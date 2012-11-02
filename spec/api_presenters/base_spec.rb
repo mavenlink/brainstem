@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'api_presenters/base'
 
 describe ApiPresenters::Base do
   describe "post_process hooks" do

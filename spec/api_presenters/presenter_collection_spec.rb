@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'api_presenters/base'
 
 describe ApiPresenters::PresenterCollection do
   class IncludeTestingWorkspacePresenter < ApiPresenters::Base
