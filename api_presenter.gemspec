@@ -1,9 +1,9 @@
 # -*- encoding: utf-8 -*-
 $LOAD_PATH.unshift File.expand_path('../lib', __FILE__)
-require "api_presenters/version"
+require "api_presenter/version"
 
 Gem::Specification.new do |gem|
-  gem.name          = "api_presenters"
+  gem.name          = "api_presenter"
   gem.authors       = ["André Arko & Katlyn Daniluk"]
   gem.email         = ["pair+andré+katlyn@mavenlink.com"]
   gem.description   = %q{API Presenters allows you to create presenters that know how to filter, sort, include associations, and convert your objects to Ruby hashes that can be output as JSON}
@@ -15,5 +15,5 @@ Gem::Specification.new do |gem|
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.require_paths = ["lib"]
-  gem.version       = ApiPresenters::VERSION
+  gem.version       = ApiPresenter::VERSION
 end

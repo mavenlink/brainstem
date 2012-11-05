@@ -1,4 +1,4 @@
-module ApiPresenters
+module ApiPresenter
   class Base
     class AssociationField
       attr_reader :method_name
@@ -21,6 +21,25 @@ module ApiPresenters
     class OptionalFieldLambda < Proc; end
 
     class << self
+      attr_reader :presenters
+
+      def inherited(subclass)
+        @subclasses ||= []
+        @subclasses << subclass
+
+        names = subclass.name.split("::")
+        namespace = names[-2] ? names[-2].downcase : "root"
+        model_name = names[-1].match(/(.*?)Presenter/) && $1
+
+        unless model_name
+          raise "Presenter classes should be named like '#{name}Presenter'"
+        end
+
+        @presenters ||= {}
+        @presenters[namespace] ||= {}
+        @presenters[namespace][model_name] = subclass.new
+      end
+
       def default_sort_order(sort_string = nil)
         if sort_string
           @default_sort_order = sort_string
@@ -73,7 +92,7 @@ module ApiPresenters
     end
 
     def present(model)
-      raise "Please override #present(model) in your subclass of ApiPresenters::Base"
+      raise "Please override #present(model) in your subclass of ApiPresenter::Base"
     end
 
     def present_and_post_process(model, fields = [], associations = [])

@@ -1,11 +1,11 @@
 require 'spec_helper'
-require 'api_presenters/base'
+require 'api_presenter/base'
 
-describe ApiPresenters::Base do
+describe ApiPresenter::Base do
   describe "post_process hooks" do
     describe "converting dates and times" do
       it "should convert all Time-like objects to epochs, but not date objects, which should be iso8601" do
-        some_presenter = Class.new(ApiPresenters::Base) do
+        some_presenter = Class.new(ApiPresenter::Base) do
           def present(model)
             {
               :time => Time.now,
@@ -33,7 +33,7 @@ describe ApiPresenters::Base do
 
     describe "outputting associations" do
       before do
-        some_presenter = Class.new(ApiPresenters::Base) do
+        some_presenter = Class.new(ApiPresenter::Base) do
           def present(model)
             {
                 :stories                    => association(:stories),
@@ -90,7 +90,7 @@ describe ApiPresenters::Base do
 
     describe "selecting fields" do
       before do
-        some_presenter = Class.new(ApiPresenters::Base) do
+        some_presenter = Class.new(ApiPresenter::Base) do
           def present(model)
             {
                 :id           => model.id,

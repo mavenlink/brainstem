@@ -1,4 +1,4 @@
-module ApiPresenters
+module ApiPresenter
   class PresenterCollection
     attr_accessor :default_max_per_page, :default_per_page, :presenters
 

@@ -1,8 +1,8 @@
 require 'spec_helper'
-require 'api_presenters/base'
+require 'api_presenter/base'
 
-describe ApiPresenters::PresenterCollection do
-  class IncludeTestingWorkspacePresenter < ApiPresenters::Base
+describe ApiPresenter::PresenterCollection do
+  class IncludeTestingWorkspacePresenter < ApiPresenter::Base
     def present(model)
       {
         :id => model.id,
@@ -14,7 +14,7 @@ describe ApiPresenters::PresenterCollection do
     end
   end
 
-  class IncludeTestingTimeEntryPresenter < ApiPresenters::Base
+  class IncludeTestingTimeEntryPresenter < ApiPresenter::Base
     def present(model)
       {
         :id => model.id,
@@ -23,7 +23,7 @@ describe ApiPresenters::PresenterCollection do
     end
   end
 
-  class IncludeTestingStoryPresenter < ApiPresenters::Base
+  class IncludeTestingStoryPresenter < ApiPresenter::Base
     def present(model)
       {
         :id           => model.id,
@@ -34,7 +34,7 @@ describe ApiPresenters::PresenterCollection do
     end
   end
 
-  class IncludeTestingUserPresenter < ApiPresenters::Base
+  class IncludeTestingUserPresenter < ApiPresenter::Base
     def present(model)
       {
         :id           => model.id,
@@ -44,7 +44,7 @@ describe ApiPresenters::PresenterCollection do
   end
 
   before do
-    @presenter_collection = ApiPresenters::PresenterCollection.new
+    @presenter_collection = ApiPresenter::PresenterCollection.new
     @presenter_collection.add_presenter :v1, "Workspace", IncludeTestingWorkspacePresenter.new
     @presenter_collection.add_presenter :v1, "TimeEntry", IncludeTestingTimeEntryPresenter.new
     @presenter_collection.add_presenter :v1, "Story", IncludeTestingStoryPresenter.new
@@ -124,14 +124,14 @@ describe ApiPresenters::PresenterCollection do
     end
 
     describe "uses presenters" do
-      class TestWorkspacePresenter < ApiPresenters::Base
+      class TestWorkspacePresenter < ApiPresenter::Base
         def present(workspace)
           { :title => "WUT" }
         end
       end
 
       before do
-        @presenter_collection = ApiPresenters::PresenterCollection.new
+        @presenter_collection = ApiPresenter::PresenterCollection.new
         @presenter_collection.add_presenter :testing_presenters, "Workspace", TestWorkspacePresenter.new
       end
 
