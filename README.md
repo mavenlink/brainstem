@@ -1,24 +1,42 @@
-# ApiPresenters
+# ApiPresenter
 
-TODO: Write a gem description
+The API Presenter gem provides a framework for converting model objects into JSON-compatible hashes. Presenters that
+inherit from the ApiPresenter class are able to apply sorting and filtering options, either by default or as requested
+by end-users of the API. Presenters also handle all of the work of loading and presenting associations of the objects
+that are being requested, allowing fewer requests and smaller responses.
 
 ## Installation
 
 Add this line to your application's Gemfile:
 
-    gem 'api_presenters'
-
-And then execute:
-
-    $ bundle
-
-Or install it yourself as:
-
-    $ gem install api_presenters
+    gem 'api_presenter'
 
 ## Usage
 
-TODO: Write usage instructions here
+Create a class that inherits from ApiPresenter::Base, named after the model you want to present. For example:
+
+```
+class UserPresenter < ApiPresenter::Base
+
+  # Return a ruby hash that can be converted to JSON
+  def present(user)
+    {
+      :id => user.id,
+      :friends => association(:friends)
+    }
+  end
+
+  # Optional list of includes that may be requested
+  allowed_includes(:friends => "friends")
+
+  # Optional sort order that may be requested
+  sort_order :popularity, "users.friends_count DESC"
+
+  # Optional sort order to apply automatically
+  default_sort_order "created_at DESC"
+
+end
+```
 
 ## Contributing
 
