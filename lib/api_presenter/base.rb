@@ -33,12 +33,12 @@ module ApiPresenter
       end
 
       def inherited(subclass)
-        names = subclass.name.split("::")
+        names = subclass.to_s.split("::")
         namespace = names[-2] ? names[-2].downcase : "root"
         model_name = names[-1].match(/(.*?)Presenter/) && $1
 
         unless model_name
-          raise "Presenter class names must end in Presenter, i.e. '#{name}Presenter'";
+          raise "Presenter class names must end in Presenter, i.e. '#{name}Presenter'"
         end
 
         presenters[namespace] ||= {}
