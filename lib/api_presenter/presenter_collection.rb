@@ -27,7 +27,7 @@ module ApiPresenter
       options[:table_name] = presented_class.table_name
 
       # key these models will use in the struct that is output
-      json_name = options[:as] || name.to_s.tableize
+      options[:as] ||= name.to_s.tableize
 
       # the other methods need this to be a symbol. I think.
       name = name.to_s.to_sym
@@ -51,7 +51,7 @@ module ApiPresenter
       models = perform_preloading scope, includes_hash
       primary_models, associated_models = gather_associations(models, name, includes_hash)
 
-      struct = { :count => count, name => [] }
+      struct = { :count => count, options[:as] => [] }
 
       associated_models.each do |json_name, models|
         models.flatten!
@@ -68,7 +68,7 @@ module ApiPresenter
 
       if primary_models.length > 0
         primary_object_fields = (options[:params][:fields] || "").split(",").map(&:to_sym)
-        struct[json_name] += options[:presenter].group_present(models, primary_object_fields, includes_hash.keys)
+        struct[options[:as]] += options[:presenter].group_present(models, primary_object_fields, includes_hash.keys)
       end
 
       struct
