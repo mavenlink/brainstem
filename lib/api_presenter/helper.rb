@@ -1,7 +1,7 @@
 module ApiPresenter
   class Helper
 
-    def self.for(namespace)
+    def self.for(namespace = "root")
       @helpers_for ||= {}
       @helpers_for[namespace.to_s] ||= begin
         klass = @helpers && @helpers[namespace.to_s]
