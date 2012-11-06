@@ -12,12 +12,12 @@ module ApiPresenter
 
       if name.is_a?(String)
         # A string in name means the block is controller-context
-        presented_class = model.classify.constantize
+        presented_class = name.classify.constantize
         scope = block.call
       else
         # A model in name means the block is model-context
-        presented_class = model
-        scope = model.instance_eval(&block)
+        presented_class = name
+        scope = name.instance_eval(&block)
       end
 
       # grab the presenter that knows about filters and sorting etc.
