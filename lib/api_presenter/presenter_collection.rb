@@ -1,18 +1,17 @@
 module ApiPresenter
   class PresenterCollection
-    attr_accessor :default_max_per_page, :default_per_page, :presenters
+    attr_accessor :default_max_per_page, :default_per_page
 
     def initialize
       @default_per_page = 20
       @default_max_per_page = 200
-      @presenters = {}
     end
 
     def presenting(name, options = {})
       options[:params] ||= {}
       scope = yield
       presented_class = (options[:model] || name.classify).constantize
-      options[:presenter] = find_presenter(options[:namespace] || :v1, presented_class)
+      options[:presenter] = ApiPresenter.find_presenter(options[:namespace] || :v1, presented_class)
       options[:table_name] = presented_class.table_name
       name = name.to_sym
 
@@ -42,8 +41,9 @@ module ApiPresenter
         models.uniq!
 
         if models.length > 0
+          presenter = ApiPresenter.find_presenter(options[:namespace] || :v1, models.first.class)
           associated_fields = includes_hash.to_a.find { |k, v| v[:json_name] == json_name }.last[:fields]
-          struct[json_name] = find_presenter(options[:namespace] || :v1, models.first.class).group_present(models, associated_fields, [])
+          struct[json_name] = presenter.group_present(models, associated_fields, [])
         else
           struct[json_name] = []
         end
@@ -169,17 +169,6 @@ module ApiPresenter
       end
 
       [primary_models, record_hash]
-    end
-
-    def add_presenter(namespace, model_class, presenter)
-      presenters[namespace] ||= {}
-      presenters[namespace][model_class.to_s] = presenter
-    end
-
-    def find_presenter(namespace, klass)
-      presenters[namespace][klass.to_s] || begin
-        raise "Unable to find a presenter in namespace #{namespace} for class #{klass.to_s}"
-      end
     end
 
     def make_api_filter(options = {}, &block)
