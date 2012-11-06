@@ -24,15 +24,12 @@ module ApiPresenter
       attr_reader :presenters
 
       def inherited(subclass)
-        @subclasses ||= []
-        @subclasses << subclass
-
         names = subclass.name.split("::")
         namespace = names[-2] ? names[-2].downcase : "root"
         model_name = names[-1].match(/(.*?)Presenter/) && $1
 
         unless model_name
-          raise "Presenter classes should be named like '#{name}Presenter'"
+          raise "Presenter class names must end in Presenter, i.e. '#{name}Presenter'";
         end
 
         @presenters ||= {}
@@ -73,6 +70,29 @@ module ApiPresenter
       def filters
         @filters
       end
+
+      def namespace
+        @namespace ||= begin
+          presenters = ApiPresenter::Base.presenters
+          presenters.keys.find{|n| presenters[n].values.any?{|p| p.class == self }}
+        end
+      end
+
+      def helper
+        @helper ||= ApiPresenter::Helper.for(namespace)
+      end
+
+      def respond_to?(meth)
+        (helper && helper.respond_to?(meth)) || super(meth)
+      end
+
+      def method_missing(meth, *args, &block)
+        if helper && helper.respond_to?(meth)
+          helper.send(meth, *args, &block)
+        else
+          super(meth, *args, &block)
+        end
+      end
     end
 
     def default_sort_order
@@ -89,6 +109,19 @@ module ApiPresenter
 
     def filters
       self.class.filters
+    end
+
+    def respond_to?(meth)
+      (self.class.helper && self.class.helper.respond_to?(meth)) || super(meth)
+    end
+
+    def method_missing(meth, *args, &block)
+      helper = self.class.helper
+      if helper && helper.respond_to?(meth)
+        helper.send(meth, *args, &block)
+      else
+        super(meth, *args, &block)
+      end
     end
 
     def present(model)
@@ -177,10 +210,6 @@ module ApiPresenter
           end
         end
       end
-    end
-
-    def current_user
-      ActiveRecord::Base.current_user
     end
 
     def association(method_name = nil, &block)
