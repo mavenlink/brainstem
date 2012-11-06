@@ -3,11 +3,15 @@ require 'api_presenter/helper'
 
 module ApiPresenter
   class Base
+
     TIME_CLASSES = [Time]
-    TIME_CLASSES << ActiveSupport::TimeWithZone if defined?(ActiveSupport::TimeWithZone)
+    begin
+      require 'active_support/time_with_zone'
+      TIME_CLASSES << ActiveSupport::TimeWithZone
+    rescue LoadError
+    end
 
     class AssociationField
-
       attr_reader :method_name
 
       def initialize(method_name = nil, &block)
