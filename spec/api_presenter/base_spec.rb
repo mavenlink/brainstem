@@ -45,6 +45,7 @@ describe ApiPresenter::Base do
             }
           end
         end
+
         @presenter = some_presenter.new
       end
 
