@@ -5,29 +5,27 @@ describe ApiPresenter::Base do
   describe "post_process hooks" do
     describe "converting dates and times" do
       it "should convert all Time-like objects to epochs, but not date objects, which should be iso8601" do
-        some_presenter = Class.new(ApiPresenter::Base) do
+        class TimePresenter < ApiPresenter::Base
           def present(model)
             {
               :time => Time.now,
-              :date => Date.today,
+              :date => Date.new,
               :recursion => {
                   :time => Time.now,
                   :something => [Time.now, :else],
                   :foo => :bar
-              },
-              :time_with_zone => Workspace.last.created_at
+              }
             }
           end
         end
 
-        struct = some_presenter.new.present_and_post_process("something")
+        struct = TimePresenter.new.present_and_post_process("something")
         struct[:time].should be_a(Integer)
         struct[:date].should =~ /\d{4}-\d{2}-\d{2}/
         struct[:recursion][:time].should be_a(Integer)
         struct[:recursion][:something].first.should be_a(Integer)
         struct[:recursion][:something].last.should == :else
         struct[:recursion][:foo].should == :bar
-        struct[:time_with_zone].should be_a(Integer)
       end
     end
 
