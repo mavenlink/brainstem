@@ -4,7 +4,7 @@ module ApiPresenter
     def self.for(namespace)
       @helpers_for ||= {}
       @helpers_for[namespace.to_s] ||= begin
-        klass = @helpers[namespace.to_s]
+        klass = @helpers && @helpers[namespace.to_s]
         klass && klass.new
       end
     end

@@ -1,3 +1,5 @@
+require 'api_presenter/helper'
+
 module ApiPresenter
   class Base
     class AssociationField
