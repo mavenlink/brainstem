@@ -1,8 +1,13 @@
+require 'date'
 require 'api_presenter/helper'
 
 module ApiPresenter
   class Base
+    TIME_CLASSES = [Time]
+    TIME_CLASSES << ActiveSupport::TimeWithZone if defined?(ActiveSupport::TimeWithZone)
+
     class AssociationField
+
       attr_reader :method_name
 
       def initialize(method_name = nil, &block)
@@ -155,14 +160,14 @@ module ApiPresenter
 
     def datetimes_to_epoch(struct)
       case struct
-        when Array
-          struct.map { |value| datetimes_to_epoch value }
-        when Hash
-          struct.inject({}) { |memo, (k, v)| memo[k] = datetimes_to_epoch v; memo }
-        when Time, ActiveSupport::TimeWithZone
-          struct.to_i
-        else
-          struct
+      when Array
+        struct.map { |value| datetimes_to_epoch value }
+      when Hash
+        struct.inject({}) { |memo, (k, v)| memo[k] = datetimes_to_epoch v; memo }
+      when *TIME_CLASSES # Time, ActiveSupport::TimeWithZone
+        struct.to_i
+      else
+        struct
       end
     end
 
@@ -173,7 +178,7 @@ module ApiPresenter
         when Hash
           struct.inject({}) { |memo, (k, v)| memo[k] = dates_to_strings v; memo }
         when Date
-          struct.iso8601
+          struct.strftime('%F')
         else
           struct
       end
