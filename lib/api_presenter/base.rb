@@ -32,10 +32,6 @@ module ApiPresenter
     class OptionalFieldLambda < Proc; end
 
     class << self
-      def presenters
-        @presenters ||= {}
-      end
-
       def inherited(subclass)
         names = subclass.to_s.split("::")
         namespace = names[-2] ? names[-2].downcase : "root"
@@ -45,8 +41,8 @@ module ApiPresenter
           raise "Presenter class names must end in Presenter, i.e. '#{name}Presenter'"
         end
 
-        presenters[namespace] ||= {}
-        presenters[namespace][model_name] = subclass.new
+        ApiPresenter.presenters[namespace] ||= {}
+        ApiPresenter.presenters[namespace][model_name] = subclass.new
       end
 
       def default_sort_order(sort_string = nil)
@@ -85,7 +81,8 @@ module ApiPresenter
 
       def namespace
         @namespace ||= begin
-          presenters.keys.find{|n| presenters[n].values.any?{|p| p.class == self }}
+          ps = ApiPresenter.presenters
+          ps.keys.find{|n| ps[n].values.any?{|p| p.class == self }} || "root"
         end
       end
 

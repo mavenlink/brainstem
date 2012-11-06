@@ -11,7 +11,7 @@ module ApiPresenter
   end
 
   def presenters
-    Base.presenters
+    @presenters ||= {}
   end
 
   attr_writer :default_namespace
