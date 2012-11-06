@@ -7,13 +7,30 @@ module ApiPresenter
       @default_max_per_page = 200
     end
 
-    def presenting(name, options = {})
+    def presenting(name, options = {}, &block)
       options[:params] ||= {}
-      scope = yield
-      presented_class = (options[:model] || name.classify).constantize
-      options[:presenter] = ApiPresenter.find_presenter(options[:namespace] || :v1, presented_class)
+
+      if name.is_a?(String)
+        # A string in name means the block is controller-context
+        presented_class = model.classify.constantize
+        scope = block.call
+      else
+        # A model in name means the block is model-context
+        presented_class = model
+        scope = model.instance_eval(&block)
+      end
+
+      # grab the presenter that knows about filters and sorting etc.
+      options[:presenter] = ApiPresenter.for(presented_class, options[:namespace] || :v1)
+
+      # table name will be used to query the database for the filtered data
       options[:table_name] = presented_class.table_name
-      name = name.to_sym
+
+      # key these models will use in the struct that is output
+      json_name = options[:as] || name.to_s.tableize
+
+      # the other methods need this to be a symbol. I think.
+      name = name.to_s.to_sym
 
       # Filter
       scope = run_filters scope, options
@@ -41,7 +58,7 @@ module ApiPresenter
         models.uniq!
 
         if models.length > 0
-          presenter = ApiPresenter.find_presenter(options[:namespace] || :v1, models.first.class)
+          presenter = ApiPresenter.for(models.first.class, options[:namespace] || :v1)
           associated_fields = includes_hash.to_a.find { |k, v| v[:json_name] == json_name }.last[:fields]
           struct[json_name] = presenter.group_present(models, associated_fields, [])
         else
@@ -51,7 +68,7 @@ module ApiPresenter
 
       if primary_models.length > 0
         primary_object_fields = (options[:params][:fields] || "").split(",").map(&:to_sym)
-        struct[name] += options[:presenter].group_present(models, primary_object_fields, includes_hash.keys)
+        struct[json_name] += options[:presenter].group_present(models, primary_object_fields, includes_hash.keys)
       end
 
       struct

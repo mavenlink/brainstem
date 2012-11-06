@@ -14,7 +14,13 @@ module ApiPresenter
     Base.presenters
   end
 
-  def find_presenter(namespace, klass)
+  attr_writer :default_namespace
+
+  def self.default_namespace
+    @default_namespace || "none"
+  end
+
+  def for(klass, namespace = default_namespace)
     presenters[namespace.to_s][klass.to_s] || begin
       raise "Unable to find a presenter in namespace #{namespace} for class #{klass}"
     end
