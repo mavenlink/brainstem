@@ -1,5 +1,4 @@
 require 'date'
-require 'api_presenter/helper'
 
 module ApiPresenter
   class Base
@@ -32,17 +31,8 @@ module ApiPresenter
     class OptionalFieldLambda < Proc; end
 
     class << self
-      def inherited(subclass)
-        names = subclass.to_s.split("::")
-        namespace = names[-2] ? names[-2].downcase : "root"
-        model_name = names[-1].match(/(.*?)Presenter/) && $1
-
-        unless model_name
-          raise "Presenter class names must end in Presenter, i.e. '#{name}Presenter'"
-        end
-
-        ApiPresenter.presenters[namespace] ||= {}
-        ApiPresenter.presenters[namespace][model_name] = subclass.new
+      def presents(*klasses)
+        ApiPresenter.add_presenter_class(self, *klasses)
       end
 
       def default_sort_order(sort_string = nil)
@@ -79,27 +69,9 @@ module ApiPresenter
         @filters
       end
 
-      def namespace
-        @namespace ||= begin
-          ps = ApiPresenter.presenters
-          ps.keys.find{|n| ps[n].values.any?{|p| p.class == self }} || "root"
-        end
-      end
-
-      def helper
-        @helper ||= ApiPresenter::Helper.for(namespace)
-      end
-
-      def respond_to?(meth)
-        (helper && helper.respond_to?(meth)) || super(meth)
-      end
-
-      def method_missing(meth, *args, &block)
-        if helper && helper.respond_to?(meth)
-          helper.send(meth, *args, &block)
-        else
-          super(meth, *args, &block)
-        end
+      def helper(mod)
+        include mod
+        extend mod
       end
     end
 

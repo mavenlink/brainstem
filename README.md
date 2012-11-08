@@ -29,10 +29,10 @@ Create a class that inherits from ApiPresenter::Base, named after the model you 
       allowed_includes(:friends => "friends")
 
       # Optional sort order that may be requested
-      sort_order :popularity, "users.friends_count DESC"
+      sort_order :popularity, "users.friends_count"
 
       # Optional sort order to apply automatically
-      default_sort_order "created_at DESC"
+      default_sort_order "created_at:desc"
 
     end
 

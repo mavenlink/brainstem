@@ -215,5 +215,23 @@ module ApiPresenter
         filter_default != nil
       end
     end
+
+    def presenters
+      @presenters ||= {}
+    end
+
+    def add_presenter_class(presenter_class, *klasses)
+      klasses.each do |klass|
+        presenters[klass.to_s] = presenter_class.new
+      end
+    end
+
+    def for(klass)
+      presenters[klass.to_s]
+    end
+
+    def for!(klass)
+      self.for(klass) || raise(ArgumentError, "Unable to find a presenter for class #{klass}")
+    end
   end
 end

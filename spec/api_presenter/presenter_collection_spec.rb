@@ -44,11 +44,11 @@ describe ApiPresenter::PresenterCollection do
   end
 
   before do
-    @presenter_collection = ApiPresenter::PresenterCollection.new
-    @presenter_collection.add_presenter :v1, "Workspace", IncludeTestingWorkspacePresenter.new
-    @presenter_collection.add_presenter :v1, "TimeEntry", IncludeTestingTimeEntryPresenter.new
-    @presenter_collection.add_presenter :v1, "Story", IncludeTestingStoryPresenter.new
-    @presenter_collection.add_presenter :v1, "User", IncludeTestingUserPresenter.new
+    #@presenter_collection = ApiPresenter::PresenterCollection.new
+    #@presenter_collection.add_presenter :v1, "Workspace", IncludeTestingWorkspacePresenter.new
+    #@presenter_collection.add_presenter :v1, "TimeEntry", IncludeTestingTimeEntryPresenter.new
+    #@presenter_collection.add_presenter :v1, "Story", IncludeTestingStoryPresenter.new
+    #@presenter_collection.add_presenter :v1, "User", IncludeTestingUserPresenter.new
   end
 
   describe "#presenting" do
@@ -234,14 +234,12 @@ describe ApiPresenter::PresenterCollection do
       end
 
       it "preloads associations when they are full model-level associations, but also works with model methods (without preloading)" do
-        IncludeTestingWorkspacePresenter.allowed_includes :stories => "stories", :primary_maven => "users"
         # Here, primary_maven is a method on Workspace, not a true association.
         @presenter_collection.presenting("workspaces", :params => { :include => "stories;primary_maven" }) { Workspace.where(:id => workspaces(:jane_car_wash).id) }
 
+        IncludeTestingWorkspacePresenter.allowed_includes :stories => "stories", :primary_maven => "users"
         mock(ActiveRecord::Associations::Preloader).new(anything, [:stories]) { mock!.run }
-        result = @presenter_collection.presenting("workspaces",
-                                                  :params => { :include => "stories;primary_maven" },
-                                                  :allowed_includes =>  { :stories => "stories", :primary_maven => "users" }) { Workspace.where(:id => workspaces(:jane_car_wash).id) }
+        result = @presenter_collection.presenting("workspaces", :params => { :include => "stories;primary_maven" }) { Workspace.where(:id => workspaces(:jane_car_wash).id) }
         result[:stories].should be_present
         result[:users].first[:id].should == users(:bob).id
       end
@@ -406,6 +404,34 @@ describe ApiPresenter::PresenterCollection do
       it "defaults to no includes" do
         @presenter_collection.filter_includes(nil, { :stories => :stories, :time_entries => :time_entries }).should == {}
         @presenter_collection.filter_includes("", { :stories => :stories, :time_entries => :time_entries }).should == {}
+      end
+    end
+  end
+
+  describe "collection methods" do
+    describe "for method" do
+      module V1
+        class ArrayPresenter < ApiPresenter::Base
+          presents Array
+        end
+      end
+
+      it "returns the presenter for a given class" do
+        ApiPresenter.presenter_collection("v1").for(Array).should be_a(V1::ArrayPresenter)
+      end
+
+      it "returns nil when given nil" do
+        ApiPresenter.presenter_collection("v1").for(nil).should be_nil
+      end
+
+      it "returns nil when a given class has no presenter" do
+        ApiPresenter.presenter_collection("v1").for(String).should be_nil
+      end
+    end
+
+    describe "for! method" do
+      it "raises if there is no presenter for the given class" do
+        lambda{ ApiPresenter.presenter_collection("v1").for!(String) }.should raise_error(ArgumentError)
       end
     end
   end

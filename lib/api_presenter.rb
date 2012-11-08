@@ -1,18 +1,9 @@
 require "api_presenter/base"
-require "api_presenter/helper"
 require "api_presenter/presenter_collection"
 require "api_presenter/version"
 
 module ApiPresenter
   extend self
-
-  def presenter_collection
-    @presenter_collection ||= PresenterCollection.new
-  end
-
-  def presenters
-    @presenters ||= {}
-  end
 
   attr_writer :default_namespace
 
@@ -20,10 +11,21 @@ module ApiPresenter
     @default_namespace || "none"
   end
 
-  def for(klass, namespace = default_namespace)
-    presenters[namespace.to_s][klass.to_s] || begin
-      raise "Unable to find a presenter in namespace #{namespace} for class #{klass}"
-    end
+  def presenter_collection(namespace = default_namespace)
+    @presenter_collection ||= {}
+    @presenter_collection[namespace.to_s.downcase] ||= PresenterCollection.new
   end
 
+  def clear_collections!
+    @presenter_collection = nil
+  end
+
+  def add_presenter_class(presenter_class, *klasses)
+    presenter_collection(namespace_of(presenter_class)).add_presenter_class(presenter_class, *klasses)
+  end
+
+  def namespace_of(klass)
+    names = klass.to_s.split("::")
+    names[-2] ? names[-2] : default_namespace
+  end
 end

@@ -2,6 +2,70 @@ require 'spec_helper'
 require 'api_presenter/base'
 
 describe ApiPresenter::Base do
+  describe "class methods" do
+
+    describe "presents method" do
+      before do
+        @klass = Class.new(ApiPresenter::Base)
+      end
+
+      it "records itself as the presenter for the named class as a string" do
+        @klass.presents "String"
+        ApiPresenter.presenter_collection.for(String).should be_a(@klass)
+      end
+
+      it "records itself as the presenter for the given class" do
+        @klass.presents String
+        ApiPresenter.presenter_collection.for(String).should be_a(@klass)
+      end
+
+      it "records itself as the presenter for the named classes" do
+        @klass.presents String, Array
+        ApiPresenter.presenter_collection.for(String).should be_a(@klass)
+        ApiPresenter.presenter_collection.for(Array).should be_a(@klass)
+      end
+    end
+
+    describe "implicit namespacing" do
+      module V1
+        class SomePresenter < ApiPresenter::Base
+        end
+      end
+
+      it "uses the closest module name as the presenter namespace" do
+        V1::SomePresenter.presents String
+        ApiPresenter.presenter_collection(:v1).for(String).should be_a(V1::SomePresenter)
+      end
+
+      it "does not map namespaced presenters into the default namespace" do
+        V1::SomePresenter.presents String
+        ApiPresenter.presenter_collection.for(String).should be_nil
+      end
+    end
+
+    describe "helper method" do
+      before do
+        @klass = Class.new(ApiPresenter::Base) do
+          def call_helper
+            foo
+          end
+        end
+        @helper = Module.new do
+          def foo
+            "I work"
+          end
+        end
+      end
+
+      it "includes and extends the given module" do
+        lambda { @klass.new.call_helper }.should raise_error
+        @klass.helper @helper
+        @klass.new.call_helper.should == "I work"
+        @klass.foo.should == "I work"
+      end
+    end
+  end
+
   describe "post_process hooks" do
     describe "converting dates and times" do
       it "should convert all Time-like objects to epochs, but not date objects, which should be iso8601" do
