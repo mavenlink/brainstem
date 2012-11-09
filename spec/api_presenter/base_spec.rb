@@ -171,7 +171,7 @@ describe ApiPresenter::Base do
                 :tasks        => association(:tasks),
                 :updated_at   => model.updated_at,
                 :title        => optional_field { model.title },
-                :description  => optional_field { model.description }
+                :description  => optional_field(:description)
             }
           end
         end

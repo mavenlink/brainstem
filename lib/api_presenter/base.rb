@@ -10,7 +10,7 @@ module ApiPresenter
     rescue LoadError
     end
 
-    class AssociationField
+    class FieldProxy
       attr_reader :method_name
 
       def initialize(method_name = nil, &block)
@@ -28,7 +28,8 @@ module ApiPresenter
       end
     end
 
-    class OptionalFieldLambda < Proc; end
+    class AssociationField < FieldProxy; end
+    class OptionalField < FieldProxy; end
 
     class << self
       def presents(*klasses)
@@ -91,19 +92,6 @@ module ApiPresenter
       self.class.filters
     end
 
-    def respond_to?(meth)
-      (self.class.helper && self.class.helper.respond_to?(meth)) || super(meth)
-    end
-
-    def method_missing(meth, *args, &block)
-      helper = self.class.helper
-      if helper && helper.respond_to?(meth)
-        helper.send(meth, *args, &block)
-      else
-        super(meth, *args, &block)
-      end
-    end
-
     def present(model)
       raise "Please override #present(model) in your subclass of ApiPresenter::Base"
     end
@@ -114,7 +102,7 @@ module ApiPresenter
 
     def post_process(struct, model, fields = [], associations = [])
       load_associations!(model, struct, associations)
-      load_optional_fields!(struct, fields)
+      load_optional_fields!(model, struct, fields)
       struct = dates_to_strings(struct)
       datetimes_to_epoch(struct)
     end
@@ -157,11 +145,11 @@ module ApiPresenter
       end
     end
 
-    def load_optional_fields!(struct, fields)
+    def load_optional_fields!(model, struct, fields)
       struct.to_a.each do |key, value|
-        if value.is_a?(OptionalFieldLambda)
+        if value.is_a?(OptionalField)
           if fields.include?(key)
-            struct[key] = value.call
+            struct[key] = value.call(model)
           else
             struct.delete key
           end
@@ -196,9 +184,8 @@ module ApiPresenter
       AssociationField.new method_name, &block
     end
 
-    def optional_field(&block)
-      # Don't use this because the front end does not support it yet - AC
-      OptionalFieldLambda.new &block
+    def optional_field(field_name = nil, &block)
+      OptionalField.new field_name, &block
     end
   end
 end
