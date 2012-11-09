@@ -96,57 +96,65 @@ describe ApiPresenter::Base do
     describe "outputting associations" do
       before do
         some_presenter = Class.new(ApiPresenter::Base) do
+          presents Workspace
+
           def present(model)
             {
-                :stories                    => association(:stories),
-                :creator                    => association(:creator),
-                :something                  => association(:creator),
-                :primary_maven              => association(:primary_maven),
-                :primary_maven_with_lambda  => association { model.primary_maven },
+                :tasks                      => association(:tasks),
+                :user                       => association(:user),
+                :something                  => association(:user),
+                :lead_user                  => association(:lead_user),
+                :lead_user_with_lambda      => association { model.user },
                 :synthetic                  => association(:synthetic)
             }
           end
         end
 
         @presenter = some_presenter.new
+        @workspace = Workspace.find_by_title "bob workspace 1"
       end
 
-      it "should not convert or return non-included associations, even when they're in the field list" do
-        json = @presenter.present_and_post_process(workspaces(:jane_car_wash), [:creator, :creator_id, :stories, :story_ids], [])
-        json.should_not have_key(:story_ids)
-        json.should_not have_key(:stories)
-        json.should_not have_key(:creator)
-        json.should have_key(:creator_id)
+      it "should not convert or return non-included associations, even when they're in the field list, but should return <association>_ids" do
+        json = @presenter.present_and_post_process(@workspace, [:user, :user_id, :tasks, :task_ids], [])
+        json.should_not have_key(:task_ids)
+        json.should_not have_key(:tasks)
+        json.should_not have_key(:user)
+        json.should have_key(:user_id)
       end
 
       it "should convert requested has_many associations (includes) into the <association>_ids format, whether or not the field is requested" do
-        @presenter.present_and_post_process(workspaces(:jane_car_wash), [], [:stories])[:story_ids].should =~ workspaces(:jane_car_wash).stories.map(&:id)
-        @presenter.present_and_post_process(workspaces(:jane_car_wash), [:stories, :story_ids], [:stories])[:story_ids].should =~ workspaces(:jane_car_wash).stories.map(&:id)
+        @workspace.tasks.length.should > 0
+        @presenter.present_and_post_process(@workspace, [], [:tasks])[:task_ids].should =~ @workspace.tasks.map(&:id)
+        @presenter.present_and_post_process(@workspace, [:tasks, :task_ids], [:tasks])[:task_ids].should =~ @workspace.tasks.map(&:id)
       end
 
       it "should convert requested belongs_to and has_one associations into the <association>_id format when requested" do
-        @presenter.present_and_post_process(workspaces(:jane_car_wash), [], [:primary_maven])[:primary_maven_id].should == workspaces(:jane_car_wash).primary_maven.id
-        @presenter.present_and_post_process(workspaces(:jane_car_wash), [:primary_maven_id, :primary_maven], [:primary_maven])[:primary_maven_id].should == workspaces(:jane_car_wash).primary_maven.id
+        @presenter.present_and_post_process(@workspace, [], [:user])[:user_id].should == @workspace.user.id
+      end
+
+      it "converts non-association models into <model>_id format when they are requested" do
+        @presenter.present_and_post_process(@workspace, [], [:lead_user])[:lead_user_id].should == @workspace.lead_user.id
+      end
+
+      it "handles associations provided with lambdas" do
+        @presenter.present_and_post_process(@workspace, [], [:lead_user_with_lambda])[:lead_user_with_lambda_id].should == @workspace.lead_user.id
       end
 
       it "should return <association>_id fields when the given association ids exist on the model whether it is requested or not" do
-        @presenter.present_and_post_process(workspaces(:jane_car_wash), [], [:creator])[:creator_id].should == workspaces(:jane_car_wash).creator_id
+        @presenter.present_and_post_process(@workspace, [], [:user])[:user_id].should == @workspace.user_id
 
-        json = @presenter.present_and_post_process(workspaces(:jane_car_wash), [], [])
-        json.keys.should =~ [:creator_id, :something_id]
-        json[:creator_id].should == workspaces(:jane_car_wash).creator_id
-      end
-
-      it "should leave non-active-records alone" do
-        @presenter.present_and_post_process(workspaces(:jane_car_wash), [], [:creator])[:creator_id].should == workspaces(:jane_car_wash).creator_id
-        @presenter.present_and_post_process(workspaces(:jane_car_wash), [:creator, :creator_id], [:creator])[:creator_id].should == workspaces(:jane_car_wash).creator_id
+        json = @presenter.present_and_post_process(@workspace, [], [])
+        json.keys.should eq([:user_id, :something_id])
+        json[:user_id].should == @workspace.user_id
+        json[:something_id].should == @workspace.user_id
       end
 
       context "when the model has an <association>_id method but no column" do
         it "does not include the <association>_id field" do
-          workspace = workspaces(:jane_car_wash)
-          def workspace.synthetic_id; raise "Why you call me?"; end
-          @presenter.present_and_post_process(workspace, [], []).should_not have_key(:synthetic_id)
+          def @workspace.synthetic_id
+            raise "this explodes because it's not an association"
+          end
+          @presenter.present_and_post_process(@workspace, [], []).should_not have_key(:synthetic_id)
         end
       end
     end
@@ -154,31 +162,30 @@ describe ApiPresenter::Base do
     describe "selecting fields" do
       before do
         some_presenter = Class.new(ApiPresenter::Base) do
+          presents Workspace
+
           def present(model)
             {
                 :id           => model.id,
-                :creator_id   => model.creator_id,
+                :user         => association(:user),
+                :tasks        => association(:tasks),
+                :updated_at   => model.updated_at,
                 :title        => optional_field { model.title },
                 :description  => optional_field { model.description }
             }
           end
         end
         @presenter = some_presenter.new
+        @workspace = Workspace.find_by_title "bob workspace 1"
       end
 
       it "always returns normal fields" do
-        @presenter.present_and_post_process(workspaces(:jane_car_wash), [], []).should == { :id => workspaces(:jane_car_wash).id,
-                                                                                            :creator_id => workspaces(:jane_car_wash).creator_id }
+        @presenter.present_and_post_process(@workspace, [], []).keys.should =~ [:id, :user_id, :updated_at]
       end
 
       it "only returns optional_fields when they are explicitly requested" do
-        @presenter.present_and_post_process(workspaces(:jane_car_wash), [:title], []).should == { :title => workspaces(:jane_car_wash).title,
-                                                                                                  :id => workspaces(:jane_car_wash).id,
-                                                                                                  :creator_id => workspaces(:jane_car_wash).creator_id }
-        @presenter.present_and_post_process(workspaces(:jane_car_wash), [:title, :description], []).should == { :title => workspaces(:jane_car_wash).title,
-                                                                                                                :description => workspaces(:jane_car_wash).description,
-                                                                                                                :id => workspaces(:jane_car_wash).id,
-                                                                                                                :creator_id => workspaces(:jane_car_wash).creator_id }
+        @presenter.present_and_post_process(@workspace, [:title], [])[:title].should eq(@workspace.title)
+        @presenter.present_and_post_process(@workspace, [:title, :description], []).keys.should =~ [:id, :user_id, :updated_at, :title, :description]
       end
     end
   end
