@@ -1,6 +1,7 @@
 require "api_presenter/base"
 require "api_presenter/presenter_collection"
 require "api_presenter/version"
+require "logger"
 
 module ApiPresenter
   extend self
@@ -27,5 +28,15 @@ module ApiPresenter
   def namespace_of(klass)
     names = klass.to_s.split("::")
     names[-2] ? names[-2] : default_namespace
+  end
+
+  def logger
+    @logger ||= begin
+      if defined?(Rails)
+        Rails.logger
+      else
+        Logger.new(STDOUT)
+      end
+    end
   end
 end

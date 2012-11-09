@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'api_presenter/base'
 
 describe ApiPresenter::Base do
   describe "class methods" do

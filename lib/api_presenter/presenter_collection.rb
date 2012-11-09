@@ -9,25 +9,17 @@ module ApiPresenter
 
     def presenting(name, options = {}, &block)
       options[:params] ||= {}
-
-      if name.is_a?(String)
-        # A string in name means the block is controller-context
-        presented_class = name.classify.constantize
-        scope = block.call
-      else
-        # A model in name means the block is model-context
-        presented_class = name
-        scope = name.instance_eval(&block)
-      end
+      presented_class = (options[:model] || name).to_s.classify.constantize
+      scope = presented_class.instance_eval(&block)
 
       # grab the presenter that knows about filters and sorting etc.
-      options[:presenter] = ApiPresenter.for(presented_class, options[:namespace] || :v1)
+      options[:presenter] = for!(presented_class)
 
       # table name will be used to query the database for the filtered data
       options[:table_name] = presented_class.table_name
 
       # key these models will use in the struct that is output
-      options[:as] ||= name.to_s.tableize
+      options[:as] ||= name.to_s.tableize.to_sym
 
       # the other methods need this to be a symbol. I think.
       name = name.to_s.to_sym
@@ -58,7 +50,7 @@ module ApiPresenter
         models.uniq!
 
         if models.length > 0
-          presenter = ApiPresenter.for(models.first.class, options[:namespace] || :v1)
+          presenter = for!(models.first.class)
           associated_fields = includes_hash.to_a.find { |k, v| v[:json_name] == json_name }.last[:fields]
           struct[json_name] = presenter.group_present(models, associated_fields, [])
         else
@@ -157,14 +149,14 @@ module ApiPresenter
 
     def perform_preloading(scope, includes_hash)
       scope.to_a.tap do |models|
-        Rails.logger.info "Starting eager load."
+        ApiPresenter.logger.info "Starting eager load."
         association_names_to_preload = includes_hash.values.map {|i| i[:association] }
         if models.first
           reflections = models.first.reflections
           association_names_to_preload.reject! { |association| !reflections.has_key?(association) }
         end
         ActiveRecord::Associations::Preloader.new(models, association_names_to_preload).run
-        Rails.logger.info "Ended eager load of #{association_names_to_preload.join(", ")}."
+        ApiPresenter.logger.info "Ended eager load of #{association_names_to_preload.join(", ")}."
       end
     end
 

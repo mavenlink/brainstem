@@ -1,54 +1,57 @@
 require 'spec_helper'
-require 'api_presenter/presenter_collection'
 
 describe ApiPresenter::PresenterCollection do
-  class IncludeTestingWorkspacePresenter < ApiPresenter::Base
-    def present(model)
-      {
-        :id => model.id,
-        :title => model.title,
-        :updated_at => model.updated_at,
-        :description => optional_field { model.description.present? ? model.description : "" },
-        :stories => association { model.stories }
-      }
-    end
-  end
+  class WorkspacePresenter < ApiPresenter::Base
+    presents Workspace
 
-  class IncludeTestingTimeEntryPresenter < ApiPresenter::Base
-    def present(model)
-      {
-        :id => model.id,
-        :another_name_for_story => association { model.story }
-      }
-    end
-  end
-
-  class IncludeTestingStoryPresenter < ApiPresenter::Base
     def present(model)
       {
         :id           => model.id,
         :title        => model.title,
-        :tags         => optional_field { model.tags },
-        :sub_stories  => association { model.sub_stories }
+        :description  => optional_field { model.description },
+        :updated_at   => model.updated_at,
+        :tasks        => association(:tasks)
       }
     end
   end
 
-  class IncludeTestingUserPresenter < ApiPresenter::Base
+  #class TimeEntryPresenter < ApiPresenter::Base
+  #  def present(model)
+  #    {
+  #      :id => model.id,
+  #      :another_name_for_story => association { model.story }
+  #    }
+  #  end
+  #end
+
+  class TaskPresenter < ApiPresenter::Base
+    presents Task
+
     def present(model)
       {
         :id           => model.id,
-        :full_name    => model.full_name,
+        :name         => model.name,
+        :tags         => optional_field { model.tags },
+        :sub_tasks    => association(:sub_tasks)
+      }
+    end
+  end
+
+  class UserPresenter < ApiPresenter::Base
+    presents User
+
+    def present(model)
+      {
+        :id           => model.id
       }
     end
   end
 
   before do
-    #@presenter_collection = ApiPresenter::PresenterCollection.new
-    #@presenter_collection.add_presenter :v1, "Workspace", IncludeTestingWorkspacePresenter.new
-    #@presenter_collection.add_presenter :v1, "TimeEntry", IncludeTestingTimeEntryPresenter.new
-    #@presenter_collection.add_presenter :v1, "Story", IncludeTestingStoryPresenter.new
-    #@presenter_collection.add_presenter :v1, "User", IncludeTestingUserPresenter.new
+    UserPresenter.presents User
+    TaskPresenter.presents Task
+    WorkspacePresenter.presents Workspace
+    @presenter_collection = ApiPresenter.presenter_collection
   end
 
   describe "#presenting" do
@@ -106,52 +109,48 @@ describe ApiPresenter::PresenterCollection do
         before do
           @presenter_collection.default_per_page = 500
           @presenter_collection.default_max_per_page = 500
-          @actual_count = users(:bob).workspaces.can_create_line_items(users(:bob)).active.to_a.map(&:id).uniq.length
         end
 
         it "returns the unique count by model id" do
-          result = @presenter_collection.presenting("workspaces", :params => { :per_page => 100, :page => 1 }) { users(:bob).workspaces.can_create_line_items(users(:bob)).active }
-          result[:count].should == result[:workspaces].length
-          result[:count].should == @actual_count
-        end
-
-        it "infers the table name from the model" do
-          result = @presenter_collection.presenting("not_workspaces", :model => "Workspace", :params => { :per_page => 100, :page => 1 }) { users(:bob).workspaces.can_create_line_items(users(:bob)).active }
-          result[:count].should == result[:not_workspaces].length
-          result[:count].should == @actual_count
+          result = @presenter_collection.presenting("workspaces", :params => { :per_page => 2, :page => 1 }) { Workspace.order('id desc') }
+          result[:count].should == Workspace.count
         end
       end
     end
 
     describe "uses presenters" do
-      class TestWorkspacePresenter < ApiPresenter::Base
-        def present(workspace)
-          { :title => "WUT" }
-        end
+      it "finds presenter by table name string" do
+        result = @presenter_collection.presenting("workspaces") { Workspace.order('id desc') }
+        result[:workspaces].size.should eq(Workspace.count)
       end
 
-      before do
-        @presenter_collection = ApiPresenter::PresenterCollection.new
-        @presenter_collection.add_presenter :testing_presenters, "Workspace", TestWorkspacePresenter.new
+      it "finds presenter by model name string" do
+        result = @presenter_collection.presenting("Workspace") { order('id desc') }
+        result[:workspaces].size.should eq(Workspace.count)
       end
 
-      it "finds presenters by namespace" do
-        result = @presenter_collection.presenting("workspaces", :namespace => :testing_presenters, :max_per_page => 2) { Workspace.where(:id => workspaces(:jane_car_wash)) }
-        result[:workspaces].first.should == { :title => "WUT" }
+      it "finds presenter by model" do
+        result = @presenter_collection.presenting(Workspace) { order('id desc') }
+        result[:workspaces].size.should eq(Workspace.count)
+      end
+
+      it "infers the table name from the model" do
+        result = @presenter_collection.presenting("not_workspaces", :model => "Workspace", :params => { :per_page => 2, :page => 1 }) { Workspace.order('id desc') }
+        result[:not_workspaces].should_not be_empty
+        result[:count].should == Workspace.count
       end
     end
 
     describe "includes" do
       it "reads allowed includes from the presenter" do
-        IncludeTestingWorkspacePresenter.allowed_includes :stories => "stories"
-        result = @presenter_collection.presenting("workspaces", :params => { :include => "drop table;stories;posts;time_entries" }, :max_per_page => 2) { Workspace.where(:id => workspaces(:jane_car_wash)) }
-        result[:stories].should be_present
+        WorkspacePresenter.allowed_includes :tasks => "tasks"
+        result = @presenter_collection.presenting("workspaces", :params => { :include => "drop table;tasks;time_entries" }) { Workspace.order('id desc') }
+        result[:tasks].should be_present
         result[:time_entries].should_not be_present
-        result[:posts].should_not be_present
       end
 
       it "allows the allowed includes list to have different json names and association names" do
-        IncludeTestingTimeEntryPresenter.allowed_includes(:another_name_for_story => {
+        TimeEntryPresenter.allowed_includes(:another_name_for_story => {
           :association => :story, :json_name => "stories"})
         result = @presenter_collection.presenting("time_entries",
           :params => { :include => "another_name_for_story" }) { TimeEntry.where("true") }
@@ -160,27 +159,27 @@ describe ApiPresenter::PresenterCollection do
       end
 
       it "defaults to not include any allowed includes" do
-        IncludeTestingWorkspacePresenter.allowed_includes :stories => "stories"
+        WorkspacePresenter.allowed_includes :stories => "stories"
         result = @presenter_collection.presenting("workspaces", :max_per_page => 2) { Workspace.where(:id => workspaces(:jane_car_wash)) }
         result[:workspaces].first[:id].should == workspaces(:jane_car_wash).id
         result[:stories].should be_nil
       end
 
       it "loads has_many associations and returns them when requested" do
-        IncludeTestingWorkspacePresenter.allowed_includes :stories => "stories"
+        WorkspacePresenter.allowed_includes :stories => "stories"
         result = @presenter_collection.presenting("workspaces", :params => { :include => "stories" }, :max_per_page => 2) { Workspace.where(:id => workspaces(:jane_car_wash)) }
         result[:stories].map { |s| s[:id] }.should =~ workspaces(:jane_car_wash).stories.map(&:id)
         result[:workspaces].first[:story_ids].should =~ workspaces(:jane_car_wash).stories.map(&:id)
       end
 
       it "returns optional fields when requested on the primary object and on associations" do
-        IncludeTestingWorkspacePresenter.allowed_includes :stories => "stories"
+        WorkspacePresenter.allowed_includes :stories => "stories"
         result = @presenter_collection.presenting("workspaces",
                                                   :params => { :include => "stories:tags,title", :fields => "description" },
                                                   :max_per_page => 2) { Workspace.where(:id => workspaces(:jane_car_wash)) }
         result[:workspaces].first.should have_key(:description)
         result[:stories].first.should have_key(:tags)
-        result[:stories].first.should have_key(:title)
+        result[:stories].first.should have_key(:name)
       end
 
       it "does not return optional fields when they are not requested" do
@@ -189,17 +188,17 @@ describe ApiPresenter::PresenterCollection do
                                                   :max_per_page => 2) { Workspace.where(:id => workspaces(:jane_car_wash)) }
         result[:workspaces].first.should_not have_key(:description)
         result[:stories].first.should_not have_key(:tags)
-        result[:stories].first.should have_key(:title)
+        result[:stories].first.should have_key(:name)
       end
 
       it "loads belongs_tos and returns them when requested" do
-        IncludeTestingStoryPresenter.allowed_includes :workspace => "workspaces"
+        TaskPresenter.allowed_includes :workspace => "workspaces"
         result = @presenter_collection.presenting("stories", :params => { :include => "workspace" }, :max_per_page => 2) { Story.where(:id => stories(:story_for_jane_car_wash).id) }
         result[:workspaces].first[:id].should == workspaces(:jane_car_wash).id
       end
 
       it "doesn't return nils when belong_tos are missing" do
-        IncludeTestingTimeEntryPresenter.allowed_includes :story => "stories"
+        TimeEntryPresenter.allowed_includes :story => "stories"
         time_entry = line_items(:bob_logs_2hrs_billable)
         time_entry.story.should be_nil
         result = @presenter_collection.presenting("time_entries", :params => { :include => "story" }, :max_per_page => 2) { TimeEntry.where(:id => time_entry) }
@@ -209,7 +208,7 @@ describe ApiPresenter::PresenterCollection do
       end
 
       it "returns sensible data when including something of the same type as the primary model" do
-        IncludeTestingStoryPresenter.allowed_includes :sub_stories => "stories"
+        TaskPresenter.allowed_includes :sub_stories => "stories"
         result = @presenter_collection.presenting("stories", :params => { :include => "sub_stories" }) { Story.where(:id => stories(:story_for_jane_car_wash).id) }
         result[:stories].map {|s| s[:id] }.should =~ ([stories(:story_for_jane_car_wash)] + stories(:story_for_jane_car_wash).sub_stories).map(&:id)
         result[:stories].find {|s| s[:id] == stories(:story_for_jane_car_wash).id }[:sub_story_ids].should == stories(:story_for_jane_car_wash).sub_stories.map(&:id) # The primary should have a sub_story_ids array.
@@ -217,7 +216,7 @@ describe ApiPresenter::PresenterCollection do
       end
 
       it "includes requested keys, even when empty" do
-        IncludeTestingWorkspacePresenter.allowed_includes :time_entries => "time_entries", :stories => "stories"
+        WorkspacePresenter.allowed_includes :time_entries => "time_entries", :stories => "stories"
         result = @presenter_collection.presenting("workspaces", :params => { :only => "not an id", :include => "time_entries;stories" }) { Workspace.order("id desc") }
         result[:workspaces].length.should == 0
         result[:time_entries].length.should == 0
@@ -225,7 +224,7 @@ describe ApiPresenter::PresenterCollection do
       end
 
       it "includes requested includes even when no records are found" do
-        IncludeTestingTimeEntryPresenter.allowed_includes :workspace => "workspaces", :story => "stories"
+        TimeEntryPresenter.allowed_includes :workspace => "workspaces", :story => "stories"
         TimeEntry.where(:id => 123456789).should be_empty
         result = @presenter_collection.presenting("time_entries", :params => { :include => "workspace;story" }) { TimeEntry.where(:id => 123456789) }
         result[:workspaces].length.should == 0
@@ -237,7 +236,7 @@ describe ApiPresenter::PresenterCollection do
         # Here, primary_maven is a method on Workspace, not a true association.
         @presenter_collection.presenting("workspaces", :params => { :include => "stories;primary_maven" }) { Workspace.where(:id => workspaces(:jane_car_wash).id) }
 
-        IncludeTestingWorkspacePresenter.allowed_includes :stories => "stories", :primary_maven => "users"
+        WorkspacePresenter.allowed_includes :stories => "stories", :primary_maven => "users"
         mock(ActiveRecord::Associations::Preloader).new(anything, [:stories]) { mock!.run }
         result = @presenter_collection.presenting("workspaces", :params => { :include => "stories;primary_maven" }) { Workspace.where(:id => workspaces(:jane_car_wash).id) }
         result[:stories].should be_present
@@ -278,8 +277,8 @@ describe ApiPresenter::PresenterCollection do
 
     describe "filters" do
       it "runs filters when requested" do
-        IncludeTestingWorkspacePresenter.filter(:has_participant) { |scope, user_id| scope.has_participant(user_id.to_i) }
-        IncludeTestingWorkspacePresenter.filter(:price) { |scope, price| scope.where(:price => price) }
+        WorkspacePresenter.filter(:has_participant) { |scope, user_id| scope.has_participant(user_id.to_i) }
+        WorkspacePresenter.filter(:price) { |scope, price| scope.where(:price => price) }
 
         result = @presenter_collection.presenting("workspaces", :params => { :filters => "has_participant:#{users(:bob).id}" }) { Workspace.order("id desc") } # hit the API, filtering on has_participant:bob
         result[:workspaces].should be_present
@@ -294,7 +293,7 @@ describe ApiPresenter::PresenterCollection do
       end
 
       it "allows filters to have defaults, which causes the filters to always be run" do
-        IncludeTestingWorkspacePresenter.filter(:include_archived, :default => false) { |scope, t_or_f| t_or_f != "true" ? scope.active : scope }
+        WorkspacePresenter.filter(:include_archived, :default => false) { |scope, t_or_f| t_or_f != "true" ? scope.active : scope }
         result = @presenter_collection.presenting("workspaces") { Workspace.where(:id => [workspaces(:bob_change_order_archived).id, workspaces(:jane_car_wash).id]) }
         result[:workspaces].map {|w| w[:id] }.should == [workspaces(:jane_car_wash).id]
 
@@ -331,29 +330,29 @@ describe ApiPresenter::PresenterCollection do
       end
 
       it "allows default ordering descending" do
-        IncludeTestingWorkspacePresenter.sort_order(:updated_at, "workspaces.updated_at")
-        IncludeTestingWorkspacePresenter.default_sort_order("updated_at:desc")
+        WorkspacePresenter.sort_order(:updated_at, "workspaces.updated_at")
+        WorkspacePresenter.default_sort_order("updated_at:desc")
         result = @presenter_collection.presenting("workspaces") { Workspace.where(:id => [@ws1, @ws2, @ws3]) }
         result[:workspaces].map {|i| i[:id]}.should == [@ws1, @ws3, @ws2]
       end
 
       it "allows default ordering ascending" do
-        IncludeTestingWorkspacePresenter.sort_order(:updated_at, "workspaces.updated_at")
-        IncludeTestingWorkspacePresenter.default_sort_order("updated_at:asc")
+        WorkspacePresenter.sort_order(:updated_at, "workspaces.updated_at")
+        WorkspacePresenter.default_sort_order("updated_at:asc")
         result = @presenter_collection.presenting("workspaces") { Workspace.where(:id => [@ws1, @ws2, @ws3]) }
         result[:workspaces].map {|i| i[:id]}.should == [@ws2, @ws3, @ws1]
       end
 
       it "applies orders that match the default order" do
-        IncludeTestingWorkspacePresenter.sort_order(:updated_at, "workspaces.updated_at")
-        IncludeTestingWorkspacePresenter.default_sort_order("updated_at:desc")
+        WorkspacePresenter.sort_order(:updated_at, "workspaces.updated_at")
+        WorkspacePresenter.default_sort_order("updated_at:desc")
         result = @presenter_collection.presenting("workspaces", :params => { :order => "updated_at:desc" }) { Workspace.where(:id => [@ws1, @ws2, @ws3]) }
         result[:workspaces].map {|i| i[:id]}.should == [@ws1, @ws3, @ws2]
       end
 
       it "applies orders that conflict with the default order" do
-        IncludeTestingWorkspacePresenter.sort_order(:updated_at, "workspaces.updated_at")
-        IncludeTestingWorkspacePresenter.default_sort_order("updated_at:desc")
+        WorkspacePresenter.sort_order(:updated_at, "workspaces.updated_at")
+        WorkspacePresenter.default_sort_order("updated_at:desc")
         result = @presenter_collection.presenting("workspaces", :params => { :order => "updated_at:asc" }) { Workspace.where(:id => [@ws1, @ws2, @ws3]) }
         result[:workspaces].map {|i| i[:id]}.should == [@ws2, @ws3, @ws1]
       end
@@ -363,8 +362,8 @@ describe ApiPresenter::PresenterCollection do
       end
 
       it "can take a proc" do
-        IncludeTestingWorkspacePresenter.sort_order(:title, "workspaces.title")
-        IncludeTestingWorkspacePresenter.default_sort_order("title:asc")
+        WorkspacePresenter.sort_order(:title, "workspaces.title")
+        WorkspacePresenter.default_sort_order("title:asc")
         result = @presenter_collection.presenting("workspaces") { Workspace.where(:id => [@ws1, @ws2, @ws3]) }
         result[:workspaces].map {|i| i[:id]}.should == [@ws3, @ws2, @ws1]
       end
@@ -378,8 +377,8 @@ describe ApiPresenter::PresenterCollection do
             :stories => { :json_name => :stories, :association => :stories, :fields => [] },
             :time_entries => { :json_name => :time_entries, :association => :time_entries, :fields => [] }
         }
-        @presenter_collection.filter_includes("stories:title,id;time_entries:title", { 'stories' => 'stories', :time_entries => :time_entries, :posts => :posts }).should == {
-            :stories => { :json_name => :stories, :association => :stories, :fields => [:title, :id] },
+        @presenter_collection.filter_includes("stories:name,id;time_entries:title", { 'stories' => 'stories', :time_entries => :time_entries, :posts => :posts }).should == {
+            :stories => { :json_name => :stories, :association => :stories, :fields => [:name, :id] },
             :time_entries => { :json_name => :time_entries, :association => :time_entries, :fields => [:title] }
         }
       end
@@ -412,8 +411,11 @@ describe ApiPresenter::PresenterCollection do
     describe "for method" do
       module V1
         class ArrayPresenter < ApiPresenter::Base
-          presents Array
         end
+      end
+
+      before do
+        V1::ArrayPresenter.presents Array
       end
 
       it "returns the presenter for a given class" do

@@ -16,6 +16,7 @@ ActiveRecord::Schema.define do
 
   create_table :tasks do |t|
     t.string :name
+    t.integer :parent_id
     t.belongs_to :workspace
     t.timestamps
   end
@@ -27,6 +28,11 @@ end
 
 class Task < ActiveRecord::Base
   belongs_to :workspace
+  has_many :sub_tasks, :foreign_key => :parent_id, :class_name => "Task"
+
+  def tags
+    %w[some tags]
+  end
 end
 
 class Workspace < ActiveRecord::Base
@@ -49,3 +55,5 @@ Workspace.create!(:id => 6, :user_id => 2, :title => "jane workspace 2", :descri
 
 Task.create!(:id => 1, :workspace_id => 1, :name => "Buy milk")
 Task.create!(:id => 2, :workspace_id => 1, :name => "Buy bananas")
+Task.create!(:id => 3, :workspace_id => 1, :parent_id => 2, :name => "Green preferred")
+Task.create!(:id => 4, :workspace_id => 1, :parent_id => 2, :name => "One bunch")
