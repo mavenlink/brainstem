@@ -143,11 +143,14 @@ describe ApiPresenter::PresenterCollection do
 
     describe "includes" do
       it "reads allowed includes from the presenter" do
-        WorkspacePresenter.allowed_includes :tasks => "tasks"
         result = @presenter_collection.presenting("workspaces", :params => { :include => "drop table;tasks;time_entries" }) { Workspace.order('id desc') }
         result[:tasks].should be_present
         result[:time_entries].should_not be_present
       end
+
+      #              |
+      #             |
+      # we're here \/
 
       it "allows the allowed includes list to have different json names and association names" do
         TimeEntryPresenter.allowed_includes(:another_name_for_story => {

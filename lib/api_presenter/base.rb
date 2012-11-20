@@ -11,9 +11,11 @@ module ApiPresenter
     end
 
     class FieldProxy
-      attr_reader :method_name
+      attr_reader :method_name, :association_name, :json_name
 
-      def initialize(method_name = nil, &block)
+      def initialize(method_name = nil, options = {}, &block)
+        @json_name, @association_name = options[:json_name], options[:association_name]
+
         if block_given?
           @block = block
         elsif method_name
@@ -44,14 +46,6 @@ module ApiPresenter
         end
       end
 
-      def allowed_includes(includes = nil)
-        if includes
-          @includes = includes
-        else
-          @includes
-        end
-      end
-
       def sort_order(name, order = nil, &block)
         @sort_orders ||= {}
         @sort_orders[name] = (block_given? ? block : order)
@@ -78,10 +72,6 @@ module ApiPresenter
 
     def default_sort_order
       self.class.default_sort_order
-    end
-
-    def allowed_includes
-      self.class.allowed_includes
     end
 
     def sort_orders

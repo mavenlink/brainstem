@@ -39,8 +39,16 @@ module ApiPresenter
       scope = handle_ordering scope, options
 
       # Load Includes
-      includes_hash = filter_includes options[:params][:include], options[:presenter].allowed_includes
-      models = perform_preloading scope, includes_hash
+      records = scope.to_a
+      allowed_includes = {}
+      if records.first
+        options[:presenter].present(records.first).each do |k, v|
+          allowed_includes[k] = v if v.is_a?(Base::AssociationField)
+        end
+      end
+
+      includes_hash = filter_includes options[:params][:include], allowed_includes
+      models = perform_preloading records, includes_hash
       primary_models, associated_models = gather_associations(models, name, includes_hash)
 
       struct = { :count => count, options[:as] => [] }
@@ -85,17 +93,12 @@ module ApiPresenter
         memo
       end
 
-      allowed_includes = (allowed_includes || {}).symbolize_keys
       filtered_includes = {}
       includes.each do |k, fields|
         if allowed_includes.has_key?(k)
-          if allowed_includes[k].is_a?(Hash)
-            association = allowed_includes[k][:association].to_sym
-            json_name = allowed_includes[k][:json_name].to_sym
-          else
-            association = k
-            json_name = allowed_includes[k].to_sym
-          end
+          association = allowed_includes[k].association_name || allowed_includes[k].method_name
+          json_name = allowed_includes[k].json_name || k
+
           filtered_includes[k] = {
               :fields => fields,
               :association => association,
@@ -147,8 +150,8 @@ module ApiPresenter
       end
     end
 
-    def perform_preloading(scope, includes_hash)
-      scope.to_a.tap do |models|
+    def perform_preloading(records, includes_hash)
+      records.tap do |models|
         ApiPresenter.logger.info "Starting eager load."
         association_names_to_preload = includes_hash.values.map {|i| i[:association] }
         if models.first
