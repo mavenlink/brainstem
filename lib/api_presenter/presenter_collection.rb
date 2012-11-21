@@ -43,7 +43,7 @@ module ApiPresenter
       allowed_includes = {}
       if records.first
         options[:presenter].present(records.first).each do |k, v|
-          allowed_includes[k] = v if v.is_a?(Base::AssociationField)
+          allowed_includes[k.to_s.tableize] = v if v.is_a?(Base::AssociationField)
         end
       end
 
@@ -94,10 +94,11 @@ module ApiPresenter
       end
 
       filtered_includes = {}
-      includes.each do |k, fields|
+      includes.each do |include, fields|
+        k = include.to_s.tableize
         if allowed_includes.has_key?(k)
           association = allowed_includes[k].association_name || allowed_includes[k].method_name
-          json_name = allowed_includes[k].json_name || k
+          json_name = allowed_includes[k].json_name
 
           filtered_includes[k] = {
               :fields => fields,
@@ -165,7 +166,7 @@ module ApiPresenter
 
     def gather_associations(models, name, includes_hash)
       name = name.to_sym
-      record_hash = includes_hash.values.inject({ name => [] }) {|memo, include_data| memo[include_data[:json_name]] = []; memo } # Start with something looking like { :workspaces => [], :stories => [] }
+      record_hash = { name => [] }
       primary_models = []
 
       models.each do |model|
@@ -173,6 +174,7 @@ module ApiPresenter
 
         includes_hash.each do |include, include_data|
           model_or_models = model.send(include_data[:association])
+
           if model_or_models && (!model_or_models.is_a?(Array) || model_or_models.length > 0)
             record_hash[include_data[:json_name]] ||= []
             record_hash[include_data[:json_name]] << model_or_models

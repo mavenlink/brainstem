@@ -15,15 +15,6 @@ describe ApiPresenter::PresenterCollection do
     end
   end
 
-  #class TimeEntryPresenter < ApiPresenter::Base
-  #  def present(model)
-  #    {
-  #      :id => model.id,
-  #      :another_name_for_story => association { model.story }
-  #    }
-  #  end
-  #end
-
   class TaskPresenter < ApiPresenter::Base
     presents Task
 
@@ -32,7 +23,9 @@ describe ApiPresenter::PresenterCollection do
         :id           => model.id,
         :name         => model.name,
         :tags         => optional_field { model.tags },
-        :sub_tasks    => association(:sub_tasks)
+        :sub_tasks    => association(:sub_tasks),
+        :other_tasks  => association(:sub_tasks),
+        :workspace    => association(:workspace)
       }
     end
   end
@@ -42,7 +35,7 @@ describe ApiPresenter::PresenterCollection do
 
     def present(model)
       {
-        :id           => model.id
+        :id => model.id
       }
     end
   end
@@ -143,79 +136,71 @@ describe ApiPresenter::PresenterCollection do
 
     describe "includes" do
       it "reads allowed includes from the presenter" do
-        result = @presenter_collection.presenting("workspaces", :params => { :include => "drop table;tasks;time_entries" }) { Workspace.order('id desc') }
+        result = @presenter_collection.presenting("workspaces", :params => { :include => "drop table;tasks;users" }) { Workspace.order('id desc') }
         result[:tasks].should be_present
-        result[:time_entries].should_not be_present
+        result[:users].should_not be_present
       end
 
-      #              |
-      #             |
-      # we're here \/
-
       it "allows the allowed includes list to have different json names and association names" do
-        TimeEntryPresenter.allowed_includes(:another_name_for_story => {
-          :association => :story, :json_name => "stories"})
-        result = @presenter_collection.presenting("time_entries",
-          :params => { :include => "another_name_for_story" }) { TimeEntry.where("true") }
-        result[:stories].should be_present
-        result[:time_entries].should be_present
+        result = @presenter_collection.presenting("tasks",
+          :params => { :include => "other_tasks" }) { Task.order('id desc') }
+        result[:tasks].should be_present
+        result[:other_tasks].should be_present
       end
 
       it "defaults to not include any allowed includes" do
-        WorkspacePresenter.allowed_includes :stories => "stories"
-        result = @presenter_collection.presenting("workspaces", :max_per_page => 2) { Workspace.where(:id => workspaces(:jane_car_wash)) }
-        result[:workspaces].first[:id].should == workspaces(:jane_car_wash).id
-        result[:stories].should be_nil
+        tasked_workspace = Task.first
+        result = @presenter_collection.presenting("workspaces", :max_per_page => 2) { Workspace.where(:id => tasked_workspace.workspace_id) }
+        result[:workspaces].first[:id].should == tasked_workspace.workspace_id
+        result[:tasks].should be_nil
       end
 
       it "loads has_many associations and returns them when requested" do
-        WorkspacePresenter.allowed_includes :stories => "stories"
-        result = @presenter_collection.presenting("workspaces", :params => { :include => "stories" }, :max_per_page => 2) { Workspace.where(:id => workspaces(:jane_car_wash)) }
-        result[:stories].map { |s| s[:id] }.should =~ workspaces(:jane_car_wash).stories.map(&:id)
-        result[:workspaces].first[:story_ids].should =~ workspaces(:jane_car_wash).stories.map(&:id)
+        result = @presenter_collection.presenting("workspaces", :params => { :include => "tasks" }, :max_per_page => 2) { Workspace.where(:id => 1) }
+        result[:tasks].map { |s| s[:id] }.should =~ Workspace.first.tasks.map(&:id)
+        result[:workspaces].first[:task_ids].should =~ Workspace.first.tasks.map(&:id)
       end
 
       it "returns optional fields when requested on the primary object and on associations" do
-        WorkspacePresenter.allowed_includes :stories => "stories"
         result = @presenter_collection.presenting("workspaces",
-                                                  :params => { :include => "stories:tags,title", :fields => "description" },
-                                                  :max_per_page => 2) { Workspace.where(:id => workspaces(:jane_car_wash)) }
+                                                  :params => { :include => "tasks:tags,title", :fields => "description" },
+                                                  :max_per_page => 2) { Workspace.where(:id => 1) }
         result[:workspaces].first.should have_key(:description)
-        result[:stories].first.should have_key(:tags)
-        result[:stories].first.should have_key(:name)
+        result[:tasks].first.should have_key(:tags)
+        result[:tasks].first.should have_key(:name)
       end
 
       it "does not return optional fields when they are not requested" do
         result = @presenter_collection.presenting("workspaces",
-                                                  :params => { :include => "stories" },
-                                                  :max_per_page => 2) { Workspace.where(:id => workspaces(:jane_car_wash)) }
+                                                  :params => { :include => "tasks" },
+                                                  :max_per_page => 2) { Workspace.where(:id => 1) }
         result[:workspaces].first.should_not have_key(:description)
-        result[:stories].first.should_not have_key(:tags)
-        result[:stories].first.should have_key(:name)
+        result[:tasks].first.should_not have_key(:tags)
+        result[:tasks].first.should have_key(:name)
       end
 
       it "loads belongs_tos and returns them when requested" do
-        TaskPresenter.allowed_includes :workspace => "workspaces"
-        result = @presenter_collection.presenting("stories", :params => { :include => "workspace" }, :max_per_page => 2) { Story.where(:id => stories(:story_for_jane_car_wash).id) }
-        result[:workspaces].first[:id].should == workspaces(:jane_car_wash).id
+        result = @presenter_collection.presenting("tasks", :params => { :include => "workspace" }, :max_per_page => 2) { Task.where(:id => 1) }
+        result[:workspaces].first[:id].should == 1
       end
 
       it "doesn't return nils when belong_tos are missing" do
-        TimeEntryPresenter.allowed_includes :story => "stories"
-        time_entry = line_items(:bob_logs_2hrs_billable)
-        time_entry.story.should be_nil
-        result = @presenter_collection.presenting("time_entries", :params => { :include => "story" }, :max_per_page => 2) { TimeEntry.where(:id => time_entry) }
-        result[:time_entries].first[:id].should == time_entry.id
-        result[:stories].length.should == 0
-        result.keys.should =~ [:time_entries, :stories, :count]
+        t = Task.first
+        t.workspace.destroy
+        t.reload.workspace.should be_nil
+        result = @presenter_collection.presenting("tasks", :params => { :include => "workspace" }, :max_per_page => 2) { Task.where(:id => t.id) }
+        result[:tasks].first[:id].should == t.id
+        result[:workspaces].should eq([])
+        result.keys.should =~ [:tasks, :workspaces, :count]
       end
 
       it "returns sensible data when including something of the same type as the primary model" do
-        TaskPresenter.allowed_includes :sub_stories => "stories"
-        result = @presenter_collection.presenting("stories", :params => { :include => "sub_stories" }) { Story.where(:id => stories(:story_for_jane_car_wash).id) }
-        result[:stories].map {|s| s[:id] }.should =~ ([stories(:story_for_jane_car_wash)] + stories(:story_for_jane_car_wash).sub_stories).map(&:id)
-        result[:stories].find {|s| s[:id] == stories(:story_for_jane_car_wash).id }[:sub_story_ids].should == stories(:story_for_jane_car_wash).sub_stories.map(&:id) # The primary should have a sub_story_ids array.
-        result[:stories].find {|s| s[:id] == stories(:story_for_jane_car_wash).sub_stories.first.id }[:sub_story_ids].should be_nil # Sub stories should not have a sub_story_ids array.
+        result = @presenter_collection.presenting("tasks", :params => { :include => "sub_tasks" }) { Task.where(:id => 2) }
+        p result
+        sub_task_ids = Task.find(2).sub_tasks.map(&:id)
+        result[:tasks].map {|s| s[:id] }.should =~ sub_task_ids + [2]
+        result[:tasks].find {|s| s[:id] == 2 }[:sub_task_ids].should == sub_task_ids # The primary should have a sub_story_ids array.
+        result[:tasks].find {|s| s[:id] == sub_task_ids.first }[:sub_task_ids].should be_nil # Sub stories should not have a sub_story_ids array.
       end
 
       it "includes requested keys, even when empty" do

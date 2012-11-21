@@ -11,11 +11,9 @@ module ApiPresenter
     end
 
     class FieldProxy
-      attr_reader :method_name, :association_name, :json_name
+      attr_reader :method_name
 
       def initialize(method_name = nil, options = {}, &block)
-        @json_name, @association_name = options[:json_name], options[:association_name]
-
         if block_given?
           @block = block
         elsif method_name
@@ -30,7 +28,15 @@ module ApiPresenter
       end
     end
 
-    class AssociationField < FieldProxy; end
+    class AssociationField < FieldProxy
+      attr_reader :association_name, :json_name
+
+      def initialize(*)
+        @json_name, @association_name = options[:json_name], options[:association_name]
+        super(*)
+      end
+    end
+
     class OptionalField < FieldProxy; end
 
     class << self

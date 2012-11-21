@@ -46,6 +46,7 @@ end
 
 User.create!(:id => 1, :username => "bob")
 User.create!(:id => 2, :username => "jane")
+
 Workspace.create!(:id => 1, :user_id => 1, :title => "bob workspace 1", :description => "something")
 Workspace.create!(:id => 2, :user_id => 1, :title => "bob workspace 2", :description => "something")
 Workspace.create!(:id => 3, :user_id => 1, :title => "bob workspace 3", :description => "something")
