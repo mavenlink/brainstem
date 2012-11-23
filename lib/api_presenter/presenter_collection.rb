@@ -42,10 +42,14 @@ module ApiPresenter
 
       # Load Includes
       records = scope.to_a
+      model = records.first
       allowed_includes = {}
-      if records.first
-        options[:presenter].present(records.first).each do |k, v|
-          allowed_includes[k.to_s.tableize] = v if v.is_a?(AssociationField)
+      if model
+        options[:presenter].present(model).each do |k, v|
+          next unless v.is_a?(AssociationField)
+          association = model.class.reflections[v.method_name]
+          v.json_name ||= association.table_name
+          allowed_includes[v.json_name.to_sym] = v
         end
       end
 
@@ -96,16 +100,15 @@ module ApiPresenter
       end
 
       filtered_includes = {}
-      includes.each do |include, fields|
-        k = include.to_s.tableize
+      includes.each do |k, fields|
         if allowed_includes.has_key?(k)
           association = allowed_includes[k].association_name || allowed_includes[k].method_name
-          json_name = allowed_includes[k].json_name
+          json_name = allowed_includes[k].json_name || k
 
           filtered_includes[k] = {
               :fields => fields,
-              :association => association,
-              :json_name => json_name
+              :association => association.to_sym,
+              :json_name => json_name.to_sym
           }
         end
       end
