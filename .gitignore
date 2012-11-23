@@ -1,6 +1,7 @@
 *.gem
 *.rbc
 .bundle
+.tmtags*
 Gemfile.lock
 exec/
 coverage
