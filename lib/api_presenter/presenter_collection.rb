@@ -1,3 +1,5 @@
+require 'api_presenter/association_field'
+
 module ApiPresenter
   class PresenterCollection
     attr_accessor :default_max_per_page, :default_per_page
@@ -43,7 +45,7 @@ module ApiPresenter
       allowed_includes = {}
       if records.first
         options[:presenter].present(records.first).each do |k, v|
-          allowed_includes[k.to_s.tableize] = v if v.is_a?(Base::AssociationField)
+          allowed_includes[k.to_s.tableize] = v if v.is_a?(AssociationField)
         end
       end
 

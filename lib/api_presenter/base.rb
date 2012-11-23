@@ -1,4 +1,7 @@
 require 'date'
+require 'api_presenter/association_field'
+require 'api_presenter/optional_field'
+require 'api_presenter/time_classes'
 
 module ApiPresenter
   class Base
@@ -9,35 +12,6 @@ module ApiPresenter
       TIME_CLASSES << ActiveSupport::TimeWithZone
     rescue LoadError
     end
-
-    class FieldProxy
-      attr_reader :method_name
-
-      def initialize(method_name = nil, options = {}, &block)
-        if block_given?
-          @block = block
-        elsif method_name
-          @method_name = method_name
-        else
-          raise ArgumentError, "Method name or block is required"
-        end
-      end
-
-      def call(model)
-        @block ? @block.call : model.send(@method_name)
-      end
-    end
-
-    class AssociationField < FieldProxy
-      attr_reader :association_name, :json_name
-
-      def initialize(method_name = nil, options = {}, &block)
-        @json_name, @association_name = options[:json_name], options[:association_name]
-        super
-      end
-    end
-
-    class OptionalField < FieldProxy; end
 
     class << self
       def presents(*klasses)
