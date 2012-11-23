@@ -1,7 +1,6 @@
+require "api_presenter/version"
 require "api_presenter/base"
 require "api_presenter/presenter_collection"
-require "api_presenter/version"
-require "logger"
 
 module ApiPresenter
   extend self
@@ -35,6 +34,7 @@ module ApiPresenter
       if defined?(Rails)
         Rails.logger
       else
+        require "logger"
         Logger.new(STDOUT)
       end
     end
