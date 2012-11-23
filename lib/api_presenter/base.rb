@@ -6,13 +6,6 @@ require 'api_presenter/time_classes'
 module ApiPresenter
   class Base
 
-    TIME_CLASSES = [Time]
-    begin
-      require 'active_support/time_with_zone'
-      TIME_CLASSES << ActiveSupport::TimeWithZone
-    rescue LoadError
-    end
-
     class << self
       def presents(*klasses)
         ApiPresenter.add_presenter_class(self, *klasses)
