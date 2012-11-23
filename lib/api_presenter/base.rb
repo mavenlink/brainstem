@@ -6,54 +6,45 @@ require 'api_presenter/time_classes'
 module ApiPresenter
   class Base
 
-    class << self
-      def presents(*klasses)
-        ApiPresenter.add_presenter_class(self, *klasses)
-      end
+    # Class methods
 
-      def default_sort_order(sort_string = nil)
-        if sort_string
-          @default_sort_order = sort_string
-        else
-          @default_sort_order
-        end
-      end
+    def self.presents(*klasses)
+      ApiPresenter.add_presenter_class(self, *klasses)
+    end
 
-      def sort_order(name, order = nil, &block)
-        @sort_orders ||= {}
-        @sort_orders[name] = (block_given? ? block : order)
-      end
-
-      def sort_orders
-        @sort_orders
-      end
-
-      def filter(name, options = {}, &block)
-        @filters ||= {}
-        @filters[name] = [options, block]
-      end
-
-      def filters
-        @filters
-      end
-
-      def helper(mod)
-        include mod
-        extend mod
+    def self.default_sort_order(sort_string = nil)
+      if sort_string
+        @default_sort_order = sort_string
+      else
+        @default_sort_order
       end
     end
 
-    def default_sort_order
-      self.class.default_sort_order
+    def self.sort_order(name, order = nil, &block)
+      @sort_orders ||= {}
+      @sort_orders[name] = (block_given? ? block : order)
     end
 
-    def sort_orders
-      self.class.sort_orders
+    def self.sort_orders
+      @sort_orders
     end
 
-    def filters
-      self.class.filters
+    def self.filter(name, options = {}, &block)
+      @filters ||= {}
+      @filters[name] = [options, block]
     end
+
+    def self.filters
+      @filters
+    end
+
+    def self.helper(mod)
+      include mod
+      extend mod
+    end
+
+
+    # Instance methods
 
     def present(model)
       raise "Please override #present(model) in your subclass of ApiPresenter::Base"
@@ -141,6 +132,18 @@ module ApiPresenter
           end
         end
       end
+    end
+
+    def default_sort_order
+      self.class.default_sort_order
+    end
+
+    def sort_orders
+      self.class.sort_orders
+    end
+
+    def filters
+      self.class.filters
     end
 
     def association(method_name = nil, &block)
