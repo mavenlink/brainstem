@@ -31,9 +31,9 @@ module ApiPresenter
     class AssociationField < FieldProxy
       attr_reader :association_name, :json_name
 
-      def initialize(*)
+      def initialize(method_name = nil, options = {}, &block)
         @json_name, @association_name = options[:json_name], options[:association_name]
-        super(*)
+        super
       end
     end
 
