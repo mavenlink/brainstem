@@ -196,7 +196,6 @@ describe ApiPresenter::PresenterCollection do
 
       it "returns sensible data when including something of the same type as the primary model" do
         result = @presenter_collection.presenting("tasks", :params => { :include => "sub_tasks" }) { Task.where(:id => 2) }
-        p result
         sub_task_ids = Task.find(2).sub_tasks.map(&:id)
         result[:tasks].map {|s| s[:id] }.should =~ sub_task_ids + [2]
         result[:tasks].find {|s| s[:id] == 2 }[:sub_task_ids].should == sub_task_ids # The primary should have a sub_story_ids array.

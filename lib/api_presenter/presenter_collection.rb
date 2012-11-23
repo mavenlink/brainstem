@@ -48,8 +48,8 @@ module ApiPresenter
         options[:presenter].present(model).each do |k, v|
           next unless v.is_a?(AssociationField)
           association = model.class.reflections[v.method_name]
-          v.json_name ||= association.table_name
-          allowed_includes[v.json_name.to_sym] = v
+          v.json_name ||= association.name == k.to_sym ? association.table_name : k
+          allowed_includes[k] = v
         end
       end
 
