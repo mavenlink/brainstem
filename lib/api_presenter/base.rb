@@ -146,8 +146,8 @@ module ApiPresenter
       self.class.filters
     end
 
-    def association(method_name = nil, &block)
-      AssociationField.new method_name, &block
+    def association(method_name = nil, options = {}, &block)
+      AssociationField.new method_name, options, &block
     end
 
     def optional_field(field_name = nil, &block)

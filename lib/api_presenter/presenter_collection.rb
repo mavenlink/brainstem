@@ -44,19 +44,25 @@ module ApiPresenter
       records = scope.to_a
       model = records.first
       allowed_includes = {}
-      if model
-        options[:presenter].present(model).each do |k, v|
-          next unless v.is_a?(AssociationField)
-          association = model.class.reflections[v.method_name]
-          v.json_name ||= association.name == k.to_sym ? association.table_name : k
-          allowed_includes[k] = v
+
+      # Gather allowed includes from the presented hash
+      model ||= presented_class.new
+      options[:presenter].present(model).each do |k, v|
+        next unless v.is_a?(AssociationField)
+
+        association = model.class.reflections[v.method_name]
+        v.json_name ||= association && association.table_name
+
+        if v.json_name.nil?
+          raise ":json_name is a required option for method-based associations (#{presented_class}##{v.method_name})"
         end
+
+        allowed_includes[k.to_sym] = v
       end
 
       includes_hash = filter_includes options[:params][:include], allowed_includes
       models = perform_preloading records, includes_hash
       primary_models, associated_models = gather_associations(models, name, includes_hash)
-
       struct = { :count => count, options[:as] => [] }
 
       associated_models.each do |json_name, models|
@@ -93,17 +99,18 @@ module ApiPresenter
     end
 
     def filter_includes(user_includes, allowed_includes)
-      includes = (user_includes || "").split(';').inject({}) do |memo, include|
+      includes = {}
+      (user_includes || "").split(';').each do |include|
         include_type, fields = include.split(":")
-        memo[include_type.to_sym] = (fields || "").split(",").map(&:to_sym)
-        memo
+        includes[include_type.to_sym] = (fields || "").split(",").map(&:to_sym)
       end
 
       filtered_includes = {}
       includes.each do |k, fields|
-        if allowed_includes.has_key?(k)
-          association = allowed_includes[k].association_name || allowed_includes[k].method_name
-          json_name = allowed_includes[k].json_name || k
+        include = allowed_includes[k] || allowed_includes[k.to_s]
+        if include
+          association = include.association_name || include.method_name
+          json_name = include.json_name || k
 
           filtered_includes[k] = {
               :fields => fields,
@@ -158,14 +165,15 @@ module ApiPresenter
 
     def perform_preloading(records, includes_hash)
       records.tap do |models|
-        ApiPresenter.logger.info "Starting eager load."
         association_names_to_preload = includes_hash.values.map {|i| i[:association] }
         if models.first
           reflections = models.first.reflections
           association_names_to_preload.reject! { |association| !reflections.has_key?(association) }
         end
-        ActiveRecord::Associations::Preloader.new(models, association_names_to_preload).run
-        ApiPresenter.logger.info "Ended eager load of #{association_names_to_preload.join(", ")}."
+        if association_names_to_preload.any?
+          ActiveRecord::Associations::Preloader.new(models, association_names_to_preload).run
+          ApiPresenter.logger.info "Eager loaded #{association_names_to_preload.join(", ")}."
+        end
       end
     end
 
@@ -174,16 +182,16 @@ module ApiPresenter
       record_hash = { name => [] }
       primary_models = []
 
+      includes_hash.each do |include, include_data|
+        record_hash[include_data[:json_name]] ||= []
+      end
+
       models.each do |model|
         primary_models << model
 
         includes_hash.each do |include, include_data|
           model_or_models = model.send(include_data[:association])
-
-          if model_or_models && (!model_or_models.is_a?(Array) || model_or_models.length > 0)
-            record_hash[include_data[:json_name]] ||= []
-            record_hash[include_data[:json_name]] << model_or_models
-          end
+          record_hash[include_data[:json_name]] += [model_or_models].flatten.compact
         end
       end
 
