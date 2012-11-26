@@ -16,10 +16,6 @@ module ApiPresenter
     @presenter_collection[namespace.to_s.downcase] ||= PresenterCollection.new
   end
 
-  def clear_collections!
-    @presenter_collection = nil
-  end
-
   def add_presenter_class(presenter_class, *klasses)
     presenter_collection(namespace_of(presenter_class)).add_presenter_class(presenter_class, *klasses)
   end

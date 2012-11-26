@@ -9,6 +9,7 @@ DatabaseCleaner.strategy = :transaction
 
 require 'api_presenter'
 require_relative 'spec_helpers/db'
+require_relative 'spec_helpers/cleanup'
 
 RSpec.configure do |config|
   config.mock_with :rr
