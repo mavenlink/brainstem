@@ -1,6 +1,5 @@
 require 'active_record'
 require 'database_cleaner'
-require 'pry'
 require 'rr'
 require 'rspec'
 require 'sqlite3'
