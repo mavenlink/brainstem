@@ -1,4 +1,5 @@
 language: ruby
+before_script: rvm install ruby-1.9.3-p125
 bundler_args: --without development
 rvm:
   - 1.9.3-p125
