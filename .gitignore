@@ -1,11 +1,13 @@
 *.gem
 *.rbc
 .bundle
+.DS_Store
+.idea
 .tmtags*
-Gemfile.lock
-exec/
 coverage
 doc/
+exec/
+Gemfile.lock
 pkg
 rdoc
 spec/reports
