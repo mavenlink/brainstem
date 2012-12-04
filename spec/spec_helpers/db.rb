@@ -2,26 +2,26 @@ ActiveRecord::Base.establish_connection(:adapter => 'sqlite3', :database => ':me
 ActiveRecord::Schema.define do
   self.verbose = false
 
-  create_table :users do |t|
+  create_table :users, :force => true do |t|
     t.string :username
     t.timestamps
   end
 
-  create_table :workspaces do |t|
+  create_table :workspaces, :force => true do |t|
     t.string :title
     t.string :description
     t.belongs_to :user
     t.timestamps
   end
 
-  create_table :tasks do |t|
+  create_table :tasks, :force => true do |t|
     t.string :name
     t.integer :parent_id
     t.belongs_to :workspace
     t.timestamps
   end
 
-  create_table :posts do |t|
+  create_table :posts, :force => true do |t|
     t.string :body
     t.integer :subject_id
     t.string :subject_type
