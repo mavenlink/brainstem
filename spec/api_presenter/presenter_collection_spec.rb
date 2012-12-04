@@ -39,6 +39,7 @@ describe ApiPresenter::PresenterCollection do
     UserPresenter.presents User
     TaskPresenter.presents Task
     WorkspacePresenter.presents Workspace
+    PostPresenter.presents Post
     @presenter_collection = ApiPresenter.presenter_collection
   end
 
@@ -221,6 +222,22 @@ describe ApiPresenter::PresenterCollection do
         result[:workspaces].map{|w| w[:id] }.should include(Workspace.first.id)
         result[:users].map{|u| u[:id] }.should include(Workspace.first.lead_user.id)
       end
+
+      describe "polymorphic associations" do
+        it "works with polymorphic associations" do
+          result = @presenter_collection.presenting("posts", :params => { :include => "subject" }) { Post.order('id desc') }
+          result[:posts].map{|w| w[:id] }.should include(Post.first.id)
+          result[:workspaces].map{|u| u[:id] }.should include(Workspace.first.id)
+          result[:tasks].map{|u| u[:id] }.should include(Task.first.id)
+        end
+
+        it "does not return an empty hash when none are found" do
+          result = @presenter_collection.presenting("posts", :params => { :include => "subject" }) { Post.where(:id => nil) }
+          result.should have_key(:posts)
+          result.should_not have_key(:workspaces)
+          result.should_not have_key(:tasks)
+        end
+      end
     end
 
     describe "handling of only" do
@@ -349,9 +366,9 @@ describe ApiPresenter::PresenterCollection do
   describe "internal helpers" do
     describe "#filter_includes" do
       let(:allowed_includes) {{
-        'stories' => ApiPresenter::AssociationField.new(:stories),
-        :time_entries => ApiPresenter::AssociationField.new("time_entries"),
-        :posts => ApiPresenter::AssociationField.new("posts")
+        'stories' => ApiPresenter::AssociationField.new(:stories, :json_name => "stories"),
+        :time_entries => ApiPresenter::AssociationField.new("time_entries", :json_name => "time_entries"),
+        :posts => ApiPresenter::AssociationField.new("posts", :json_name => "posts"),
       }}
 
       it "ignores non-allowed includes and normalizes allowed keys" do
@@ -378,6 +395,11 @@ describe ApiPresenter::PresenterCollection do
       it "defaults to no includes" do
         @presenter_collection.filter_includes(nil, allowed_includes).should == {}
         @presenter_collection.filter_includes("", allowed_includes).should == {}
+      end
+
+      it "allows associations with a json_name of nil" do
+        @presenter_collection.filter_includes("posts", {:posts => ApiPresenter::AssociationField.new("posts")}).
+          should eq(:posts => { :json_name => nil, :association => :posts, :fields => []})
       end
     end
   end

@@ -54,16 +54,13 @@ module ApiPresenter
           v.json_name = v.json_name.tableize
         else
           association = model.class.reflections[v.method_name]
-          # if association.options[:polymorphic]
-          # else
-          v.json_name = association && association.table_name
-          # end
+          if !association.options[:polymorphic]
+            v.json_name = association && association.table_name
+            if v.json_name.nil?
+              raise ":json_name is a required option for method-based associations (#{presented_class}##{v.method_name})"
+            end
+          end
         end
-
-        if v.json_name.nil?
-          raise ":json_name is a required option for method-based associations (#{presented_class}##{v.method_name})"
-        end
-
         allowed_includes[k.to_sym] = v
       end
 
@@ -78,7 +75,8 @@ module ApiPresenter
 
         if models.length > 0
           presenter = for!(models.first.class)
-          associated_fields = includes_hash.to_a.find { |k, v| v[:json_name] == json_name }.last[:fields]
+          assoc = includes_hash.to_a.find { |k, v| v[:json_name] == json_name }
+          associated_fields = (assoc && assoc.last[:fields]) || []
           struct[json_name] = presenter.group_present(models, associated_fields, [])
         else
           struct[json_name] = []
@@ -119,7 +117,7 @@ module ApiPresenter
           filtered_includes[k] = {
             :fields => fields,
             :association => allowed.method_name.to_sym,
-            :json_name => (allowed.json_name || k).to_sym
+            :json_name => allowed.json_name.try(:to_sym)
           }
         end
       end
@@ -187,15 +185,24 @@ module ApiPresenter
       primary_models = []
 
       includes_hash.each do |include, include_data|
-        record_hash[include_data[:json_name]] ||= []
+        record_hash[include_data[:json_name]] ||= [] if include_data[:json_name]
       end
 
       models.each do |model|
         primary_models << model
 
         includes_hash.each do |include, include_data|
-          model_or_models = model.send(include_data[:association])
-          record_hash[include_data[:json_name]] += [model_or_models].flatten.compact
+          models = Array(model.send(include_data[:association]))
+          if include_data[:json_name]
+            record_hash[include_data[:json_name]] += models
+          else
+            # polymorphic associations' tables must be figured out now
+            models.each do |record|
+              json_name = record.class.table_name.to_sym
+              record_hash[json_name] ||= []
+              record_hash[json_name] << record
+            end
+          end
         end
       end
 
