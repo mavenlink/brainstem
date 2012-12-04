@@ -5,7 +5,7 @@ module ApiPresenter
 
     attr_accessor :json_name
 
-    def initialize(method_name = nil, options = {}, &block)
+    def initialize(method_name, options = {}, &block)
       @json_name = options[:json_name]
       super
     end
