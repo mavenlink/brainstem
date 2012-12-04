@@ -1,6 +1,7 @@
 require "api_presenter/version"
 require "api_presenter/base"
 require "api_presenter/presenter_collection"
+require "api_presenter/controller_methods"
 
 module ApiPresenter
   extend self
