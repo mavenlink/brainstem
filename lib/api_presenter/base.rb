@@ -116,8 +116,13 @@ module ApiPresenter
         if value.is_a?(AssociationField)
           struct.delete key
           id_attr = value.method_name ? "#{value.method_name}_id" : nil
+
           if id_attr && model.class.columns_hash.has_key?(id_attr)
             struct["#{key}_id".to_sym] = model.send(id_attr)
+            reflection = value.method_name && model.reflections[value.method_name.to_sym]
+            if reflection && reflection.options[:polymorphic]
+              struct["#{key.to_s.singularize}_type".to_sym] = model.send("#{value.method_name}_type")
+            end
           elsif associations.include?(key)
             result = value.call(model)
             if result.is_a?(Array)

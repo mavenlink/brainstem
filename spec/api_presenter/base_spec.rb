@@ -92,6 +92,37 @@ describe ApiPresenter::Base do
       end
     end
 
+    describe "outputting polymorphic associations" do
+      before do 
+        some_presenter = Class.new(ApiPresenter::Base) do
+          presents Post
+
+          def present(model)
+            {
+              :body => model.body,
+              :subject => association(:subject),
+              :another_subject => association(:subject)
+            }
+          end
+        end
+
+        @presenter = some_presenter.new
+        @post = Post.first
+      end
+      
+      it "outputs the associated object's id and type" do
+        data = @presenter.present_and_post_process(@post)
+        data[:subject_id].should eq(@post.subject_id)
+        data[:subject_type].should eq(@post.subject_type)
+      end
+
+      it "outputs custom names for an associated object's id and type" do
+        data = @presenter.present_and_post_process(@post)
+        data[:another_subject_id].should eq(@post.subject_id)
+        data[:another_subject_type].should eq(@post.subject_type)
+      end
+    end
+    
     describe "outputting associations" do
       before do
         some_presenter = Class.new(ApiPresenter::Base) do

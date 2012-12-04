@@ -50,8 +50,15 @@ module ApiPresenter
       options[:presenter].present(model).each do |k, v|
         next unless v.is_a?(AssociationField)
 
-        association = model.class.reflections[v.method_name]
-        v.json_name ||= association && association.table_name
+        if v.json_name
+          v.json_name = v.json_name.tableize
+        else
+          association = model.class.reflections[v.method_name]
+          # if association.options[:polymorphic]
+          # else
+          v.json_name = association && association.table_name
+          # end
+        end
 
         if v.json_name.nil?
           raise ":json_name is a required option for method-based associations (#{presented_class}##{v.method_name})"
@@ -107,15 +114,12 @@ module ApiPresenter
 
       filtered_includes = {}
       includes.each do |k, fields|
-        include = allowed_includes[k] || allowed_includes[k.to_s]
-        if include
-          association = include.association_name || include.method_name
-          json_name = include.json_name || k
-
+        allowed = allowed_includes[k] || allowed_includes[k.to_s]
+        if allowed
           filtered_includes[k] = {
-              :fields => fields,
-              :association => association.to_sym,
-              :json_name => json_name.to_sym
+            :fields => fields,
+            :association => allowed.method_name.to_sym,
+            :json_name => (allowed.json_name || k).to_sym
           }
         end
       end
