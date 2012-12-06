@@ -139,11 +139,14 @@ module ApiPresenter
       end
 
       allowed_filters.each do |filter_name, filter|
-        filter_lambda = make_api_filter(filter.first, &filter.last)
-        if requested_filters[filter_name]
-          scope = filter_lambda.call(scope, requested_filters[filter_name])
-        elsif filter_lambda.filter_default?
-          scope = filter_lambda.call(scope, filter_lambda.filter_default)
+        options, filter_lambda = filter
+        args = requested_filters[filter_name] || options[:default]
+        next unless args
+
+        if filter_lambda
+          scope = filter_lambda.call(scope, *args)
+        else
+          scope = scope.send(filter_name, *args)
         end
       end
 
@@ -214,12 +217,6 @@ module ApiPresenter
       [primary_models, record_hash]
     end
 
-    def make_api_filter(options = {}, &block)
-      filter_proc = ApiFilterLambda.new &block
-      filter_proc.filter_default = options[:default]
-      filter_proc
-    end
-
     def make_api_order(field = nil, &block)
       if block_given?
         ApiOrderLambda.new &block
@@ -233,14 +230,7 @@ module ApiPresenter
     end
 
     class ApiOrderLambda < Proc; end
-
-    class ApiFilterLambda < Proc
-      attr_accessor :filter_default
-
-      def filter_default?
-        filter_default != nil
-      end
-    end
+    class ApiFilterLambda < Proc; end
 
     def presenters
       @presenters ||= {}

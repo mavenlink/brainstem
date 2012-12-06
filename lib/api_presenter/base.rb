@@ -31,7 +31,7 @@ module ApiPresenter
 
     def self.filter(name, options = {}, &block)
       @filters ||= {}
-      @filters[name] = [options, block]
+      @filters[name] = [options, (block_given? ? block : nil)]
     end
 
     def self.filters

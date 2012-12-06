@@ -63,6 +63,23 @@ describe ApiPresenter::Base do
         @klass.foo.should == "I work"
       end
     end
+
+    describe "filter method" do
+      before do
+        @klass = Class.new(ApiPresenter::Base)
+      end
+
+      it "creates an entry in the filters class ivar" do
+        @klass.filter(:foo, :default => true) { 1 }
+        @klass.filters[:foo][0].should eq({:default => true})
+        @klass.filters[:foo][1].should be_a(Proc)
+      end
+
+      it "accepts names without blocks" do
+        @klass.filter(:foo)
+        @klass.filters[:foo][1].should be_nil
+      end
+    end
   end
 
   describe "post_process hooks" do

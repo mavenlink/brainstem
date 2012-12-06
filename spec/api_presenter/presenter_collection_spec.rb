@@ -279,7 +279,27 @@ describe ApiPresenter::PresenterCollection do
           result = @presenter_collection.presenting("workspaces", :params => { :filters => "owner:#{jane.id}" }) { Workspace.order('id desc') }
           result[:workspaces].map{|w| w[:id] }.should match_array(jane.workspaces.map(&:id))
         end
-       end
+      end
+
+      context "without blocks" do
+        let(:bob) { User.where(:username => "bob").first }
+        let(:jane) { User.where(:username => "jane").first }
+
+        before do
+          WorkspacePresenter.filter(:owned_by, :default => bob.id)
+          WorkspacePresenter.presents("Workspace")
+        end
+
+        it "calls the named scope with default arguments" do
+          result = @presenter_collection.presenting("workspaces", :params => { :filters => "owned_by" }) { Workspace.scoped }
+          result[:workspaces].map{|w| w[:id] }.should eq(bob.workspaces.pluck(:id))
+        end
+
+        it "calls the named scope with given arguments" do
+          result = @presenter_collection.presenting("workspaces", :params => { :filters => "owned_by:#{jane.id}" }) { Workspace.scoped }
+          result[:workspaces].map{|w| w[:id] }.should eq(jane.workspaces.pluck(:id))
+        end
+      end
     end
 
     describe "sorting and ordering" do
