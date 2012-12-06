@@ -131,7 +131,12 @@ module ApiPresenter
 
     def run_filters(scope, options)
       allowed_filters = options[:presenter].filters || {}
-      requested_filters = (options[:params][:filters] || "").split(",").inject({}) {|memo, filter_string| name, value = filter_string.split(":"); memo[name.to_sym] = value; memo }
+      requested_filters = {}
+      (options[:params][:filters] || "").split(",").each do |filter_string|
+        name, value = filter_string.split(":")
+        value = value == "true" ? true : (value == "false" ? false : value)
+        requested_filters[name.to_sym] = value
+      end
 
       allowed_filters.each do |filter_name, filter|
         filter_lambda = make_api_filter(filter.first, &filter.last)

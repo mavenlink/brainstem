@@ -257,6 +257,12 @@ describe ApiPresenter::PresenterCollection do
         result[:workspaces].first[:id].should == Workspace.where(:title => "bob workspace 1").first.id
       end
 
+      it "converts boolean parameters from strings to booleans" do
+        WorkspacePresenter.filter(:owned_by_bob) { |scope, boolean| boolean ? scope.where(:user_id => bob.id) : scope }
+        result = @presenter_collection.presenting("workspaces", :params => { :filters => "owned_by_bob:false" }) { Workspace.scoped }
+        result[:workspaces].find { |workspace| workspace[:title].include?("jane") }.should be
+      end
+
       context "with defaults" do
         before do
           WorkspacePresenter.filter(:owner, :default => bob.id) { |scope, id| scope.owned_by(id) }
