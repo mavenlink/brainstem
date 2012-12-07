@@ -263,6 +263,14 @@ describe ApiPresenter::PresenterCollection do
         result[:workspaces].find { |workspace| workspace[:title].include?("jane") }.should be
       end
 
+      it "allows filters to be called with false as an argument" do
+        WorkspacePresenter.filter(:nothing) { |scope, bool| bool ? scope.where(:id => nil) : scope }
+        result = @presenter_collection.presenting("workspaces", :params => { :filters => "nothing:true" }) { Workspace.scoped }
+        result[:workspaces].size.should eq(0)
+        result = @presenter_collection.presenting("workspaces", :params => { :filters => "nothing:false" }) { Workspace.scoped }
+        result[:workspaces].size.should_not eq(0)
+      end
+
       context "with defaults" do
         before do
           WorkspacePresenter.filter(:owner, :default => bob.id) { |scope, id| scope.owned_by(id) }

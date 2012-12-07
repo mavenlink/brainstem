@@ -141,7 +141,7 @@ module ApiPresenter
       allowed_filters.each do |filter_name, filter|
         options, filter_lambda = filter
         args = requested_filters[filter_name] || options[:default]
-        next unless args
+        next if args.nil?
 
         if filter_lambda
           scope = filter_lambda.call(scope, *args)
