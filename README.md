@@ -1,9 +1,6 @@
 # ApiPresenter
 
-The API Presenter gem provides a framework for converting model objects into JSON-compatible hashes. Presenters that
-inherit from the ApiPresenter class are able to apply sorting and filtering options, either by default or as requested
-by end-users of the API. Presenters also handle all of the work of loading and presenting associations of the objects
-that are being requested, allowing fewer requests and smaller responses.
+The API Presenter gem provides a framework for converting model objects into JSON-compatible hashes. Presenters that inherit from the ApiPresenter class are able to apply sorting and filtering options, either by default or as requested by end-users of the API. Presenters also handle all of the work of loading and presenting associations of the objects that are being requested, allowing fewer requests and smaller responses.
 
 ## Installation
 
@@ -21,12 +18,13 @@ Create a class that inherits from ApiPresenter::Base, named after the model you 
       def present(user)
         {
           :id => user.id,
+          # Associations can be included by request
           :friends => association(:friends)
         }
       end
 
-      # Optional list of includes that may be requested
-      allowed_includes(:friends => "friends")
+      # Optional filter that delegates to model scope
+      filter :confirmed
 
       # Optional sort order that may be requested
       sort_order :popularity, "users.friends_count"
@@ -35,6 +33,22 @@ Create a class that inherits from ApiPresenter::Base, named after the model you 
       default_sort_order "created_at:desc"
 
     end
+
+Once you've created a presenter like the one above, pass requests through to the presenter in your controller.
+
+    class Api::UserController < ActionController::Base
+      include ApiPresenter::ControllerMethods
+
+      def index
+        present("user"){ User.where(id: current_user.id) }
+      end
+    end
+
+Requests can request includes, filters, and sort orders.
+
+    GET /api/users?include=friends&sort_order=popularity&filter=confirmed:true
+
+For more detailed examples, see [USAGE](USAGE.md).
 
 ## Contributing
 
