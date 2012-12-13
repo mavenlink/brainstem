@@ -7,7 +7,7 @@ module ApiPresenter
     # For example,
     #    render :json => present("post"){ Post.where(:draft => false) }
     def present(name, options = {}, &block)
-      ApiPresenter.presenter_collection(options[:namespace] || :v1).presenting(name, options.reverse_merge(:params => params), &block)
+      ApiPresenter.presenter_collection(options[:namespace]).presenting(name, options.reverse_merge(:params => params), &block)
     end
 
   end
