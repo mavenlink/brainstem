@@ -101,7 +101,7 @@ module ApiPresenter
 
     def load_optional_fields!(model, struct, fields)
       struct.to_a.each do |key, value|
-        if value.is_a?(OptionalField)
+        if value.is_a?(FieldProxy) && value.optional
           if fields.include?(key)
             struct[key] = value.call(model)
           else
@@ -156,7 +156,7 @@ module ApiPresenter
     end
 
     def optional_field(field_name = nil, &block)
-      OptionalField.new field_name, &block
+      FieldProxy.new field_name, {:optional => true}, &block
     end
   end
 end

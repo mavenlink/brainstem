@@ -1,7 +1,7 @@
 module ApiPresenter
 
   class FieldProxy
-    attr_reader :method_name
+    attr_reader :method_name, :optional
 
     def initialize(method_name = nil, options = {}, &block)
       if block_given?
@@ -12,6 +12,7 @@ module ApiPresenter
       else
         raise ArgumentError, "Method name or block is required"
       end
+      @optional = options[:optional]
     end
 
     def call(model)
