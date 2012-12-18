@@ -229,7 +229,9 @@ module ApiPresenter
       end
     end
 
+    # @!visibility private
     class ApiOrderLambda < Proc; end
+    # @!visibility private
     class ApiFilterLambda < Proc; end
 
     def presenters
