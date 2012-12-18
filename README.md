@@ -48,7 +48,7 @@ Requests can request includes, filters, and sort orders.
 
     GET /api/users?include=friends&sort_order=popularity&filter=confirmed:true
 
-For more detailed examples, see [USAGE](USAGE.md).
+For more detailed examples, see the documentation for methods on {ApiPresenter::Base}.
 
 ## Contributing
 
