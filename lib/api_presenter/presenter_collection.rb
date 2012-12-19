@@ -219,9 +219,6 @@ module ApiPresenter
       [primary_models, record_hash]
     end
 
-    # @!visibility private
-    class ApiFilterLambda < Proc; end
-
     def presenters
       @presenters ||= {}
     end
