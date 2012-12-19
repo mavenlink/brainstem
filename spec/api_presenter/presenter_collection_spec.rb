@@ -102,6 +102,7 @@ describe ApiPresenter::PresenterCollection do
         result = @presenter_collection.presenting("workspaces", :params => { :include => "drop table;tasks;users" }) { Workspace.order('id desc') }
         result[:tasks].should be_present
         result[:users].should_not be_present
+        result[:drop_table].should_not be_present
       end
 
       it "allows the allowed includes list to have different json names and association names" do
@@ -360,47 +361,6 @@ describe ApiPresenter::PresenterCollection do
         WorkspacePresenter.default_sort_order("description:asc")
         result = @presenter_collection.presenting("workspaces") { Workspace.where("id is not null") }
         result[:workspaces].map {|i| i[:description]}.should eq(%w(1 2 3 a b c))
-      end
-    end
-  end
-
-  describe "internal helpers" do
-    describe "#filter_includes" do
-      let(:allowed_includes) {{
-        'stories' => ApiPresenter::AssociationField.new(:stories, :json_name => "stories"),
-        :time_entries => ApiPresenter::AssociationField.new("time_entries", :json_name => "time_entries"),
-        :posts => ApiPresenter::AssociationField.new("posts", :json_name => "posts"),
-      }}
-
-      it "ignores non-allowed includes and normalizes allowed keys" do
-        includes = @presenter_collection.filter_includes("stories;drop tables;foo;time_entries", allowed_includes)
-        includes[:stories].should eq(:json_name => :stories, :association => :stories, :fields => [])
-        includes[:time_entries].should eq(:json_name => :time_entries, :association => :time_entries, :fields => [])
-      end
-
-      it "does not validate fields" do # these will need to be whitelisted in the presenters
-        @presenter_collection.filter_includes("stories:drop table", allowed_includes).should == {
-          :stories => { :fields => [:"drop table"], :association => :stories, :json_name => :stories }
-        }
-      end
-
-      it "allows you to supply the internal rails name of the association" do
-        includes = @presenter_collection.filter_includes("stories:title,id;time_entries:title", allowed_includes.merge(
-          'stories' => ApiPresenter::AssociationField.new(:internal_name, :json_name => "stories")))
-        includes.should eq(
-          :stories => { :json_name => :stories, :association => :internal_name, :fields => [:title, :id] },
-          :time_entries => { :json_name => :time_entries, :association => :time_entries, :fields => [:title] }
-        )
-      end
-
-      it "defaults to no includes" do
-        @presenter_collection.filter_includes(nil, allowed_includes).should == {}
-        @presenter_collection.filter_includes("", allowed_includes).should == {}
-      end
-
-      it "allows associations with a json_name of nil" do
-        @presenter_collection.filter_includes("posts", {:posts => ApiPresenter::AssociationField.new("posts")}).
-          should eq(:posts => { :json_name => nil, :association => :posts, :fields => []})
       end
     end
   end

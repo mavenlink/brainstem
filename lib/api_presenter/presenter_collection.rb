@@ -2,13 +2,32 @@ require 'api_presenter/association_field'
 
 module ApiPresenter
   class PresenterCollection
-    attr_accessor :default_max_per_page, :default_per_page
 
+    # @!attribute default_max_per_page
+    # @return [Integer] The maximum number of objects that can be requested in a single presented hash.
+    attr_accessor :default_max_per_page
+
+    # @!attribute default_per_page
+    # @return [Integer] The default number of objects that will be returned in the presented hash.
+    attr_accessor :default_per_page
+
+    # @!visibility private
     def initialize
       @default_per_page = 20
       @default_max_per_page = 200
     end
 
+    # The main presentation method, converting a model name and an optional scope into a hash structure, ready to be converted into JSON.
+    # @param [Class, String] name The class of the objects to be presented.
+    # @param [Hash] options The options that will be applied as the objects are converted.
+    # @option options [Hash] :params The +params+ hash included in a request for the presented object.
+    # @option options [ActiveRecord::Base] :model The model that is being presented (if different from +name+).
+    # @option options [String] :as The top-level key the presented objects will be assigned to (if different from +name.tableize+)
+    # @option options [String] :only A string containing a comma-separated list of fields that will be returned in the presented data.
+    # @option options [Integer] :max_per_page The maximum number of items that can be requested by <code>params[:per_page]</code>.
+    # @option options [Integer] :per_page The number of items that will be returned if <code>params[:per_page]</code> is not set.
+    # @yield An optional block. Must return a scope on the model +name+, which will then be presented.
+    # @return [Hash] A hash of arrays of hashes. Top-level hash keys are pluralized model names, with values of arrays containing one hash per object that was found by the given given options.
     def presenting(name, options = {}, &block)
       options[:params] ||= {}
       presented_class = (options[:model] || name).to_s.classify.constantize
@@ -91,6 +110,32 @@ module ApiPresenter
       struct
     end
 
+    # @return [Hash] The presenters this collection knows about, keyed on the names of the classes that can be presented.
+    def presenters
+      @presenters ||= {}
+    end
+
+    # @param [String, Class] presenter_class The presenter class that knows how to present all of the classes given in +klasses+.
+    # @param [*Class] klasses One or more classes that can be presented by +presenter_class+.
+    def add_presenter_class(presenter_class, *klasses)
+      klasses.each do |klass|
+        presenters[klass.to_s] = presenter_class.new
+      end
+    end
+
+    # @return [ApiPresenter::Base, nil] The presenter that knows how to present the class +klass+, or +nil+ if there isn't one.
+    def for(klass)
+      presenters[klass.to_s]
+    end
+
+    # @return [ApiPresenter::Base] The presenter that knows how to present the class +klass+.
+    # @raise [ArgumentError] if there is no known presenter for +klass+.
+    def for!(klass)
+      self.for(klass) || raise(ArgumentError, "Unable to find a presenter for class #{klass}")
+    end
+
+  private
+
     def paginate(scope, options)
       max_per_page = (options[:max_per_page] || default_max_per_page).to_i
       per_page = (options[:params][:per_page] || options[:per_page] || default_per_page).to_i
@@ -156,12 +201,12 @@ module ApiPresenter
     def handle_ordering(scope, options)
       default_column, default_direction = (options[:presenter].default_sort_order || "updated_at:desc").split(":")
       sort_name, direction = (options[:params][:order] || "").split(":")
-      options[:sort_orders] = (options[:presenter].sort_orders || {})
+      sort_orders = (options[:presenter].sort_orders || {})
 
-      if sort_name.present? && options[:sort_orders][sort_name.to_sym]
-        order = options[:sort_orders][sort_name.to_sym]
+      if sort_name.present? && sort_orders[sort_name.to_sym]
+        order = sort_orders[sort_name.to_sym]
       else
-        order = options[:sort_orders][default_column.to_sym]
+        order = sort_orders[default_column.to_sym]
         direction = default_direction
       end
 
@@ -219,22 +264,5 @@ module ApiPresenter
       [primary_models, record_hash]
     end
 
-    def presenters
-      @presenters ||= {}
-    end
-
-    def add_presenter_class(presenter_class, *klasses)
-      klasses.each do |klass|
-        presenters[klass.to_s] = presenter_class.new
-      end
-    end
-
-    def for(klass)
-      presenters[klass.to_s]
-    end
-
-    def for!(klass)
-      self.for(klass) || raise(ArgumentError, "Unable to find a presenter for class #{klass}")
-    end
   end
 end
