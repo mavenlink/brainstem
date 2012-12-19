@@ -155,21 +155,23 @@ module ApiPresenter
 
     def handle_ordering(scope, options)
       default_column, default_direction = (options[:presenter].default_sort_order || "updated_at:desc").split(":")
-      column, direction = (options[:params][:order] || "").split(":")
+      sort_name, direction = (options[:params][:order] || "").split(":")
       options[:sort_orders] = (options[:presenter].sort_orders || {})
 
-      if column.present? && options[:sort_orders][column.to_sym]
-        order = options[:sort_orders][column.to_sym]
+      if sort_name.present? && options[:sort_orders][sort_name.to_sym]
+        order = options[:sort_orders][sort_name.to_sym]
       else
         order = options[:sort_orders][default_column.to_sym]
         direction = default_direction
       end
 
-      if order
-        order_proc = order.is_a?(Proc) ? make_api_order(&order) : make_api_order(order)
-        order_proc.call(scope, direction == "desc" ? "desc" : "asc")
-      else
+      case order
+      when Proc
+        order.call(scope, direction == "desc" ? "desc" : "asc")
+      when nil
         scope
+      else
+        scope.order(order.to_s + " " + (direction == "desc" ? "desc" : "asc"))
       end
     end
 
@@ -217,20 +219,6 @@ module ApiPresenter
       [primary_models, record_hash]
     end
 
-    def make_api_order(field = nil, &block)
-      if block_given?
-        ApiOrderLambda.new &block
-      elsif field
-        ApiOrderLambda.new do |scope, direction|
-          scope.order(field.to_s + " " + (direction == "desc" ? "desc" : "asc"))
-        end
-      else
-        raise "you must provide either a field name or a block to make_api_order"
-      end
-    end
-
-    # @!visibility private
-    class ApiOrderLambda < Proc; end
     # @!visibility private
     class ApiFilterLambda < Proc; end
 
