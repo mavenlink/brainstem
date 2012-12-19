@@ -26,4 +26,5 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency "rr"
   gem.add_development_dependency "rspec"
   gem.add_development_dependency "sqlite3"
+  gem.add_development_dependency "emoji-rspec"
 end

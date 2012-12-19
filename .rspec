@@ -1,1 +1,1 @@
--fs -c
+-f hearts -c --require emoji-rspec
