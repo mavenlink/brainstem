@@ -1,5 +1,6 @@
 require 'active_record'
 require 'database_cleaner'
+require 'logger'
 require 'rr'
 require 'rspec'
 require 'sqlite3'
@@ -15,6 +16,7 @@ RSpec.configure do |config|
 
   config.before(:each) do
     DatabaseCleaner.start
+    ApiPresenter.logger = Logger.new(StringIO.new)
   end
 
   config.after(:each) do
