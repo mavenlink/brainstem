@@ -3,14 +3,23 @@ require 'api_presenter/association_field'
 require 'api_presenter/time_classes'
 
 module ApiPresenter
+  # @abstract Subclass and override {#present} to implement a presenter.
   class Base
 
     # Class methods
 
+    # Accepts a list of classes this presenter knows how to present.
+    # @param [String, [String]] klasses Any number of names of classes this presenter presents.
     def self.presents(*klasses)
       ApiPresenter.add_presenter_class(self, *klasses)
     end
 
+    # @overload default_sort_order(sort_string)
+    #   Sets a default sort order.
+    #   @param [String] sort_string The sort order to apply by default while presenting. The string must contain the name of a sort order that has explicitly been declared using {sort_order}. The string may end in +:asc+ or +:desc+ to indicate the default order's direction.
+    #   @return [String] The new default sort order.
+    # @overload default_sort_order
+    #   @return [String] The default sort order, or nil if one is not set.
     def self.default_sort_order(sort_string = nil)
       if sort_string
         @default_sort_order = sort_string
@@ -19,24 +28,46 @@ module ApiPresenter
       end
     end
 
+    # @overload sort_order(name, order)
+    #   @param [Symbol] name The name of the sort order.
+    #   @param [String] order The SQL string to use to sort the presented data.
+    # @overload sort_order(name, &block)
+    #   @yieldparam scope [ActiveRecord::Relation] The scope representing the data being presented.
+    #   @yieldreturn [ActiveRecord::Relation] A new scope that adds ordering requirements to the scope that was yielded.
+    #   Create a named sort order, either containing a string to use as ORDER in a query, or with a block that adds an order Arel predicate to a scope.
+    # @raise [ArgumentError] if neither an order string or block is given.
     def self.sort_order(name, order = nil, &block)
+      raise ArgumentError, "A sort order must be given" unless block_given? || order
       @sort_orders ||= {}
       @sort_orders[name] = (block_given? ? block : order)
     end
 
+    # @return [Hash] All defined sort orders, keyed by their name.
     def self.sort_orders
       @sort_orders
     end
 
+    # @overload filter(name, options = {})
+    #   @param [Symbol] name The name of the scope that may be applied as a filter.
+    #   @option options [Object] :default If set, causes this filter to be applied to every request. If the filter accepts parameters, the value given here will be passed to the filter when it is applied.
+    # @overload filter(name, options = {}, &block)
+    #   @param [Symbol] name The filter can be requested using this name.
+    #   @yieldparam scope [ActiveRecord::Relation] The scope that the filter should use as a base.
+    #   @yieldparam arg [Object] The argument passed when the filter was requested.
+    #   @yieldreturn [ActiveRecord::Relation] A new scope that filters the scope that was yielded.
     def self.filter(name, options = {}, &block)
       @filters ||= {}
       @filters[name] = [options, (block_given? ? block : nil)]
     end
 
+    # @return [Hash]  All defined filters, keyed by their name.
     def self.filters
       @filters
     end
 
+    # Declares a helper module whose methods will be available in instances of the presenter class and available inside sort and filter blocks.
+    # @param [Module] mod A module whose methods will be made available to filter and sort blocks, as well as inside the {#present} method.
+    # @return [self]
     def self.helper(mod)
       include mod
       extend mod
@@ -45,20 +76,29 @@ module ApiPresenter
 
     # Instance methods
 
+    # @raise [RuntimeError] if this method has not been overridden in the presenter subclass.
     def present(model)
       raise "Please override #present(model) in your subclass of ApiPresenter::Base"
     end
 
+    # @api private
+    # Calls {#post_process} on the output from {#present}.
+    # @return (see #post_process)
     def present_and_post_process(model, fields = [], associations = [])
       post_process(present(model), model, fields, associations)
     end
 
+    # @api private
+    # Loads associations and optional fields, then converts dates to epoch strings.
+    # @return [Hash] The hash representing the models and associations, ready to be converted to JSON.
     def post_process(struct, model, fields = [], associations = [])
       load_associations!(model, struct, associations)
       load_optional_fields!(model, struct, fields)
       datetimes_to_json(struct)
     end
 
+    # @api private
+    # Calls {#custom_preload}, and then {#present} and {#post_process}, for each model.
     def group_present(models, fields = [], associations = [])
       custom_preload models, fields, associations
 
@@ -67,11 +107,12 @@ module ApiPresenter
       end
     end
 
+    # Subclasses can define this if they wish. This method will be called before {#present}.
     def custom_preload(models, fields = [], associations = [])
-      # Subclasses can overload this if they wish.
     end
 
-    def datetimes_to_epoch(struct)
+    # @api private
+    # Recurses through any nested Hash/Array data structure, converting dates and times to JSON standard values.
     def datetimes_to_json(struct)
       case struct
       when Array
@@ -89,6 +130,8 @@ module ApiPresenter
       end
     end
 
+    # @api private
+    # Makes sure that any optional fields are evaluated, but only if they are requested.
     def load_optional_fields!(model, struct, fields)
       struct.to_a.each do |key, value|
         if value.is_a?(FieldProxy) && value.optional
@@ -101,6 +144,8 @@ module ApiPresenter
       end
     end
 
+    # @api private
+    # Makes sure that associations are loaded and converted into ids.
     def load_associations!(model, struct, associations)
       struct.to_a.each do |key, value|
         if value.is_a?(AssociationField)
@@ -129,24 +174,33 @@ module ApiPresenter
       end
     end
 
+    # @!attribute [r] default_sort_order
+    # The default sort order set on this presenter's class.
     def default_sort_order
       self.class.default_sort_order
     end
 
+    # @!attribute [r] sort_orders
+    # The sort orders that were declared in the definition of this presenter.
     def sort_orders
       self.class.sort_orders
     end
 
+    # @!attribute [r] filters
+    # The filters that were declared in the definition of this presenter.
     def filters
       self.class.filters
     end
 
+    # An association on the object being presented that should be included in the presented data.
     def association(method_name = nil, options = {}, &block)
       AssociationField.new method_name, options, &block
     end
 
+    # A field on the presented object that should only be included if explicitly requested.
     def optional_field(field_name = nil, &block)
       FieldProxy.new field_name, {:optional => true}, &block
     end
+
   end
 end
