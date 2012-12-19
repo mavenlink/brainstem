@@ -1,6 +1,6 @@
 module ApiPresenter
 
-  def clear_collections!
+  def self.clear_collections!
     presenter_collection.presenters.each do |klass, presenter|
       presenter.clear_options!
     end

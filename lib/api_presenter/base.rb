@@ -1,6 +1,5 @@
 require 'date'
 require 'api_presenter/association_field'
-require 'api_presenter/optional_field'
 require 'api_presenter/time_classes'
 
 module ApiPresenter
