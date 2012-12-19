@@ -40,7 +40,7 @@ module ApiPresenter
     names[-2] ? names[-2] : default_namespace
   end
 
-  # @return [Logger] The Rails logger, if it exists, or a STDOUT logger.
+  # @return [Logger] The ApiPresenter logger. If Rails is loaded, defaults to the Rails logger. If Rails is not loaded, defaults to a STDOUT logger.
   def self.logger
     @logger ||= begin
       if defined?(Rails)
@@ -52,6 +52,9 @@ module ApiPresenter
     end
   end
 
+  # Sets a new ApiPresenter logger.
+  # @param [Logger] logger A new ApiPresenter logger.
+  # @return [Logger] The new ApiPresenter logger.
   def self.logger=(logger)
     @logger = logger
   end
