@@ -56,8 +56,7 @@ module ApiPresenter
     def post_process(struct, model, fields = [], associations = [])
       load_associations!(model, struct, associations)
       load_optional_fields!(model, struct, fields)
-      struct = dates_to_strings(struct)
-      datetimes_to_epoch(struct)
+      datetimes_to_json(struct)
     end
 
     def group_present(models, fields = [], associations = [])
@@ -73,28 +72,20 @@ module ApiPresenter
     end
 
     def datetimes_to_epoch(struct)
+    def datetimes_to_json(struct)
       case struct
       when Array
-        struct.map { |value| datetimes_to_epoch value }
+        struct.map { |value| datetimes_to_json(value) }
       when Hash
-        struct.inject({}) { |memo, (k, v)| memo[k] = datetimes_to_epoch v; memo }
+        processed = {}
+        struct.each { |k,v| processed[k] = datetimes_to_json(v) }
+        processed
+      when Date
+        struct.strftime('%F')
       when *TIME_CLASSES # Time, ActiveSupport::TimeWithZone
         struct.to_i
       else
         struct
-      end
-    end
-
-    def dates_to_strings(struct)
-      case struct
-        when Array
-          struct.map { |value| dates_to_strings value }
-        when Hash
-          struct.inject({}) { |memo, (k, v)| memo[k] = dates_to_strings v; memo }
-        when Date
-          struct.strftime('%F')
-        else
-          struct
       end
     end
 
