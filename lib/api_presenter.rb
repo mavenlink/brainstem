@@ -2,6 +2,7 @@ require "api_presenter/version"
 require "api_presenter/base"
 require "api_presenter/presenter_collection"
 require "api_presenter/controller_methods"
+require "api_presenter/engine" if defined?(::Rails::Engine)
 
 # The ApiPresenter module itself contains a +default_namespace+ class attribute and a few helpers that make managing +PresenterCollections+ and their corresponding namespaces easier.
 module ApiPresenter
