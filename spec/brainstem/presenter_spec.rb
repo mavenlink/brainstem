@@ -1,50 +1,50 @@
 require 'spec_helper'
 
-describe ApiPresenter::Base do
+describe Brainstem::Presenter do
   describe "class methods" do
 
     describe "presents method" do
       before do
-        @klass = Class.new(ApiPresenter::Base)
+        @klass = Class.new(Brainstem::Presenter)
       end
 
       it "records itself as the presenter for the named class as a string" do
         @klass.presents "String"
-        ApiPresenter.presenter_collection.for(String).should be_a(@klass)
+        Brainstem.presenter_collection.for(String).should be_a(@klass)
       end
 
       it "records itself as the presenter for the given class" do
         @klass.presents String
-        ApiPresenter.presenter_collection.for(String).should be_a(@klass)
+        Brainstem.presenter_collection.for(String).should be_a(@klass)
       end
 
       it "records itself as the presenter for the named classes" do
         @klass.presents String, Array
-        ApiPresenter.presenter_collection.for(String).should be_a(@klass)
-        ApiPresenter.presenter_collection.for(Array).should be_a(@klass)
+        Brainstem.presenter_collection.for(String).should be_a(@klass)
+        Brainstem.presenter_collection.for(Array).should be_a(@klass)
       end
     end
 
     describe "implicit namespacing" do
       module V1
-        class SomePresenter < ApiPresenter::Base
+        class SomePresenter < Brainstem::Presenter
         end
       end
 
       it "uses the closest module name as the presenter namespace" do
         V1::SomePresenter.presents String
-        ApiPresenter.presenter_collection(:v1).for(String).should be_a(V1::SomePresenter)
+        Brainstem.presenter_collection(:v1).for(String).should be_a(V1::SomePresenter)
       end
 
       it "does not map namespaced presenters into the default namespace" do
         V1::SomePresenter.presents String
-        ApiPresenter.presenter_collection.for(String).should be_nil
+        Brainstem.presenter_collection.for(String).should be_nil
       end
     end
 
     describe "helper method" do
       before do
-        @klass = Class.new(ApiPresenter::Base) do
+        @klass = Class.new(Brainstem::Presenter) do
           def call_helper
             foo
           end
@@ -66,7 +66,7 @@ describe ApiPresenter::Base do
 
     describe "filter method" do
       before do
-        @klass = Class.new(ApiPresenter::Base)
+        @klass = Class.new(Brainstem::Presenter)
       end
 
       it "creates an entry in the filters class ivar" do
@@ -85,7 +85,7 @@ describe ApiPresenter::Base do
   describe "post_process hooks" do
     describe "converting dates and times" do
       it "should convert all Time-like objects to epochs, but not date objects, which should be iso8601" do
-        class TimePresenter < ApiPresenter::Base
+        class TimePresenter < Brainstem::Presenter
           def present(model)
             {
               :time => Time.now,
@@ -111,7 +111,7 @@ describe ApiPresenter::Base do
 
     describe "outputting polymorphic associations" do
       before do 
-        some_presenter = Class.new(ApiPresenter::Base) do
+        some_presenter = Class.new(Brainstem::Presenter) do
           presents Post
 
           def present(model)
@@ -142,7 +142,7 @@ describe ApiPresenter::Base do
     
     describe "outputting associations" do
       before do
-        some_presenter = Class.new(ApiPresenter::Base) do
+        some_presenter = Class.new(Brainstem::Presenter) do
           presents Workspace
 
           def present(model)
@@ -208,7 +208,7 @@ describe ApiPresenter::Base do
 
     describe "selecting fields" do
       before do
-        some_presenter = Class.new(ApiPresenter::Base) do
+        some_presenter = Class.new(Brainstem::Presenter) do
           presents Workspace
 
           def present(model)

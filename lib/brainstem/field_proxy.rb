@@ -1,4 +1,4 @@
-module ApiPresenter
+module Brainstem
 
   # FieldProxy acts as a standin for associations and optional fields.
   # @api private

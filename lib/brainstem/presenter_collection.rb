@@ -1,6 +1,6 @@
-require 'api_presenter/association_field'
+require 'brainstem/association_field'
 
-module ApiPresenter
+module Brainstem
   class PresenterCollection
 
     # @!attribute default_max_per_page
@@ -123,12 +123,12 @@ module ApiPresenter
       end
     end
 
-    # @return [ApiPresenter::Base, nil] The presenter that knows how to present the class +klass+, or +nil+ if there isn't one.
+    # @return [Brainstem::Presenter, nil] The presenter that knows how to present the class +klass+, or +nil+ if there isn't one.
     def for(klass)
       presenters[klass.to_s]
     end
 
-    # @return [ApiPresenter::Base] The presenter that knows how to present the class +klass+.
+    # @return [Brainstem::Presenter] The presenter that knows how to present the class +klass+.
     # @raise [ArgumentError] if there is no known presenter for +klass+.
     def for!(klass)
       self.for(klass) || raise(ArgumentError, "Unable to find a presenter for class #{klass}")
@@ -229,7 +229,7 @@ module ApiPresenter
         end
         if association_names_to_preload.any?
           ActiveRecord::Associations::Preloader.new(models, association_names_to_preload).run
-          ApiPresenter.logger.info "Eager loaded #{association_names_to_preload.join(", ")}."
+          Brainstem.logger.info "Eager loaded #{association_names_to_preload.join(", ")}."
         end
       end
     end

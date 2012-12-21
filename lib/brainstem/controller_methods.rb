@@ -1,4 +1,4 @@
-module ApiPresenter
+module Brainstem
 
   # ControllerMethods are intended to be included into controllers that will be handling requests for presented objects. The present method will pass through +params+, so that any allowed includes, filters, sort orders that are requested will be applied to the presented data.
   module ControllerMethods
@@ -14,7 +14,7 @@ module ApiPresenter
     # @yield (see PresenterCollection#presenting)
     # @return (see PresenterCollection#presenting)
     def present(name, options = {}, &block)
-      ApiPresenter.presenter_collection(options[:namespace]).presenting(name, options.reverse_merge(:params => params), &block)
+      Brainstem.presenter_collection(options[:namespace]).presenting(name, options.reverse_merge(:params => params), &block)
     end
 
   end

@@ -1,6 +1,6 @@
-require 'api_presenter/field_proxy'
+require 'brainstem/field_proxy'
 
-module ApiPresenter
+module Brainstem
   class AssociationField < FieldProxy
 
     attr_accessor :json_name

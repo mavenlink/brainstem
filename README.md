@@ -1,18 +1,18 @@
-# ApiPresenter
+# Brainstem
 
-The API Presenter gem provides a framework for converting model objects into JSON-compatible hashes. Presenters that inherit from the ApiPresenter class are able to apply sorting and filtering options, either by default or as requested by end-users of the API. Presenters also handle all of the work of loading and presenting associations of the objects that are being requested, allowing fewer requests and smaller responses.
+The API Presenter gem provides a framework for converting model objects into JSON-compatible hashes. Presenters that inherit from the Brainstem class are able to apply sorting and filtering options, either by default or as requested by end-users of the API. Presenters also handle all of the work of loading and presenting associations of the objects that are being requested, allowing fewer requests and smaller responses.
 
 ## Installation
 
 Add this line to your application's Gemfile:
 
-    gem 'api_presenter'
+    gem 'brainstem'
 
 ## Usage
 
-Create a class that inherits from ApiPresenter::Base, named after the model you want to present. For example:
+Create a class that inherits from Brainstem::Presenter, named after the model you want to present. For example:
 
-    class UserPresenter < ApiPresenter::Base
+    class UserPresenter < Brainstem::Presenter
 
       # Return a ruby hash that can be converted to JSON
       def present(user)
@@ -37,7 +37,7 @@ Create a class that inherits from ApiPresenter::Base, named after the model you 
 Once you've created a presenter like the one above, pass requests through to the presenter in your controller.
 
     class Api::UserController < ActionController::Base
-      include ApiPresenter::ControllerMethods
+      include Brainstem::ControllerMethods
 
       def index
         present("user"){ User.where(id: current_user.id) }
@@ -48,7 +48,7 @@ Requests can request includes, filters, and sort orders.
 
     GET /api/users?include=friends&sort_order=popularity&filter=confirmed:true
 
-For more detailed examples, see the documentation for methods on {ApiPresenter::Base}.
+For more detailed examples, see the documentation for methods on {Brainstem::Presenter}.
 
 ## Contributing
 

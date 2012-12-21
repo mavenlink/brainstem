@@ -1,4 +1,4 @@
-class WorkspacePresenter < ApiPresenter::Base
+class WorkspacePresenter < Brainstem::Presenter
   def present(model)
     {
       :id           => model.id,
@@ -11,7 +11,7 @@ class WorkspacePresenter < ApiPresenter::Base
   end
 end
 
-class TaskPresenter < ApiPresenter::Base
+class TaskPresenter < Brainstem::Presenter
   def present(model)
     {
       :id           => model.id,
@@ -24,7 +24,7 @@ class TaskPresenter < ApiPresenter::Base
   end
 end
 
-class UserPresenter < ApiPresenter::Base
+class UserPresenter < Brainstem::Presenter
   def present(model)
     {
       :id => model.id
@@ -32,7 +32,7 @@ class UserPresenter < ApiPresenter::Base
   end
 end
   
-class PostPresenter < ApiPresenter::Base
+class PostPresenter < Brainstem::Presenter
   def present(model)
     {
       :id => model.id,

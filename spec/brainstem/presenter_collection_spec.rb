@@ -1,13 +1,13 @@
 require 'spec_helper'
 require 'spec_helpers/presenters'
 
-describe ApiPresenter::PresenterCollection do
+describe Brainstem::PresenterCollection do
   before do
     UserPresenter.presents User
     TaskPresenter.presents Task
     WorkspacePresenter.presents Workspace
     PostPresenter.presents Post
-    @presenter_collection = ApiPresenter.presenter_collection
+    @presenter_collection = Brainstem.presenter_collection
   end
 
   describe "#presenting" do
@@ -368,7 +368,7 @@ describe ApiPresenter::PresenterCollection do
   describe "collection methods" do
     describe "for method" do
       module V1
-        class ArrayPresenter < ApiPresenter::Base
+        class ArrayPresenter < Brainstem::Presenter
         end
       end
 
@@ -377,21 +377,21 @@ describe ApiPresenter::PresenterCollection do
       end
 
       it "returns the presenter for a given class" do
-        ApiPresenter.presenter_collection("v1").for(Array).should be_a(V1::ArrayPresenter)
+        Brainstem.presenter_collection("v1").for(Array).should be_a(V1::ArrayPresenter)
       end
 
       it "returns nil when given nil" do
-        ApiPresenter.presenter_collection("v1").for(nil).should be_nil
+        Brainstem.presenter_collection("v1").for(nil).should be_nil
       end
 
       it "returns nil when a given class has no presenter" do
-        ApiPresenter.presenter_collection("v1").for(String).should be_nil
+        Brainstem.presenter_collection("v1").for(String).should be_nil
       end
     end
 
     describe "for! method" do
       it "raises if there is no presenter for the given class" do
-        lambda{ ApiPresenter.presenter_collection("v1").for!(String) }.should raise_error(ArgumentError)
+        lambda{ Brainstem.presenter_collection("v1").for!(String) }.should raise_error(ArgumentError)
       end
     end
   end

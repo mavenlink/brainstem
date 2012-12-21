@@ -1,4 +1,4 @@
-module ApiPresenter
+module Brainstem
 
   def self.clear_collections!
     presenter_collection.presenters.each do |klass, presenter|
@@ -7,7 +7,7 @@ module ApiPresenter
     @presenter_collection = {}
   end
 
-  class Base
+  class Presenter
     def self.clear_options!
       @default_sort_order = nil
       @filters = nil

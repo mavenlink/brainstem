@@ -1,17 +1,17 @@
 require 'date'
-require 'api_presenter/association_field'
-require 'api_presenter/time_classes'
+require 'brainstem/association_field'
+require 'brainstem/time_classes'
 
-module ApiPresenter
+module Brainstem
   # @abstract Subclass and override {#present} to implement a presenter.
-  class Base
+  class Presenter
 
     # Class methods
 
     # Accepts a list of classes this presenter knows how to present.
     # @param [String, [String]] klasses Any number of names of classes this presenter presents.
     def self.presents(*klasses)
-      ApiPresenter.add_presenter_class(self, *klasses)
+      Brainstem.add_presenter_class(self, *klasses)
     end
 
     # @overload default_sort_order(sort_string)
@@ -78,7 +78,7 @@ module ApiPresenter
 
     # @raise [RuntimeError] if this method has not been overridden in the presenter subclass.
     def present(model)
-      raise "Please override #present(model) in your subclass of ApiPresenter::Base"
+      raise "Please override #present(model) in your subclass of Brainstem::Presenter"
     end
 
     # @api private

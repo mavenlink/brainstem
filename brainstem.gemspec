@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 $LOAD_PATH.unshift File.expand_path('../lib', __FILE__)
-require "api_presenter/version"
+require "brainstem/version"
 
 Gem::Specification.new do |gem|
   gem.name          = "brainstem"
@@ -15,11 +15,10 @@ Gem::Specification.new do |gem|
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.require_paths = ["lib"]
-  gem.version       = ApiPresenter::VERSION
+  gem.version       = Brainstem::VERSION
 
   gem.add_dependency "activerecord", "~> 3.0"
 
-  gem.add_development_dependency "database_cleaner"
   gem.add_development_dependency "pry"
   gem.add_development_dependency "rake"
   gem.add_development_dependency "redcarpet" # for markdown in yard
