@@ -3,7 +3,7 @@ $LOAD_PATH.unshift File.expand_path('../lib', __FILE__)
 require "api_presenter/version"
 
 Gem::Specification.new do |gem|
-  gem.name          = "api_presenter"
+  gem.name          = "brainstem"
   gem.authors       = ["Sufyan Adam", "André Arko", "Andrew Cantino", "Katlyn Daniluk", "Reid Gillette"]
   gem.email         = ["dev@mavenlink.com"]
   gem.description   = %q{Brainstem allows you to create presenters that know how to filter, sort, include associations, and then convert your objects to Ruby hashes that can be output in another format, like JSON}
