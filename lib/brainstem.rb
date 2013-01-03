@@ -22,7 +22,8 @@ module Brainstem
 
   # @param [String] namespace
   # @return [PresenterCollection] the {PresenterCollection} for the given namespace.
-  def self.presenter_collection(namespace = default_namespace)
+  def self.presenter_collection(namespace = nil)
+    namespace ||= default_namespace
     @presenter_collection ||= {}
     @presenter_collection[namespace.to_s.downcase] ||= PresenterCollection.new
   end

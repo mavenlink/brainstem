@@ -387,6 +387,10 @@ describe Brainstem::PresenterCollection do
       it "returns nil when a given class has no presenter" do
         Brainstem.presenter_collection("v1").for(String).should be_nil
       end
+
+      it "uses the default namespace when the passed namespace is nil" do
+        Brainstem.presenter_collection.should eq(Brainstem.presenter_collection(nil))
+      end
     end
 
     describe "for! method" do
