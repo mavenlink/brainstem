@@ -311,6 +311,39 @@ describe Brainstem::PresenterCollection do
       end
     end
 
+    describe "search" do
+      context "with search method defined" do
+        before do
+          WorkspacePresenter.search do |string|
+            [3,5]
+          end
+        end
+
+        context "and a search request is made" do
+          it "calls the search method" do
+            result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
+            result[:workspaces].map{|w| w[:id] }.should eq([3,5])
+          end
+        end
+
+        context "and there is no search request" do
+          it "does not call the search method" do
+            result = @presenter_collection.presenting("workspaces") { Workspace.order("id asc") }
+            result[:workspaces].map{|w| w[:id] }.should eq(Workspace.pluck(:id))
+          end
+        end
+      end
+
+      context "without search method defined" do
+        context "and a search request is made" do
+          it "returns as if there was no search" do
+            result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
+            result[:workspaces].map{|w| w[:id] }.should eq(Workspace.pluck(:id))
+          end
+        end
+      end
+    end
+
     describe "sorting and ordering" do
       context "when there is no sort provided" do
         it "returns an empty array when there are no objects" do

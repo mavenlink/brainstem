@@ -12,6 +12,7 @@ module Brainstem
       @default_sort_order = nil
       @filters = nil
       @sort_orders = nil
+      @search_block = nil
     end
 
     def clear_options!

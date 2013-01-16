@@ -80,6 +80,17 @@ describe Brainstem::Presenter do
         @klass.filters[:foo][1].should be_nil
       end
     end
+
+    describe "search method" do
+      before do
+        @klass = Class.new(Brainstem::Presenter)
+      end
+
+      it "creates an entry in the search class ivar" do
+        @klass.search do end
+        @klass.search_block.should be_a(Proc)
+      end
+    end
   end
 
   describe "post_process hooks" do

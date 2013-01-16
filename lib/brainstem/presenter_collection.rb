@@ -48,6 +48,9 @@ module Brainstem
       # Filter
       scope = run_filters scope, options
 
+      # Search
+      scope = run_search scope, options
+
       if options[:params][:only].present?
         # Handle Only
         scope, count = handle_only(scope, options[:params][:only])
@@ -196,6 +199,13 @@ module Brainstem
       end
 
       scope
+    end
+
+    def run_search(scope, options)
+      return scope unless options[:params][:search] && options[:presenter].search_block.present?
+
+      result_ids = options[:presenter].search_block.call(options[:params][:search])
+      scope.where(:id => result_ids )
     end
 
     def handle_ordering(scope, options)

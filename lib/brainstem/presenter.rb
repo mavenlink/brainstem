@@ -65,6 +65,14 @@ module Brainstem
       @filters
     end
 
+    def self.search(&block)
+      @search_block = block
+    end
+
+    def self.search_block
+      @search_block
+    end
+
     # Declares a helper module whose methods will be available in instances of the presenter class and available inside sort and filter blocks.
     # @param [Module] mod A module whose methods will be made available to filter and sort blocks, as well as inside the {#present} method.
     # @return [self]
@@ -190,6 +198,10 @@ module Brainstem
     # The filters that were declared in the definition of this presenter.
     def filters
       self.class.filters
+    end
+
+    def search_block
+      self.class.search_block
     end
 
     # An association on the object being presented that should be included in the presented data.
