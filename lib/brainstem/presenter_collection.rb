@@ -30,7 +30,8 @@ module Brainstem
     # @return [Hash] A hash of arrays of hashes. Top-level hash keys are pluralized model names, with values of arrays containing one hash per object that was found by the given given options.
     def presenting(name, options = {}, &block)
       options[:params] ||= {}
-      presented_class = (options[:model] || name).to_s.classify.constantize
+      presented_class = (options[:model] || name)
+      presented_class = presented_class.classify.constantize if presented_class.is_a?(String)
       scope = presented_class.instance_eval(&block)
 
       # grab the presenter that knows about filters and sorting etc.
@@ -43,7 +44,7 @@ module Brainstem
       options[:as] ||= name.to_s.tableize.to_sym
 
       # the other methods need this to be a symbol. I think.
-      name = name.to_s.to_sym
+      name = name.to_s.to_sym unless name.is_a?(Symbol)
 
       # Filter
       scope = run_filters scope, options
