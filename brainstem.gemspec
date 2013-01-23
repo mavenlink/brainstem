@@ -18,7 +18,6 @@ Gem::Specification.new do |gem|
   gem.version       = Brainstem::VERSION
 
   gem.add_dependency "activerecord", "~> 3.0"
-  gem.add_dependency "brainstem-js", "~> 0.1"
 
   gem.add_development_dependency "emoji-rspec"
   gem.add_development_dependency "rake"
