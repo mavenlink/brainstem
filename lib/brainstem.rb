@@ -2,7 +2,6 @@ require "brainstem/version"
 require "brainstem/presenter"
 require "brainstem/presenter_collection"
 require "brainstem/controller_methods"
-require "brainstem/engine" if defined?(::Rails::Engine)
 
 # The Brainstem module itself contains a +default_namespace+ class attribute and a few helpers that make managing +PresenterCollections+ and their corresponding namespaces easier.
 module Brainstem
