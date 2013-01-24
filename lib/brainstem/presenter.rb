@@ -132,7 +132,7 @@ module Brainstem
       when Date
         struct.strftime('%F')
       when *TIME_CLASSES # Time, ActiveSupport::TimeWithZone
-        struct.to_i
+        struct.iso8601
       else
         struct
       end
