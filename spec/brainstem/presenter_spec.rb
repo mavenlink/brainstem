@@ -95,7 +95,7 @@ describe Brainstem::Presenter do
 
   describe "post_process hooks" do
     describe "converting dates and times" do
-      it "should convert all Time-like objects to epochs, but not date objects, which should be iso8601" do
+      it "should convert all Time-and-date-like objects to iso8601" do
         class TimePresenter < Brainstem::Presenter
           def present(model)
             {
@@ -110,18 +110,21 @@ describe Brainstem::Presenter do
           end
         end
 
+        iso8601_time = /\d{4}-\d{2}-\d{2}T\d{2}\:\d{2}\:\d{2}[-+]\d{2}:\d{2}/
+        iso8601_date = /\d{4}-\d{2}-\d{2}/
+
         struct = TimePresenter.new.present_and_post_process("something")
-        struct[:time].should be_a(Integer)
-        struct[:date].should =~ /\d{4}-\d{2}-\d{2}/
-        struct[:recursion][:time].should be_a(Integer)
-        struct[:recursion][:something].first.should be_a(Integer)
+        struct[:time].should =~ iso8601_time
+        struct[:date].should =~ iso8601_date
+        struct[:recursion][:time].should =~ iso8601_time
+        struct[:recursion][:something].first.should =~ iso8601_time
         struct[:recursion][:something].last.should == :else
         struct[:recursion][:foo].should == :bar
       end
     end
 
     describe "outputting polymorphic associations" do
-      before do 
+      before do
         some_presenter = Class.new(Brainstem::Presenter) do
           presents Post
 
@@ -137,7 +140,7 @@ describe Brainstem::Presenter do
         @presenter = some_presenter.new
         @post = Post.first
       end
-      
+
       it "outputs the associated object's id and type" do
         data = @presenter.present_and_post_process(@post)
         data[:subject_id].should eq(@post.subject_id)
@@ -150,7 +153,7 @@ describe Brainstem::Presenter do
         data[:another_subject_type].should eq(@post.subject_type)
       end
     end
-    
+
     describe "outputting associations" do
       before do
         some_presenter = Class.new(Brainstem::Presenter) do
