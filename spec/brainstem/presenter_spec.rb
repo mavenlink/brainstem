@@ -110,7 +110,7 @@ describe Brainstem::Presenter do
           end
         end
 
-        iso8601_time = /\d{4}-\d{2}-\d{2}T\d{2}\:\d{2}\:\d{2}-\d{2}:\d{2}/
+        iso8601_time = /\d{4}-\d{2}-\d{2}T\d{2}\:\d{2}\:\d{2}[-+]\d{2}:\d{2}/
         iso8601_date = /\d{4}-\d{2}-\d{2}/
 
         struct = TimePresenter.new.present_and_post_process("something")
@@ -124,7 +124,7 @@ describe Brainstem::Presenter do
     end
 
     describe "outputting polymorphic associations" do
-      before do 
+      before do
         some_presenter = Class.new(Brainstem::Presenter) do
           presents Post
 
@@ -140,7 +140,7 @@ describe Brainstem::Presenter do
         @presenter = some_presenter.new
         @post = Post.first
       end
-      
+
       it "outputs the associated object's id and type" do
         data = @presenter.present_and_post_process(@post)
         data[:subject_id].should eq(@post.subject_id)
@@ -153,7 +153,7 @@ describe Brainstem::Presenter do
         data[:another_subject_type].should eq(@post.subject_type)
       end
     end
-    
+
     describe "outputting associations" do
       before do
         some_presenter = Class.new(Brainstem::Presenter) do
