@@ -101,7 +101,7 @@ describe Brainstem::PresenterCollection do
       it "comes back with an explicit list of the matching results" do
         structure = @presenter_collection.presenting("workspaces", :params => { :include => "tasks" }, :max_per_page => 2) { Workspace.where(:id => 1) }
         structure.keys.should =~ [:workspaces, :tasks, :count, :results]
-        structure[:results].should == Workspace.where(:id => 1).limit(2).map {|w| [ "workspaces", w.id ] }
+        structure[:results].should == Workspace.where(:id => 1).limit(2).map {|w| { :key => "workspaces", :id => w.id } }
       end
     end
 

@@ -111,7 +111,7 @@ module Brainstem
         struct[options[:as]] += options[:presenter].group_present(models, primary_object_fields, includes_hash.keys)
       end
 
-      struct[:results] = primary_models.map { |model| [options[:as].to_s, model.id] }
+      struct[:results] = primary_models.map { |model|  { :key => options[:as].to_s, :id => model.id } }
 
       struct
     end
