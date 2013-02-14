@@ -184,7 +184,10 @@ module Brainstem
       allowed_filters = options[:presenter].filters || {}
       requested_filters = {}
       (options[:params][:filters] || "").split(",").each do |filter_string|
-        name, value = filter_string.split(":")
+        filter_pieces = filter_string.split(":")
+        name = filter_pieces.shift
+        value = filter_pieces.join(":")
+        value = nil unless value.present?
         value = value == "true" ? true : (value == "false" ? false : value)
         requested_filters[name.to_sym] = value
       end

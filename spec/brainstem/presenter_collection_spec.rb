@@ -280,6 +280,17 @@ describe Brainstem::PresenterCollection do
         result[:workspaces].size.should_not eq(0)
       end
 
+      it "passes additonal colon separated params through as a string" do
+        WorkspacePresenter.filter(:between) { |scope, a_and_b|
+          a, b = a_and_b.split(':')
+          a.should == "1"
+          b.should == "10"
+          scope
+        }
+
+        @presenter_collection.presenting("workspaces", :params => { :filters => "between:1:10" }) { Workspace.scoped }
+      end
+
       context "with defaults" do
         before do
           WorkspacePresenter.filter(:owner, :default => bob.id) { |scope, id| scope.owned_by(id) }
