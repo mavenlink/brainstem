@@ -101,7 +101,7 @@ describe Brainstem::PresenterCollection do
       it "comes back with an explicit list of the matching results" do
         structure = @presenter_collection.presenting("workspaces", :params => { :include => "tasks" }, :max_per_page => 2) { Workspace.where(:id => 1) }
         structure.keys.should =~ [:workspaces, :tasks, :count, :results]
-        structure[:results].should == Workspace.where(:id => 1).limit(2).map {|w| [ "workspaces", w.id ] }
+        structure[:results].should == Workspace.where(:id => 1).limit(2).map {|w| { :key => "workspaces", :id => w.id } }
       end
     end
 
@@ -278,6 +278,17 @@ describe Brainstem::PresenterCollection do
         result[:workspaces].size.should eq(0)
         result = @presenter_collection.presenting("workspaces", :params => { :filters => "nothing:false" }) { Workspace.scoped }
         result[:workspaces].size.should_not eq(0)
+      end
+
+      it "passes additonal colon separated params through as a string" do
+        WorkspacePresenter.filter(:between) { |scope, a_and_b|
+          a, b = a_and_b.split(':')
+          a.should == "1"
+          b.should == "10"
+          scope
+        }
+
+        @presenter_collection.presenting("workspaces", :params => { :filters => "between:1:10" }) { Workspace.scoped }
       end
 
       context "with defaults" do
