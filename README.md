@@ -40,7 +40,7 @@ Once you've created a presenter like the one above, pass requests through to the
       include Brainstem::ControllerMethods
 
       def index
-        present("user"){ User.where(id: current_user.id) }
+        present("user"){ User.visible_to(current_user) }
       end
     end
 
