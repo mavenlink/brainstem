@@ -1,6 +1,6 @@
 # Brainstem
 
-The API Presenter gem provides a framework for converting model objects into JSON-compatible hashes. Presenters that inherit from the Brainstem class are able to apply sorting and filtering options, either by default or as requested by end-users of the API. Presenters also handle all of the work of loading and presenting associations of the objects that are being requested, allowing fewer requests and smaller responses.
+The Brainstem gem provides a framework for converting model objects into JSON-compatible hashes. Presenters that inherit from the Brainstem class are able to apply sorting and filtering options, either by default or as requested by end-users of the API. Presenters also handle all of the work of loading and presenting associations of the objects that are being requested, allowing simpler implementations, fewer requests, and smaller responses.
 
 ## Installation
 
@@ -23,13 +23,13 @@ Create a class that inherits from Brainstem::Presenter, named after the model yo
         }
       end
 
-      # Optional filter that delegates to model scope
+      # Optional filter that delegates to the User model `confirmed` scope
       filter :confirmed
 
       # Optional sort order that may be requested
       sort_order :popularity, "users.friends_count"
 
-      # Optional sort order to apply automatically
+      # Default sort order to apply
       default_sort_order "created_at:desc"
 
     end
@@ -40,11 +40,11 @@ Once you've created a presenter like the one above, pass requests through to the
       include Brainstem::ControllerMethods
 
       def index
-        present("user"){ User.visible_to(current_user) }
+	render :json => present("users") { User.visible_to(current_user) }
       end
     end
 
-Requests can request includes, filters, and sort orders.
+Requests can have includes, filters, and sort orders.
 
     GET /api/users?include=friends&sort_order=popularity&filter=confirmed:true
 
