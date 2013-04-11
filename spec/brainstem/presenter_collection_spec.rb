@@ -97,6 +97,14 @@ describe Brainstem::PresenterCollection do
       end
     end
 
+    describe "the 'results' top level key" do
+      it "comes back with an explicit list of the matching results" do
+        structure = @presenter_collection.presenting("workspaces", :params => { :include => "tasks" }, :max_per_page => 2) { Workspace.where(:id => 1) }
+        structure.keys.should =~ [:workspaces, :tasks, :count, :results]
+        structure[:results].should == Workspace.where(:id => 1).limit(2).map {|w| { :key => "workspaces", :id => w.id } }
+      end
+    end
+
     describe "includes" do
       it "reads allowed includes from the presenter" do
         result = @presenter_collection.presenting("workspaces", :params => { :include => "drop table;tasks;users" }) { Workspace.order('id desc') }
@@ -154,7 +162,7 @@ describe Brainstem::PresenterCollection do
         result = @presenter_collection.presenting("tasks", :params => { :include => "workspace" }, :max_per_page => 2) { Task.where(:id => t.id) }
         result[:tasks].first[:id].should == t.id
         result[:workspaces].should eq([])
-        result.keys.should =~ [:tasks, :workspaces, :count]
+        result.keys.should =~ [:tasks, :workspaces, :count, :results]
       end
 
       it "returns sensible data when including something of the same type as the primary model" do
@@ -272,6 +280,17 @@ describe Brainstem::PresenterCollection do
         result[:workspaces].size.should_not eq(0)
       end
 
+      it "passes additonal colon separated params through as a string" do
+        WorkspacePresenter.filter(:between) { |scope, a_and_b|
+          a, b = a_and_b.split(':')
+          a.should == "1"
+          b.should == "10"
+          scope
+        }
+
+        @presenter_collection.presenting("workspaces", :params => { :filters => "between:1:10" }) { Workspace.scoped }
+      end
+
       context "with defaults" do
         before do
           WorkspacePresenter.filter(:owner, :default => bob.id) { |scope, id| scope.owned_by(id) }
@@ -348,7 +367,7 @@ describe Brainstem::PresenterCollection do
       context "when there is no sort provided" do
         it "returns an empty array when there are no objects" do
           result = @presenter_collection.presenting("workspaces") { Workspace.where(:id => nil) }
-          result.should eq(:count => 0, :workspaces => [])
+          result.should eq(:count => 0, :workspaces => [], :results => [])
         end
 
         it "falls back to the object's sort order when nothing is provided" do
