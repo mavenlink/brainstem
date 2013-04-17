@@ -26,7 +26,8 @@ module Brainstem
     # @option options [String] :only A string containing a comma-separated list of fields that will be returned in the presented data.
     # @option options [Integer] :max_per_page The maximum number of items that can be requested by <code>params[:per_page]</code>.
     # @option options [Integer] :per_page The number of items that will be returned if <code>params[:per_page]</code> is not set.
-    # @yield An optional block. Must return a scope on the model +name+, which will then be presented.
+    # @option options [Boolean] :apply_default_filters Determine if Presenter's filter defaults should be applied.  On by default.
+    # @yield Must return a scope on the model +name+, which will then be presented.
     # @return [Hash] A hash of arrays of hashes. Top-level hash keys are pluralized model names, with values of arrays containing one hash per object that was found by the given given options.
     def presenting(name, options = {}, &block)
       options[:params] ||= {}
@@ -182,6 +183,7 @@ module Brainstem
 
     def run_filters(scope, options)
       allowed_filters = options[:presenter].filters || {}
+      run_defaults = options.has_key?(:apply_default_filters) ? options[:apply_default_filters] : true
       requested_filters = {}
       (options[:params][:filters] || "").split(",").each do |filter_string|
         filter_pieces = filter_string.split(":")
@@ -193,8 +195,8 @@ module Brainstem
       end
 
       allowed_filters.each do |filter_name, filter|
-        options, filter_lambda = filter
-        args = requested_filters[filter_name] || options[:default]
+        filter_options, filter_lambda = filter
+        args = run_defaults ? (requested_filters[filter_name] || filter_options[:default]) : requested_filters[filter_name]
         next if args.nil?
 
         if filter_lambda

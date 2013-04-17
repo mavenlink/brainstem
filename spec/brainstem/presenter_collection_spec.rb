@@ -303,6 +303,22 @@ describe Brainstem::PresenterCollection do
           result[:workspaces].map{|w| w[:id] }.should match_array(bob.workspaces.map(&:id))
         end
 
+        it "allows falsy defaults" do
+          WorkspacePresenter.filter(:include_early_workspaces, :default => false) { |scope, bool| bool ? scope : scope.where("id > 3") }
+          result = @presenter_collection.presenting("workspaces") { Workspace.unscoped }
+          result[:workspaces].map{|w| w[:id] }.should_not include(2)
+          result = @presenter_collection.presenting("workspaces", :params => { :filters => "include_early_workspaces:true" }) { Workspace.unscoped }
+          result[:workspaces].map{|w| w[:id] }.should include(2)
+        end
+
+        it "allows defaults to be skipped if :apply_default_filters is false" do
+          WorkspacePresenter.filter(:include_early_workspaces, :default => false) { |scope, bool| bool ? scope : scope.where("id > 3") }
+          result = @presenter_collection.presenting("workspaces", :apply_default_filters => true) { Workspace.unscoped }
+          result[:workspaces].map{|w| w[:id] }.should_not include(2)
+          result = @presenter_collection.presenting("workspaces", :apply_default_filters => false) { Workspace.unscoped }
+          result[:workspaces].map{|w| w[:id] }.should include(2)
+        end
+
         it "allows the default value to be overridden" do
           result = @presenter_collection.presenting("workspaces", :params => { :filters => "owner:#{jane.id}" }) { Workspace.order('id desc') }
           result[:workspaces].map{|w| w[:id] }.should match_array(jane.workspaces.map(&:id))

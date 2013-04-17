@@ -6,9 +6,9 @@ Gem::Specification.new do |gem|
   gem.name          = "brainstem"
   gem.authors       = ["Sufyan Adam", "André Arko", "Andrew Cantino", "Katlyn Daniluk", "Reid Gillette"]
   gem.email         = ["dev@mavenlink.com"]
-  gem.description   = %q{Brainstem allows you to create presenters that know how to filter, sort, include associations, and then convert your objects to Ruby hashes that can be output in another format, like JSON}
+  gem.description   = %q{Brainstem allows you to create rich API presenters that know how to filter, sort, and include associations.}
   gem.summary       = %q{ActiveRecord presenters with a rich request API}
-  gem.homepage      = "http://dev.mavenlink.com"
+  gem.homepage      = "http://developer.mavenlink.com"
   gem.license       = "MIT"
 
   gem.files         = Dir["**/*"]
@@ -19,7 +19,6 @@ Gem::Specification.new do |gem|
 
   gem.add_dependency "activerecord", "~> 3.0"
 
-  gem.add_development_dependency "emoji-rspec"
   gem.add_development_dependency "rake"
   gem.add_development_dependency "redcarpet" # for markdown in yard
   gem.add_development_dependency "rr"
