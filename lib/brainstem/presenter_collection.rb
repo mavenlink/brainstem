@@ -42,10 +42,7 @@ module Brainstem
       options[:table_name] = presented_class.table_name
 
       # key these models will use in the struct that is output
-      options[:as] ||= name.to_s.tableize.to_sym
-
-      # the other methods need this to be a symbol. I think.
-      name = name.to_s.to_sym unless name.is_a?(Symbol)
+      options[:as] = (options[:as] || name.to_s.tableize).to_sym
 
       # Filter
       scope = run_filters scope, options
@@ -58,7 +55,7 @@ module Brainstem
         scope, count = handle_only(scope, options[:params][:only])
       else
         # Paginate
-        scope, count = paginate scope, options.merge(:name => name)
+        scope, count = paginate scope, options
       end
 
       # Ordering
@@ -67,30 +64,11 @@ module Brainstem
       # Load Includes
       records = scope.to_a
       model = records.first
-      allowed_includes = {}
 
-      # Gather allowed includes from the presented hash
-      model ||= presented_class.new
-      options[:presenter].present(model).each do |k, v|
-        next unless v.is_a?(AssociationField)
-
-        if v.json_name
-          v.json_name = v.json_name.tableize
-        else
-          association = model.class.reflections[v.method_name]
-          if !association.options[:polymorphic]
-            v.json_name = association && association.table_name
-            if v.json_name.nil?
-              raise ":json_name is a required option for method-based associations (#{presented_class}##{v.method_name})"
-            end
-          end
-        end
-        allowed_includes[k.to_sym] = v
-      end
-
+      allowed_includes = calculate_allowed_includes options[:presenter], presented_class, records
       includes_hash = filter_includes options[:params][:include], allowed_includes
       models = perform_preloading records, includes_hash
-      primary_models, associated_models = gather_associations(models, name, includes_hash)
+      primary_models, associated_models = gather_associations(models, includes_hash)
       struct = { :count => count, options[:as] => [] }
 
       associated_models.each do |json_name, models|
@@ -153,6 +131,29 @@ module Brainstem
       page = 1 if page < 1
 
       [scope.limit(per_page).offset(per_page * (page - 1)).uniq, scope.select("distinct `#{options[:table_name]}`.id").count] # as of Rails 3.2.5, uniq.count generates the wrong SQL.
+    end
+
+    # Gather allowed includes by inspecting the presented hash.  For now this requires that a new instance of the
+    # presented class is always presentable.
+    def calculate_allowed_includes(presenter, presented_class, records)
+      allowed_includes = {}
+      model = records.first || presented_class.new
+      presenter.present(model).each do |k, v|
+        next unless v.is_a?(AssociationField)
+
+        if v.json_name
+          v.json_name = v.json_name.tableize
+        else
+          association = model.class.reflections[v.method_name]
+          if !association.options[:polymorphic]
+            v.json_name = association && association.table_name
+            if v.json_name.nil?
+              raise ":json_name is a required option for method-based associations (#{presented_class}##{v.method_name})"
+            end
+          end
+        end
+        allowed_includes[k.to_sym] = v
+      end
     end
 
     def filter_includes(user_includes, allowed_includes)
@@ -252,9 +253,8 @@ module Brainstem
       end
     end
 
-    def gather_associations(models, name, includes_hash)
-      name = name.to_sym
-      record_hash = { name => [] }
+    def gather_associations(models, includes_hash)
+      record_hash = {}
       primary_models = []
 
       includes_hash.each do |include, include_data|

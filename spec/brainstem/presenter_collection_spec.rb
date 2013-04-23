@@ -108,9 +108,10 @@ describe Brainstem::PresenterCollection do
     describe "includes" do
       it "reads allowed includes from the presenter" do
         result = @presenter_collection.presenting("workspaces", :params => { :include => "drop table;tasks;users" }) { Workspace.order('id desc') }
-        result[:tasks].should be_present
-        result[:users].should_not be_present
-        result[:drop_table].should_not be_present
+        result.keys.should =~ [:count, :workspaces, :tasks, :results]
+
+        result = @presenter_collection.presenting("workspaces", :params => { :include => "foo;tasks;lead_user" }) { Workspace.order('id desc') }
+        result.keys.should =~ [:count, :workspaces, :tasks, :users, :results]
       end
 
       it "allows the allowed includes list to have different json names and association names" do
@@ -429,6 +430,13 @@ describe Brainstem::PresenterCollection do
         WorkspacePresenter.default_sort_order("description:asc")
         result = @presenter_collection.presenting("workspaces") { Workspace.where("id is not null") }
         result[:workspaces].map {|i| i[:description]}.should eq(%w(1 2 3 a b c))
+      end
+    end
+
+    describe "the :as param" do
+      it "determines the chosen top-level key name" do
+        result = @presenter_collection.presenting("workspaces", :as => :my_workspaces) { Workspace.where(:id => 1) }
+        result.keys.should eq([:count, :my_workspaces, :results])
       end
     end
   end
