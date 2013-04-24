@@ -23,7 +23,6 @@ module Brainstem
     # @option options [Hash] :params The +params+ hash included in a request for the presented object.
     # @option options [ActiveRecord::Base] :model The model that is being presented (if different from +name+).
     # @option options [String] :as The top-level key the presented objects will be assigned to (if different from +name.tableize+)
-    # @option options [String] :only A string containing a comma-separated list of fields that will be returned in the presented data.
     # @option options [Integer] :max_per_page The maximum number of items that can be requested by <code>params[:per_page]</code>.
     # @option options [Integer] :per_page The number of items that will be returned if <code>params[:per_page]</code> is not set.
     # @option options [Boolean] :apply_default_filters Determine if Presenter's filter defaults should be applied.  On by default.
@@ -78,16 +77,14 @@ module Brainstem
         if models.length > 0
           presenter = for!(models.first.class)
           assoc = includes_hash.to_a.find { |k, v| v[:json_name] == json_name }
-          associated_fields = (assoc && assoc.last[:fields]) || []
-          struct[json_name] = presenter.group_present(models, associated_fields, [])
+          struct[json_name] = presenter.group_present(models, [])
         else
           struct[json_name] = []
         end
       end
 
       if primary_models.length > 0
-        primary_object_fields = (options[:params][:fields] || "").split(",").map(&:to_sym)
-        struct[options[:as]] += options[:presenter].group_present(models, primary_object_fields, includes_hash.keys)
+        struct[options[:as]] += options[:presenter].group_present(models, includes_hash.keys)
       end
 
       struct[:results] = primary_models.map { |model|  { :key => options[:as].to_s, :id => model.id } }
@@ -133,8 +130,8 @@ module Brainstem
       [scope.limit(per_page).offset(per_page * (page - 1)).uniq, scope.select("distinct `#{options[:table_name]}`.id").count] # as of Rails 3.2.5, uniq.count generates the wrong SQL.
     end
 
-    # Gather allowed includes by inspecting the presented hash.  For now this requires that a new instance of the
-    # presented class is always presentable.
+    # Gather allowed includes by inspecting the presented hash.  For now, this requires that a new instance of the
+    # presented class always be presentable.
     def calculate_allowed_includes(presenter, presented_class, records)
       allowed_includes = {}
       model = records.first || presented_class.new
@@ -152,28 +149,23 @@ module Brainstem
             end
           end
         end
-        allowed_includes[k.to_sym] = v
+        allowed_includes[k.to_s] = v
       end
+      allowed_includes
     end
 
     def filter_includes(user_includes, allowed_includes)
-      includes = {}
-      (user_includes || "").split(';').each do |include|
-        include_type, fields = include.split(":")
-        includes[include_type.to_sym] = (fields || "").split(",").map(&:to_sym)
-      end
-
       filtered_includes = {}
-      includes.each do |k, fields|
-        allowed = allowed_includes[k] || allowed_includes[k.to_s]
+      (user_includes || "").split(',').each do |k|
+        allowed = allowed_includes[k]
         if allowed
-          filtered_includes[k] = {
-            :fields => fields,
+          filtered_includes[k.to_sym] = {
             :association => allowed.method_name.to_sym,
             :json_name => allowed.json_name.try(:to_sym)
           }
         end
       end
+
       filtered_includes
     end
 

@@ -92,31 +92,30 @@ module Brainstem
     # @api private
     # Calls {#post_process} on the output from {#present}.
     # @return (see #post_process)
-    def present_and_post_process(model, fields = [], associations = [])
-      post_process(present(model), model, fields, associations)
+    def present_and_post_process(model, associations = [])
+      post_process(present(model), model, associations)
     end
 
     # @api private
-    # Loads associations and optional fields, then converts dates to epoch strings.
+    # Loads associations and converts dates to epoch strings.
     # @return [Hash] The hash representing the models and associations, ready to be converted to JSON.
-    def post_process(struct, model, fields = [], associations = [])
+    def post_process(struct, model, associations = [])
       load_associations!(model, struct, associations)
-      load_optional_fields!(model, struct, fields)
       datetimes_to_json(struct)
     end
 
     # @api private
     # Calls {#custom_preload}, and then {#present} and {#post_process}, for each model.
-    def group_present(models, fields = [], associations = [])
-      custom_preload models, fields, associations
+    def group_present(models, associations = [])
+      custom_preload models, associations
 
       models.map do |model|
-        present_and_post_process model, fields, associations
+        present_and_post_process model, associations
       end
     end
 
     # Subclasses can define this if they wish. This method will be called before {#present}.
-    def custom_preload(models, fields = [], associations = [])
+    def custom_preload(models, associations = [])
     end
 
     # @api private
@@ -135,20 +134,6 @@ module Brainstem
         struct.iso8601
       else
         struct
-      end
-    end
-
-    # @api private
-    # Makes sure that any optional fields are evaluated, but only if they are requested.
-    def load_optional_fields!(model, struct, fields)
-      struct.to_a.each do |key, value|
-        if value.is_a?(FieldProxy) && value.optional
-          if fields.include?(key)
-            struct[key] = value.call(model)
-          else
-            struct.delete key
-          end
-        end
       end
     end
 
@@ -208,11 +193,5 @@ module Brainstem
     def association(method_name = nil, options = {}, &block)
       AssociationField.new method_name, options, &block
     end
-
-    # A field on the presented object that should only be included if explicitly requested.
-    def optional_field(field_name = nil, &block)
-      FieldProxy.new field_name, {:optional => true}, &block
-    end
-
   end
 end

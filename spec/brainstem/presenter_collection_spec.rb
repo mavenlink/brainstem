@@ -107,10 +107,10 @@ describe Brainstem::PresenterCollection do
 
     describe "includes" do
       it "reads allowed includes from the presenter" do
-        result = @presenter_collection.presenting("workspaces", :params => { :include => "drop table;tasks;users" }) { Workspace.order('id desc') }
+        result = @presenter_collection.presenting("workspaces", :params => { :include => "drop table,tasks,users" }) { Workspace.order('id desc') }
         result.keys.should =~ [:count, :workspaces, :tasks, :results]
 
-        result = @presenter_collection.presenting("workspaces", :params => { :include => "foo;tasks;lead_user" }) { Workspace.order('id desc') }
+        result = @presenter_collection.presenting("workspaces", :params => { :include => "foo,tasks,lead_user" }) { Workspace.order('id desc') }
         result.keys.should =~ [:count, :workspaces, :tasks, :users, :results]
       end
 
@@ -134,20 +134,11 @@ describe Brainstem::PresenterCollection do
         result[:workspaces].first[:task_ids].should =~ Workspace.first.tasks.map(&:id)
       end
 
-      it "returns optional fields when requested on the primary object and on associations" do
-        result = @presenter_collection.presenting("workspaces",
-                                                  :params => { :include => "tasks:tags,title", :fields => "description" },
-                                                  :max_per_page => 2) { Workspace.where(:id => 1) }
-        result[:workspaces].first.should have_key(:description)
-        result[:tasks].first.should have_key(:tags)
-        result[:tasks].first.should have_key(:name)
-      end
-
-      it "does not return optional fields when they are not requested" do
+      it "returns fields when" do
         result = @presenter_collection.presenting("workspaces",
                                                   :params => { :include => "tasks" },
                                                   :max_per_page => 2) { Workspace.where(:id => 1) }
-        result[:tasks].first.should_not have_key(:tags)
+        result[:workspaces].first.should have_key(:description)
         result[:tasks].first.should have_key(:name)
       end
 
@@ -175,14 +166,14 @@ describe Brainstem::PresenterCollection do
       end
 
       it "includes requested includes even when all records are filtered" do
-        result = @presenter_collection.presenting("workspaces", :params => { :only => "not an id", :include => "not an include;tasks" }) { Workspace.order("id desc") }
+        result = @presenter_collection.presenting("workspaces", :params => { :only => "not an id", :include => "not an include,tasks" }) { Workspace.order("id desc") }
         result[:workspaces].length.should == 0
         result[:tasks].length.should == 0
       end
 
       it "includes requested includes even when the scope has no records" do
         Workspace.where(:id => 123456789).should be_empty
-        result = @presenter_collection.presenting("workspaces", :params => { :include => "not an include;tasks" }) { Workspace.where(:id => 123456789) }
+        result = @presenter_collection.presenting("workspaces", :params => { :include => "not an include,tasks" }) { Workspace.where(:id => 123456789) }
         result[:workspaces].length.should == 0
         result[:tasks].length.should == 0
       end

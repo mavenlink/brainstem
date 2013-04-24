@@ -161,6 +161,8 @@ describe Brainstem::Presenter do
 
           def present(model)
             {
+                :id                         => model.id,
+                :updated_at                 => model.updated_at,
                 :tasks                      => association(:tasks),
                 :user                       => association(:user),
                 :something                  => association(:user),
@@ -175,37 +177,33 @@ describe Brainstem::Presenter do
         @workspace = Workspace.find_by_title "bob workspace 1"
       end
 
-      it "should not convert or return non-included associations, even when they're in the field list, but should return <association>_ids" do
-        json = @presenter.present_and_post_process(@workspace, [:user, :user_id, :tasks, :task_ids], [])
-        json.should_not have_key(:task_ids)
-        json.should_not have_key(:tasks)
-        json.should_not have_key(:user)
-        json.should have_key(:user_id)
+      it "should not convert or return non-included associations, but should return <association>_id for belongs_to relationships, plus all fields" do
+        json = @presenter.present_and_post_process(@workspace, [])
+        json.keys.should =~ [:id, :updated_at, :something_id, :user_id]
       end
 
-      it "should convert requested has_many associations (includes) into the <association>_ids format, whether or not the field is requested" do
+      it "should convert requested has_many associations (includes) into the <association>_ids format" do
         @workspace.tasks.length.should > 0
-        @presenter.present_and_post_process(@workspace, [], [:tasks])[:task_ids].should =~ @workspace.tasks.map(&:id)
-        @presenter.present_and_post_process(@workspace, [:tasks, :task_ids], [:tasks])[:task_ids].should =~ @workspace.tasks.map(&:id)
+        @presenter.present_and_post_process(@workspace, [:tasks])[:task_ids].should =~ @workspace.tasks.map(&:id)
       end
 
       it "should convert requested belongs_to and has_one associations into the <association>_id format when requested" do
-        @presenter.present_and_post_process(@workspace, [], [:user])[:user_id].should == @workspace.user.id
+        @presenter.present_and_post_process(@workspace, [:user])[:user_id].should == @workspace.user.id
       end
 
       it "converts non-association models into <model>_id format when they are requested" do
-        @presenter.present_and_post_process(@workspace, [], [:lead_user])[:lead_user_id].should == @workspace.lead_user.id
+        @presenter.present_and_post_process(@workspace, [:lead_user])[:lead_user_id].should == @workspace.lead_user.id
       end
 
       it "handles associations provided with lambdas" do
-        @presenter.present_and_post_process(@workspace, [], [:lead_user_with_lambda])[:lead_user_with_lambda_id].should == @workspace.lead_user.id
+        @presenter.present_and_post_process(@workspace, [:lead_user_with_lambda])[:lead_user_with_lambda_id].should == @workspace.lead_user.id
       end
 
       it "should return <association>_id fields when the given association ids exist on the model whether it is requested or not" do
-        @presenter.present_and_post_process(@workspace, [], [:user])[:user_id].should == @workspace.user_id
+        @presenter.present_and_post_process(@workspace, [:user])[:user_id].should == @workspace.user_id
 
-        json = @presenter.present_and_post_process(@workspace, [], [])
-        json.keys.should eq([:user_id, :something_id])
+        json = @presenter.present_and_post_process(@workspace, [])
+        json.keys.should =~ [:user_id, :something_id, :id, :updated_at]
         json[:user_id].should == @workspace.user_id
         json[:something_id].should == @workspace.user_id
       end
@@ -215,38 +213,8 @@ describe Brainstem::Presenter do
           def @workspace.synthetic_id
             raise "this explodes because it's not an association"
           end
-          @presenter.present_and_post_process(@workspace, [], []).should_not have_key(:synthetic_id)
+          @presenter.present_and_post_process(@workspace, []).should_not have_key(:synthetic_id)
         end
-      end
-    end
-
-    describe "selecting fields" do
-      before do
-        some_presenter = Class.new(Brainstem::Presenter) do
-          presents Workspace
-
-          def present(model)
-            {
-                :id           => model.id,
-                :user         => association(:user),
-                :tasks        => association(:tasks),
-                :updated_at   => model.updated_at,
-                :title        => optional_field { model.title },
-                :description  => optional_field(:description)
-            }
-          end
-        end
-        @presenter = some_presenter.new
-        @workspace = Workspace.find_by_title "bob workspace 1"
-      end
-
-      it "always returns normal fields" do
-        @presenter.present_and_post_process(@workspace, [], []).keys.should =~ [:id, :user_id, :updated_at]
-      end
-
-      it "only returns optional_fields when they are explicitly requested" do
-        @presenter.present_and_post_process(@workspace, [:title], [])[:title].should eq(@workspace.title)
-        @presenter.present_and_post_process(@workspace, [:title, :description], []).keys.should =~ [:id, :user_id, :updated_at, :title, :description]
       end
     end
   end

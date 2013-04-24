@@ -16,7 +16,6 @@ class TaskPresenter < Brainstem::Presenter
     {
       :id           => model.id,
       :name         => model.name,
-      :tags         => optional_field { model.tags },
       :sub_tasks    => association(:sub_tasks),
       :other_tasks  => association(:sub_tasks, :json_name => "other_tasks"),
       :workspace    => association(:workspace)
