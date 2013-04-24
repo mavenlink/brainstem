@@ -243,36 +243,41 @@ describe Brainstem::PresenterCollection do
       let(:bob_workspaces_ids) { bob.workspaces.map(&:id) }
 
       it "limits records to those matching given filters" do
-        result = @presenter_collection.presenting("workspaces", :params => { :filters => "owned_by:#{bob.id}" }) { Workspace.order("id desc") } # hit the API, filtering on has_participant:bob
+        result = @presenter_collection.presenting("workspaces", :params => { :owned_by => bob.id.to_s }) { Workspace.order("id desc") } # hit the API, filtering on owned_by:bob
         result[:workspaces].should be_present
         result[:workspaces].all? {|w| bob_workspaces_ids.include?(w[:id]) }.should be_true # all of the returned workspaces should contain bob
       end
 
       it "returns all records if filters are not given" do
-        result = @presenter_collection.presenting("workspaces") { Workspace.order("id desc") } # hit the API again, this time not filtering on has_participant:bob
+        result = @presenter_collection.presenting("workspaces") { Workspace.order("id desc") } # hit the API again, this time not filtering on anything
         result[:workspaces].all? {|w| bob_workspaces_ids.include?(w[:id]) }.should be_false # the returned workspaces no longer all contain bob
       end
 
+      it "ignores unknown filters" do
+        result = @presenter_collection.presenting("workspaces", :params => { :wut => "is this?" }) { Workspace.order("id desc") }
+        result[:workspaces].all? {|w| bob_workspaces_ids.include?(w[:id]) }.should be_false
+      end
+
       it "limits records to those matching all given filters" do
-        result = @presenter_collection.presenting("workspaces", :params => { :filters => "owned_by:#{bob.id},title:bob workspace 1" }) { Workspace.order("id desc") } # try two filters
+        result = @presenter_collection.presenting("workspaces", :params => { :owned_by => bob.id.to_s, :title => "bob workspace 1" }) { Workspace.order("id desc") } # try two filters
         result[:workspaces].first[:id].should == Workspace.where(:title => "bob workspace 1").first.id
       end
 
       it "converts boolean parameters from strings to booleans" do
         WorkspacePresenter.filter(:owned_by_bob) { |scope, boolean| boolean ? scope.where(:user_id => bob.id) : scope }
-        result = @presenter_collection.presenting("workspaces", :params => { :filters => "owned_by_bob:false" }) { Workspace.scoped }
+        result = @presenter_collection.presenting("workspaces", :params => { :owned_by_bob => "false" }) { Workspace.scoped }
         result[:workspaces].find { |workspace| workspace[:title].include?("jane") }.should be
       end
 
       it "allows filters to be called with false as an argument" do
         WorkspacePresenter.filter(:nothing) { |scope, bool| bool ? scope.where(:id => nil) : scope }
-        result = @presenter_collection.presenting("workspaces", :params => { :filters => "nothing:true" }) { Workspace.scoped }
+        result = @presenter_collection.presenting("workspaces", :params => { :nothing => "true" }) { Workspace.scoped }
         result[:workspaces].size.should eq(0)
-        result = @presenter_collection.presenting("workspaces", :params => { :filters => "nothing:false" }) { Workspace.scoped }
+        result = @presenter_collection.presenting("workspaces", :params => { :nothing => "false" }) { Workspace.scoped }
         result[:workspaces].size.should_not eq(0)
       end
 
-      it "passes additonal colon separated params through as a string" do
+      it "passes colon separated params through as a string" do
         WorkspacePresenter.filter(:between) { |scope, a_and_b|
           a, b = a_and_b.split(':')
           a.should == "1"
@@ -280,7 +285,7 @@ describe Brainstem::PresenterCollection do
           scope
         }
 
-        @presenter_collection.presenting("workspaces", :params => { :filters => "between:1:10" }) { Workspace.scoped }
+        @presenter_collection.presenting("workspaces", :params => { :between => "1:10" }) { Workspace.scoped }
       end
 
       context "with defaults" do
@@ -299,7 +304,7 @@ describe Brainstem::PresenterCollection do
           WorkspacePresenter.filter(:include_early_workspaces, :default => false) { |scope, bool| bool ? scope : scope.where("id > 3") }
           result = @presenter_collection.presenting("workspaces") { Workspace.unscoped }
           result[:workspaces].map{|w| w[:id] }.should_not include(2)
-          result = @presenter_collection.presenting("workspaces", :params => { :filters => "include_early_workspaces:true" }) { Workspace.unscoped }
+          result = @presenter_collection.presenting("workspaces", :params => { :include_early_workspaces => "true" }) { Workspace.unscoped }
           result[:workspaces].map{|w| w[:id] }.should include(2)
         end
 
@@ -312,7 +317,7 @@ describe Brainstem::PresenterCollection do
         end
 
         it "allows the default value to be overridden" do
-          result = @presenter_collection.presenting("workspaces", :params => { :filters => "owner:#{jane.id}" }) { Workspace.order('id desc') }
+          result = @presenter_collection.presenting("workspaces", :params => { :owner => jane.id.to_s }) { Workspace.order('id desc') }
           result[:workspaces].map{|w| w[:id] }.should match_array(jane.workspaces.map(&:id))
         end
       end
@@ -327,12 +332,12 @@ describe Brainstem::PresenterCollection do
         end
 
         it "calls the named scope with default arguments" do
-          result = @presenter_collection.presenting("workspaces", :params => { :filters => "owned_by" }) { Workspace.scoped }
+          result = @presenter_collection.presenting("workspaces") { Workspace.scoped }
           result[:workspaces].map{|w| w[:id] }.should eq(bob.workspaces.pluck(:id))
         end
 
         it "calls the named scope with given arguments" do
-          result = @presenter_collection.presenting("workspaces", :params => { :filters => "owned_by:#{jane.id}" }) { Workspace.scoped }
+          result = @presenter_collection.presenting("workspaces", :params => { :owned_by => jane.id.to_s }) { Workspace.scoped }
           result[:workspaces].map{|w| w[:id] }.should eq(jane.workspaces.pluck(:id))
         end
       end

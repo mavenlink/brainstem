@@ -175,21 +175,15 @@ module Brainstem
     end
 
     def run_filters(scope, options)
-      allowed_filters = options[:presenter].filters || {}
       run_defaults = options.has_key?(:apply_default_filters) ? options[:apply_default_filters] : true
-      requested_filters = {}
-      (options[:params][:filters] || "").split(",").each do |filter_string|
-        filter_pieces = filter_string.split(":")
-        name = filter_pieces.shift
-        value = filter_pieces.join(":")
-        value = nil unless value.present?
-        value = value == "true" ? true : (value == "false" ? false : value)
-        requested_filters[name.to_sym] = value
-      end
 
-      allowed_filters.each do |filter_name, filter|
+      (options[:presenter].filters || {}).each do |filter_name, filter|
+        requested = options[:params][filter_name]
+        requested = nil unless requested.present?
+        requested = requested == "true" ? true : (requested == "false" ? false : requested)
+
         filter_options, filter_lambda = filter
-        args = run_defaults ? (requested_filters[filter_name] || filter_options[:default]) : requested_filters[filter_name]
+        args = run_defaults ? (requested || filter_options[:default]) : requested
         next if args.nil?
 
         if filter_lambda
