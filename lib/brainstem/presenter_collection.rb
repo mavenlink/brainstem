@@ -68,7 +68,7 @@ module Brainstem
       includes_hash = filter_includes options[:params][:include], allowed_includes
       models = perform_preloading records, includes_hash
       primary_models, associated_models = gather_associations(models, includes_hash)
-      struct = { :count => count, options[:as] => [] }
+      struct = { :count => count, options[:as] => [], :results => [] }
 
       associated_models.each do |json_name, models|
         models.flatten!
@@ -84,10 +84,10 @@ module Brainstem
       end
 
       if primary_models.length > 0
-        struct[options[:as]] += options[:presenter].group_present(models, includes_hash.keys)
+        presented_primary_models = options[:presenter].group_present(models, includes_hash.keys)
+        struct[options[:as]] += presented_primary_models
+        struct[:results] = presented_primary_models.map { |model| { :key => options[:as].to_s, :id => model[:id] } }
       end
-
-      struct[:results] = primary_models.map { |model|  { :key => options[:as].to_s, :id => model.id } }
 
       rewrite_keys_as_objects!(struct)
 

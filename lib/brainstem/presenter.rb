@@ -100,8 +100,17 @@ module Brainstem
     # Loads associations and converts dates to epoch strings.
     # @return [Hash] The hash representing the models and associations, ready to be converted to JSON.
     def post_process(struct, model, associations = [])
+      add_id(model, struct)
       load_associations!(model, struct, associations)
       datetimes_to_json(struct)
+    end
+
+    # @api private
+    # Adds :id as a string from the given model.
+    def add_id(model, struct)
+      if model.class.respond_to?(:primary_key)
+        struct[:id] = model[model.class.primary_key].to_s
+      end
     end
 
     # @api private
@@ -146,7 +155,7 @@ module Brainstem
           id_attr = value.method_name ? "#{value.method_name}_id" : nil
 
           if id_attr && model.class.columns_hash.has_key?(id_attr)
-            struct["#{key}_id".to_sym] = model.send(id_attr)
+            struct["#{key}_id".to_sym] = model.send(id_attr).to_s
             reflection = value.method_name && model.reflections[value.method_name.to_sym]
             if reflection && reflection.options[:polymorphic]
               struct["#{key.to_s.singularize}_type".to_sym] = model.send("#{value.method_name}_type")
@@ -154,12 +163,12 @@ module Brainstem
           elsif associations.include?(key)
             result = value.call(model)
             if result.is_a?(Array)
-              struct["#{key.to_s.singularize}_ids".to_sym] = result.map {|a| a.is_a?(ActiveRecord::Base) ? a.id : a }
+              struct["#{key.to_s.singularize}_ids".to_sym] = result.map {|a| a.is_a?(ActiveRecord::Base) ? a.id.to_s : a.to_s }
             else
               if result.is_a?(ActiveRecord::Base)
-                struct["#{key.to_s.singularize}_id".to_sym] = result.id
+                struct["#{key.to_s.singularize}_id".to_sym] = result.id.to_s
               else
-                struct["#{key.to_s.singularize}_id".to_sym] = result
+                struct["#{key.to_s.singularize}_id".to_sym] = result.to_s
               end
             end
           end

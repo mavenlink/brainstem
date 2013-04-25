@@ -27,7 +27,7 @@ describe Brainstem::PresenterCollection do
 
       it "will accept strings" do
         struct = @presenter_collection.presenting("workspaces", :params => { :per_page => "1", :page => "2" }) { Workspace.order('id desc') }
-        struct[:results].first[:id].should == Workspace.order('id desc')[1].id
+        struct[:results].first[:id].should == Workspace.order('id desc')[1].id.to_s
       end
 
       it "has a global max_per_page default" do
@@ -42,17 +42,17 @@ describe Brainstem::PresenterCollection do
         it "honors the user's requested page size and page and returns counts" do
           result = @presenter_collection.presenting("workspaces", :params => { :per_page => 1, :page => 2 }) { Workspace.order('id desc') }[:results]
           result.length.should == 1
-          result.first[:id].should == Workspace.order('id desc')[1].id
+          result.first[:id].should == Workspace.order('id desc')[1].id.to_s
 
           result = @presenter_collection.presenting("workspaces", :params => { :per_page => 2, :page => 2 }) { Workspace.order('id desc') }[:results]
           result.length.should == 2
-          result.map { |m| m[:id] }.should == Workspace.order('id desc')[2..3].map(&:id)
+          result.map { |m| m[:id] }.should == Workspace.order('id desc')[2..3].map(&:id).map(&:to_s)
         end
 
         it "defaults to 1 if the page number is less than 1" do
           result = @presenter_collection.presenting("workspaces", :params => { :per_page => 1, :page => 0 }) { Workspace.order('id desc') }[:results]
           result.length.should == 1
-          result.first[:id].should == Workspace.order('id desc')[0].id
+          result.first[:id].should == Workspace.order('id desc')[0].id.to_s
         end
       end
 
@@ -96,8 +96,8 @@ describe Brainstem::PresenterCollection do
       it "comes back with an explicit list of the matching results" do
         structure = @presenter_collection.presenting("workspaces", :params => { :include => "tasks" }, :max_per_page => 2) { Workspace.where(:id => 1) }
         structure.keys.should =~ [:workspaces, :tasks, :count, :results]
-        structure[:results].should == Workspace.where(:id => 1).limit(2).map {|w| { :key => "workspaces", :id => w.id } }
-        structure[:workspaces].keys.should == [1]
+        structure[:results].should == Workspace.where(:id => 1).limit(2).map {|w| { :key => "workspaces", :id => w.id.to_s } }
+        structure[:workspaces].keys.should == %w[1]
       end
     end
 
@@ -120,14 +120,14 @@ describe Brainstem::PresenterCollection do
       it "defaults to not include any allowed includes" do
         tasked_workspace = Task.first
         result = @presenter_collection.presenting("workspaces", :max_per_page => 2) { Workspace.where(:id => tasked_workspace.workspace_id) }
-        result[:workspaces].keys.should == [ tasked_workspace.workspace_id ]
+        result[:workspaces].keys.should == [ tasked_workspace.workspace_id.to_s ]
         result[:tasks].should be_nil
       end
 
       it "loads has_many associations and returns them when requested" do
         result = @presenter_collection.presenting("workspaces", :params => { :include => "tasks" }, :max_per_page => 2) { Workspace.where(:id => 1) }
-        result[:tasks].keys.should =~ Workspace.first.tasks.map(&:id)
-        result[:workspaces][1][:task_ids].should =~ Workspace.first.tasks.map(&:id)
+        result[:tasks].keys.should =~ Workspace.first.tasks.map(&:id).map(&:to_s)
+        result[:workspaces]["1"][:task_ids].should =~ Workspace.first.tasks.map(&:id).map(&:to_s)
       end
 
       it "returns appropriate fields" do
@@ -140,7 +140,7 @@ describe Brainstem::PresenterCollection do
 
       it "loads belongs_tos and returns them when requested" do
         result = @presenter_collection.presenting("tasks", :params => { :include => "workspace" }, :max_per_page => 2) { Task.where(:id => 1) }
-        result[:workspaces].keys.should == [1]
+        result[:workspaces].keys.should == %w[1]
       end
 
       it "doesn't return nils when belong_tos are missing" do
@@ -148,17 +148,17 @@ describe Brainstem::PresenterCollection do
         t.update_attribute :workspace, nil
         t.reload.workspace.should be_nil
         result = @presenter_collection.presenting("tasks", :params => { :include => "workspace" }, :max_per_page => 2) { Task.where(:id => t.id) }
-        result[:tasks].keys.should == [ t.id ]
+        result[:tasks].keys.should == [ t.id.to_s ]
         result[:workspaces].should eq({})
         result.keys.should =~ [:tasks, :workspaces, :count, :results]
       end
 
       it "returns sensible data when including something of the same type as the primary model" do
         result = @presenter_collection.presenting("tasks", :params => { :include => "sub_tasks" }) { Task.where(:id => 2) }
-        sub_task_ids = Task.find(2).sub_tasks.map(&:id)
-        result[:tasks].keys.should =~ sub_task_ids + [2]
-        result[:tasks][2][:sub_task_ids].should == sub_task_ids # The primary should have a sub_story_ids array.
-        result[:tasks][sub_task_ids.first][:sub_task_ids].should be_nil # Sub stories should not have a sub_story_ids array.
+        sub_task_ids = Task.find(2).sub_tasks.map(&:id).map(&:to_s)
+        result[:tasks].keys.should =~ sub_task_ids + ["2"]
+        result[:tasks]["2"][:sub_task_ids].should == sub_task_ids               # The primary should have a sub_story_ids array.
+        result[:tasks][sub_task_ids.first][:sub_task_ids].should_not be_present # Sub stories should not have a sub_story_ids array.
       end
 
       it "includes requested includes even when all records are filtered" do
@@ -183,16 +183,16 @@ describe Brainstem::PresenterCollection do
 
       it "works with model methods that load records (but without preloading)" do
         result = @presenter_collection.presenting("workspaces", :params => { :include => "lead_user" }) { Workspace.order('id desc') }
-        result[:workspaces].keys.should include(Workspace.first.id)
-        result[:users].keys.should include(Workspace.first.lead_user.id)
+        result[:workspaces][Workspace.first.id.to_s].should be_present
+        result[:users][Workspace.first.lead_user.id.to_s].should be_present
       end
 
       describe "polymorphic associations" do
         it "works with polymorphic associations" do
           result = @presenter_collection.presenting("posts", :params => { :include => "subject" }) { Post.order('id desc') }
-          result[:posts].keys.should include(Post.first.id)
-          result[:workspaces].keys.should include(Workspace.first.id)
-          result[:tasks].keys.should include(Task.first.id)
+          result[:posts][Post.first.id.to_s].should be_present
+          result[:workspaces][Workspace.first.id.to_s].should be_present
+          result[:tasks][Task.first.id.to_s].should be_present
         end
 
         it "does not return an empty hash when none are found" do
@@ -207,7 +207,7 @@ describe Brainstem::PresenterCollection do
     describe "handling of only" do
       it "accepts params[:only] as a list of ids to limit to" do
         result = @presenter_collection.presenting("workspaces", :params => { :only => Workspace.limit(2).pluck(:id).join(",") }) { Workspace.order("id desc") }
-        result[:workspaces].keys.should match_array(Workspace.limit(2).pluck(:id))
+        result[:workspaces].keys.should match_array(Workspace.limit(2).pluck(:id).map(&:to_s))
       end
 
       it "does not paginate only requests" do
@@ -241,22 +241,22 @@ describe Brainstem::PresenterCollection do
       it "limits records to those matching given filters" do
         result = @presenter_collection.presenting("workspaces", :params => { :owned_by => bob.id.to_s }) { Workspace.order("id desc") } # hit the API, filtering on owned_by:bob
         result[:workspaces].should be_present
-        result[:workspaces].keys.all? {|id| bob_workspaces_ids.include?(id) }.should be_true # all of the returned workspaces should contain bob
+        result[:workspaces].keys.all? {|id| bob_workspaces_ids.map(&:to_s).include?(id) }.should be_true # all of the returned workspaces should contain bob
       end
 
       it "returns all records if filters are not given" do
         result = @presenter_collection.presenting("workspaces") { Workspace.order("id desc") } # hit the API again, this time not filtering on anything
-        result[:workspaces].keys.all? {|id| bob_workspaces_ids.include?(id) }.should be_false # the returned workspaces no longer all contain bob
+        result[:workspaces].keys.all? {|id| bob_workspaces_ids.map(&:to_s).include?(id) }.should be_false # the returned workspaces no longer all contain bob
       end
 
       it "ignores unknown filters" do
         result = @presenter_collection.presenting("workspaces", :params => { :wut => "is this?" }) { Workspace.order("id desc") }
-        result[:workspaces].keys.all? {|id| bob_workspaces_ids.include?(id) }.should be_false
+        result[:workspaces].keys.all? {|id| bob_workspaces_ids.map(&:to_s).include?(id) }.should be_false
       end
 
       it "limits records to those matching all given filters" do
         result = @presenter_collection.presenting("workspaces", :params => { :owned_by => bob.id.to_s, :title => "bob workspace 1" }) { Workspace.order("id desc") } # try two filters
-        result[:results].first[:id].should == Workspace.where(:title => "bob workspace 1").first.id
+        result[:results].first[:id].should == Workspace.where(:title => "bob workspace 1").first.id.to_s
       end
 
       it "converts boolean parameters from strings to booleans" do
@@ -293,28 +293,28 @@ describe Brainstem::PresenterCollection do
 
         it "applies the filter when it is not requested" do
           result = @presenter_collection.presenting("workspaces") { Workspace.order('id desc') }
-          result[:workspaces].keys.should match_array(bob.workspaces.map(&:id))
+          result[:workspaces].keys.should match_array(bob.workspaces.map(&:id).map(&:to_s))
         end
 
         it "allows falsy defaults" do
           WorkspacePresenter.filter(:include_early_workspaces, :default => false) { |scope, bool| bool ? scope : scope.where("id > 3") }
           result = @presenter_collection.presenting("workspaces") { Workspace.unscoped }
-          result[:workspaces].keys.should_not include(2)
+          result[:workspaces]["2"].should_not be_present
           result = @presenter_collection.presenting("workspaces", :params => { :include_early_workspaces => "true" }) { Workspace.unscoped }
-          result[:workspaces].keys.should include(2)
+          result[:workspaces]["2"].should be_present
         end
 
         it "allows defaults to be skipped if :apply_default_filters is false" do
           WorkspacePresenter.filter(:include_early_workspaces, :default => false) { |scope, bool| bool ? scope : scope.where("id > 3") }
           result = @presenter_collection.presenting("workspaces", :apply_default_filters => true) { Workspace.unscoped }
-          result[:workspaces].keys.should_not include(2)
+          result[:workspaces]["2"].should_not be_present
           result = @presenter_collection.presenting("workspaces", :apply_default_filters => false) { Workspace.unscoped }
-          result[:workspaces].keys.should include(2)
+          result[:workspaces]["2"].should be_present
         end
 
         it "allows the default value to be overridden" do
           result = @presenter_collection.presenting("workspaces", :params => { :owner => jane.id.to_s }) { Workspace.order('id desc') }
-          result[:workspaces].keys.should match_array(jane.workspaces.map(&:id))
+          result[:workspaces].keys.should match_array(jane.workspaces.map(&:id).map(&:to_s))
         end
       end
 
@@ -329,12 +329,12 @@ describe Brainstem::PresenterCollection do
 
         it "calls the named scope with default arguments" do
           result = @presenter_collection.presenting("workspaces") { Workspace.scoped }
-          result[:workspaces].keys.should eq(bob.workspaces.pluck(:id))
+          result[:workspaces].keys.should eq(bob.workspaces.pluck(:id).map(&:to_s))
         end
 
         it "calls the named scope with given arguments" do
           result = @presenter_collection.presenting("workspaces", :params => { :owned_by => jane.id.to_s }) { Workspace.scoped }
-          result[:workspaces].keys.should eq(jane.workspaces.pluck(:id))
+          result[:workspaces].keys.should eq(jane.workspaces.pluck(:id).map(&:to_s))
         end
       end
     end
@@ -350,14 +350,14 @@ describe Brainstem::PresenterCollection do
         context "and a search request is made" do
           it "calls the search method" do
             result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
-            result[:workspaces].keys.should eq([3,5])
+            result[:workspaces].keys.should eq(%w[3 5])
           end
         end
 
         context "and there is no search request" do
           it "does not call the search method" do
             result = @presenter_collection.presenting("workspaces") { Workspace.order("id asc") }
-            result[:workspaces].keys.should eq(Workspace.pluck(:id))
+            result[:workspaces].keys.should eq(Workspace.pluck(:id).map(&:to_s))
           end
         end
       end
@@ -366,7 +366,7 @@ describe Brainstem::PresenterCollection do
         context "and a search request is made" do
           it "returns as if there was no search" do
             result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
-            result[:workspaces].keys.should eq(Workspace.pluck(:id))
+            result[:workspaces].keys.should eq(Workspace.pluck(:id).map(&:to_s))
           end
         end
       end
@@ -381,7 +381,7 @@ describe Brainstem::PresenterCollection do
 
         it "falls back to the object's sort order when nothing is provided" do
           result = @presenter_collection.presenting("workspaces") { Workspace.where(:id => [1, 3]) }
-          result[:workspaces].keys.should == [1, 3]
+          result[:workspaces].keys.should == %w[1 3]
         end
       end
 

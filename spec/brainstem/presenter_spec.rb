@@ -94,6 +94,29 @@ describe Brainstem::Presenter do
   end
 
   describe "post_process hooks" do
+    describe "adding object ids as strings" do
+      before do
+        post_presenter = Class.new(Brainstem::Presenter) do
+          presents Post
+
+          def present(model)
+            {
+              :body => model.body,
+            }
+          end
+        end
+
+        @presenter = post_presenter.new
+        @post = Post.first
+      end
+
+      it "outputs the associated object's id and type" do
+        data = @presenter.present_and_post_process(@post)
+        data[:id].should eq(@post.id.to_s)
+        data[:body].should eq(@post.body)
+      end
+    end
+
     describe "converting dates and times" do
       it "should convert all Time-and-date-like objects to iso8601" do
         class TimePresenter < Brainstem::Presenter
@@ -143,13 +166,13 @@ describe Brainstem::Presenter do
 
       it "outputs the associated object's id and type" do
         data = @presenter.present_and_post_process(@post)
-        data[:subject_id].should eq(@post.subject_id)
+        data[:subject_id].should eq(@post.subject_id.to_s)
         data[:subject_type].should eq(@post.subject_type)
       end
 
       it "outputs custom names for an associated object's id and type" do
         data = @presenter.present_and_post_process(@post)
-        data[:another_subject_id].should eq(@post.subject_id)
+        data[:another_subject_id].should eq(@post.subject_id.to_s)
         data[:another_subject_type].should eq(@post.subject_type)
       end
     end
@@ -161,7 +184,6 @@ describe Brainstem::Presenter do
 
           def present(model)
             {
-                :id                         => model.id,
                 :updated_at                 => model.updated_at,
                 :tasks                      => association(:tasks),
                 :user                       => association(:user),
@@ -184,28 +206,28 @@ describe Brainstem::Presenter do
 
       it "should convert requested has_many associations (includes) into the <association>_ids format" do
         @workspace.tasks.length.should > 0
-        @presenter.present_and_post_process(@workspace, [:tasks])[:task_ids].should =~ @workspace.tasks.map(&:id)
+        @presenter.present_and_post_process(@workspace, [:tasks])[:task_ids].should =~ @workspace.tasks.map(&:id).map(&:to_s)
       end
 
       it "should convert requested belongs_to and has_one associations into the <association>_id format when requested" do
-        @presenter.present_and_post_process(@workspace, [:user])[:user_id].should == @workspace.user.id
+        @presenter.present_and_post_process(@workspace, [:user])[:user_id].should == @workspace.user.id.to_s
       end
 
       it "converts non-association models into <model>_id format when they are requested" do
-        @presenter.present_and_post_process(@workspace, [:lead_user])[:lead_user_id].should == @workspace.lead_user.id
+        @presenter.present_and_post_process(@workspace, [:lead_user])[:lead_user_id].should == @workspace.lead_user.id.to_s
       end
 
       it "handles associations provided with lambdas" do
-        @presenter.present_and_post_process(@workspace, [:lead_user_with_lambda])[:lead_user_with_lambda_id].should == @workspace.lead_user.id
+        @presenter.present_and_post_process(@workspace, [:lead_user_with_lambda])[:lead_user_with_lambda_id].should == @workspace.lead_user.id.to_s
       end
 
       it "should return <association>_id fields when the given association ids exist on the model whether it is requested or not" do
-        @presenter.present_and_post_process(@workspace, [:user])[:user_id].should == @workspace.user_id
+        @presenter.present_and_post_process(@workspace, [:user])[:user_id].should == @workspace.user_id.to_s
 
         json = @presenter.present_and_post_process(@workspace, [])
         json.keys.should =~ [:user_id, :something_id, :id, :updated_at]
-        json[:user_id].should == @workspace.user_id
-        json[:something_id].should == @workspace.user_id
+        json[:user_id].should == @workspace.user_id.to_s
+        json[:something_id].should == @workspace.user_id.to_s
       end
 
       context "when the model has an <association>_id method but no column" do

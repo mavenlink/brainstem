@@ -1,7 +1,6 @@
 class WorkspacePresenter < Brainstem::Presenter
   def present(model)
     {
-      :id           => model.id,
       :title        => model.title,
       :description  => model.description,
       :updated_at   => model.updated_at,
@@ -14,7 +13,6 @@ end
 class TaskPresenter < Brainstem::Presenter
   def present(model)
     {
-      :id           => model.id,
       :name         => model.name,
       :sub_tasks    => association(:sub_tasks),
       :other_tasks  => association(:sub_tasks, :json_name => "other_tasks"),
@@ -26,7 +24,7 @@ end
 class UserPresenter < Brainstem::Presenter
   def present(model)
     {
-      :id => model.id
+      :username => model.username
     }
   end
 end
@@ -34,7 +32,6 @@ end
 class PostPresenter < Brainstem::Presenter
   def present(model)
     {
-      :id => model.id,
       :body => model.body,
       :subject => association(:subject)
     }

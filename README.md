@@ -50,7 +50,6 @@ Create a class that inherits from Brainstem::Presenter, named after the model th
       # Return a ruby hash that can be converted to JSON
       def present(widget)
         {
-            :id             => widget.id,
             :name           => widget.name,
             :legacy         => widget.legacy?,
             :updated_at     => widget.updated_at,
@@ -80,17 +79,17 @@ Responses will look like the following:
 
     {
       count: 5,  # Total number of results that matched the query.
-      results: [{ key: 'widgets', id: 2 }, { key: 'widgets', id: 10 }], # A lookup table to top-level keys.  Necessary
-                                                                        # because some objects can have associations of
-                                                                        # the same type as themselves.
+      results: [{ key: "widgets", id: "2" }, { key: "widgets", id: "10" }],  # A lookup table to top-level keys.  Necessary
+                                                                             # because some objects can have associations of
+                                                                             # the same type as themselves.
       widgets: {
-        10: { id: 10, name: "disco ball", feature_ids: [5], popularity: 85 },
-        2: { id: 2, name: "flubber", feature_ids: [6, 12], popularity: 100 }
+        "10": { id: "10", name: "disco ball", feature_ids: ["5"], popularity: 85 },
+        "2": { id: "2", name: "flubber", feature_ids: ["6", "12"], popularity: 100 }
       },
       features: {
-        5: { id: 5, name: "shiny" },
-        6: { id: 6, name: "bouncy" },
-        12: { id: 12, name: "physically impossible" }
+        "5": { id: "5", name: "shiny" },
+        "6": { id: "6", name: "bouncy" },
+        "12": { id: "12", name: "physically impossible" }
       }
     }
 
