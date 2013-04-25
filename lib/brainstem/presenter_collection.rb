@@ -89,6 +89,8 @@ module Brainstem
 
       struct[:results] = primary_models.map { |model|  { :key => options[:as].to_s, :id => model.id } }
 
+      rewrite_keys_as_objects!(struct)
+
       struct
     end
 
@@ -268,5 +270,10 @@ module Brainstem
       [primary_models, record_hash]
     end
 
+    def rewrite_keys_as_objects!(struct)
+      (struct.keys - [:count, :results]).each do |key|
+        struct[key] = struct[key].inject({}) {|memo, obj| memo[obj[:id] || obj["id"] || "unknown_id"] = obj; memo }
+      end
+    end
   end
 end

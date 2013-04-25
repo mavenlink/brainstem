@@ -74,7 +74,7 @@ Once you've created a presenter like the one above, pass requests through to the
 
 Requests can have includes, filters, and sort orders.
 
-    GET /api/widgets.json?include=features&sort_order=popularity:desc&filter=location_name:san+francisco
+    GET /api/widgets.json?include=features&sort_order=popularity:desc&location_name=san+francisco
 
 Responses will look like the following:
 
@@ -83,15 +83,15 @@ Responses will look like the following:
       results: [{ key: 'widgets', id: 2 }, { key: 'widgets', id: 10 }], # A lookup table to top-level keys.  Necessary
                                                                         # because some objects can have associations of
                                                                         # the same type as themselves.
-      widgets: [
-        { id: 10, name: "disco ball", feature_ids: [5], popularity: 85 },
-        { id: 2, name: "flubber", feature_ids: [6, 12], popularity: 100 }
-      ],
-      features: [
-        { id: 5, name: "shiny" },
-        { id: 6, name: "bouncy" },
-        { id: 12, name: "physically impossible" }
-      ]
+      widgets: {
+        10: { id: 10, name: "disco ball", feature_ids: [5], popularity: 85 },
+        2: { id: 2, name: "flubber", feature_ids: [6, 12], popularity: 100 }
+      },
+      features: {
+        5: { id: 5, name: "shiny" },
+        6: { id: 6, name: "bouncy" },
+        12: { id: 12, name: "physically impossible" }
+      }
     }
 
 For more detailed examples, see the documentation for methods on {Brainstem::Presenter} and our detailed [Rails example application].
