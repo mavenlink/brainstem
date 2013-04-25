@@ -114,23 +114,6 @@ to interface with your API from JavaScript.
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create new Pull Request (`git pull-request`)
 
-## Contributors (sorted roughly by involvement)
-
-### Mavenlink, Inc.
-
-* Andrew Cantino (@cantino)
-* André Arko (@indirect)
-* Chris Alvarado-Dryden
-* Sufyan Adam
-* Reid Gillette
-* Michael Chen
-* Alec Jacobs
-* Katlyn Daniluk
-* Caleb Mingle
-* Simon Fletcher
-* Roger Neel
-* Jeff Moore
-
 ## License
 
-Brainstem is available under the MIT License.
+Brainstem was created by Mavenlink, Inc. is available under the MIT License.
