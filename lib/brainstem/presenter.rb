@@ -155,7 +155,7 @@ module Brainstem
           id_attr = value.method_name ? "#{value.method_name}_id" : nil
 
           if id_attr && model.class.columns_hash.has_key?(id_attr)
-            struct["#{key}_id".to_sym] = model.send(id_attr).to_s
+            struct["#{key}_id".to_sym] = to_s_except_nil(model.send(id_attr))
             reflection = value.method_name && model.reflections[value.method_name.to_sym]
             if reflection && reflection.options[:polymorphic]
               struct["#{key.to_s.singularize}_type".to_sym] = model.send("#{value.method_name}_type")
@@ -163,12 +163,12 @@ module Brainstem
           elsif associations.include?(key)
             result = value.call(model)
             if result.is_a?(Array)
-              struct["#{key.to_s.singularize}_ids".to_sym] = result.map {|a| a.is_a?(ActiveRecord::Base) ? a.id.to_s : a.to_s }
+              struct["#{key.to_s.singularize}_ids".to_sym] = result.map {|a| to_s_except_nil(a.is_a?(ActiveRecord::Base) ? a.id : a) }
             else
               if result.is_a?(ActiveRecord::Base)
-                struct["#{key.to_s.singularize}_id".to_sym] = result.id.to_s
+                struct["#{key.to_s.singularize}_id".to_sym] = to_s_except_nil(result.id)
               else
-                struct["#{key.to_s.singularize}_id".to_sym] = result.to_s
+                struct["#{key.to_s.singularize}_id".to_sym] = to_s_except_nil(result)
               end
             end
           end
@@ -201,6 +201,10 @@ module Brainstem
     # An association on the object being presented that should be included in the presented data.
     def association(method_name = nil, options = {}, &block)
       AssociationField.new method_name, options, &block
+    end
+
+    def to_s_except_nil(thing)
+      thing.nil? ? nil : thing.to_s
     end
   end
 end

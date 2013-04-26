@@ -230,6 +230,15 @@ describe Brainstem::Presenter do
         json[:something_id].should == @workspace.user_id.to_s
       end
 
+      it "should return null, not empty string when ids are missing" do
+        @workspace.user = nil
+        @workspace.tasks = []
+        @presenter.present_and_post_process(@workspace, [:lead_user_with_lambda])[:lead_user_with_lambda_id].should == nil
+        @presenter.present_and_post_process(@workspace, [:user])[:user_id].should == nil
+        @presenter.present_and_post_process(@workspace, [:something])[:something_id].should == nil
+        @presenter.present_and_post_process(@workspace, [:tasks])[:task_ids].should == []
+      end
+
       context "when the model has an <association>_id method but no column" do
         it "does not include the <association>_id field" do
           def @workspace.synthetic_id
