@@ -181,7 +181,7 @@ module Brainstem
 
       (options[:presenter].filters || {}).each do |filter_name, filter|
         requested = options[:params][filter_name]
-        requested = nil unless requested.present?
+        requested = requested.present? ? requested.to_s : nil
         requested = requested == "true" ? true : (requested == "false" ? false : requested)
 
         filter_options, filter_lambda = filter

@@ -265,6 +265,11 @@ describe Brainstem::PresenterCollection do
         result[:workspaces].values.find { |workspace| workspace[:title].include?("jane") }.should be
       end
 
+      it "ensures arguments are strings" do
+        WorkspacePresenter.filter(:owned_by_bob) { |scope, string| string.should be_a(String); scope }
+        result = @presenter_collection.presenting("workspaces", :params => { :owned_by_bob => [1, 2] }) { Workspace.scoped }
+      end
+
       it "allows filters to be called with false as an argument" do
         WorkspacePresenter.filter(:nothing) { |scope, bool| bool ? scope.where(:id => nil) : scope }
         result = @presenter_collection.presenting("workspaces", :params => { :nothing => "true" }) { Workspace.scoped }
@@ -335,6 +340,16 @@ describe Brainstem::PresenterCollection do
         it "calls the named scope with given arguments" do
           result = @presenter_collection.presenting("workspaces", :params => { :owned_by => jane.id.to_s }) { Workspace.scoped }
           result[:workspaces].keys.should eq(jane.workspaces.pluck(:id).map(&:to_s))
+        end
+
+        it "allows scopes that take no arguments" do
+          WorkspacePresenter.filter(:numeric_description)
+          result = @presenter_collection.presenting("workspaces") { Workspace.scoped }
+          result[:workspaces].keys.should eq(bob.workspaces.pluck(:id).map(&:to_s))
+          result = @presenter_collection.presenting("workspaces", :params => { :numeric_description => "true" }) { Workspace.scoped }
+          result[:workspaces].keys.should =~ ["2", "4"]
+          result = @presenter_collection.presenting("workspaces", :params => { :numeric_description => "fadlse" }) { Workspace.scoped }
+          result[:workspaces].keys.should eq(bob.workspaces.pluck(:id).map(&:to_s))
         end
       end
     end
