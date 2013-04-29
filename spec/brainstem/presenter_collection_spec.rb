@@ -348,6 +348,10 @@ describe Brainstem::PresenterCollection do
           result[:workspaces].keys.should eq(bob.workspaces.pluck(:id).map(&:to_s))
           result = @presenter_collection.presenting("workspaces", :params => { :numeric_description => "true" }) { Workspace.scoped }
           result[:workspaces].keys.should =~ ["2", "4"]
+
+
+          # Where are these arguments going??
+
           result = @presenter_collection.presenting("workspaces", :params => { :numeric_description => "false" }) { Workspace.scoped }
           result[:workspaces].keys.should eq(bob.workspaces.pluck(:id).map(&:to_s))
         end
