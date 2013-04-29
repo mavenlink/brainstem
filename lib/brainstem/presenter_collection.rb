@@ -23,7 +23,6 @@ module Brainstem
     # @option options [Hash] :params The +params+ hash included in a request for the presented object.
     # @option options [ActiveRecord::Base] :model The model that is being presented (if different from +name+).
     # @option options [String] :as The top-level key the presented objects will be assigned to (if different from +name.tableize+)
-    # @option options [String] :only A string containing a comma-separated list of fields that will be returned in the presented data.
     # @option options [Integer] :max_per_page The maximum number of items that can be requested by <code>params[:per_page]</code>.
     # @option options [Integer] :per_page The number of items that will be returned if <code>params[:per_page]</code> is not set.
     # @option options [Boolean] :apply_default_filters Determine if Presenter's filter defaults should be applied.  On by default.
@@ -69,7 +68,7 @@ module Brainstem
       includes_hash = filter_includes options[:params][:include], allowed_includes
       models = perform_preloading records, includes_hash
       primary_models, associated_models = gather_associations(models, includes_hash)
-      struct = { :count => count, options[:as] => [] }
+      struct = { :count => count, options[:as] => [], :results => [] }
 
       associated_models.each do |json_name, models|
         models.flatten!
@@ -78,19 +77,19 @@ module Brainstem
         if models.length > 0
           presenter = for!(models.first.class)
           assoc = includes_hash.to_a.find { |k, v| v[:json_name] == json_name }
-          associated_fields = (assoc && assoc.last[:fields]) || []
-          struct[json_name] = presenter.group_present(models, associated_fields, [])
+          struct[json_name] = presenter.group_present(models, [])
         else
           struct[json_name] = []
         end
       end
 
       if primary_models.length > 0
-        primary_object_fields = (options[:params][:fields] || "").split(",").map(&:to_sym)
-        struct[options[:as]] += options[:presenter].group_present(models, primary_object_fields, includes_hash.keys)
+        presented_primary_models = options[:presenter].group_present(models, includes_hash.keys)
+        struct[options[:as]] += presented_primary_models
+        struct[:results] = presented_primary_models.map { |model| { :key => options[:as].to_s, :id => model[:id] } }
       end
 
-      struct[:results] = primary_models.map { |model|  { :key => options[:as].to_s, :id => model.id } }
+      rewrite_keys_as_objects!(struct)
 
       struct
     end
@@ -133,8 +132,8 @@ module Brainstem
       [scope.limit(per_page).offset(per_page * (page - 1)).uniq, scope.select("distinct `#{options[:table_name]}`.id").count] # as of Rails 3.2.5, uniq.count generates the wrong SQL.
     end
 
-    # Gather allowed includes by inspecting the presented hash.  For now this requires that a new instance of the
-    # presented class is always presentable.
+    # Gather allowed includes by inspecting the presented hash.  For now, this requires that a new instance of the
+    # presented class always be presentable.
     def calculate_allowed_includes(presenter, presented_class, records)
       allowed_includes = {}
       model = records.first || presented_class.new
@@ -152,28 +151,23 @@ module Brainstem
             end
           end
         end
-        allowed_includes[k.to_sym] = v
+        allowed_includes[k.to_s] = v
       end
+      allowed_includes
     end
 
     def filter_includes(user_includes, allowed_includes)
-      includes = {}
-      (user_includes || "").split(';').each do |include|
-        include_type, fields = include.split(":")
-        includes[include_type.to_sym] = (fields || "").split(",").map(&:to_sym)
-      end
-
       filtered_includes = {}
-      includes.each do |k, fields|
-        allowed = allowed_includes[k] || allowed_includes[k.to_s]
+      (user_includes || "").split(',').each do |k|
+        allowed = allowed_includes[k]
         if allowed
-          filtered_includes[k] = {
-            :fields => fields,
+          filtered_includes[k.to_sym] = {
             :association => allowed.method_name.to_sym,
             :json_name => allowed.json_name.try(:to_sym)
           }
         end
       end
+
       filtered_includes
     end
 
@@ -183,21 +177,15 @@ module Brainstem
     end
 
     def run_filters(scope, options)
-      allowed_filters = options[:presenter].filters || {}
       run_defaults = options.has_key?(:apply_default_filters) ? options[:apply_default_filters] : true
-      requested_filters = {}
-      (options[:params][:filters] || "").split(",").each do |filter_string|
-        filter_pieces = filter_string.split(":")
-        name = filter_pieces.shift
-        value = filter_pieces.join(":")
-        value = nil unless value.present?
-        value = value == "true" ? true : (value == "false" ? false : value)
-        requested_filters[name.to_sym] = value
-      end
 
-      allowed_filters.each do |filter_name, filter|
+      (options[:presenter].filters || {}).each do |filter_name, filter|
+        requested = options[:params][filter_name]
+        requested = requested.present? ? requested.to_s : nil
+        requested = requested == "true" ? true : (requested == "false" ? false : requested)
+
         filter_options, filter_lambda = filter
-        args = run_defaults ? (requested_filters[filter_name] || filter_options[:default]) : requested_filters[filter_name]
+        args = run_defaults ? (requested || filter_options[:default]) : requested
         next if args.nil?
 
         if filter_lambda
@@ -282,5 +270,10 @@ module Brainstem
       [primary_models, record_hash]
     end
 
+    def rewrite_keys_as_objects!(struct)
+      (struct.keys - [:count, :results]).each do |key|
+        struct[key] = struct[key].inject({}) {|memo, obj| memo[obj[:id] || obj["id"] || "unknown_id"] = obj; memo }
+      end
+    end
   end
 end

@@ -92,31 +92,39 @@ module Brainstem
     # @api private
     # Calls {#post_process} on the output from {#present}.
     # @return (see #post_process)
-    def present_and_post_process(model, fields = [], associations = [])
-      post_process(present(model), model, fields, associations)
+    def present_and_post_process(model, associations = [])
+      post_process(present(model), model, associations)
     end
 
     # @api private
-    # Loads associations and optional fields, then converts dates to epoch strings.
+    # Loads associations and converts dates to epoch strings.
     # @return [Hash] The hash representing the models and associations, ready to be converted to JSON.
-    def post_process(struct, model, fields = [], associations = [])
+    def post_process(struct, model, associations = [])
+      add_id(model, struct)
       load_associations!(model, struct, associations)
-      load_optional_fields!(model, struct, fields)
       datetimes_to_json(struct)
     end
 
     # @api private
+    # Adds :id as a string from the given model.
+    def add_id(model, struct)
+      if model.class.respond_to?(:primary_key)
+        struct[:id] = model[model.class.primary_key].to_s
+      end
+    end
+
+    # @api private
     # Calls {#custom_preload}, and then {#present} and {#post_process}, for each model.
-    def group_present(models, fields = [], associations = [])
-      custom_preload models, fields, associations
+    def group_present(models, associations = [])
+      custom_preload models, associations
 
       models.map do |model|
-        present_and_post_process model, fields, associations
+        present_and_post_process model, associations
       end
     end
 
     # Subclasses can define this if they wish. This method will be called before {#present}.
-    def custom_preload(models, fields = [], associations = [])
+    def custom_preload(models, associations = [])
     end
 
     # @api private
@@ -139,20 +147,6 @@ module Brainstem
     end
 
     # @api private
-    # Makes sure that any optional fields are evaluated, but only if they are requested.
-    def load_optional_fields!(model, struct, fields)
-      struct.to_a.each do |key, value|
-        if value.is_a?(FieldProxy) && value.optional
-          if fields.include?(key)
-            struct[key] = value.call(model)
-          else
-            struct.delete key
-          end
-        end
-      end
-    end
-
-    # @api private
     # Makes sure that associations are loaded and converted into ids.
     def load_associations!(model, struct, associations)
       struct.to_a.each do |key, value|
@@ -161,7 +155,7 @@ module Brainstem
           id_attr = value.method_name ? "#{value.method_name}_id" : nil
 
           if id_attr && model.class.columns_hash.has_key?(id_attr)
-            struct["#{key}_id".to_sym] = model.send(id_attr)
+            struct["#{key}_id".to_sym] = to_s_except_nil(model.send(id_attr))
             reflection = value.method_name && model.reflections[value.method_name.to_sym]
             if reflection && reflection.options[:polymorphic]
               struct["#{key.to_s.singularize}_type".to_sym] = model.send("#{value.method_name}_type")
@@ -169,12 +163,12 @@ module Brainstem
           elsif associations.include?(key)
             result = value.call(model)
             if result.is_a?(Array)
-              struct["#{key.to_s.singularize}_ids".to_sym] = result.map {|a| a.is_a?(ActiveRecord::Base) ? a.id : a }
+              struct["#{key.to_s.singularize}_ids".to_sym] = result.map {|a| to_s_except_nil(a.is_a?(ActiveRecord::Base) ? a.id : a) }
             else
               if result.is_a?(ActiveRecord::Base)
-                struct["#{key.to_s.singularize}_id".to_sym] = result.id
+                struct["#{key.to_s.singularize}_id".to_sym] = to_s_except_nil(result.id)
               else
-                struct["#{key.to_s.singularize}_id".to_sym] = result
+                struct["#{key.to_s.singularize}_id".to_sym] = to_s_except_nil(result)
               end
             end
           end
@@ -209,10 +203,8 @@ module Brainstem
       AssociationField.new method_name, options, &block
     end
 
-    # A field on the presented object that should only be included if explicitly requested.
-    def optional_field(field_name = nil, &block)
-      FieldProxy.new field_name, {:optional => true}, &block
+    def to_s_except_nil(thing)
+      thing.nil? ? nil : thing.to_s
     end
-
   end
 end
