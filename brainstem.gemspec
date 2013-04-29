@@ -4,11 +4,11 @@ require "brainstem/version"
 
 Gem::Specification.new do |gem|
   gem.name          = "brainstem"
-  gem.authors       = ["Sufyan Adam", "André Arko", "Andrew Cantino", "Katlyn Daniluk", "Reid Gillette"]
-  gem.email         = ["dev@mavenlink.com"]
+  gem.authors       = ["Mavenlink"]
+  gem.email         = ["opensource@mavenlink.com"]
   gem.description   = %q{Brainstem allows you to create rich API presenters that know how to filter, sort, and include associations.}
   gem.summary       = %q{ActiveRecord presenters with a rich request API}
-  gem.homepage      = "http://developer.mavenlink.com"
+  gem.homepage      = "http://github.com/mavenlink/brainstem"
   gem.license       = "MIT"
 
   gem.files         = Dir["**/*"]
