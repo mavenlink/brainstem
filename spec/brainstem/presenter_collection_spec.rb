@@ -348,7 +348,7 @@ describe Brainstem::PresenterCollection do
           result[:workspaces].keys.should eq(bob.workspaces.pluck(:id).map(&:to_s))
           result = @presenter_collection.presenting("workspaces", :params => { :numeric_description => "true" }) { Workspace.scoped }
           result[:workspaces].keys.should =~ ["2", "4"]
-          result = @presenter_collection.presenting("workspaces", :params => { :numeric_description => "fadlse" }) { Workspace.scoped }
+          result = @presenter_collection.presenting("workspaces", :params => { :numeric_description => "false" }) { Workspace.scoped }
           result[:workspaces].keys.should eq(bob.workspaces.pluck(:id).map(&:to_s))
         end
       end
