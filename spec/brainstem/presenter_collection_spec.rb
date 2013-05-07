@@ -23,6 +23,7 @@ describe Brainstem::PresenterCollection do
 
       it "will not accept a per_page less than 1" do
         @presenter_collection.presenting("workspaces", :params => { :per_page => 0 }) { Workspace.order('id desc') }[:workspaces].length.should == 2
+        @presenter_collection.presenting("workspaces", :per_page => 0) { Workspace.order('id desc') }[:workspaces].length.should == 2
       end
 
       it "will accept strings" do
@@ -237,6 +238,7 @@ describe Brainstem::PresenterCollection do
 
       let(:bob) { User.where(:username => "bob").first }
       let(:bob_workspaces_ids) { bob.workspaces.map(&:id) }
+      let(:jane) { User.where(:username => "jane").first }
 
       it "limits records to those matching given filters" do
         result = @presenter_collection.presenting("workspaces", :params => { :owned_by => bob.id.to_s }) { Workspace.order("id desc") } # hit the API, filtering on owned_by:bob
@@ -260,9 +262,10 @@ describe Brainstem::PresenterCollection do
       end
 
       it "converts boolean parameters from strings to booleans" do
-        WorkspacePresenter.filter(:owned_by_bob) { |scope, boolean| boolean ? scope.where(:user_id => bob.id) : scope }
+        WorkspacePresenter.filter(:owned_by_bob) { |scope, boolean| boolean ? scope.where(:user_id => bob.id) : scope.where(:user_id => jane.id) }
         result = @presenter_collection.presenting("workspaces", :params => { :owned_by_bob => "false" }) { Workspace.scoped }
         result[:workspaces].values.find { |workspace| workspace[:title].include?("jane") }.should be
+        result[:workspaces].values.find { |workspace| workspace[:title].include?("bob") }.should_not be
       end
 
       it "ensures arguments are strings" do
@@ -320,6 +323,10 @@ describe Brainstem::PresenterCollection do
         it "allows the default value to be overridden" do
           result = @presenter_collection.presenting("workspaces", :params => { :owner => jane.id.to_s }) { Workspace.order('id desc') }
           result[:workspaces].keys.should match_array(jane.workspaces.map(&:id).map(&:to_s))
+
+          WorkspacePresenter.filter(:include_early_workspaces, :default => true) { |scope, bool| bool ? scope : scope.where("id > 3") }
+          result = @presenter_collection.presenting("workspaces", :params => { :include_early_workspaces => "false" }) { Workspace.unscoped }
+          result[:workspaces]["2"].should_not be_present
         end
       end
 
@@ -349,7 +356,7 @@ describe Brainstem::PresenterCollection do
           result = @presenter_collection.presenting("workspaces", :params => { :numeric_description => "true" }) { Workspace.scoped }
           result[:workspaces].keys.should =~ ["2", "4"]
           result = @presenter_collection.presenting("workspaces", :params => { :numeric_description => "false" }) { Workspace.scoped }
-          result[:workspaces].keys.should eq(bob.workspaces.pluck(:id).map(&:to_s))
+          result[:workspaces].keys.should =~ ["2", "4"]
         end
       end
     end
