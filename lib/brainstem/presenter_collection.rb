@@ -46,8 +46,12 @@ module Brainstem
       # Filter
       scope = run_filters scope, options
 
+      allowed_includes = calculate_allowed_includes options[:presenter], presented_class
+      includes_hash = filter_includes options[:params][:include], allowed_includes
+
       # Search
-      scope = run_search scope, options
+      sort_name, direction = calculate_sort_name_and_direction options
+      scope = run_search scope, includes_hash.keys.map(&:to_s), sort_name, direction, options
 
       if options[:params][:only].present?
         # Handle Only
@@ -64,8 +68,6 @@ module Brainstem
       records = scope.to_a
       model = records.first
 
-      allowed_includes = calculate_allowed_includes options[:presenter], presented_class, records
-      includes_hash = filter_includes options[:params][:include], allowed_includes
       models = perform_preloading records, includes_hash
       primary_models, associated_models = gather_associations(models, includes_hash)
       struct = { :count => count, options[:as] => [], :results => [] }
@@ -207,16 +209,23 @@ module Brainstem
 
         filter_options = filter[0]
         args = run_defaults && requested.nil? ? filter_options[:default] : requested
-        filters_hash[filter_name] = args
+        filters_hash[filter_name] = args unless args.nil?
       end
 
       filters_hash
     end
 
-    def run_search(scope, options)
-      return scope unless options[:params][:search] && options[:presenter].search_block.present?
+    def run_search(scope, includes, sort_name, direction, options)
+      return scope if !options[:params][:search] || options[:presenter].search_block.blank?
 
-      result_ids = options[:presenter].search_block.call(options[:params][:search])
+      search_options = { :include => includes,
+                         :order => { :sort_order => sort_name, :direction => direction },
+                         :per_page => calculate_per_page(options),
+                         :page => calculate_page(options) }
+
+      search_options.reverse_merge!(extract_filters(options))
+
+      result_ids = options[:presenter].search_block.call(options[:params][:search], search_options)
       scope.where(:id => result_ids )
     end
 

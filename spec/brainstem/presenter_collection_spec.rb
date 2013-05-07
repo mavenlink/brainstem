@@ -374,6 +374,79 @@ describe Brainstem::PresenterCollection do
             result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
             result[:workspaces].keys.should eq(%w[3 5])
           end
+
+          it "passes the search method, the search string, includes, order, and paging options" do
+            WorkspacePresenter.filter(:owned_by) { |scope| scope }
+            WorkspacePresenter.search do |string, options|
+              string.should == "blah"
+              options[:include].should == ["tasks", "lead_user"]
+              options[:owned_by].should == false
+              options[:order][:sort_order].should == "updated_at"
+              options[:order][:direction].should == "desc"
+              options[:page].should == 2
+              options[:per_page].should == 5
+            end
+
+            @presenter_collection.presenting("workspaces", :params => { :search => "blah", :include => "tasks,lead_user", :owned_by => "false", :order => "updated_at:desc", :page => 2, :per_page => 5 }) { Workspace.order("id asc") }
+          end
+
+          describe "includes" do
+            it "throws out requested inlcudes that the presenter does not have associations for" do
+              WorkspacePresenter.search do |string, options|
+                options[:include].should == []
+              end
+              @presenter_collection.presenting("workspaces", :params => { :search => "blah", :include => "users"}) { Workspace.order("id asc") }
+            end
+          end
+
+          describe "filters" do
+            it "passes through the default filters if no filter is requested" do
+              WorkspacePresenter.filter(:owned_by, :default => true) { |scope| scope }
+              WorkspacePresenter.search do |string, options|
+                options[:owned_by].should == true
+              end
+
+              @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
+            end
+
+            it "throws out requested filters that the presenter does not have" do
+              WorkspacePresenter.search do |string, options|
+                options[:highest_rated].should be_nil
+              end
+
+              @presenter_collection.presenting("workspaces", :params => { :search => "blah", :highest_rated => true}) { Workspace.order("id asc") }
+            end
+
+            it "does not pass through existing non-default filters that are not requested" do
+              WorkspacePresenter.filter(:owned_by) { |scope| scope }
+              WorkspacePresenter.search do |string, options|
+                options.has_key?(:owned_by).should == false
+              end
+
+              @presenter_collection.presenting("workspaces", :params => { :search => "blah"}) { Workspace.order("id asc") }
+            end
+          end
+
+          describe "orders" do
+            it "passes through the default sort order if no order is requested" do
+              WorkspacePresenter.default_sort_order("description:desc")
+              WorkspacePresenter.search do |string, options|
+                options[:order][:sort_order].should == "description"
+                options[:order][:direction].should == "desc"
+              end
+
+              @presenter_collection.presenting("workspaces", :params => { :search => "blah"}) { Workspace.order("id asc") }
+            end
+
+            it "makes the sort order 'updated_at:desc' if the requested order doesn't match an existing sort order and there is no default" do
+              WorkspacePresenter.search do |string, options|
+                options[:order][:sort_order].should == "updated_at"
+                options[:order][:direction].should == "desc"
+              end
+
+              @presenter_collection.presenting("workspaces", :params => { :search => "blah", :order => "created_at:asc"}) { Workspace.order("id asc") }
+            end
+          end
         end
 
         context "and there is no search request" do
