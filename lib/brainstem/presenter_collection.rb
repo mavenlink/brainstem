@@ -50,7 +50,7 @@ module Brainstem
       if searching? options
         # Search
         sort_name, direction = calculate_sort_name_and_direction options
-        scope, count = run_search scope, includes_hash.keys.map(&:to_s), sort_name, direction, options
+        scope, count, ordered_search_ids = run_search(scope, includes_hash.keys.map(&:to_s), sort_name, direction, options)
       else
         # Filter
         scope = run_filters scope, options
@@ -69,6 +69,7 @@ module Brainstem
 
       # Load Includes
       records = scope.to_a
+      records = order_for_search(records, ordered_search_ids) if searching? options
       model = records.first
 
       models = perform_preloading records, includes_hash
@@ -229,11 +230,26 @@ module Brainstem
       search_options.reverse_merge!(extract_filters(options))
 
       result_ids, count = options[:presenter].search_block.call(options[:params][:search], search_options)
-      [scope.where(:id => result_ids ), count]
+      [scope.where(:id => result_ids ), count, result_ids]
     end
 
     def searching?(options)
       options[:params][:search] && options[:presenter].search_block.present?
+    end
+
+    def order_for_search(records, ordered_search_ids)
+      ids_to_position = {}
+      ordered_records = []
+
+      ordered_search_ids.each_with_index do |id, i|
+        ids_to_position[id] = i
+      end
+
+      records.each do |record|
+        ordered_records[ids_to_position[record.id]] = record
+      end
+
+      ordered_records
     end
 
     def handle_ordering(scope, options)

@@ -365,14 +365,14 @@ describe Brainstem::PresenterCollection do
       context "with search method defined" do
         before do
           WorkspacePresenter.search do |string|
-            [[3,5], 2]
+            [[5, 3], 2]
           end
         end
 
         context "and a search request is made" do
-          it "calls the search method" do
+          it "calls the search method and maintains the resulting order" do
             result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
-            result[:workspaces].keys.should eq(%w[3 5])
+            result[:workspaces].keys.should eq(%w[5 3])
             result[:count].should eq(2)
           end
 
@@ -396,6 +396,11 @@ describe Brainstem::PresenterCollection do
             result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
           end
 
+          it "keeps the records in the order returned by search" do
+            result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.unscoped }
+
+          end
+
           describe "passing options to the search block" do
             it "passes the search method, the search string, includes, order, and paging options" do
               WorkspacePresenter.filter(:owned_by) { |scope| scope }
@@ -407,6 +412,7 @@ describe Brainstem::PresenterCollection do
                 options[:order][:direction].should == "desc"
                 options[:page].should == 2
                 options[:per_page].should == 5
+                [[1], 1] # returned ids, count - not testing this in this set of specs
               end
 
               @presenter_collection.presenting("workspaces", :params => { :search => "blah", :include => "tasks,lead_user", :owned_by => "false", :order => "updated_at:desc", :page => 2, :per_page => 5 }) { Workspace.order("id asc") }
@@ -416,7 +422,9 @@ describe Brainstem::PresenterCollection do
               it "throws out requested inlcudes that the presenter does not have associations for" do
                 WorkspacePresenter.search do |string, options|
                   options[:include].should == []
+                  [[1], 1]
                 end
+
                 @presenter_collection.presenting("workspaces", :params => { :search => "blah", :include => "users"}) { Workspace.order("id asc") }
               end
             end
@@ -426,6 +434,7 @@ describe Brainstem::PresenterCollection do
                 WorkspacePresenter.filter(:owned_by, :default => true) { |scope| scope }
                 WorkspacePresenter.search do |string, options|
                   options[:owned_by].should == true
+                  [[1], 1]
                 end
 
                 @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
@@ -434,6 +443,7 @@ describe Brainstem::PresenterCollection do
               it "throws out requested filters that the presenter does not have" do
                 WorkspacePresenter.search do |string, options|
                   options[:highest_rated].should be_nil
+                  [[1], 1]
                 end
 
                 @presenter_collection.presenting("workspaces", :params => { :search => "blah", :highest_rated => true}) { Workspace.order("id asc") }
@@ -443,6 +453,7 @@ describe Brainstem::PresenterCollection do
                 WorkspacePresenter.filter(:owned_by) { |scope| scope }
                 WorkspacePresenter.search do |string, options|
                   options.has_key?(:owned_by).should == false
+                  [[1], 1]
                 end
 
                 @presenter_collection.presenting("workspaces", :params => { :search => "blah"}) { Workspace.order("id asc") }
@@ -455,6 +466,7 @@ describe Brainstem::PresenterCollection do
                 WorkspacePresenter.search do |string, options|
                   options[:order][:sort_order].should == "description"
                   options[:order][:direction].should == "desc"
+                  [[1], 1]
                 end
 
                 @presenter_collection.presenting("workspaces", :params => { :search => "blah"}) { Workspace.order("id asc") }
@@ -464,6 +476,7 @@ describe Brainstem::PresenterCollection do
                 WorkspacePresenter.search do |string, options|
                   options[:order][:sort_order].should == "updated_at"
                   options[:order][:direction].should == "desc"
+                  [[1], 1]
                 end
 
                 @presenter_collection.presenting("workspaces", :params => { :search => "blah", :order => "created_at:asc"}) { Workspace.order("id asc") }
