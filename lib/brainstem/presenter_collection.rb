@@ -33,6 +33,7 @@ module Brainstem
       presented_class = (options[:model] || name)
       presented_class = presented_class.classify.constantize if presented_class.is_a?(String)
       scope = presented_class.instance_eval(&block)
+      count = 0
 
       # grab the presenter that knows about filters and sorting etc.
       options[:presenter] = for!(presented_class)
@@ -43,26 +44,28 @@ module Brainstem
       # key these models will use in the struct that is output
       options[:as] = (options[:as] || name.to_s.tableize).to_sym
 
-      # Filter
-      scope = run_filters scope, options
-
       allowed_includes = calculate_allowed_includes options[:presenter], presented_class
       includes_hash = filter_includes options[:params][:include], allowed_includes
 
-      # Search
-      sort_name, direction = calculate_sort_name_and_direction options
-      scope = run_search scope, includes_hash.keys.map(&:to_s), sort_name, direction, options
-
-      if options[:params][:only].present?
-        # Handle Only
-        scope, count = handle_only(scope, options[:params][:only])
+      if searching? options
+        # Search
+        sort_name, direction = calculate_sort_name_and_direction options
+        scope, count = run_search scope, includes_hash.keys.map(&:to_s), sort_name, direction, options
       else
-        # Paginate
-        scope, count = paginate scope, options
-      end
+        # Filter
+        scope = run_filters scope, options
 
-      # Ordering
-      scope = handle_ordering scope, options
+        if options[:params][:only].present?
+          # Handle Only
+          scope, count = handle_only(scope, options[:params][:only])
+        else
+          # Paginate
+          scope, count = paginate scope, options
+        end
+
+        # Ordering
+        scope = handle_ordering scope, options
+      end
 
       # Load Includes
       records = scope.to_a
@@ -216,7 +219,7 @@ module Brainstem
     end
 
     def run_search(scope, includes, sort_name, direction, options)
-      return scope if !options[:params][:search] || options[:presenter].search_block.blank?
+      return scope unless searching? options
 
       search_options = { :include => includes,
                          :order => { :sort_order => sort_name, :direction => direction },
@@ -225,8 +228,12 @@ module Brainstem
 
       search_options.reverse_merge!(extract_filters(options))
 
-      result_ids = options[:presenter].search_block.call(options[:params][:search], search_options)
-      scope.where(:id => result_ids )
+      result_ids, count = options[:presenter].search_block.call(options[:params][:search], search_options)
+      [scope.where(:id => result_ids ), count]
+    end
+
+    def searching?(options)
+      options[:params][:search] && options[:presenter].search_block.present?
     end
 
     def handle_ordering(scope, options)
