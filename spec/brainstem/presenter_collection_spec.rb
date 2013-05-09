@@ -187,6 +187,12 @@ describe Brainstem::PresenterCollection do
         result[:users][Workspace.first.lead_user.id.to_s].should be_present
       end
 
+      it "can accept a lambda for the association and uses that when present" do
+        result = @presenter_collection.presenting("users", :params => { :include => "odd_workspaces" }) { User.where(:id => 1) }
+        result[:odd_workspaces][Workspace.first.id.to_s].should be_present
+        result[:users][Workspace.first.lead_user.id.to_s].should be_present
+      end
+
       describe "polymorphic associations" do
         it "works with polymorphic associations" do
           result = @presenter_collection.presenting("posts", :params => { :include => "subject" }) { Post.order('id desc') }

@@ -24,7 +24,10 @@ end
 class UserPresenter < Brainstem::Presenter
   def present(model)
     {
-      :username => model.username
+      :username => model.username,
+      :odd_workspaces => association() { |user|
+        user.workspaces.select { |workspace| workspace.id % 2 == 1 }
+      }
     }
   end
 end

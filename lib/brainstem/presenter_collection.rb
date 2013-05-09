@@ -76,7 +76,7 @@ module Brainstem
 
         if models.length > 0
           presenter = for!(models.first.class)
-          assoc = includes_hash.to_a.find { |k, v| v[:json_name] == json_name }
+          assoc = includes_hash.to_a.find { |k, v| v.json_name == json_name }
           struct[json_name] = presenter.group_present(models, [])
         else
           struct[json_name] = []
@@ -118,7 +118,7 @@ module Brainstem
       self.for(klass) || raise(ArgumentError, "Unable to find a presenter for class #{klass}")
     end
 
-  private
+    private
 
     def paginate(scope, options)
       max_per_page = (options[:max_per_page] || default_max_per_page).to_i
@@ -139,9 +139,10 @@ module Brainstem
       model = records.first || presented_class.new
       presenter.present(model).each do |k, v|
         next unless v.is_a?(AssociationField)
-
         if v.json_name
           v.json_name = v.json_name.tableize
+        elsif v.block
+          v.json_name = k.to_s.tableize
         else
           association = model.class.reflections[v.method_name]
           if !association.options[:polymorphic]
@@ -158,16 +159,14 @@ module Brainstem
 
     def filter_includes(user_includes, allowed_includes)
       filtered_includes = {}
-      (user_includes || "").split(',').each do |k|
+
+      (user_includes || '').split(',').each do |k|
         allowed = allowed_includes[k]
         if allowed
-          filtered_includes[k.to_sym] = {
-            :association => allowed.method_name.to_sym,
-            :json_name => allowed.json_name.try(:to_sym)
-          }
+          allowed.json_name = allowed.json_name.try(:to_sym)
+          filtered_includes[k.to_sym] = allowed
         end
       end
-
       filtered_includes
     end
 
@@ -218,18 +217,18 @@ module Brainstem
       end
 
       case order
-      when Proc
-        order.call(scope, direction == "desc" ? "desc" : "asc")
-      when nil
-        scope
-      else
-        scope.order(order.to_s + " " + (direction == "desc" ? "desc" : "asc"))
+        when Proc
+          order.call(scope, direction == "desc" ? "desc" : "asc")
+        when nil
+          scope
+        else
+          scope.order(order.to_s + " " + (direction == "desc" ? "desc" : "asc"))
       end
     end
 
     def perform_preloading(records, includes_hash)
       records.tap do |models|
-        association_names_to_preload = includes_hash.values.map {|i| i[:association] }
+        association_names_to_preload = includes_hash.values.map {|i| i.association }
         if models.first
           reflections = models.first.reflections
           association_names_to_preload.reject! { |association| !reflections.has_key?(association) }
@@ -246,16 +245,18 @@ module Brainstem
       primary_models = []
 
       includes_hash.each do |include, include_data|
-        record_hash[include_data[:json_name]] ||= [] if include_data[:json_name]
+        record_hash[include_data.json_name] ||= [] if include_data.json_name
       end
 
       models.each do |model|
         primary_models << model
 
         includes_hash.each do |include, include_data|
-          models = Array(model.send(include_data[:association]))
-          if include_data[:json_name]
-            record_hash[include_data[:json_name]] += models
+          #models = Array(model.send(include_data[:association], *(include_data[:args] || [])))
+          models = Array(include_data.call(model))
+
+          if include_data.json_name
+            record_hash[include_data.json_name] += models
           else
             # polymorphic associations' tables must be figured out now
             models.each do |record|
