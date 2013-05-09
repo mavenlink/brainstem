@@ -6,10 +6,6 @@ module Brainstem
     # @return [String] The name of the method that is being proxied.
     attr_reader :method_name
 
-    # @!attribute [r] association
-    # @return [Symbol] The name of the method that is being proxied as a symbol.
-    attr_reader :association
-
     # @!attribute [r] json_name
     # @return [String] The name of the top-level JSON key for objects provided by this association.
     attr_accessor :json_name
@@ -21,14 +17,22 @@ module Brainstem
     # @param method_name The name of the method being proxied. Not required if
     #   a block is passed instead.
     # @option options [Boolean] :json_name The name of the top-level JSON key for objects provided by this association.
-    def initialize(method_name = nil, options = {}, &block)
+    def initialize(*args, &block)
+      method_name = nil
+      options = {}
+      args.each do |arg|
+        if arg.is_a?(String) || arg.is_a?(Symbol)
+          method_name = arg.to_sym
+        elsif arg.is_a?(Hash)
+          options = arg
+        end
+      end
       @json_name = options[:json_name]
       if block_given?
         raise ArgumentError, "Method name is invalid with a block" if method_name
         @block = block
       elsif method_name
         @method_name = method_name
-        @association = method_name.to_sym
       else
         raise ArgumentError, "Method name or block is required"
       end

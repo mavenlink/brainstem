@@ -228,7 +228,7 @@ module Brainstem
 
     def perform_preloading(records, includes_hash)
       records.tap do |models|
-        association_names_to_preload = includes_hash.values.map {|i| i.association }
+        association_names_to_preload = includes_hash.values.map {|i| i.method_name }
         if models.first
           reflections = models.first.reflections
           association_names_to_preload.reject! { |association| !reflections.has_key?(association) }
