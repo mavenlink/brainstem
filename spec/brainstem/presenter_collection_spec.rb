@@ -348,14 +348,24 @@ describe Brainstem::PresenterCollection do
           result[:workspaces].keys.should eq(jane.workspaces.pluck(:id).map(&:to_s))
         end
 
-        it "allows scopes that take no arguments" do
+        it "detects model scopes without arguments and raises an error" do
           WorkspacePresenter.filter(:numeric_description)
-          result = @presenter_collection.presenting("workspaces") { Workspace.scoped }
-          result[:workspaces].keys.should eq(bob.workspaces.pluck(:id).map(&:to_s))
-          result = @presenter_collection.presenting("workspaces", :params => { :numeric_description => "true" }) { Workspace.scoped }
-          result[:workspaces].keys.should =~ ["2", "4"]
-          result = @presenter_collection.presenting("workspaces", :params => { :numeric_description => "false" }) { Workspace.scoped }
-          result[:workspaces].keys.should eq(bob.workspaces.pluck(:id).map(&:to_s))
+
+          lambda {
+            result = @presenter_collection.presenting("workspaces", :params => { :numeric_description => "true" }) { Workspace.scoped }
+          }.should raise_error(StandardError, /Filters called without blocks/)
+        end
+
+        it "detects model scopes without arguments and raises an error when default arguments are given" do
+          WorkspacePresenter.filter(:numeric_description, :default => 2)
+
+          lambda {
+            result = @presenter_collection.presenting("workspaces") { Workspace.scoped }
+          }.should raise_error(StandardError, /Filters called without blocks/)
+
+          lambda {
+            result = @presenter_collection.presenting("workspaces", :params => { :numeric_description => "true" }) { Workspace.scoped }
+          }.should raise_error(StandardError, /Filters called without blocks/)
         end
       end
     end
