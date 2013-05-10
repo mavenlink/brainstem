@@ -355,24 +355,19 @@ describe Brainstem::PresenterCollection do
           result[:workspaces].keys.should eq(jane.workspaces.pluck(:id).map(&:to_s))
         end
 
-        it "detects model scopes without arguments and raises an error" do
+        it "can use filters without lambdas in the presenter or model, but behaves strangely when false is given" do
           WorkspacePresenter.filter(:numeric_description)
 
-          lambda {
-            result = @presenter_collection.presenting("workspaces", :params => { :numeric_description => "true" }) { Workspace.scoped }
-          }.should raise_error(StandardError, /Filters called without blocks/)
-        end
+          result = @presenter_collection.presenting("workspaces") { Workspace.scoped }
+          result[:workspaces].keys.should eq(%w[1 2 3 4])
 
-        it "detects model scopes without arguments and raises an error when default arguments are given" do
-          WorkspacePresenter.filter(:numeric_description, :default => 2)
+          result = @presenter_collection.presenting("workspaces", :params => { :numeric_description => "true" }) { Workspace.scoped }
+          result[:workspaces].keys.should eq(%w[2 4])
 
-          lambda {
-            result = @presenter_collection.presenting("workspaces") { Workspace.scoped }
-          }.should raise_error(StandardError, /Filters called without blocks/)
-
-          lambda {
-            result = @presenter_collection.presenting("workspaces", :params => { :numeric_description => "true" }) { Workspace.scoped }
-          }.should raise_error(StandardError, /Filters called without blocks/)
+          # This is probably not the behavior that the developer or user intends.  You should always use a one-argument lambda in your
+          # model scope declaration!
+          result = @presenter_collection.presenting("workspaces", :params => { :numeric_description => "false" }) { Workspace.scoped }
+          result[:workspaces].keys.should eq(%w[2 4])
         end
       end
     end

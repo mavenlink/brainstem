@@ -192,27 +192,7 @@ module Brainstem
         if filter_lambda
           scope = filter_lambda.call(scope, *arg)
         else
-          begin
-
-            # This is decidedly not a good solution, but I don't know another way to interrogate the arity of a lambda
-            # that is called from within another lambda.  In this case, the goal is to detect whether the user is calling
-            # a scope with a defined lambda or a scope using one of the Arel helpers.  E.g,
-            #
-            # class Widget < ActiveRecord::Base
-            #   scope :case_one, where(:id => 3)
-            #   scope :case_two, lambda { |id| where(:id => id.to_i) }
-            # end
-            #
-            # The second case is okay, the first one is not.  In the case of first scope, using the `where` helper, Rails
-            # allows any number of arguments to be passed in and they seemingly get ignored.  However, I'm not comfortable
-            # allowing end-users to pass arbitrary arguments that are used in an ambiguous way.  So, for now, we detect
-            # user lambdas by looking for ArgumentErrors.  Uug.  Please send pull requests!
-
-            scope.send(filter_name, *([1] * 10))
-            raise "Filters called without blocks in a Presenter must have lambdas with a set number of arguments in the model."
-          rescue ArgumentError
-            scope = scope.send(filter_name, *arg)
-          end
+          scope = scope.send(filter_name, *arg)
         end
       end
 
