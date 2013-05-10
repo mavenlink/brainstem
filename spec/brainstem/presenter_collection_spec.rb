@@ -23,6 +23,7 @@ describe Brainstem::PresenterCollection do
 
       it "will not accept a per_page less than 1" do
         @presenter_collection.presenting("workspaces", :params => { :per_page => 0 }) { Workspace.order('id desc') }[:workspaces].length.should == 2
+        @presenter_collection.presenting("workspaces", :per_page => 0) { Workspace.order('id desc') }[:workspaces].length.should == 2
       end
 
       it "will accept strings" do
@@ -243,6 +244,7 @@ describe Brainstem::PresenterCollection do
 
       let(:bob) { User.where(:username => "bob").first }
       let(:bob_workspaces_ids) { bob.workspaces.map(&:id) }
+      let(:jane) { User.where(:username => "jane").first }
 
       it "limits records to those matching given filters" do
         result = @presenter_collection.presenting("workspaces", :params => { :owned_by => bob.id.to_s }) { Workspace.order("id desc") } # hit the API, filtering on owned_by:bob
@@ -266,9 +268,10 @@ describe Brainstem::PresenterCollection do
       end
 
       it "converts boolean parameters from strings to booleans" do
-        WorkspacePresenter.filter(:owned_by_bob) { |scope, boolean| boolean ? scope.where(:user_id => bob.id) : scope }
+        WorkspacePresenter.filter(:owned_by_bob) { |scope, boolean| boolean ? scope.where(:user_id => bob.id) : scope.where(:user_id => jane.id) }
         result = @presenter_collection.presenting("workspaces", :params => { :owned_by_bob => "false" }) { Workspace.scoped }
         result[:workspaces].values.find { |workspace| workspace[:title].include?("jane") }.should be
+        result[:workspaces].values.find { |workspace| workspace[:title].include?("bob") }.should_not be
       end
 
       it "ensures arguments are strings" do
@@ -326,6 +329,10 @@ describe Brainstem::PresenterCollection do
         it "allows the default value to be overridden" do
           result = @presenter_collection.presenting("workspaces", :params => { :owner => jane.id.to_s }) { Workspace.order('id desc') }
           result[:workspaces].keys.should match_array(jane.workspaces.map(&:id).map(&:to_s))
+
+          WorkspacePresenter.filter(:include_early_workspaces, :default => true) { |scope, bool| bool ? scope : scope.where("id > 3") }
+          result = @presenter_collection.presenting("workspaces", :params => { :include_early_workspaces => "false" }) { Workspace.unscoped }
+          result[:workspaces]["2"].should_not be_present
         end
       end
 
@@ -374,14 +381,123 @@ describe Brainstem::PresenterCollection do
       context "with search method defined" do
         before do
           WorkspacePresenter.search do |string|
-            [3,5]
+            [[5, 3], 2]
           end
         end
 
         context "and a search request is made" do
-          it "calls the search method" do
+          it "calls the search method and maintains the resulting order" do
             result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
-            result[:workspaces].keys.should eq(%w[3 5])
+            result[:workspaces].keys.should eq(%w[5 3])
+            result[:count].should eq(2)
+          end
+
+          it "does not apply filters" do
+            mock(@presenter_collection).run_filters(anything, anything).times(0)
+            result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
+          end
+
+          it "does not apply ordering" do
+            mock(@presenter_collection).handle_ordering(anything, anything).times(0)
+            result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
+          end
+
+          it "does not try to handle only's" do
+            mock(@presenter_collection).handle_only(anything, anything).times(0)
+            result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
+          end
+
+          it "does not apply pagination" do
+            mock(@presenter_collection).paginate(anything, anything).times(0)
+            result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
+          end
+
+          it "keeps the records in the order returned by search" do
+            result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.unscoped }
+
+          end
+
+          describe "passing options to the search block" do
+            it "passes the search method, the search string, includes, order, and paging options" do
+              WorkspacePresenter.filter(:owned_by) { |scope| scope }
+              WorkspacePresenter.search do |string, options|
+                string.should == "blah"
+                options[:include].should == ["tasks", "lead_user"]
+                options[:owned_by].should == false
+                options[:order][:sort_order].should == "updated_at"
+                options[:order][:direction].should == "desc"
+                options[:page].should == 2
+                options[:per_page].should == 5
+                [[1], 1] # returned ids, count - not testing this in this set of specs
+              end
+
+              @presenter_collection.presenting("workspaces", :params => { :search => "blah", :include => "tasks,lead_user", :owned_by => "false", :order => "updated_at:desc", :page => 2, :per_page => 5 }) { Workspace.order("id asc") }
+            end
+
+            describe "includes" do
+              it "throws out requested inlcudes that the presenter does not have associations for" do
+                WorkspacePresenter.search do |string, options|
+                  options[:include].should == []
+                  [[1], 1]
+                end
+
+                @presenter_collection.presenting("workspaces", :params => { :search => "blah", :include => "users"}) { Workspace.order("id asc") }
+              end
+            end
+
+            describe "filters" do
+              it "passes through the default filters if no filter is requested" do
+                WorkspacePresenter.filter(:owned_by, :default => true) { |scope| scope }
+                WorkspacePresenter.search do |string, options|
+                  options[:owned_by].should == true
+                  [[1], 1]
+                end
+
+                @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
+              end
+
+              it "throws out requested filters that the presenter does not have" do
+                WorkspacePresenter.search do |string, options|
+                  options[:highest_rated].should be_nil
+                  [[1], 1]
+                end
+
+                @presenter_collection.presenting("workspaces", :params => { :search => "blah", :highest_rated => true}) { Workspace.order("id asc") }
+              end
+
+              it "does not pass through existing non-default filters that are not requested" do
+                WorkspacePresenter.filter(:owned_by) { |scope| scope }
+                WorkspacePresenter.search do |string, options|
+                  options.has_key?(:owned_by).should == false
+                  [[1], 1]
+                end
+
+                @presenter_collection.presenting("workspaces", :params => { :search => "blah"}) { Workspace.order("id asc") }
+              end
+            end
+
+            describe "orders" do
+              it "passes through the default sort order if no order is requested" do
+                WorkspacePresenter.default_sort_order("description:desc")
+                WorkspacePresenter.search do |string, options|
+                  options[:order][:sort_order].should == "description"
+                  options[:order][:direction].should == "desc"
+                  [[1], 1]
+                end
+
+                @presenter_collection.presenting("workspaces", :params => { :search => "blah"}) { Workspace.order("id asc") }
+              end
+
+              it "makes the sort order 'updated_at:desc' if the requested order doesn't match an existing sort order and there is no default" do
+                WorkspacePresenter.search do |string, options|
+                  options[:order][:sort_order].should == "updated_at"
+                  options[:order][:direction].should == "desc"
+                  [[1], 1]
+                end
+
+                @presenter_collection.presenting("workspaces", :params => { :search => "blah", :order => "created_at:asc"}) { Workspace.order("id asc") }
+              end
+            end
           end
         end
 

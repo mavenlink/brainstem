@@ -33,6 +33,7 @@ module Brainstem
       presented_class = (options[:model] || name)
       presented_class = presented_class.classify.constantize if presented_class.is_a?(String)
       scope = presented_class.instance_eval(&block)
+      count = 0
 
       # grab the presenter that knows about filters and sorting etc.
       options[:presenter] = for!(presented_class)
@@ -43,29 +44,34 @@ module Brainstem
       # key these models will use in the struct that is output
       options[:as] = (options[:as] || name.to_s.tableize).to_sym
 
-      # Filter
-      scope = run_filters scope, options
+      allowed_includes = calculate_allowed_includes options[:presenter], presented_class
+      includes_hash = filter_includes options[:params][:include], allowed_includes
 
-      # Search
-      scope = run_search scope, options
-
-      if options[:params][:only].present?
-        # Handle Only
-        scope, count = handle_only(scope, options[:params][:only])
+      if searching? options
+        # Search
+        sort_name, direction = calculate_sort_name_and_direction options
+        scope, count, ordered_search_ids = run_search(scope, includes_hash.keys.map(&:to_s), sort_name, direction, options)
       else
-        # Paginate
-        scope, count = paginate scope, options
-      end
+        # Filter
+        scope = run_filters scope, options
 
-      # Ordering
-      scope = handle_ordering scope, options
+        if options[:params][:only].present?
+          # Handle Only
+          scope, count = handle_only(scope, options[:params][:only])
+        else
+          # Paginate
+          scope, count = paginate scope, options
+        end
+
+        # Ordering
+        scope = handle_ordering scope, options
+      end
 
       # Load Includes
       records = scope.to_a
+      records = order_for_search(records, ordered_search_ids) if searching? options
       model = records.first
 
-      allowed_includes = calculate_allowed_includes options[:presenter], presented_class, records
-      includes_hash = filter_includes options[:params][:include], allowed_includes
       models = perform_preloading records, includes_hash
       primary_models, associated_models = gather_associations(models, includes_hash)
       struct = { :count => count, options[:as] => [], :results => [] }
@@ -121,22 +127,27 @@ module Brainstem
     private
 
     def paginate(scope, options)
-      max_per_page = (options[:max_per_page] || default_max_per_page).to_i
-      per_page = (options[:params][:per_page] || options[:per_page] || default_per_page).to_i
-      per_page = max_per_page if per_page > max_per_page
-      per_page = (options[:per_page] || default_per_page).to_i if per_page < 1
-
-      page = (options[:params][:page] || 1).to_i
-      page = 1 if page < 1
+      per_page = calculate_per_page(options)
+      page = calculate_page(options)
 
       [scope.limit(per_page).offset(per_page * (page - 1)).uniq, scope.select("distinct `#{options[:table_name]}`.id").count] # as of Rails 3.2.5, uniq.count generates the wrong SQL.
     end
 
+    def calculate_per_page(options)
+      per_page = [(options[:params][:per_page] || options[:per_page] || default_per_page).to_i, (options[:max_per_page] || default_max_per_page).to_i].min
+      per_page = default_per_page if per_page < 1
+      per_page
+    end
+
+    def calculate_page(options)
+      [(options[:params][:page] || 1).to_i, 1].max
+    end
+
     # Gather allowed includes by inspecting the presented hash.  For now, this requires that a new instance of the
     # presented class always be presentable.
-    def calculate_allowed_includes(presenter, presented_class, records)
+    def calculate_allowed_includes(presenter, presented_class, records = nil)
       allowed_includes = {}
-      model = records.first || presented_class.new
+      model = records.try(:first) || presented_class.new
       presenter.present(model).each do |k, v|
         next unless v.is_a?(AssociationField)
         if v.json_name
@@ -174,16 +185,9 @@ module Brainstem
     end
 
     def run_filters(scope, options)
-      run_defaults = options.has_key?(:apply_default_filters) ? options[:apply_default_filters] : true
-
-      (options[:presenter].filters || {}).each do |filter_name, filter|
-        requested = options[:params][filter_name]
-        requested = requested.present? ? requested.to_s : nil
-        requested = requested == "true" ? true : (requested == "false" ? false : requested)
-
-        filter_options, filter_lambda = filter
-        arg = run_defaults ? (requested || filter_options[:default]) : requested
+      extract_filters(options).each do |filter_name, arg|
         next if arg.nil?
+        filter_lambda = options[:presenter].filters[filter_name][1]
 
         if filter_lambda
           scope = filter_lambda.call(scope, *arg)
@@ -215,24 +219,58 @@ module Brainstem
       scope
     end
 
-    def run_search(scope, options)
-      return scope unless options[:params][:search] && options[:presenter].search_block.present?
+    def extract_filters(options)
+      filters_hash = {}
+      run_defaults = options.has_key?(:apply_default_filters) ? options[:apply_default_filters] : true
 
-      result_ids = options[:presenter].search_block.call(options[:params][:search])
-      scope.where(:id => result_ids )
+      (options[:presenter].filters || {}).each do |filter_name, filter|
+        requested = options[:params][filter_name]
+        requested = requested.present? ? requested.to_s : nil
+        requested = requested == "true" ? true : (requested == "false" ? false : requested)
+
+        filter_options = filter[0]
+        args = run_defaults && requested.nil? ? filter_options[:default] : requested
+        filters_hash[filter_name] = args unless args.nil?
+      end
+
+      filters_hash
+    end
+
+    def run_search(scope, includes, sort_name, direction, options)
+      return scope unless searching? options
+
+      search_options = { :include => includes,
+                         :order => { :sort_order => sort_name, :direction => direction },
+                         :per_page => calculate_per_page(options),
+                         :page => calculate_page(options) }
+
+      search_options.reverse_merge!(extract_filters(options))
+
+      result_ids, count = options[:presenter].search_block.call(options[:params][:search], search_options)
+      [scope.where(:id => result_ids ), count, result_ids]
+    end
+
+    def searching?(options)
+      options[:params][:search] && options[:presenter].search_block.present?
+    end
+
+    def order_for_search(records, ordered_search_ids)
+      ids_to_position = {}
+      ordered_records = []
+
+      ordered_search_ids.each_with_index do |id, i|
+        ids_to_position[id] = i
+      end
+
+      records.each do |record|
+        ordered_records[ids_to_position[record.id]] = record
+      end
+
+      ordered_records
     end
 
     def handle_ordering(scope, options)
-      default_column, default_direction = (options[:presenter].default_sort_order || "updated_at:desc").split(":")
-      sort_name, direction = (options[:params][:order] || "").split(":")
-      sort_orders = (options[:presenter].sort_orders || {})
-
-      if sort_name.present? && sort_orders[sort_name.to_sym]
-        order = sort_orders[sort_name.to_sym]
-      else
-        order = sort_orders[default_column.to_sym]
-        direction = default_direction
-      end
+      order, direction = calculate_order_and_direction(options)
 
       case order
         when Proc
@@ -242,6 +280,26 @@ module Brainstem
         else
           scope.order(order.to_s + " " + (direction == "desc" ? "desc" : "asc"))
       end
+    end
+
+    def calculate_order_and_direction(options)
+      sort_name, direction = calculate_sort_name_and_direction(options)
+      sort_orders = (options[:presenter].sort_orders || {})
+      order = sort_orders[sort_name.to_sym]
+
+      [order, direction]
+    end
+
+    def calculate_sort_name_and_direction(options)
+      default_column, default_direction = (options[:presenter].default_sort_order || "updated_at:desc").split(":")
+      sort_name, direction = (options[:params][:order] || "").split(":")
+      sort_orders = (options[:presenter].sort_orders || {})
+      unless sort_name.present? && sort_orders[sort_name.to_sym]
+        sort_name = default_column
+        direction = default_direction
+      end
+
+      [sort_name, direction]
     end
 
     def perform_preloading(records, includes_hash)
