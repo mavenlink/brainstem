@@ -145,9 +145,9 @@ module Brainstem
 
     # Gather allowed includes by inspecting the presented hash.  For now, this requires that a new instance of the
     # presented class always be presentable.
-    def calculate_allowed_includes(presenter, presented_class, records = nil)
+    def calculate_allowed_includes(presenter, presented_class)
       allowed_includes = {}
-      model = records.try(:first) || presented_class.new
+      model = presented_class.new
       presenter.present(model).each do |k, v|
         next unless v.is_a?(AssociationField)
         if v.json_name
