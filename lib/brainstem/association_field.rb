@@ -18,17 +18,11 @@ module Brainstem
     #   a block is passed instead.
     # @option options [Boolean] :json_name The name of the top-level JSON key for objects provided by this association.
     def initialize(*args, &block)
-      method_name = nil
-      options = {}
-      args.each do |arg|
-        if arg.is_a?(String) || arg.is_a?(Symbol)
-          method_name = arg.to_sym
-        elsif arg.is_a?(Hash)
-          options = arg
-        end
-      end
+      options = args.last.is_a?(Hash) ? args.pop : {}
+      method_name = args.first.to_sym if args.first.is_a?(String) || args.first.is_a?(Symbol)
       @json_name = options[:json_name]
       if block_given?
+        raise ArgumentError, "options[:json_name] is required when using a block" unless options[:json_name]
         raise ArgumentError, "Method name is invalid with a block" if method_name
         @block = block
       elsif method_name

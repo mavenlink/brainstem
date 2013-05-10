@@ -189,7 +189,7 @@ describe Brainstem::Presenter do
                 :user                       => association(:user),
                 :something                  => association(:user),
                 :lead_user                  => association(:lead_user),
-                :lead_user_with_lambda      => association { model.user },
+                :lead_user_with_lambda      => association(:json_name => "users") { |model| model.user },
                 :synthetic                  => association(:synthetic)
             }
           end

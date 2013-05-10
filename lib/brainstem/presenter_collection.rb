@@ -141,8 +141,6 @@ module Brainstem
         next unless v.is_a?(AssociationField)
         if v.json_name
           v.json_name = v.json_name.tableize
-        elsif v.block
-          v.json_name = k.to_s.tableize
         else
           association = model.class.reflections[v.method_name]
           if !association.options[:polymorphic]
@@ -252,7 +250,6 @@ module Brainstem
         primary_models << model
 
         includes_hash.each do |include, include_data|
-          #models = Array(model.send(include_data[:association], *(include_data[:args] || [])))
           models = Array(include_data.call(model))
 
           if include_data.json_name
