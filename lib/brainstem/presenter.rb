@@ -199,8 +199,8 @@ module Brainstem
     end
 
     # An association on the object being presented that should be included in the presented data.
-    def association(method_name = nil, options = {}, &block)
-      AssociationField.new method_name, options, &block
+    def association(*args, &block)
+      AssociationField.new *args, &block
     end
 
     def to_s_except_nil(thing)
