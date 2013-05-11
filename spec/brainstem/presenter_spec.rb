@@ -71,7 +71,7 @@ describe Brainstem::Presenter do
 
       it "creates an entry in the filters class ivar" do
         @klass.filter(:foo, :default => true) { 1 }
-        @klass.filters[:foo][0].should eq({:default => true})
+        @klass.filters[:foo][0].should eq({"default" => true})
         @klass.filters[:foo][1].should be_a(Proc)
       end
 
@@ -206,23 +206,23 @@ describe Brainstem::Presenter do
 
       it "should convert requested has_many associations (includes) into the <association>_ids format" do
         @workspace.tasks.length.should > 0
-        @presenter.present_and_post_process(@workspace, [:tasks])[:task_ids].should =~ @workspace.tasks.map(&:id).map(&:to_s)
+        @presenter.present_and_post_process(@workspace, ["tasks"])[:task_ids].should =~ @workspace.tasks.map(&:id).map(&:to_s)
       end
 
       it "should convert requested belongs_to and has_one associations into the <association>_id format when requested" do
-        @presenter.present_and_post_process(@workspace, [:user])[:user_id].should == @workspace.user.id.to_s
+        @presenter.present_and_post_process(@workspace, ["user"])[:user_id].should == @workspace.user.id.to_s
       end
 
       it "converts non-association models into <model>_id format when they are requested" do
-        @presenter.present_and_post_process(@workspace, [:lead_user])[:lead_user_id].should == @workspace.lead_user.id.to_s
+        @presenter.present_and_post_process(@workspace, ["lead_user"])[:lead_user_id].should == @workspace.lead_user.id.to_s
       end
 
       it "handles associations provided with lambdas" do
-        @presenter.present_and_post_process(@workspace, [:lead_user_with_lambda])[:lead_user_with_lambda_id].should == @workspace.lead_user.id.to_s
+        @presenter.present_and_post_process(@workspace, ["lead_user_with_lambda"])[:lead_user_with_lambda_id].should == @workspace.lead_user.id.to_s
       end
 
       it "should return <association>_id fields when the given association ids exist on the model whether it is requested or not" do
-        @presenter.present_and_post_process(@workspace, [:user])[:user_id].should == @workspace.user_id.to_s
+        @presenter.present_and_post_process(@workspace, ["user"])[:user_id].should == @workspace.user_id.to_s
 
         json = @presenter.present_and_post_process(@workspace, [])
         json.keys.should =~ [:user_id, :something_id, :id, :updated_at]
@@ -233,10 +233,10 @@ describe Brainstem::Presenter do
       it "should return null, not empty string when ids are missing" do
         @workspace.user = nil
         @workspace.tasks = []
-        @presenter.present_and_post_process(@workspace, [:lead_user_with_lambda])[:lead_user_with_lambda_id].should == nil
-        @presenter.present_and_post_process(@workspace, [:user])[:user_id].should == nil
-        @presenter.present_and_post_process(@workspace, [:something])[:something_id].should == nil
-        @presenter.present_and_post_process(@workspace, [:tasks])[:task_ids].should == []
+        @presenter.present_and_post_process(@workspace, ["lead_user_with_lambda"])[:lead_user_with_lambda_id].should == nil
+        @presenter.present_and_post_process(@workspace, ["user"])[:user_id].should == nil
+        @presenter.present_and_post_process(@workspace, ["something"])[:something_id].should == nil
+        @presenter.present_and_post_process(@workspace, ["tasks"])[:task_ids].should == []
       end
 
       context "when the model has an <association>_id method but no column" do

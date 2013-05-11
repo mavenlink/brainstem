@@ -555,16 +555,33 @@ describe Brainstem::PresenterCollection do
         result[:results].map {|i| result[:workspaces][i[:id]][:description] }.should eq(%w(1 2 3 a b c))
       end
 
-      it "cleans the direction param" do
+      it "cleans the params" do
+        WorkspacePresenter.sort_order(:description, "workspaces.description")
+        WorkspacePresenter.default_sort_order("description:desc")
+
         result = @presenter_collection.presenting("workspaces", :params => { :order => "updated_at:drop table" }) { Workspace.where("id is not null") }
         result.keys.should =~ [:count, :workspaces, :results]
+
+        result = @presenter_collection.presenting("workspaces", :params => { :order => "drop table:desc" }) { Workspace.where("id is not null") }
+        result.keys.should =~ [:count, :workspaces, :results]
+        result[:results].map {|i| result[:workspaces][i[:id]][:description] }.should eq(%w(c b a 3 2 1))
       end
 
       it "can take a proc" do
-        WorkspacePresenter.sort_order(:description){ Workspace.order("workspaces.description") }
-        WorkspacePresenter.default_sort_order("description:asc")
+        WorkspacePresenter.sort_order(:id) { |scope, direction| scope.order("workspaces.id #{direction}") }
+        WorkspacePresenter.default_sort_order("id:asc")
+
+        # Default
         result = @presenter_collection.presenting("workspaces") { Workspace.where("id is not null") }
-        result[:results].map {|i| result[:workspaces][i[:id]][:description] }.should eq(%w(1 2 3 a b c))
+        result[:results].map {|i| result[:workspaces][i[:id]][:description] }.should eq(%w(a 1 b 2 c 3))
+
+        # Asc
+        result = @presenter_collection.presenting("workspaces", :params => { :order => "id:asc" }) { Workspace.where("id is not null") }
+        result[:results].map {|i| result[:workspaces][i[:id]][:description] }.should eq(%w(a 1 b 2 c 3))
+
+        # Desc
+        result = @presenter_collection.presenting("workspaces", :params => { :order => "id:desc" }) { Workspace.where("id is not null") }
+        result[:results].map {|i| result[:workspaces][i[:id]][:description] }.should eq(%w(3 c 2 b 1 a))
       end
     end
 

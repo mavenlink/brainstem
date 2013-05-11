@@ -38,7 +38,7 @@ module Brainstem
     # @raise [ArgumentError] if neither an order string or block is given.
     def self.sort_order(name, order = nil, &block)
       raise ArgumentError, "A sort order must be given" unless block_given? || order
-      @sort_orders ||= {}
+      @sort_orders ||= HashWithIndifferentAccess.new
       @sort_orders[name] = (block_given? ? block : order)
     end
 
@@ -56,7 +56,7 @@ module Brainstem
     #   @yieldparam arg [Object] The argument passed when the filter was requested.
     #   @yieldreturn [ActiveRecord::Relation] A new scope that filters the scope that was yielded.
     def self.filter(name, options = {}, &block)
-      @filters ||= {}
+      @filters ||= HashWithIndifferentAccess.new
       @filters[name] = [options, (block_given? ? block : nil)]
     end
 
@@ -160,7 +160,7 @@ module Brainstem
             if reflection && reflection.options[:polymorphic]
               struct["#{key.to_s.singularize}_type".to_sym] = model.send("#{value.method_name}_type")
             end
-          elsif associations.include?(key)
+          elsif associations.include?(key.to_s)
             result = value.call(model)
             if result.is_a?(Array)
               struct["#{key.to_s.singularize}_ids".to_sym] = result.map {|a| to_s_except_nil(a.is_a?(ActiveRecord::Base) ? a.id : a) }

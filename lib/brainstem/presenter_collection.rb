@@ -29,7 +29,7 @@ module Brainstem
     # @yield Must return a scope on the model +name+, which will then be presented.
     # @return [Hash] A hash of arrays of hashes. Top-level hash keys are pluralized model names, with values of arrays containing one hash per object that was found by the given given options.
     def presenting(name, options = {}, &block)
-      options[:params] ||= {}
+      options[:params] = HashWithIndifferentAccess.new(options[:params] || {})
       presented_class = (options[:model] || name)
       presented_class = presented_class.classify.constantize if presented_class.is_a?(String)
       scope = presented_class.instance_eval(&block)
@@ -151,11 +151,11 @@ module Brainstem
       presenter.present(model).each do |k, v|
         next unless v.is_a?(AssociationField)
         if v.json_name
-          v.json_name = v.json_name.tableize
+          v.json_name = v.json_name.tableize.to_sym
         else
           association = model.class.reflections[v.method_name]
           if !association.options[:polymorphic]
-            v.json_name = association && association.table_name
+            v.json_name = association && association.table_name.to_sym
             if v.json_name.nil?
               raise ":json_name is a required option for method-based associations (#{presented_class}##{v.method_name})"
             end
@@ -172,8 +172,7 @@ module Brainstem
       (user_includes || '').split(',').each do |k|
         allowed = allowed_includes[k]
         if allowed
-          allowed.json_name = allowed.json_name.try(:to_sym)
-          filtered_includes[k.to_sym] = allowed
+          filtered_includes[k] = allowed
         end
       end
       filtered_includes
@@ -219,10 +218,12 @@ module Brainstem
     def run_search(scope, includes, sort_name, direction, options)
       return scope unless searching? options
 
-      search_options = { :include => includes,
-                         :order => { :sort_order => sort_name, :direction => direction },
-                         :per_page => calculate_per_page(options),
-                         :page => calculate_page(options) }
+      search_options = HashWithIndifferentAccess.new(
+          :include => includes,
+          :order => { :sort_order => sort_name, :direction => direction },
+          :per_page => calculate_per_page(options),
+          :page => calculate_page(options)
+      )
 
       search_options.reverse_merge!(extract_filters(options))
 
@@ -238,8 +239,8 @@ module Brainstem
       ids_to_position = {}
       ordered_records = []
 
-      ordered_search_ids.each_with_index do |id, i|
-        ids_to_position[id] = i
+      ordered_search_ids.each_with_index do |id, index|
+        ids_to_position[id] = index
       end
 
       records.each do |record|
@@ -265,7 +266,7 @@ module Brainstem
     def calculate_order_and_direction(options)
       sort_name, direction = calculate_sort_name_and_direction(options)
       sort_orders = (options[:presenter].sort_orders || {})
-      order = sort_orders[sort_name.to_sym]
+      order = sort_orders[sort_name]
 
       [order, direction]
     end
@@ -273,8 +274,8 @@ module Brainstem
     def calculate_sort_name_and_direction(options)
       default_column, default_direction = (options[:presenter].default_sort_order || "updated_at:desc").split(":")
       sort_name, direction = (options[:params][:order] || "").split(":")
-      sort_orders = (options[:presenter].sort_orders || {})
-      unless sort_name.present? && sort_orders[sort_name.to_sym]
+      sort_orders = options[:presenter].sort_orders || {}
+      unless sort_name.present? && sort_orders[sort_name]
         sort_name = default_column
         direction = default_direction
       end
