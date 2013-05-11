@@ -10,6 +10,10 @@ describe Brainstem::PresenterCollection do
     @presenter_collection = Brainstem.presenter_collection
   end
 
+  let(:bob) { User.where(:username => "bob").first }
+  let(:bob_workspaces_ids) { bob.workspaces.map(&:id) }
+  let(:jane) { User.where(:username => "jane").first }
+
   describe "#presenting" do
     describe "#pagination" do
       before do
@@ -241,10 +245,6 @@ describe Brainstem::PresenterCollection do
         WorkspacePresenter.filter(:owned_by) { |scope, user_id| scope.owned_by(user_id.to_i) }
         WorkspacePresenter.filter(:title) { |scope, title| scope.where(:title => title) }
       end
-
-      let(:bob) { User.where(:username => "bob").first }
-      let(:bob_workspaces_ids) { bob.workspaces.map(&:id) }
-      let(:jane) { User.where(:username => "jane").first }
 
       it "limits records to those matching given filters" do
         result = @presenter_collection.presenting("workspaces", :params => { :owned_by => bob.id.to_s }) { Workspace.order("id desc") } # hit the API, filtering on owned_by:bob
@@ -589,6 +589,24 @@ describe Brainstem::PresenterCollection do
       it "determines the chosen top-level key name" do
         result = @presenter_collection.presenting("workspaces", :as => :my_workspaces) { Workspace.where(:id => 1) }
         result.keys.should eq([:count, :my_workspaces, :results])
+      end
+    end
+
+    describe "the count top level key" do
+      it "should return the total number of matched records" do
+        WorkspacePresenter.filter(:owned_by) { |scope, user_id| scope.owned_by(user_id.to_i) }
+
+        result = @presenter_collection.presenting("workspaces") { Workspace.where(:id => 1) }
+        result[:count].should == 1
+
+        result = @presenter_collection.presenting("workspaces") { Workspace.unscoped }
+        result[:count].should == Workspace.count
+
+        result = @presenter_collection.presenting("workspaces", :params => { :owned_by => bob.to_param }) { Workspace.unscoped }
+        result[:count].should == Workspace.owned_by(bob.to_param).count
+
+        result = @presenter_collection.presenting("workspaces", :params => { :owned_by => bob.to_param }) { Workspace.group(:id) }
+        result[:count].should == Workspace.owned_by(bob.to_param).count
       end
     end
   end

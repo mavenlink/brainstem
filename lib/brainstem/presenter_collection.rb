@@ -63,6 +63,8 @@ module Brainstem
           scope, count = paginate scope, options
         end
 
+        count = count.keys.length if count.is_a?(Hash)
+
         # Ordering
         scope = handle_ordering scope, options
       end
