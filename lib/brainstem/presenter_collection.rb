@@ -1,4 +1,5 @@
 require 'brainstem/association_field'
+require 'brainstem/search_unavailable_error'
 
 module Brainstem
   class PresenterCollection
@@ -230,7 +231,11 @@ module Brainstem
       search_options.reverse_merge!(extract_filters(options))
 
       result_ids, count = options[:presenter].search_block.call(options[:params][:search], search_options)
-      [scope.where(:id => result_ids ), count, result_ids]
+      if result_ids
+        [scope.where(:id => result_ids ), count, result_ids]
+      else
+        raise(SearchUnavailableError, 'Search is currently unavailable')
+      end
     end
 
     def searching?(options)
