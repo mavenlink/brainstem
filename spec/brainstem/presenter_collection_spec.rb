@@ -412,6 +412,16 @@ describe Brainstem::PresenterCollection do
 
           end
 
+          it "throws a SearchUnavailableError if the search block returns false" do
+            WorkspacePresenter.search do |string|
+              false
+            end
+
+            lambda {
+              @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.unscoped }
+            }.should raise_error(Brainstem::SearchUnavailableError)
+          end
+
           describe "passing options to the search block" do
             it "passes the search method, the search string, includes, order, and paging options" do
               WorkspacePresenter.filter(:owned_by) { |scope| scope }
