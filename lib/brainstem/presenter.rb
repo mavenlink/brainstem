@@ -162,7 +162,7 @@ module Brainstem
             end
           elsif associations.include?(key.to_s)
             result = value.call(model)
-            if result.is_a?(Array)
+            if result.is_a?(Array) || result.is_a?(ActiveRecord::Relation)
               struct["#{key.to_s.singularize}_ids".to_sym] = result.map {|a| to_s_except_nil(a.is_a?(ActiveRecord::Base) ? a.id : a) }
             else
               if result.is_a?(ActiveRecord::Base)
