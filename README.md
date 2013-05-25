@@ -14,6 +14,8 @@ Brainstem is designed to power rich APIs in Rails. The Brainstem gem provides a 
 * Prevent data duplication by pulling associations into top-level hashes, easily indexable by ID.
 * Easy integration with Backbone.js.  "It's like Ember Data for Backbone.js!"
 
+Please [watch our talk about Brainstem from RailsConf 2013](http://www.confreaks.com/videos/2457-railsconf2013-introducing-brainstem-your-companion-for-rich-rails-apis).
+
 ## Installation
 
 Add this line to your application's Gemfile:
