@@ -19,6 +19,8 @@ module Brainstem
     end
 
     # The main presentation method, converting a model name and an optional scope into a hash structure, ready to be converted into JSON.
+    # If searching, Brainstem filtering, only, pagination, and ordering are skipped and should be implemented with your search solution.
+    # All request options are passed to the +search_block+ for your convenience.
     # @param [Class, String] name The class of the objects to be presented.
     # @param [Hash] options The options that will be applied as the objects are converted.
     # @option options [Hash] :params The +params+ hash included in a request for the presented object.
@@ -218,6 +220,9 @@ module Brainstem
       filters_hash
     end
 
+    # Runs the current search_block and returns an array of [scope of the resulting ids, result count, result ids]
+    # If the search_block returns a falsy value a SearchUnavailableError is raised.
+    # Your search block should return a list of ids and the count of ids found, or false if search is unavailable.
     def run_search(scope, includes, sort_name, direction, options)
       return scope unless searching? options
 

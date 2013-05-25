@@ -190,6 +190,7 @@ describe Brainstem::Presenter do
                 :something                  => association(:user),
                 :lead_user                  => association(:lead_user),
                 :lead_user_with_lambda      => association(:json_name => "users") { |model| model.user },
+                :tasks_with_lambda          => association(:json_name => "tasks") { |model| Task.where(:workspace_id => model) },
                 :synthetic                  => association(:synthetic)
             }
           end
@@ -219,6 +220,7 @@ describe Brainstem::Presenter do
 
       it "handles associations provided with lambdas" do
         @presenter.present_and_post_process(@workspace, ["lead_user_with_lambda"])[:lead_user_with_lambda_id].should == @workspace.lead_user.id.to_s
+        @presenter.present_and_post_process(@workspace, ["tasks_with_lambda"])[:tasks_with_lambda_ids].should == @workspace.tasks.map(&:id).map(&:to_s)
       end
 
       it "should return <association>_id fields when the given association ids exist on the model whether it is requested or not" do
