@@ -135,7 +135,9 @@ module Brainstem
       per_page = calculate_per_page(options)
       page = calculate_page(options)
 
-      [scope.limit(per_page).offset(per_page * (page - 1)).uniq, scope.select("distinct `#{options[:table_name]}`.id").count] # as of Rails 3.2.5, uniq.count generates the wrong SQL.
+      table_name = scope.connection.quote_table_name(options[:table_name])
+
+      [scope.limit(per_page).offset(per_page * (page - 1)).uniq, scope.select("distinct #{table_name}.id").count] # as of Rails 3.2.5, uniq.count generates the wrong SQL.
     end
 
     def calculate_per_page(options)
