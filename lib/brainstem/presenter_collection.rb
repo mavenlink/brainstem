@@ -132,10 +132,15 @@ module Brainstem
     private
 
     def paginate(scope, options)
-      per_page = calculate_per_page(options)
-      page = calculate_page(options)
+      if options[:params][:limit].present? && options[:params][:offset].present?
+        limit = calculate_limit(options)
+        offset = calculate_offset(options)
+      else
+        limit = calculate_per_page(options)
+        offset = limit * (calculate_page(options) - 1)
+      end
 
-      [scope.limit(per_page).offset(per_page * (page - 1)).uniq, scope.select("distinct `#{options[:table_name]}`.id").count] # as of Rails 3.2.5, uniq.count generates the wrong SQL.
+      [scope.limit(limit).offset(offset).uniq, scope.select("distinct `#{options[:table_name]}`.id").count] # as of Rails 3.2.5, uniq.count generates the wrong SQL.
     end
 
     def calculate_per_page(options)
@@ -146,6 +151,14 @@ module Brainstem
 
     def calculate_page(options)
       [(options[:params][:page] || 1).to_i, 1].max
+    end
+
+    def calculate_limit(options)
+      [[options[:params][:limit].to_i, 1].max, default_max_per_page].min
+    end
+
+    def calculate_offset(options)
+      [options[:params][:offset].to_i, 0].max
     end
 
     # Gather allowed includes by inspecting the presented hash.  For now, this requires that a new instance of the

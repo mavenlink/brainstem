@@ -44,20 +44,60 @@ describe Brainstem::PresenterCollection do
       end
 
       describe "limits and offsets" do
-        it "honors the user's requested page size and page and returns counts" do
-          result = @presenter_collection.presenting("workspaces", :params => { :per_page => 1, :page => 2 }) { Workspace.order('id desc') }[:results]
-          result.length.should == 1
-          result.first[:id].should == Workspace.order('id desc')[1].id.to_s
+        context "when only per_page and page are present" do
+          it "honors the user's requested page size and page and returns counts" do
+            result = @presenter_collection.presenting("workspaces", :params => { :per_page => 1, :page => 2 }) { Workspace.order('id desc') }[:results]
+            result.length.should == 1
+            result.first[:id].should == Workspace.order('id desc')[1].id.to_s
 
-          result = @presenter_collection.presenting("workspaces", :params => { :per_page => 2, :page => 2 }) { Workspace.order('id desc') }[:results]
-          result.length.should == 2
-          result.map { |m| m[:id] }.should == Workspace.order('id desc')[2..3].map(&:id).map(&:to_s)
+            result = @presenter_collection.presenting("workspaces", :params => { :per_page => 2, :page => 2 }) { Workspace.order('id desc') }[:results]
+            result.length.should == 2
+            result.map { |m| m[:id] }.should == Workspace.order('id desc')[2..3].map(&:id).map(&:to_s)
+          end
+
+          it "defaults to 1 if the page number is less than 1" do
+            result = @presenter_collection.presenting("workspaces", :params => { :per_page => 1, :page => 0 }) { Workspace.order('id desc') }[:results]
+            result.length.should == 1
+            result.first[:id].should == Workspace.order('id desc')[0].id.to_s
+          end
         end
 
-        it "defaults to 1 if the page number is less than 1" do
-          result = @presenter_collection.presenting("workspaces", :params => { :per_page => 1, :page => 0 }) { Workspace.order('id desc') }[:results]
-          result.length.should == 1
-          result.first[:id].should == Workspace.order('id desc')[0].id.to_s
+        context "when only limit and offset are present" do
+          it "honors the user's requested limit and offset and returns counts" do
+            result = @presenter_collection.presenting("workspaces", :params => { :limit => 1, :offset => 2 }) { Workspace.order('id desc') }[:results]
+            result.length.should == 1
+            result.first[:id].should == Workspace.order('id desc')[2].id.to_s
+
+            result = @presenter_collection.presenting("workspaces", :params => { :limit => 2, :offset => 2 }) { Workspace.order('id desc') }[:results]
+            result.length.should == 2
+            result.map { |m| m[:id] }.should == Workspace.order('id desc')[2..3].map(&:id).map(&:to_s)
+          end
+
+          it "defaults to offset 0 if the passed offset is less than 0 and limit to 1 if the passed limit is less than 1" do
+            stub.proxy(@presenter_collection).calculate_offset(anything).times(1)
+            stub.proxy(@presenter_collection).calculate_limit(anything).times(1)
+            result = @presenter_collection.presenting("workspaces", :params => { :limit => -1, :offset => -1 }) { Workspace.order('id desc') }[:results]
+            result.length.should == 1
+            result.first[:id].should == Workspace.order('id desc')[0].id.to_s
+          end
+        end
+
+        context "when both sets of params are present" do
+          it "prefers limit and offset over per_page and page" do
+            result = @presenter_collection.presenting("workspaces", :params => { :limit => 1, :offset => 0, :per_page => 2, :page => 2 }) { Workspace.order('id desc') }[:results]
+            result.length.should == 1
+            result.first[:id].should == Workspace.order('id desc')[0].id.to_s
+          end
+
+          it "uses per_page and page if limit and offset are not complete" do
+            result = @presenter_collection.presenting("workspaces", :params => { :limit => 5, :per_page => 1, :page => 0 }) { Workspace.order('id desc') }[:results]
+            result.length.should == 1
+            result.first[:id].should == Workspace.order('id desc')[0].id.to_s
+
+            result = @presenter_collection.presenting("workspaces", :params => { :offset => 5, :per_page => 1, :page => 0 }) { Workspace.order('id desc') }[:results]
+            result.length.should == 1
+            result.first[:id].should == Workspace.order('id desc')[0].id.to_s
+          end
         end
       end
 
