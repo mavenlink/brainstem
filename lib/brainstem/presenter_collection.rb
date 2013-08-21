@@ -242,9 +242,15 @@ module Brainstem
       search_options = HashWithIndifferentAccess.new(
           :include => includes,
           :order => { :sort_order => sort_name, :direction => direction },
-          :per_page => calculate_per_page(options),
-          :page => calculate_page(options)
       )
+
+      if options[:params][:limit].present? && options[:params][:offset].present?
+        search_options[:limit] = calculate_limit(options)
+        search_options[:offset] = calculate_offset(options)
+      else
+        search_options[:per_page] = calculate_per_page(options)
+        search_options[:page] = calculate_page(options)
+      end
 
       search_options.reverse_merge!(extract_filters(options))
 
