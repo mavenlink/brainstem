@@ -543,6 +543,66 @@ describe Brainstem::PresenterCollection do
                 @presenter_collection.presenting("workspaces", :params => { :search => "blah", :order => "created_at:asc"}) { Workspace.order("id asc") }
               end
             end
+
+            describe "pagination" do
+              it "passes through limit and offset if they are requested" do
+                WorkspacePresenter.search do |string, options|
+                  options[:limit].should == 1
+                  options[:offset].should == 2
+                  [[1], 1]
+                end
+
+                @presenter_collection.presenting("workspaces", :params => { :search => "blah", :limit => 1, :offset => 2}) { Workspace.order("id asc") }
+              end
+
+              it "passes through only limit and offset if all pagination options are requested" do
+                WorkspacePresenter.search do |string, options|
+                  options[:limit].should == 1
+                  options[:offset].should == 2
+                  options[:per_page].should == nil
+                  options[:page].should == nil
+                  [[1], 1]
+                end
+
+                @presenter_collection.presenting("workspaces", :params => { :search => "blah", :limit => 1, :offset => 2, :per_page => 3, :page => 4}) { Workspace.order("id asc") }
+              end
+
+              it "passes through page and per_page when limit not present" do
+                WorkspacePresenter.search do |string, options|
+                  options[:limit].should == nil
+                  options[:offset].should == nil
+                  options[:per_page].should == 3
+                  options[:page].should == 4
+                  [[1], 1]
+                end
+
+                @presenter_collection.presenting("workspaces", :params => { :search => "blah", :offset => 2, :per_page => 3, :page => 4}) { Workspace.order("id asc") }
+              end
+
+              it "passes through page and per_page when offset not present" do
+                WorkspacePresenter.search do |string, options|
+                  options[:limit].should == nil
+                  options[:offset].should == nil
+                  options[:per_page].should == 3
+                  options[:page].should == 4
+                  [[1], 1]
+                end
+
+                @presenter_collection.presenting("workspaces", :params => { :search => "blah", :limit => 1, :per_page => 3, :page => 4}) { Workspace.order("id asc") }
+              end
+
+              it "passes through page and per_page by default" do
+                WorkspacePresenter.search do |string, options|
+                  options[:limit].should == nil
+                  options[:offset].should == nil
+                  options[:per_page].should == 20
+                  options[:page].should == 1
+                  [[1], 1]
+                end
+
+                @presenter_collection.presenting("workspaces", :params => { :search => "blah"}) { Workspace.order("id asc") }
+              end
+            end
           end
         end
 
