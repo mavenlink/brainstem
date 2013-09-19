@@ -47,7 +47,7 @@ module Brainstem
       # key these models will use in the struct that is output
       options[:as] = (options[:as] || name.to_s.tableize).to_sym
 
-      allowed_includes = calculate_allowed_includes options[:presenter], presented_class
+      allowed_includes = calculate_allowed_includes options[:presenter], presented_class, options[:params][:only].present?
       includes_hash = filter_includes options[:params][:include], allowed_includes
 
       if searching? options
@@ -163,11 +163,13 @@ module Brainstem
 
     # Gather allowed includes by inspecting the presented hash.  For now, this requires that a new instance of the
     # presented class always be presentable.
-    def calculate_allowed_includes(presenter, presented_class)
+    def calculate_allowed_includes(presenter, presented_class, is_only_query)
       allowed_includes = {}
       model = presented_class.new
       presenter.present(model).each do |k, v|
         next unless v.is_a?(AssociationField)
+        next if v.restrict_to_only && !is_only_query
+
         if v.json_name
           v.json_name = v.json_name.tableize.to_sym
         else
