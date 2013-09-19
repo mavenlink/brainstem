@@ -238,6 +238,23 @@ describe Brainstem::PresenterCollection do
         result[:users][Workspace.first.lead_user.id.to_s].should be_present
       end
 
+      describe "restricted associations" do
+        it "does apply includes that are restricted to only queries in an only query" do
+          t = Task.first
+          result = @presenter_collection.presenting("tasks", :params => { :include => "restricted", :only => t.id.to_s }, :max_per_page => 2) { Task.where(:id => t.id) }
+          result[:tasks][t.id.to_s].keys.should include(:restricted_id)
+          result.keys.should include(:restricted_associations)
+        end
+
+        it "does not apply includes that are restricted to only queries in a non-only query" do
+          t = Task.first
+          result = @presenter_collection.presenting("tasks", :params => { :include => "restricted" }, :max_per_page => 2) { Task.where(:id => t.id) }
+
+          result[:tasks][t.id.to_s].keys.should_not include(:restricted_id)
+          result.keys.should_not include(:restricted_associations)
+        end
+      end
+
       describe "polymorphic associations" do
         it "works with polymorphic associations" do
           result = @presenter_collection.presenting("posts", :params => { :include => "subject" }) { Post.order('id desc') }
