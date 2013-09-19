@@ -168,7 +168,7 @@ module Brainstem
       model = presented_class.new
       presenter.present(model).each do |k, v|
         next unless v.is_a?(AssociationField)
-        next if v.restrict_only && !is_only_query
+        next if v.restrict_to_only && !is_only_query
 
         if v.json_name
           v.json_name = v.json_name.tableize.to_sym

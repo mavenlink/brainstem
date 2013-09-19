@@ -17,7 +17,7 @@ class TaskPresenter < Brainstem::Presenter
       :sub_tasks    => association(:sub_tasks),
       :other_tasks  => association(:sub_tasks, :json_name => "other_tasks"),
       :workspace    => association(:workspace),
-      :restricted   => association(:json_name => "restricted_association", :restrict_only => true) { |model| model }
+      :restricted   => association(:json_name => "restricted_association", :restrict_to_only => true) { |model| model }
     }
   end
 end
