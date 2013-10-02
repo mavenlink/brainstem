@@ -6,7 +6,7 @@ Brainstem is designed to power rich APIs in Rails. The Brainstem gem provides a 
 
 ## Why Brainstem?
 
-* Seperate business and presentation logic with Presenters.
+* Separate business and presentation logic with Presenters.
 * Version your Presenters for consistency as your API evolves.
 * Expose end-user selectable filters and sorts.
 * Whitelist your existing scopes to act as API filters for your users.
