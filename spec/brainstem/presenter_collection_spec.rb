@@ -326,21 +326,21 @@ describe Brainstem::PresenterCollection do
 
       it "converts boolean parameters from strings to booleans" do
         WorkspacePresenter.filter(:owned_by_bob) { |scope, boolean| boolean ? scope.where(:user_id => bob.id) : scope.where(:user_id => jane.id) }
-        result = @presenter_collection.presenting("workspaces", :params => { :owned_by_bob => "false" }) { Workspace.scoped }
+        result = @presenter_collection.presenting("workspaces", :params => { :owned_by_bob => "false" }) { Workspace.all }
         result[:workspaces].values.find { |workspace| workspace[:title].include?("jane") }.should be
         result[:workspaces].values.find { |workspace| workspace[:title].include?("bob") }.should_not be
       end
 
       it "ensures arguments are strings" do
         WorkspacePresenter.filter(:owned_by_bob) { |scope, string| string.should be_a(String); scope }
-        result = @presenter_collection.presenting("workspaces", :params => { :owned_by_bob => [1, 2] }) { Workspace.scoped }
+        result = @presenter_collection.presenting("workspaces", :params => { :owned_by_bob => [1, 2] }) { Workspace.all }
       end
 
       it "allows filters to be called with false as an argument" do
         WorkspacePresenter.filter(:nothing) { |scope, bool| bool ? scope.where(:id => nil) : scope }
-        result = @presenter_collection.presenting("workspaces", :params => { :nothing => "true" }) { Workspace.scoped }
+        result = @presenter_collection.presenting("workspaces", :params => { :nothing => "true" }) { Workspace.all }
         result[:workspaces].length.should eq(0)
-        result = @presenter_collection.presenting("workspaces", :params => { :nothing => "false" }) { Workspace.scoped }
+        result = @presenter_collection.presenting("workspaces", :params => { :nothing => "false" }) { Workspace.all }
         result[:workspaces].length.should_not eq(0)
       end
 
@@ -352,7 +352,7 @@ describe Brainstem::PresenterCollection do
           scope
         }
 
-        @presenter_collection.presenting("workspaces", :params => { :between => "1:10" }) { Workspace.scoped }
+        @presenter_collection.presenting("workspaces", :params => { :between => "1:10" }) { Workspace.all }
       end
 
       context "with defaults" do
@@ -403,27 +403,27 @@ describe Brainstem::PresenterCollection do
         end
 
         it "calls the named scope with default arguments" do
-          result = @presenter_collection.presenting("workspaces") { Workspace.scoped }
+          result = @presenter_collection.presenting("workspaces") { Workspace.all }
           result[:workspaces].keys.should eq(bob.workspaces.pluck(:id).map(&:to_s))
         end
 
         it "calls the named scope with given arguments" do
-          result = @presenter_collection.presenting("workspaces", :params => { :owned_by => jane.id.to_s }) { Workspace.scoped }
+          result = @presenter_collection.presenting("workspaces", :params => { :owned_by => jane.id.to_s }) { Workspace.all }
           result[:workspaces].keys.should eq(jane.workspaces.pluck(:id).map(&:to_s))
         end
 
         it "can use filters without lambdas in the presenter or model, but behaves strangely when false is given" do
           WorkspacePresenter.filter(:numeric_description)
 
-          result = @presenter_collection.presenting("workspaces") { Workspace.scoped }
+          result = @presenter_collection.presenting("workspaces") { Workspace.all }
           result[:workspaces].keys.should eq(%w[1 2 3 4])
 
-          result = @presenter_collection.presenting("workspaces", :params => { :numeric_description => "true" }) { Workspace.scoped }
+          result = @presenter_collection.presenting("workspaces", :params => { :numeric_description => "true" }) { Workspace.all }
           result[:workspaces].keys.should eq(%w[2 4])
 
           # This is probably not the behavior that the developer or user intends.  You should always use a one-argument lambda in your
           # model scope declaration!
-          result = @presenter_collection.presenting("workspaces", :params => { :numeric_description => "false" }) { Workspace.scoped }
+          result = @presenter_collection.presenting("workspaces", :params => { :numeric_description => "false" }) { Workspace.all }
           result[:workspaces].keys.should eq(%w[2 4])
         end
       end
