@@ -17,7 +17,7 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
   gem.version       = Brainstem::VERSION
 
-  gem.add_dependency "activerecord", "~> 3.0"
+  gem.add_dependency "activerecord", ">= 3.0"
 
   gem.add_development_dependency "rake"
   gem.add_development_dependency "redcarpet" # for markdown in yard

@@ -49,7 +49,7 @@ class Workspace < ActiveRecord::Base
   has_many :posts
 
   scope :owned_by, -> id { where(:user_id => id) }
-  scope :numeric_description, where(:description => ["1", "2", "3"])
+  scope :numeric_description, -> description { where(:description => ["1", "2", "3"]) }
 
   def lead_user
     user
