@@ -101,6 +101,44 @@ describe Brainstem::PresenterCollection do
         end
       end
 
+      describe "raise_on_empty option" do
+        context "raise_on_empty is true" do
+          context "results are empty" do
+            it "should raise the provided error class when the empty_error_class option is provided" do
+              class MyException < Exception; end
+
+              lambda {
+                @presenter_collection.presenting("workspaces", :raise_on_empty => true, :empty_error_class => MyException) { Workspace.where(:id => nil) }
+              }.should raise_error(MyException)
+            end
+
+            it "should raise ActiveRecord::RecordNotFound when the empty_error_class option is not provided" do
+              lambda {
+                @presenter_collection.presenting("workspaces", :raise_on_empty => true) { Workspace.where(:id => nil) }
+              }.should raise_error(ActiveRecord::RecordNotFound)
+            end
+          end
+
+          context "results are not empty" do
+            it "should not raise an exception" do
+              Workspace.count.should > 0
+
+              lambda {
+                @presenter_collection.presenting("workspaces", :raise_on_empty => true) { Workspace.order('id desc') }
+              }.should_not raise_error
+            end
+          end
+        end
+
+        context "raise_on_empty is false" do
+          it "should not raise an exception when the results are empty" do
+            lambda { 
+              @presenter_collection.presenting("workspaces") { Workspace.where(:id => nil) }
+            }.should_not raise_error
+          end
+        end
+      end
+
       describe "counts" do
         before do
           @presenter_collection.default_per_page = 500

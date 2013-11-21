@@ -27,7 +27,6 @@ module Brainstem
     #                           only required if the name cannot be inferred.
     # @return (see PresenterCollection#presenting)
     def present_object(objects, options = {})
-      options.reverse_merge(:params => params)
       if objects.is_a?(ActiveRecord::Relation) || objects.is_a?(Array)
         raise ActiveRecord::RecordNotFound if objects.empty?
         klass = objects.first.class
@@ -37,7 +36,7 @@ module Brainstem
         ids = objects.id
       end
       json_key = (options[:key_map] || {})[klass.to_s] || klass.table_name
-      present(klass, :as => json_key, :apply_default_filters => false){ klass.where(:id => ids) }
+      present(klass, options.merge(:as => json_key, :params => params)) { klass.where(:id => ids) }
     end
     alias_method :present_objects, :present_object
   end

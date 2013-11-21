@@ -59,9 +59,14 @@ describe Brainstem::ControllerMethods do
         @controller.call_results[:block_result].pluck(:id).should == [1]
       end
 
-      it "passes :apply_default_filters => false to the PresenterCollection so that filters are not applied by default" do
-        @controller.present_object(Workspace.find(1))
-        @controller.call_results[:options][:apply_default_filters].should == false
+      it "passes through the controller params" do
+        @controller.present_object(Workspace.find(1), :key_map => { "Workspace" => "your_workspaces" })
+        @controller.call_results[:options][:params].should == @controller.params
+      end
+
+      it "passes through supplied options" do
+        @controller.present_object(Workspace.find(1), :foo => :bar)
+        @controller.call_results[:options][:foo].should == :bar
       end
     end
   end

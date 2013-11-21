@@ -74,6 +74,12 @@ module Brainstem
 
       # Load Includes
       records = scope.to_a
+
+      # Determine if an exception should be raised on an empty result set.
+      if options[:raise_on_empty] && records.empty?
+        raise options[:empty_error_class] || ActiveRecord::RecordNotFound
+      end
+
       records = order_for_search(records, ordered_search_ids) if searching? options
       model = records.first
 
