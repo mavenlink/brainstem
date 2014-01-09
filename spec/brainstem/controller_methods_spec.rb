@@ -61,12 +61,20 @@ describe Brainstem::ControllerMethods do
 
       it "passes through the controller params" do
         @controller.present_object(Workspace.find(1), :key_map => { "Workspace" => "your_workspaces" })
-        @controller.call_results[:options][:params].should == @controller.params
+        @controller.call_results[:options][:params].should == @controller.params.merge(:only => '1')
       end
 
       it "passes through supplied options" do
         @controller.present_object(Workspace.find(1), :foo => :bar)
         @controller.call_results[:options][:foo].should == :bar
+      end
+
+      it "adds an only param if there is only one object to present" do
+        @controller.present_object(Workspace.find(1))
+        @controller.call_results[:options][:params][:only].should == "1"
+
+        @controller.present_object(Workspace.all)
+        @controller.call_results[:options][:params][:only].should be_nil
       end
     end
   end
