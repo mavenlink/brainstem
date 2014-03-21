@@ -369,9 +369,26 @@ describe Brainstem::PresenterCollection do
         result[:workspaces].values.find { |workspace| workspace[:title].include?("bob") }.should_not be
       end
 
-      it "ensures arguments are strings" do
-        WorkspacePresenter.filter(:owned_by_bob) { |scope, string| string.should be_a(String); scope }
-        result = @presenter_collection.presenting("workspaces", :params => { :owned_by_bob => [1, 2] }) { Workspace.where(nil) }
+      it "ensures arguments are strings if they are not arrays" do
+        filter_was_run = false
+        WorkspacePresenter.filter(:owned_by_bob) do |scope, string|
+          filter_was_run = true
+          string.should be_a(String)
+          scope
+        end
+        @presenter_collection.presenting("workspaces", :params => { :owned_by_bob => { :wut => "is this?" } }) { Workspace.where(nil) }
+        filter_was_run.should be_true
+      end
+
+      it "preserves array arguments" do
+        filter_was_run = false
+        WorkspacePresenter.filter(:owned_by_bob) do |scope, array|
+          filter_was_run = true
+          array.should be_a(Array)
+          scope
+        end
+        @presenter_collection.presenting("workspaces", :params => { :owned_by_bob => [1, 2] }) { Workspace.where(nil) }
+        filter_was_run.should be_true
       end
 
       it "allows filters to be called with false as an argument" do

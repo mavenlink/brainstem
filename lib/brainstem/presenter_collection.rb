@@ -215,9 +215,9 @@ module Brainstem
         filter_lambda = options[:presenter].filters[filter_name][1]
 
         if filter_lambda
-          scope = filter_lambda.call(scope, *arg)
+          scope = filter_lambda.call(scope, arg)
         else
-          scope = scope.send(filter_name, *arg)
+          scope = scope.send(filter_name, arg)
         end
       end
 
@@ -230,7 +230,7 @@ module Brainstem
 
       (options[:presenter].filters || {}).each do |filter_name, filter|
         requested = options[:params][filter_name]
-        requested = requested.present? ? requested.to_s : nil
+        requested = requested.is_a?(Array) ? requested : (requested.present? ? requested.to_s : nil)
         requested = requested == "true" ? true : (requested == "false" ? false : requested)
 
         filter_options = filter[0]
