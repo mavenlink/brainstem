@@ -80,7 +80,7 @@ Once you've created a presenter like the one above, pass requests through from y
 
 The scope passed to `present` could contain any starting conditions that you'd like.  Requests can have includes, filters, and sort orders.
 
-    GET /api/widgets.json?include=features&sort_order=popularity:desc&location_name=san+francisco
+    GET /api/widgets.json?include=features&order=popularity:desc&location_name=san+francisco
 
 Responses will look like the following:
 
