@@ -330,7 +330,7 @@ module Brainstem
           association_names_to_preload.reject! { |association| !reflections.has_key?(association) }
         end
         if association_names_to_preload.any?
-          ActiveRecord::Associations::Preloader.new(models, association_names_to_preload).run
+          preload(models, association_names_to_preload)
           Brainstem.logger.info "Eager loaded #{association_names_to_preload.join(", ")}."
         end
       end
@@ -369,6 +369,14 @@ module Brainstem
     def rewrite_keys_as_objects!(struct)
       (struct.keys - [:count, :results]).each do |key|
         struct[key] = struct[key].inject({}) {|memo, obj| memo[obj[:id] || obj["id"] || "unknown_id"] = obj; memo }
+      end
+    end
+
+    def preload(models, association_names)
+      if Gem.loaded_specs['activerecord'].version >= Gem::Version.create('4.1')
+        ActiveRecord::Associations::Preloader.new.preload(models, association_names)
+      else
+        ActiveRecord::Associations::Preloader.new(models, association_names).run
       end
     end
   end
