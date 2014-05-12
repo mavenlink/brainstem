@@ -26,57 +26,61 @@ Add this line to your application's Gemfile:
 
 Create a class that inherits from Brainstem::Presenter, named after the model that you want to present, and preferrably versioned in a module. For example:
 
-    module Api
-	  module V1
-	    class WidgetPresenter < Brainstem::Presenter
-	      presents "Widget"
-	
-	      # Available sort orders to expose through the API
-	      sort_order :updated_at, "widgets.updated_at"
-	      sort_order :created_at, "widgets.created_at"
-	
-	      # Default sort order to apply
-	      default_sort_order "updated_at:desc"
-	
-	      # Optional filter that delegates to the Widget model :popular scope, 
-	      # which should take one argument of true or false.
-	      filter :popular
-	
-	      # Optional filter that applies a lambda.
-	      filter :location_name do |scope, location_name|
-	        scope.joins(:locations).where("locations.name = ?", location_name)
-	      end
-	
-	      # Filter with an overridable default that runs on all requests.
-	      filter :include_legacy_widgets, :default => false do |scope, bool|
-	        bool ? scope : scope.without_legacy_widgets
-	      end
-	
-	      # Return a ruby hash that can be converted to JSON
-	      def present(widget)
-	        {
-	            :name           => widget.name,
-	            :legacy         => widget.legacy?,
-	            :updated_at     => widget.updated_at,
-	            :created_at     => widget.created_at,
-	            # Associations can be included by request
-	            :features       => association(:features),
-	            :location       => association(:location)
-	        }
-	      end
-	    end
-	  end
-	end
+```ruby
+module Api
+  module V1
+    class WidgetPresenter < Brainstem::Presenter
+      presents "Widget"
+
+      # Available sort orders to expose through the API
+      sort_order :updated_at, "widgets.updated_at"
+      sort_order :created_at, "widgets.created_at"
+
+      # Default sort order to apply
+      default_sort_order "updated_at:desc"
+
+      # Optional filter that delegates to the Widget model :popular scope, 
+      # which should take one argument of true or false.
+      filter :popular
+
+      # Optional filter that applies a lambda.
+      filter :location_name do |scope, location_name|
+        scope.joins(:locations).where("locations.name = ?", location_name)
+      end
+
+      # Filter with an overridable default that runs on all requests.
+      filter :include_legacy_widgets, :default => false do |scope, bool|
+        bool ? scope : scope.without_legacy_widgets
+      end
+
+      # Return a ruby hash that can be converted to JSON
+      def present(widget)
+        {
+            :name           => widget.name,
+            :legacy         => widget.legacy?,
+            :updated_at     => widget.updated_at,
+            :created_at     => widget.created_at,
+            # Associations can be included by request
+            :features       => association(:features),
+            :location       => association(:location)
+        }
+      end
+    end
+  end
+end
+```
 
 Once you've created a presenter like the one above, pass requests through from your controller.
 
-    class Api::WidgetsController < ActionController::Base
-      include Brainstem::ControllerMethods
+```ruby
+class Api::WidgetsController < ActionController::Base
+  include Brainstem::ControllerMethods
 
-      def index
-        render :json => present("widgets") { Widgets.visible_to(current_user) }
-      end
-    end
+  def index
+    render :json => present("widgets") { Widgets.visible_to(current_user) }
+  end
+end
+```
 
 The scope passed to `present` could contain any starting conditions that you'd like.  Requests can have includes, filters, and sort orders.
 
@@ -125,26 +129,28 @@ Responses will look like the following:
 
 You may want to setup an initializer in `config/initializers/brainstem.rb` like the following:
 
-    Brainstem.default_namespace = :v1
- 
-    module Api
-	  module V1
-	    module Helper
-	      def current_user
-	        # However you get your current user.
-	      end
-	    end
-	  end
-	end
-	Brainstem::Presenter.helper(Api::V1::Helper)
-	
-	require 'api/v1/widget_presenter'
-	require 'api/v1/feature_presenter'
-	require 'api/v1/location_presenter'
-	# ...
-	
-	# Or you could do something like this:
-	#  Dir[Rails.root.join("lib/api/v1/*_presenter.rb").to_s].each { |p| require p }
+```ruby
+Brainstem.default_namespace = :v1
+
+module Api
+  module V1
+    module Helper
+      def current_user
+        # However you get your current user.
+      end
+    end
+  end
+end
+Brainstem::Presenter.helper(Api::V1::Helper)
+
+require 'api/v1/widget_presenter'
+require 'api/v1/feature_presenter'
+require 'api/v1/location_presenter'
+# ...
+
+# Or you could do something like this:
+#  Dir[Rails.root.join("lib/api/v1/*_presenter.rb").to_s].each { |p| require p }
+```
 
 For more detailed examples, please see the documentation for methods on {Brainstem::Presenter} and our detailed [Rails example application](https://github.com/mavenlink/brainstem-demo-rails).
 
