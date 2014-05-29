@@ -27,7 +27,7 @@ module Brainstem
     #                           only required if the name cannot be inferred.
     # @return (see PresenterCollection#presenting)
     def present_object(objects, options = {})
-      options.merge!(:params => params)
+      options.merge!(:params => params, :apply_default_filters => false)
 
       if objects.is_a?(ActiveRecord::Relation) || objects.is_a?(Array)
         raise ActiveRecord::RecordNotFound if objects.empty?

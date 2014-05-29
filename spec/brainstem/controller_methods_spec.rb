@@ -76,6 +76,11 @@ describe Brainstem::ControllerMethods do
         @controller.present_object(Workspace.all)
         @controller.call_results[:options][:params][:only].should be_nil
       end
+
+      it "passes :apply_default_filters => false to the PresenterCollection so that filters are not applied by default" do
+        @controller.present_object(Workspace.find(1))
+        @controller.call_results[:options][:apply_default_filters].should == false
+      end
     end
   end
 end
