@@ -10,18 +10,18 @@ describe Brainstem::Presenter do
 
       it "records itself as the presenter for the named class as a string" do
         @klass.presents "String"
-        Brainstem.presenter_collection.for(String).should be_a(@klass)
+        expect(Brainstem.presenter_collection.for(String)).to be_a(@klass)
       end
 
       it "records itself as the presenter for the given class" do
         @klass.presents String
-        Brainstem.presenter_collection.for(String).should be_a(@klass)
+        expect(Brainstem.presenter_collection.for(String)).to be_a(@klass)
       end
 
       it "records itself as the presenter for the named classes" do
         @klass.presents String, Array
-        Brainstem.presenter_collection.for(String).should be_a(@klass)
-        Brainstem.presenter_collection.for(Array).should be_a(@klass)
+        expect(Brainstem.presenter_collection.for(String)).to be_a(@klass)
+        expect(Brainstem.presenter_collection.for(Array)).to be_a(@klass)
       end
     end
 
@@ -33,12 +33,12 @@ describe Brainstem::Presenter do
 
       it "uses the closest module name as the presenter namespace" do
         V1::SomePresenter.presents String
-        Brainstem.presenter_collection(:v1).for(String).should be_a(V1::SomePresenter)
+        expect(Brainstem.presenter_collection(:v1).for(String)).to be_a(V1::SomePresenter)
       end
 
       it "does not map namespaced presenters into the default namespace" do
         V1::SomePresenter.presents String
-        Brainstem.presenter_collection.for(String).should be_nil
+        expect(Brainstem.presenter_collection.for(String)).to be_nil
       end
     end
 
@@ -57,10 +57,10 @@ describe Brainstem::Presenter do
       end
 
       it "includes and extends the given module" do
-        lambda { @klass.new.call_helper }.should raise_error
+        expect { @klass.new.call_helper }.to raise_error
         @klass.helper @helper
-        @klass.new.call_helper.should == "I work"
-        @klass.foo.should == "I work"
+        expect(@klass.new.call_helper).to eq("I work")
+        expect(@klass.foo).to eq("I work")
       end
     end
 
@@ -71,13 +71,13 @@ describe Brainstem::Presenter do
 
       it "creates an entry in the filters class ivar" do
         @klass.filter(:foo, :default => true) { 1 }
-        @klass.filters[:foo][0].should eq({"default" => true})
-        @klass.filters[:foo][1].should be_a(Proc)
+        expect(@klass.filters[:foo][0]).to eq({"default" => true})
+        expect(@klass.filters[:foo][1]).to be_a(Proc)
       end
 
       it "accepts names without blocks" do
         @klass.filter(:foo)
-        @klass.filters[:foo][1].should be_nil
+        expect(@klass.filters[:foo][1]).to be_nil
       end
     end
 
@@ -88,7 +88,7 @@ describe Brainstem::Presenter do
 
       it "creates an entry in the search class ivar" do
         @klass.search do end
-        @klass.search_block.should be_a(Proc)
+        expect(@klass.search_block).to be_a(Proc)
       end
     end
   end
@@ -112,8 +112,8 @@ describe Brainstem::Presenter do
 
       it "outputs the associated object's id and type" do
         data = @presenter.present_and_post_process(@post)
-        data[:id].should eq(@post.id.to_s)
-        data[:body].should eq(@post.body)
+        expect(data[:id]).to eq(@post.id.to_s)
+        expect(data[:body]).to eq(@post.body)
       end
     end
 
@@ -137,12 +137,12 @@ describe Brainstem::Presenter do
         iso8601_date = /\d{4}-\d{2}-\d{2}/
 
         struct = TimePresenter.new.present_and_post_process("something")
-        struct[:time].should =~ iso8601_time
-        struct[:date].should =~ iso8601_date
-        struct[:recursion][:time].should =~ iso8601_time
-        struct[:recursion][:something].first.should =~ iso8601_time
-        struct[:recursion][:something].last.should == :else
-        struct[:recursion][:foo].should == :bar
+        expect(struct[:time]).to match(iso8601_time)
+        expect(struct[:date]).to match(iso8601_date)
+        expect(struct[:recursion][:time]).to match(iso8601_time)
+        expect(struct[:recursion][:something].first).to match(iso8601_time)
+        expect(struct[:recursion][:something].last).to eq(:else)
+        expect(struct[:recursion][:foo]).to eq(:bar)
       end
     end
 
@@ -166,14 +166,14 @@ describe Brainstem::Presenter do
 
       it "outputs the associated object's id and type" do
         data = @presenter.present_and_post_process(@post)
-        data[:subject_id].should eq(@post.subject_id.to_s)
-        data[:subject_type].should eq(@post.subject_type)
+        expect(data[:subject_id]).to eq(@post.subject_id.to_s)
+        expect(data[:subject_type]).to eq(@post.subject_type)
       end
 
       it "outputs custom names for an associated object's id and type" do
         data = @presenter.present_and_post_process(@post)
-        data[:another_subject_id].should eq(@post.subject_id.to_s)
-        data[:another_subject_type].should eq(@post.subject_type)
+        expect(data[:another_subject_id]).to eq(@post.subject_id.to_s)
+        expect(data[:another_subject_type]).to eq(@post.subject_type)
       end
     end
 
@@ -202,43 +202,43 @@ describe Brainstem::Presenter do
 
       it "should not convert or return non-included associations, but should return <association>_id for belongs_to relationships, plus all fields" do
         json = @presenter.present_and_post_process(@workspace, [])
-        json.keys.should =~ [:id, :updated_at, :something_id, :user_id]
+        expect(json.keys).to match_array([:id, :updated_at, :something_id, :user_id])
       end
 
       it "should convert requested has_many associations (includes) into the <association>_ids format" do
-        @workspace.tasks.length.should > 0
-        @presenter.present_and_post_process(@workspace, ["tasks"])[:task_ids].should =~ @workspace.tasks.map(&:id).map(&:to_s)
+        expect(@workspace.tasks.length).to be > 0
+        expect(@presenter.present_and_post_process(@workspace, ["tasks"])[:task_ids]).to match_array(@workspace.tasks.map(&:id).map(&:to_s))
       end
 
       it "should convert requested belongs_to and has_one associations into the <association>_id format when requested" do
-        @presenter.present_and_post_process(@workspace, ["user"])[:user_id].should == @workspace.user.id.to_s
+        expect(@presenter.present_and_post_process(@workspace, ["user"])[:user_id]).to eq(@workspace.user.id.to_s)
       end
 
       it "converts non-association models into <model>_id format when they are requested" do
-        @presenter.present_and_post_process(@workspace, ["lead_user"])[:lead_user_id].should == @workspace.lead_user.id.to_s
+        expect(@presenter.present_and_post_process(@workspace, ["lead_user"])[:lead_user_id]).to eq(@workspace.lead_user.id.to_s)
       end
 
       it "handles associations provided with lambdas" do
-        @presenter.present_and_post_process(@workspace, ["lead_user_with_lambda"])[:lead_user_with_lambda_id].should == @workspace.lead_user.id.to_s
-        @presenter.present_and_post_process(@workspace, ["tasks_with_lambda"])[:tasks_with_lambda_ids].should == @workspace.tasks.map(&:id).map(&:to_s)
+        expect(@presenter.present_and_post_process(@workspace, ["lead_user_with_lambda"])[:lead_user_with_lambda_id]).to eq(@workspace.lead_user.id.to_s)
+        expect(@presenter.present_and_post_process(@workspace, ["tasks_with_lambda"])[:tasks_with_lambda_ids]).to eq(@workspace.tasks.map(&:id).map(&:to_s))
       end
 
       it "should return <association>_id fields when the given association ids exist on the model whether it is requested or not" do
-        @presenter.present_and_post_process(@workspace, ["user"])[:user_id].should == @workspace.user_id.to_s
+        expect(@presenter.present_and_post_process(@workspace, ["user"])[:user_id]).to eq(@workspace.user_id.to_s)
 
         json = @presenter.present_and_post_process(@workspace, [])
-        json.keys.should =~ [:user_id, :something_id, :id, :updated_at]
-        json[:user_id].should == @workspace.user_id.to_s
-        json[:something_id].should == @workspace.user_id.to_s
+        expect(json.keys).to match_array([:user_id, :something_id, :id, :updated_at])
+        expect(json[:user_id]).to eq(@workspace.user_id.to_s)
+        expect(json[:something_id]).to eq(@workspace.user_id.to_s)
       end
 
       it "should return null, not empty string when ids are missing" do
         @workspace.user = nil
         @workspace.tasks = []
-        @presenter.present_and_post_process(@workspace, ["lead_user_with_lambda"])[:lead_user_with_lambda_id].should == nil
-        @presenter.present_and_post_process(@workspace, ["user"])[:user_id].should == nil
-        @presenter.present_and_post_process(@workspace, ["something"])[:something_id].should == nil
-        @presenter.present_and_post_process(@workspace, ["tasks"])[:task_ids].should == []
+        expect(@presenter.present_and_post_process(@workspace, ["lead_user_with_lambda"])[:lead_user_with_lambda_id]).to eq(nil)
+        expect(@presenter.present_and_post_process(@workspace, ["user"])[:user_id]).to eq(nil)
+        expect(@presenter.present_and_post_process(@workspace, ["something"])[:something_id]).to eq(nil)
+        expect(@presenter.present_and_post_process(@workspace, ["tasks"])[:task_ids]).to eq([])
       end
 
       context "when the model has an <association>_id method but no column" do
@@ -246,7 +246,7 @@ describe Brainstem::Presenter do
           def @workspace.synthetic_id
             raise "this explodes because it's not an association"
           end
-          @presenter.present_and_post_process(@workspace, []).should_not have_key(:synthetic_id)
+          expect(@presenter.present_and_post_process(@workspace, [])).not_to have_key(:synthetic_id)
         end
       end
     end
