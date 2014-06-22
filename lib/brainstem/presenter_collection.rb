@@ -108,6 +108,8 @@ module Brainstem
 
       rewrite_keys_as_objects!(struct)
 
+      make_pretty_printable!(struct) if options[:params][:pretty] == "true"
+
       struct
     end
 
@@ -377,6 +379,12 @@ module Brainstem
         ActiveRecord::Associations::Preloader.new.preload(models, association_names)
       else
         ActiveRecord::Associations::Preloader.new(models, association_names).run
+      end
+    end
+    def make_pretty_printable!(struct)
+      struct.define_singleton_method(:to_json) do |options = nil|
+        copy = self.deep_dup
+        JSON.pretty_generate(copy)
       end
     end
   end
