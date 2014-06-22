@@ -108,6 +108,7 @@ module Brainstem
 
       rewrite_keys_as_objects!(struct)
 
+      # Make struct pretty-print when rendered as json, if required.
       make_pretty_printable!(struct) if options[:params][:pretty] == "true"
 
       struct
@@ -381,8 +382,13 @@ module Brainstem
         ActiveRecord::Associations::Preloader.new(models, association_names).run
       end
     end
+
+    # Modify a hash so that sending it as a paramter to `render :json` will
+    # result in pretty printed json. Adds a `to_json` method which handles the
+    # serialization.
     def make_pretty_printable!(struct)
       struct.define_singleton_method(:to_json) do |options = nil|
+        # Make a copy of self to avoid recursion.
         copy = self.deep_dup
         JSON.pretty_generate(copy)
       end
