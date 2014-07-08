@@ -4,22 +4,22 @@ describe Brainstem do
   describe "default_namespace attribute" do
     it "can be set and read" do
       Brainstem.default_namespace = "something"
-      Brainstem.default_namespace.should eq("something")
+      expect(Brainstem.default_namespace).to eq("something")
     end
 
     it "returns 'none' if unset" do
-      Brainstem.default_namespace.should eq("none")
+      expect(Brainstem.default_namespace).to eq("none")
     end
   end
 
   describe "presenter collection method" do
     it "returns an instance of PresenterCollection" do
-      Brainstem.presenter_collection.should be_a(Brainstem::PresenterCollection)
+      expect(Brainstem.presenter_collection).to be_a(Brainstem::PresenterCollection)
     end
 
     it "accepts a namespace" do
-      Brainstem.presenter_collection("v1").should be_a(Brainstem::PresenterCollection)
-      Brainstem.presenter_collection("v1").should_not eq(Brainstem.presenter_collection)
+      expect(Brainstem.presenter_collection("v1")).to be_a(Brainstem::PresenterCollection)
+      expect(Brainstem.presenter_collection("v1")).not_to eq(Brainstem.presenter_collection)
     end
   end
 end
