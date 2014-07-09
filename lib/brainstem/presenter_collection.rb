@@ -383,12 +383,11 @@ module Brainstem
       end
     end
 
-    # Modify a hash so that sending it as a paramter to `render :json` will
-    # result in pretty printed json. Adds a `to_json` method which handles the
-    # serialization.
+    # Modify a hash so that it is pretty-printed when rendered as JSON. Works
+    # by adding a `to_json` singleton method which is called during rendering.
+    # Uses a copy of the hash to avoid recursion issues.
     def make_pretty_printable!(struct)
       struct.define_singleton_method(:to_json) do |options = nil|
-        # Make a copy of self to avoid recursion.
         copy = self.deep_dup
         JSON.pretty_generate(copy)
       end
