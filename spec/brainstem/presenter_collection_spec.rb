@@ -791,6 +791,22 @@ describe Brainstem::PresenterCollection do
         expect(result[:count]).to eq(Workspace.owned_by(bob.to_param).count)
       end
     end
+
+    describe "pretty printing" do
+      before do
+        @user_result = { :count => 1, :users => { 1 => { :username => "bob", :id => "1" } }, :results => [{ :key => "users", :id => "1" }] }
+      end
+
+      it "should return normal json if the pretty parameter is not true" do
+        result = @presenter_collection.presenting("users") { User.where(:id => 1) }
+        expect(result.to_json).to eq(JSON.generate(@user_result))
+      end
+
+      it "should return pretty printed json if the pretty parameter is true" do
+        result = @presenter_collection.presenting("users", :params => { :pretty => "true" }) { User.where(:id => 1) }
+        expect(result.to_json).to eq(JSON.pretty_generate(@user_result))
+      end
+    end
   end
 
   describe "collection methods" do
