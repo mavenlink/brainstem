@@ -3,7 +3,6 @@
 + **0.2.5** - _07/22/2014_
 
   + `Brainstem::Presenter#load_associations!` now:
-    + supports polymorphic 'belongs_to' associations
     + polymorphic 'belongs_to' association is represented as a hash which includes:
       + id: The id of the polymorphic object
       + key: The table name for the class of the polymorphic object
