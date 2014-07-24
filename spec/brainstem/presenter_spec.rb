@@ -161,17 +161,35 @@ describe Brainstem::Presenter do
         end
 
         @presenter = some_presenter.new
-        @post = Post.first
       end
 
-      let(:presented_data) { @presenter.present_and_post_process(@post) }
+      let(:presented_data) { @presenter.present_and_post_process(post) }
 
-      it "outputs the object as a hash with the id & class table name" do
-        expect(presented_data[:subject_ref]).to eq({ :id => @post.subject.id.to_s, :key => @post.subject.class.table_name })
+      context "when polymorphic association exists" do
+        let(:post) { Post.find(1) }
+
+
+        it "outputs the object as a hash with the id & class table name" do
+          expect(presented_data[:subject_ref]).to eq({ :id => post.subject.id.to_s,
+                                                       :key => post.subject.class.table_name })
+        end
+
+        it "outputs custom names for the object as a hash with the id & class table name" do
+          expect(presented_data[:another_subject_ref]).to eq({ :id => post.subject.id.to_s,
+                                                               :key => post.subject.class.table_name })
+        end
       end
 
-      it "outputs custom names for the object as a hash with the id & class table name" do
-        expect(presented_data[:another_subject_ref]).to eq({ :id => @post.subject.id.to_s, :key => @post.subject.class.table_name })
+      context "when polymorphic association does not exist" do
+        let(:post) { Post.find(3) }
+
+        it "outputs nil" do
+          expect(presented_data[:subject_ref]).to be_nil
+        end
+
+        it "outputs nil" do
+          expect(presented_data[:another_subject_ref]).to be_nil
+        end
       end
     end
 

@@ -77,3 +77,4 @@ Task.create!(:id => 4, :workspace_id => 1, :parent_id => 2, :name => "One bunch"
 
 Post.create!(:id => 1, :subject => Workspace.first, :body => "first post!")
 Post.create!(:id => 2, :subject => Task.first, :body => "this is important. get on it!")
+Post.create!(:id => 3, :body => "Post without subject")
