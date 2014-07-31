@@ -155,10 +155,18 @@ module Brainstem
           id_attr = value.method_name ? "#{value.method_name}_id" : nil
 
           if id_attr && model.class.columns_hash.has_key?(id_attr)
-            struct["#{key}_id".to_sym] = to_s_except_nil(model.send(id_attr))
             reflection = value.method_name && model.class.reflections[value.method_name.to_sym]
             if reflection && reflection.options[:polymorphic]
-              struct["#{key.to_s.singularize}_type".to_sym] = model.send("#{value.method_name}_type")
+              struct["#{key.to_s.singularize}_ref".to_sym] = begin
+                if (id_attr = model.send(id_attr)).present?
+                  {
+                    :id => to_s_except_nil(id_attr),
+                    :key => model.send("#{value.method_name}_type").try(:constantize).try(:table_name)
+                  }
+                end
+              end
+            else
+              struct["#{key}_id".to_sym] = to_s_except_nil(model.send(id_attr))
             end
           elsif associations.include?(key.to_s)
             result = value.call(model)

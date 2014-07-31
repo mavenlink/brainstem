@@ -1,5 +1,12 @@
 # Changelog
 
++ **0.2.5** - _07/22/2014_
+
+  + `Brainstem::Presenter#load_associations!` now:
+    + polymorphic 'belongs_to' association is represented as a hash which includes:
+      + id: The id of the polymorphic object
+      + key: The table name for the class of the polymorphic object
+
 + **0.2.4** - _01/9/2014_
 
   + `Brainstem::ControllerMethods#present_object` now simulates an only request (by providing the `only` parameter to Brainstem) when attempting to present a single model.
