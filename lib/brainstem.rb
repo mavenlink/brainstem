@@ -5,7 +5,6 @@ require "brainstem/controller_methods"
 
 # The Brainstem module itself contains a +default_namespace+ class attribute and a few helpers that make managing +PresenterCollections+ and their corresponding namespaces easier.
 module Brainstem
-
   # Sets {default_namespace} to a new value.
   # @param [String] namespace
   # @return [String] the new default namespace
@@ -59,5 +58,4 @@ module Brainstem
   def self.logger=(logger)
     @logger = logger
   end
-
 end
