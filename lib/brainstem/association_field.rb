@@ -6,6 +6,11 @@ module Brainstem
     # @return [String] The name of the method that is being proxied.
     attr_reader :method_name
 
+    # @!attribute [rw] ignore_type
+    # @return [Boolean] When true, polymorphic associations will be treated like normal ones,
+    #                   skipping the _ref structure and simply using [json_name]_id.
+    attr_accessor :ignore_type
+
     # @!attribute [rw] json_name
     # @return [String] The name of the top-level JSON key for objects provided by this association.
     attr_accessor :json_name
@@ -25,6 +30,7 @@ module Brainstem
       options = args.last.is_a?(Hash) ? args.pop : {}
       method_name = args.first.to_sym if args.first.is_a?(String) || args.first.is_a?(Symbol)
       @json_name = options[:json_name]
+      @ignore_type = options[:ignore_type] || false
       @restrict_to_only = options[:restrict_to_only] || false
       if block_given?
         raise ArgumentError, "options[:json_name] is required when using a block" unless options[:json_name]

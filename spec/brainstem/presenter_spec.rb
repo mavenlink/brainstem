@@ -155,7 +155,8 @@ describe Brainstem::Presenter do
             {
               :body => model.body,
               :subject => association(:subject),
-              :another_subject => association(:subject)
+              :another_subject => association(:subject),
+              :something_else => association(:subject, :ignore_type => true)
             }
           end
         end
@@ -177,6 +178,12 @@ describe Brainstem::Presenter do
         it "outputs custom names for the object as a hash with the id & class table name" do
           expect(presented_data[:another_subject_ref]).to eq({ :id => post.subject.id.to_s,
                                                                :key => post.subject.class.table_name })
+        end
+
+        it "skips the polymorphic handling when ignore_type is true" do
+          expect(presented_data[:something_else_id]).to eq(post.subject.id.to_s)
+          expect(presented_data).not_to have_key(:something_else_type)
+          expect(presented_data).not_to have_key(:something_else_ref)
         end
       end
 

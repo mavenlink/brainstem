@@ -156,7 +156,7 @@ module Brainstem
 
           if id_attr && model.class.columns_hash.has_key?(id_attr)
             reflection = value.method_name && model.class.reflections[value.method_name.to_sym]
-            if reflection && reflection.options[:polymorphic]
+            if reflection && reflection.options[:polymorphic] && !value.ignore_type
               struct["#{key.to_s.singularize}_ref".to_sym] = begin
                 if (id_attr = model.send(id_attr)).present?
                   {
