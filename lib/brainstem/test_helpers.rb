@@ -14,14 +14,18 @@ module Brainstem
     #
     # Assume user is the model and name is an attribute
     #
-    # If there are multiple users, using a singular method will return the first one
-    #   expect(brainstem_data.user.name).to eq('name')
+    # Selecting an item from a collection by it's id
+    #   expect(brainstem_data.users.by_id(235).name).to eq('name')
     #
-    # A pluralized model name returns the collection
+    # Getting an array of all ids of in a collection without map
     #   expect(brainstem_data.users.ids).to include(1)
     #
-    # You can use the index operator on a collection
-    #   expect(brainstem_data.users[2].title).to eq('title')
+    # Accessing the keys of a collection
+    #   expect(brainstem_data.users.first.keys).to =~ %w(id name email address)
+    #
+    # Using standard array methods on a collection
+    #   expect(brainstem_data.users.first.name).to eq('name')
+    #   expect(brainstem_data.users[2].name).to eq('name')
     #
     def brainstem_data
       BrainstemDataHelper.new(response.body)
@@ -33,32 +37,11 @@ module Brainstem
       end
 
       def method_missing(name)
-        if plural?(name)
-          build_collection(name)
-        elsif singular?(name)
-          build_item(name)
-        end
-      end
-
-      private
-
-      def build_collection(name)
         data = @json[name.to_s].try(:values)
         BrainstemHelperCollection.new(data) unless data.nil?
       end
 
-      def build_item(name)
-        data = @json[name.to_s.pluralize].try(:values).try(:first)
-        BrainstemHelperItem.new(data) unless data.nil?
-      end
-
-      def plural?(name)
-        name.to_s.pluralize == name.to_s
-      end
-
-      def singular?(name)
-        name.to_s.singularize == name.to_s
-      end
+      private
 
       class BrainstemHelperCollection < Array
         def initialize(collection)
@@ -85,12 +68,12 @@ module Brainstem
           @data = data
         end
 
-        def method_missing(name)
-          @data[name.to_s]
-        end
-
         def keys
           @data.keys
+        end
+
+        def method_missing(name)
+          @data[name.to_s]
         end
       end
     end

@@ -193,15 +193,28 @@ Now you are ready to use the `brainstem_data` method.
 ```ruby
 # Assume user is the model and name is an attribute
 
-# If there are multiple users, using a singular method
-# will return the first one
-expect(brainstem_data.user.name).to eq('name')
+# Selecting an item from a collection by it's id
+expect(brainstem_data.users.by_id(235).name).to eq('name')
 
-# A pluralized model name returns the collection
+# Getting an array of all ids of in a collection without map
 expect(brainstem_data.users.ids).to include(1)
 
-# You can use the index operator on a collection
-expect(brainstem_data.users[2].title).to eq('title')
+# Accessing the keys of a collection
+expect(brainstem_data.users.first.keys).to =~ %w(id name email address)
+
+# Using standard array methods on a collection to get by index
+expect(brainstem_data.users.first.name).to eq('name')
+expect(brainstem_data.users[2].name).to eq('name')
+```
+
+An alternate syntax for readability might be:
+
+```ruby
+describe 'brainstem_data' do
+  subject { brainstem_data }
+
+  its('users.ids') { should include(1) }
+end
 ```
 
 ### Brainstem and Backbone.js
