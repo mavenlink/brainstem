@@ -39,7 +39,7 @@ module Api
       # Default sort order to apply
       default_sort_order "updated_at:desc"
 
-      # Optional filter that delegates to the Widget model :popular scope, 
+      # Optional filter that delegates to the Widget model :popular scope,
       # which should take one argument of true or false.
       filter :popular
 
@@ -94,7 +94,7 @@ Responses will look like the following:
     {
       # Total number of results that matched the query.
       count: 5,
-      
+
       # A lookup table to top-level keys.  Necessary
       # because some objects can have associations of
       # the same type as themselves.
@@ -102,7 +102,7 @@ Responses will look like the following:
         { key: "widgets", id: "2" },
         { key: "widgets", id: "10" }
       ],
-      
+
       # Serialized models with any requested associations, keyed by ID.
 
       widgets: {
@@ -113,7 +113,7 @@ Responses will look like the following:
           popularity: 85,
           location_id: "2"
         },
-        
+
         "2": {
        	  id: "2",
        	  name: "flubber",
@@ -167,15 +167,55 @@ APIs presented with Brainstem are just JSON APIs, so they can be consumed with j
       results: [
         { key: "widgets", id: "2" }, { key: "widgets", id: "10" }
       ],
-      
+
       widgets: {
         "10": {
           id: "10",
           name: "disco ball",
           …
 
-
 Brainstem returns objects as top-level hashes and provides a `results` array of `key` and `id` objects for finding the returned data in those hashes.  The reason that we use the `results` array is two-fold: 1st) it provides order outside of the serialized objects so that we can provide objects keyed by ID, and 2nd) it allows for polymorphic responses and for objects that have associations of their own type (like posts and replies or tasks and sub-tasks).
+
+### Test helpers
+
+Brainstem includes some spec helpers for controller specs. In order to use them, you need to include Brainstem in your controller specs by adding the following to `spec/support/brainstem.rb` or in your `spec/spec_helper.rb`:
+
+```ruby
+require 'brainstem/test_helpers'
+
+RSpec.configure do |config|
+  config.include Brainstem::TestHelpers, type: :controller
+end
+```
+
+Now you are ready to use the `brainstem_data` method.
+
+```ruby
+# Assume user is the model and name is an attribute
+
+# Selecting an item from a collection by it's id
+expect(brainstem_data.users.by_id(235).name).to eq('name')
+
+# Getting an array of all ids of in a collection without map
+expect(brainstem_data.users.ids).to include(1)
+
+# Accessing the keys of a collection
+expect(brainstem_data.users.first.keys).to =~ %w(id name email address)
+
+# Using standard array methods on a collection to get by index
+expect(brainstem_data.users.first.name).to eq('name')
+expect(brainstem_data.users[2].name).to eq('name')
+```
+
+An alternate syntax for readability might be:
+
+```ruby
+describe 'brainstem_data' do
+  subject { brainstem_data }
+
+  its('users.ids') { should include(1) }
+end
+```
 
 ### Brainstem and Backbone.js
 
