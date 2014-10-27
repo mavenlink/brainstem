@@ -159,7 +159,7 @@ require 'api/v1/location_presenter'
 
 In Rails 3 it was acceptable to write scopes like this: `scope :popular, where(:popular => true)`. This was deprecated in Rails 4 in preference of scopes that include a callable object: `scope :popular, -> { where(:popular) => true }`.
 
-If your scope does NOT take any parameters, this can cause a problem with Brainstem if you use a filter that delegates to that scope in y our presenter. e.g., `filter :popular`. The preferable way to handle this is to write a Brainstem scope that delegates to your model scope:
+If your scope does not take any parameters, this can cause a problem with Brainstem if you use a filter that delegates to that scope in your presenter. (e.g., `filter :popular`). The preferable way to handle this is to write a Brainstem scope that delegates to your model scope:
 
 ```ruby
 filter :popular do |scope|
