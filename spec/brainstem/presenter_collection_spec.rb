@@ -438,6 +438,14 @@ describe Brainstem::PresenterCollection do
           expect(result[:workspaces]["2"]).to be_present
         end
 
+        it "allows defaults to be skipped if params contain :apply_default_filters with a false value" do
+          WorkspacePresenter.filter(:include_early_workspaces, :default => false) { |scope, bool| bool ? scope : scope.where("id > 3") }
+          result = @presenter_collection.presenting("workspaces", :params => { :apply_default_filters => "true" }) { Workspace.unscoped }
+          expect(result[:workspaces]["2"]).not_to be_present
+          result = @presenter_collection.presenting("workspaces", :params => { :apply_default_filters => "false" }) { Workspace.unscoped }
+          expect(result[:workspaces]["2"]).to be_present
+        end
+
         it "allows the default value to be overridden" do
           result = @presenter_collection.presenting("workspaces", :params => { :owner => jane.id.to_s }) { Workspace.order('id desc') }
           expect(result[:workspaces].keys).to match_array(jane.workspaces.map(&:id).map(&:to_s))
