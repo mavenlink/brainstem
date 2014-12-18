@@ -132,7 +132,7 @@ describe Brainstem::PresenterCollection do
 
         context "raise_on_empty is false" do
           it "should not raise an exception when the results are empty" do
-            expect { 
+            expect {
               @presenter_collection.presenting("workspaces") { Workspace.where(:id => nil) }
             }.not_to raise_error
           end
@@ -369,14 +369,25 @@ describe Brainstem::PresenterCollection do
         expect(result[:workspaces].values.find { |workspace| workspace[:title].include?("bob") }).not_to be
       end
 
-      it "ensures arguments are strings if they are not arrays" do
+      it "ensures arguments are strings if they are not arrays or hashes" do
         filter_was_run = false
         WorkspacePresenter.filter(:owned_by_bob) do |scope, string|
           filter_was_run = true
           expect(string).to be_a(String)
           scope
         end
-        @presenter_collection.presenting("workspaces", :params => { :owned_by_bob => { :wut => "is this?" } }) { Workspace.where(nil) }
+        @presenter_collection.presenting("workspaces", :params => { :owned_by_bob => Object }) { Workspace.where(nil) }
+        expect(filter_was_run).to be_truthy
+      end
+
+      it "preserves hash arguments" do
+        filter_was_run = false
+        WorkspacePresenter.filter(:owned_by_bob) do |scope, hash|
+          filter_was_run = true
+          expect(hash).to be_a(Hash)
+          scope
+        end
+        @presenter_collection.presenting("workspaces", :params => { :owned_by_bob => {:test => 'abc'} }) { Workspace.where(nil) }
         expect(filter_was_run).to be_truthy
       end
 
