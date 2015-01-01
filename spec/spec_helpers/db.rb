@@ -4,28 +4,28 @@ ActiveRecord::Schema.define do
 
   create_table :users, :force => true do |t|
     t.string :username
-    t.timestamps
+    t.timestamps null: true
   end
 
   create_table :workspaces, :force => true do |t|
     t.string :title
     t.string :description
     t.belongs_to :user
-    t.timestamps
+    t.timestamps null: true
   end
 
   create_table :tasks, :force => true do |t|
     t.string :name
     t.integer :parent_id
     t.belongs_to :workspace
-    t.timestamps
+    t.timestamps null: true
   end
 
   create_table :posts, :force => true do |t|
     t.string :body
     t.integer :subject_id
     t.string :subject_type
-    t.timestamps
+    t.timestamps null: true
   end
 end
 

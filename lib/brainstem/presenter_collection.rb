@@ -182,7 +182,7 @@ module Brainstem
         if v.json_name
           v.json_name = v.json_name.tableize.to_sym
         else
-          association = model.class.reflections[v.method_name]
+          association = reflect(model.class, v.method_name)
           if !association.options[:polymorphic]
             v.json_name = association && association.table_name.to_sym
             if v.json_name.nil?
@@ -372,6 +372,15 @@ module Brainstem
     def rewrite_keys_as_objects!(struct)
       (struct.keys - [:count, :results]).each do |key|
         struct[key] = struct[key].inject({}) {|memo, obj| memo[obj[:id] || obj["id"] || "unknown_id"] = obj; memo }
+      end
+    end
+
+    # In Rails 4.2, ActiveRecord::Base#reflections was replaces with ActiveRecord::Base#reflect_on_association.
+    def reflect(klass, association_name)
+      if Gem.loaded_specs['activerecord'].version >= Gem::Version.create('4.2')
+        klass.reflect_on_association(association_name)
+      else
+        klass.reflections[association_name]
       end
     end
 
