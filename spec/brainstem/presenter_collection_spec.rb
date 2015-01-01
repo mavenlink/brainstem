@@ -754,17 +754,33 @@ describe Brainstem::PresenterCollection do
           last_direction = direction
           scope
         end
+        WorkspacePresenter.sort_order(:title, "workspaces.title")
         WorkspacePresenter.default_sort_order("description:desc")
 
         result = @presenter_collection.presenting("workspaces", :params => { :order => "description:drop table" }) { Workspace.where("id is not null") }
         expect(last_direction).to eq('asc')
         expect(result.keys).to match_array([:count, :workspaces, :results])
 
+        result = @presenter_collection.presenting("workspaces", :params => { :order => "description:;;hacker;;" }) { Workspace.where("id is not null") }
+        expect(last_direction).to eq('asc')
+
         result = @presenter_collection.presenting("workspaces", :params => { :order => "description:desc" }) { Workspace.where("id is not null") }
         expect(last_direction).to eq('desc')
 
+        result = @presenter_collection.presenting("workspaces", :params => { :order => "description:asc" }) { Workspace.where("id is not null") }
+        expect(last_direction).to eq('asc')
+
         result = @presenter_collection.presenting("workspaces", :params => { :order => "drop table:desc" }) { Workspace.where("id is not null") }
         expect(last_direction).to eq('desc')
+
+        result = @presenter_collection.presenting("workspaces", :params => { :order => "title:desc" }) { Workspace.where("id is not null") }
+        expect(result[:results].map {|i| result[:workspaces][i[:id]][:title] }).to eq(["jane workspace 2", "jane workspace 1", "bob workspace 4", "bob workspace 3", "bob workspace 2", "bob workspace 1"])
+
+        result = @presenter_collection.presenting("workspaces", :params => { :order => "title:hacker" }) { Workspace.where("id is not null") }
+        expect(result[:results].map {|i| result[:workspaces][i[:id]][:title] }).to eq(["bob workspace 1", "bob workspace 2", "bob workspace 3", "bob workspace 4", "jane workspace 1", "jane workspace 2"])
+
+        result = @presenter_collection.presenting("workspaces", :params => { :order => "title:;;;drop table;;" }) { Workspace.where("id is not null") }
+        expect(result[:results].map {|i| result[:workspaces][i[:id]][:title] }).to eq(["bob workspace 1", "bob workspace 2", "bob workspace 3", "bob workspace 4", "jane workspace 1", "jane workspace 2"])
       end
 
       it "can take a proc" do
