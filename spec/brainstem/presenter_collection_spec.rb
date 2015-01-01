@@ -487,6 +487,7 @@ describe Brainstem::PresenterCollection do
     describe "search" do
       context "with search method defined" do
         before do
+          WorkspacePresenter.sort_order(:description, "workspaces.description")
           WorkspacePresenter.search do |string|
             [[5, 3], 2]
           end
@@ -541,14 +542,14 @@ describe Brainstem::PresenterCollection do
                 expect(string).to eq("blah")
                 expect(options[:include]).to eq(["tasks", "lead_user"])
                 expect(options[:owned_by]).to eq(false)
-                expect(options[:order][:sort_order]).to eq("updated_at")
+                expect(options[:order][:sort_order]).to eq("description")
                 expect(options[:order][:direction]).to eq("desc")
                 expect(options[:page]).to eq(2)
                 expect(options[:per_page]).to eq(5)
                 [[1], 1] # returned ids, count - not testing this in this set of specs
               end
 
-              @presenter_collection.presenting("workspaces", :params => { :search => "blah", :include => "tasks,lead_user", :owned_by => "false", :order => "updated_at:desc", :page => 2, :per_page => 5 }) { Workspace.order("id asc") }
+              @presenter_collection.presenting("workspaces", :params => { :search => "blah", :include => "tasks,lead_user", :owned_by => "false", :order => "description:desc", :page => 2, :per_page => 5 }) { Workspace.order("id asc") }
             end
 
             describe "includes" do
@@ -613,6 +614,16 @@ describe Brainstem::PresenterCollection do
                 end
 
                 @presenter_collection.presenting("workspaces", :params => { :search => "blah", :order => "created_at:asc"}) { Workspace.order("id asc") }
+              end
+
+              it "sanitizes sort orders" do
+                WorkspacePresenter.search do |string, options|
+                  expect(options[:order][:sort_order]).to eq("description")
+                  expect(options[:order][:direction]).to eq("asc")
+                  [[1], 1]
+                end
+
+                @presenter_collection.presenting("workspaces", :params => { :search => "blah", :order => "description:owned"}) { Workspace.order("id asc") }
               end
             end
 
@@ -738,15 +749,22 @@ describe Brainstem::PresenterCollection do
       end
 
       it "cleans the params" do
-        WorkspacePresenter.sort_order(:description, "workspaces.description")
+        last_direction = nil
+        WorkspacePresenter.sort_order(:description, "workspaces.description") do |scope, direction|
+          last_direction = direction
+          scope
+        end
         WorkspacePresenter.default_sort_order("description:desc")
 
-        result = @presenter_collection.presenting("workspaces", :params => { :order => "updated_at:drop table" }) { Workspace.where("id is not null") }
+        result = @presenter_collection.presenting("workspaces", :params => { :order => "description:drop table" }) { Workspace.where("id is not null") }
+        expect(last_direction).to eq('asc')
         expect(result.keys).to match_array([:count, :workspaces, :results])
 
+        result = @presenter_collection.presenting("workspaces", :params => { :order => "description:desc" }) { Workspace.where("id is not null") }
+        expect(last_direction).to eq('desc')
+
         result = @presenter_collection.presenting("workspaces", :params => { :order => "drop table:desc" }) { Workspace.where("id is not null") }
-        expect(result.keys).to match_array([:count, :workspaces, :results])
-        expect(result[:results].map {|i| result[:workspaces][i[:id]][:description] }).to eq(%w(c b a 3 2 1))
+        expect(last_direction).to eq('desc')
       end
 
       it "can take a proc" do
