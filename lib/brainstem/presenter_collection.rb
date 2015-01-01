@@ -251,8 +251,8 @@ module Brainstem
       return scope unless searching? options
 
       search_options = HashWithIndifferentAccess.new(
-          :include => includes,
-          :order => { :sort_order => sort_name, :direction => direction },
+        :include => includes,
+        :order => { :sort_order => sort_name, :direction => direction },
       )
 
       if options[:params][:limit].present? && options[:params][:offset].present?
@@ -297,11 +297,11 @@ module Brainstem
 
       case order
         when Proc
-          order.call(scope, direction == "desc" ? "desc" : "asc")
+          order.call(scope, direction)
         when nil
           scope
         else
-          scope.order(order.to_s + " " + (direction == "desc" ? "desc" : "asc"))
+          scope.order(order.to_s + " " + direction)
       end
     end
 
@@ -322,7 +322,7 @@ module Brainstem
         direction = default_direction
       end
 
-      [sort_name, direction]
+      [sort_name, direction == 'desc' ? 'desc' : 'asc']
     end
 
     def perform_preloading(records, includes_hash)
