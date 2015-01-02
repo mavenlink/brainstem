@@ -136,7 +136,7 @@ describe Brainstem::Presenter do
         iso8601_time = /\d{4}-\d{2}-\d{2}T\d{2}\:\d{2}\:\d{2}[-+]\d{2}:\d{2}/
         iso8601_date = /\d{4}-\d{2}-\d{2}/
 
-        struct = TimePresenter.new.present_and_post_process("something")
+        struct = TimePresenter.new.present_and_post_process(Workspace.first)
         expect(struct[:time]).to match(iso8601_time)
         expect(struct[:date]).to match(iso8601_date)
         expect(struct[:recursion][:time]).to match(iso8601_time)

@@ -86,9 +86,6 @@ The scope passed to `present` could contain any starting conditions that you'd l
 
     GET /api/widgets.json?include=features&order=popularity:desc&location_name=san+francisco
 
-Additionally, requests can have a 'pretty' parameter. When set to true, responses will be pretty-printed.
-Do this by adding `&pretty=true` to the above example.
-
 Responses will look like the following:
 
     {

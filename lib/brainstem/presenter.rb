@@ -149,13 +149,14 @@ module Brainstem
     # @api private
     # Makes sure that associations are loaded and converted into ids.
     def load_associations!(model, struct, associations)
+      reflections = Brainstem::PresenterCollection.reflections(model.class)
       struct.to_a.each do |key, value|
         if value.is_a?(AssociationField)
           struct.delete key
           id_attr = value.method_name ? "#{value.method_name}_id" : nil
 
           if id_attr && model.class.columns_hash.has_key?(id_attr)
-            reflection = value.method_name && model.class.reflections[value.method_name.to_sym]
+            reflection = value.method_name && reflections[value.method_name.to_s]
             if reflection && reflection.options[:polymorphic] && !value.ignore_type
               struct["#{key.to_s.singularize}_ref".to_sym] = begin
                 if (id_attr = model.send(id_attr)).present?
