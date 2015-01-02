@@ -108,9 +108,6 @@ module Brainstem
 
       rewrite_keys_as_objects!(struct)
 
-      # Make struct pretty-print when rendered as json, if required.
-      make_pretty_printable!(struct) if options[:params][:pretty] == "true"
-
       struct
     end
 
@@ -175,6 +172,7 @@ module Brainstem
     def calculate_allowed_includes(presenter, presented_class, is_only_query)
       allowed_includes = {}
       model = presented_class.new
+      reflections = Brainstem::PresenterCollection.reflections(model.class)
       presenter.present(model).each do |k, v|
         next unless v.is_a?(AssociationField)
         next if v.restrict_to_only && !is_only_query
@@ -182,8 +180,8 @@ module Brainstem
         if v.json_name
           v.json_name = v.json_name.tableize.to_sym
         else
-          association = model.class.reflections[v.method_name]
-          if !association.options[:polymorphic]
+          association = reflections[v.method_name.to_s]
+          if association && !association.options[:polymorphic]
             v.json_name = association && association.table_name.to_sym
             if v.json_name.nil?
               raise ":json_name is a required option for method-based associations (#{presented_class}##{v.method_name})"
@@ -329,11 +327,11 @@ module Brainstem
       records.tap do |models|
         association_names_to_preload = includes_hash.values.map {|i| i.method_name }
         if models.first
-          reflections = models.first.class.reflections
-          association_names_to_preload.reject! { |association| !reflections.has_key?(association) }
+          reflections = Brainstem::PresenterCollection.reflections(models.first.class)
+          association_names_to_preload.reject! { |association| !reflections.has_key?(association.to_s) }
         end
         if association_names_to_preload.any?
-          preload(models, association_names_to_preload)
+          Brainstem::PresenterCollection.preload(models, association_names_to_preload)
           Brainstem.logger.info "Eager loaded #{association_names_to_preload.join(", ")}."
         end
       end
@@ -375,21 +373,18 @@ module Brainstem
       end
     end
 
-    def preload(models, association_names)
+    # Class Methods
+
+    # In Rails 4.2, ActiveRecord::Base#reflections started being keyed by strings instead of symbols.
+    def self.reflections(klass)
+      klass.reflections.each_with_object({}) { |(key, value), memo| memo[key.to_s] = value }
+    end
+
+    def self.preload(models, association_names)
       if Gem.loaded_specs['activerecord'].version >= Gem::Version.create('4.1')
         ActiveRecord::Associations::Preloader.new.preload(models, association_names)
       else
         ActiveRecord::Associations::Preloader.new(models, association_names).run
-      end
-    end
-
-    # Modify a hash so that it is pretty-printed when rendered as JSON. Works
-    # by adding a `to_json` singleton method which is called during rendering.
-    # Uses a copy of the hash to avoid recursion issues.
-    def make_pretty_printable!(struct)
-      struct.define_singleton_method(:to_json) do |options = nil|
-        copy = self.deep_dup
-        JSON.pretty_generate(copy)
       end
     end
   end

@@ -259,7 +259,7 @@ describe Brainstem::PresenterCollection do
 
       it "preloads associations when they are full model-level associations" do
         # Here, primary_maven is a method on Workspace, not a true association.
-        mock(@presenter_collection).preload(anything, [:tasks])
+        mock(Brainstem::PresenterCollection).preload(anything, [:tasks])
         result = @presenter_collection.presenting("workspaces", :params => { :include => "tasks" }) { Workspace.order('id desc') }
         expect(result[:tasks].length).to be > 0
       end
@@ -823,22 +823,6 @@ describe Brainstem::PresenterCollection do
 
         result = @presenter_collection.presenting("workspaces", :params => { :owned_by => bob.to_param }) { Workspace.group(:id) }
         expect(result[:count]).to eq(Workspace.owned_by(bob.to_param).count)
-      end
-    end
-
-    describe "pretty printing" do
-      before do
-        @user_result = { :count => 1, :users => { 1 => { :username => "bob", :id => "1" } }, :results => [{ :key => "users", :id => "1" }] }
-      end
-
-      it "should return normal json if the pretty parameter is not true" do
-        result = @presenter_collection.presenting("users") { User.where(:id => 1) }
-        expect(result.to_json).to eq(JSON.generate(@user_result))
-      end
-
-      it "should return pretty printed json if the pretty parameter is true" do
-        result = @presenter_collection.presenting("users", :params => { :pretty => "true" }) { User.where(:id => 1) }
-        expect(result.to_json).to eq(JSON.pretty_generate(@user_result))
       end
     end
   end
