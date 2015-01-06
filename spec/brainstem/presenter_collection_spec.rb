@@ -132,7 +132,7 @@ describe Brainstem::PresenterCollection do
 
         context "raise_on_empty is false" do
           it "should not raise an exception when the results are empty" do
-            expect { 
+            expect {
               @presenter_collection.presenting("workspaces") { Workspace.where(:id => nil) }
             }.not_to raise_error
           end
@@ -435,6 +435,26 @@ describe Brainstem::PresenterCollection do
           result = @presenter_collection.presenting("workspaces", :apply_default_filters => true) { Workspace.unscoped }
           expect(result[:workspaces]["2"]).not_to be_present
           result = @presenter_collection.presenting("workspaces", :apply_default_filters => false) { Workspace.unscoped }
+          expect(result[:workspaces]["2"]).to be_present
+        end
+
+        it "allows defaults set to false to be skipped if params contain :apply_default_filters with a false value" do
+          WorkspacePresenter.filter(:include_early_workspaces, :default => false) { |scope, bool| bool ? scope : scope.where("id > 3") }
+
+          result = @presenter_collection.presenting("workspaces", :params => { :apply_default_filters => "true" }) { Workspace.unscoped }
+          expect(result[:workspaces]["2"]).not_to be_present
+
+          result = @presenter_collection.presenting("workspaces", :params => { :apply_default_filters => true }) { Workspace.unscoped }
+          expect(result[:workspaces]["2"]).not_to be_present
+        end
+
+        it "allows defaults set to true to be skipped if params contain :apply_default_filters with a false value" do
+          WorkspacePresenter.filter(:include_early_workspaces, :default => true) { |scope, bool| bool ? scope : scope.where("id > 3") }
+
+          result = @presenter_collection.presenting("workspaces", :params => { :apply_default_filters => "false" }) { Workspace.unscoped }
+          expect(result[:workspaces]["2"]).to be_present
+
+          result = @presenter_collection.presenting("workspaces", :params => { :apply_default_filters => false }) { Workspace.unscoped }
           expect(result[:workspaces]["2"]).to be_present
         end
 

@@ -33,6 +33,7 @@ module Brainstem
     # @return [Hash] A hash of arrays of hashes. Top-level hash keys are pluralized model names, with values of arrays containing one hash per object that was found by the given given options.
     def presenting(name, options = {}, &block)
       options[:params] = HashWithIndifferentAccess.new(options[:params] || {})
+      set_default_filters_option!(options)
       presented_class = (options[:model] || name)
       presented_class = presented_class.classify.constantize if presented_class.is_a?(String)
       scope = presented_class.instance_eval(&block)
@@ -227,7 +228,7 @@ module Brainstem
 
     def extract_filters(options)
       filters_hash = {}
-      run_defaults = options.has_key?(:apply_default_filters) ? options[:apply_default_filters] : true
+      run_defaults = options.fetch(:apply_default_filters) { true }
 
       (options[:presenter].filters || {}).each do |filter_name, filter|
         requested = options[:params][filter_name]
@@ -371,6 +372,12 @@ module Brainstem
       (struct.keys - [:count, :results]).each do |key|
         struct[key] = struct[key].inject({}) {|memo, obj| memo[obj[:id] || obj["id"] || "unknown_id"] = obj; memo }
       end
+    end
+
+    def set_default_filters_option!(options)
+      return unless options[:params].has_key?(:apply_default_filters)
+
+      options[:apply_default_filters] = [true, "true", "TRUE", 1, "1"].include? options[:params].delete(:apply_default_filters)
     end
 
     # Class Methods
