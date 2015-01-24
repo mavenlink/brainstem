@@ -11,7 +11,10 @@ module Brainstem
     # Accepts a list of classes this presenter knows how to present.
     # @param [String, [String]] klasses Any number of names of classes this presenter presents.
     def self.presents(*klasses)
+      @presents ||= []
+      @presents += klasses.map(&:to_s)
       Brainstem.add_presenter_class(self, *klasses)
+      @presents
     end
 
     # @overload default_sort_order(sort_string)

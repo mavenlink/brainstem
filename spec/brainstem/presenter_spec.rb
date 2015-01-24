@@ -23,6 +23,19 @@ describe Brainstem::Presenter do
         expect(Brainstem.presenter_collection.for(String)).to be_a(@klass)
         expect(Brainstem.presenter_collection.for(Array)).to be_a(@klass)
       end
+
+      it "can be called more than once" do
+        @klass.presents String
+        @klass.presents Array
+        expect(Brainstem.presenter_collection.for(String)).to be_a(@klass)
+        expect(Brainstem.presenter_collection.for(Array)).to be_a(@klass)
+      end
+
+      it "returns the set of presented class names" do
+        expect(@klass.presents(String)).to eq(["String"])
+        expect(@klass.presents("Array")).to eq(["String", "Array"])
+        expect(@klass.presents).to eq(["String", "Array"])
+      end
     end
 
     describe "implicit namespacing" do
