@@ -1,11 +1,10 @@
-require 'date'
-require 'brainstem/association_field'
-require 'brainstem/time_classes'
+require "date"
+require "brainstem/association_field"
+require "brainstem/time_classes"
 
 module Brainstem
   # @abstract Subclass and override {#present} to implement a presenter.
   class Presenter
-
     # Class methods
 
     # Accepts a list of classes this presenter knows how to present.
@@ -37,14 +36,14 @@ module Brainstem
     #   Create a named sort order, either containing a string to use as ORDER in a query, or with a block that adds an order Arel predicate to a scope.
     # @raise [ArgumentError] if neither an order string or block is given.
     def self.sort_order(name, order = nil, &block)
-      raise ArgumentError, "A sort order must be given" unless block_given? || order
+      fail ArgumentError, "A sort order must be given" unless block_given? || order
       @sort_orders ||= HashWithIndifferentAccess.new
       @sort_orders[name] = (block_given? ? block : order)
     end
 
     # @return [Hash] All defined sort orders, keyed by their name.
-    def self.sort_orders
-      @sort_orders
+    class << self
+      attr_reader :sort_orders
     end
 
     # @overload filter(name, options = {})
@@ -61,16 +60,16 @@ module Brainstem
     end
 
     # @return [Hash]  All defined filters, keyed by their name.
-    def self.filters
-      @filters
+    class << self
+      attr_reader :filters
     end
 
     def self.search(&block)
       @search_block = block
     end
 
-    def self.search_block
-      @search_block
+    class << self
+      attr_reader :search_block
     end
 
     # Declares a helper module whose methods will be available in instances of the presenter class and available inside sort and filter blocks.
@@ -81,12 +80,11 @@ module Brainstem
       extend mod
     end
 
-
     # Instance methods
 
     # @raise [RuntimeError] if this method has not been overridden in the presenter subclass.
-    def present(model)
-      raise "Please override #present(model) in your subclass of Brainstem::Presenter"
+    def present(_model)
+      fail "Please override #present(model) in your subclass of Brainstem::Presenter"
     end
 
     # @api private
@@ -124,7 +122,7 @@ module Brainstem
     end
 
     # Subclasses can define this if they wish. This method will be called before {#present}.
-    def custom_preload(models, associations = [])
+    def custom_preload(_models, _associations = [])
     end
 
     # @api private
@@ -135,10 +133,10 @@ module Brainstem
         struct.map { |value| datetimes_to_json(value) }
       when Hash
         processed = {}
-        struct.each { |k,v| processed[k] = datetimes_to_json(v) }
+        struct.each { |k, v| processed[k] = datetimes_to_json(v) }
         processed
       when Date
-        struct.strftime('%F')
+        struct.strftime("%F")
       when *TIME_CLASSES # Time, ActiveSupport::TimeWithZone
         struct.iso8601
       else
@@ -155,14 +153,14 @@ module Brainstem
           struct.delete key
           id_attr = value.method_name ? "#{value.method_name}_id" : nil
 
-          if id_attr && model.class.columns_hash.has_key?(id_attr)
+          if id_attr && model.class.columns_hash.key?(id_attr)
             reflection = value.method_name && reflections[value.method_name.to_s]
             if reflection && reflection.options[:polymorphic] && !value.ignore_type
               struct["#{key.to_s.singularize}_ref".to_sym] = begin
                 if (id_attr = model.send(id_attr)).present?
                   {
-                    :id => to_s_except_nil(id_attr),
-                    :key => model.send("#{value.method_name}_type").try(:constantize).try(:table_name)
+                    id: to_s_except_nil(id_attr),
+                    key: model.send("#{value.method_name}_type").try(:constantize).try(:table_name)
                   }
                 end
               end
@@ -172,7 +170,7 @@ module Brainstem
           elsif associations.include?(key.to_s)
             result = value.call(model)
             if result.is_a?(Array) || result.is_a?(ActiveRecord::Relation)
-              struct["#{key.to_s.singularize}_ids".to_sym] = result.map {|a| to_s_except_nil(a.is_a?(ActiveRecord::Base) ? a.id : a) }
+              struct["#{key.to_s.singularize}_ids".to_sym] = result.map { |a| to_s_except_nil(a.is_a?(ActiveRecord::Base) ? a.id : a) }
             else
               if result.is_a?(ActiveRecord::Base)
                 struct["#{key.to_s.singularize}_id".to_sym] = to_s_except_nil(result.id)

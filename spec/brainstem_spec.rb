@@ -1,4 +1,4 @@
-require 'spec_helper'
+require "spec_helper"
 
 describe Brainstem do
   describe "default_namespace attribute" do

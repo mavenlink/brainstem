@@ -33,13 +33,13 @@ module Brainstem
       @ignore_type = options[:ignore_type] || false
       @restrict_to_only = options[:restrict_to_only] || false
       if block_given?
-        raise ArgumentError, "options[:json_name] is required when using a block" unless options[:json_name]
-        raise ArgumentError, "Method name is invalid with a block" if method_name
+        fail ArgumentError, "options[:json_name] is required when using a block" unless options[:json_name]
+        fail ArgumentError, "Method name is invalid with a block" if method_name
         @block = block
       elsif method_name
         @method_name = method_name
       else
-        raise ArgumentError, "Method name or block is required"
+        fail ArgumentError, "Method name or block is required"
       end
     end
 

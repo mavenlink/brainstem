@@ -6,7 +6,7 @@ module Brainstem
     TIME_CLASSES = [Time]
 
     begin
-      require 'active_support/time_with_zone'
+      require "active_support/time_with_zone"
       TIME_CLASSES << ActiveSupport::TimeWithZone
     rescue LoadError
     end
