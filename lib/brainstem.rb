@@ -8,8 +8,8 @@ module Brainstem
   # Sets {default_namespace} to a new value.
   # @param [String] namespace
   # @return [String] the new default namespace
-  def self.default_namespace=(namespace)
-    @default_namespace = namespace
+  class << self
+    attr_writer :default_namespace
   end
 
   # The namespace that will be used by {presenter_collection} and {add_presenter_class} if none is given or implied.
@@ -55,7 +55,7 @@ module Brainstem
   # Sets a new Brainstem logger.
   # @param [Logger] logger A new Brainstem logger.
   # @return [Logger] The new Brainstem logger.
-  def self.logger=(logger)
-    @logger = logger
+  class << self
+    attr_writer :logger
   end
 end

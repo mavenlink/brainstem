@@ -1,5 +1,5 @@
-require 'spec_helper'
-require 'spec_helpers/presenters'
+require "spec_helper"
+require "spec_helpers/presenters"
 
 describe Brainstem::ControllerMethods do
   class FakeController
@@ -8,7 +8,7 @@ describe Brainstem::ControllerMethods do
     attr_accessor :call_results
 
     def params
-      { :a => :b }
+      { a: :b }
     end
   end
 
@@ -27,7 +27,7 @@ describe Brainstem::ControllerMethods do
     describe "calling #present with sensible params" do
       before do
         def @controller.present(klass, options)
-          @call_results = { :klass => klass, :options => options, :block_result => yield }
+          @call_results = { klass: klass, options: options, block_result: yield }
         end
       end
 
@@ -53,19 +53,19 @@ describe Brainstem::ControllerMethods do
       end
 
       it "accepts a key map" do
-        @controller.present_object(Workspace.find(1), :key_map => { "Workspace" => "your_workspaces" })
+        @controller.present_object(Workspace.find(1), key_map: { "Workspace" => "your_workspaces" })
         expect(@controller.call_results[:klass]).to eq(Workspace)
         expect(@controller.call_results[:options][:as]).to eq("your_workspaces")
         expect(@controller.call_results[:block_result].pluck(:id)).to eq([1])
       end
 
       it "passes through the controller params" do
-        @controller.present_object(Workspace.find(1), :key_map => { "Workspace" => "your_workspaces" })
-        expect(@controller.call_results[:options][:params]).to eq(@controller.params.merge(:only => '1'))
+        @controller.present_object(Workspace.find(1), key_map: { "Workspace" => "your_workspaces" })
+        expect(@controller.call_results[:options][:params]).to eq(@controller.params.merge(only: "1"))
       end
 
       it "passes through supplied options" do
-        @controller.present_object(Workspace.find(1), :foo => :bar)
+        @controller.present_object(Workspace.find(1), foo: :bar)
         expect(@controller.call_results[:options][:foo]).to eq(:bar)
       end
 

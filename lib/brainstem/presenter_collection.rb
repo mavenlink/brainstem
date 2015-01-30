@@ -1,9 +1,8 @@
-require 'brainstem/association_field'
-require 'brainstem/search_unavailable_error'
+require "brainstem/association_field"
+require "brainstem/search_unavailable_error"
 
 module Brainstem
   class PresenterCollection
-
     # @!attribute default_max_per_page
     # @return [Integer] The maximum number of objects that can be requested in a single presented hash.
     attr_accessor :default_max_per_page
@@ -78,7 +77,7 @@ module Brainstem
 
       # Determine if an exception should be raised on an empty result set.
       if options[:raise_on_empty] && records.empty?
-        raise options[:empty_error_class] || ActiveRecord::RecordNotFound
+        fail options[:empty_error_class] || ActiveRecord::RecordNotFound
       end
 
       records = order_for_search(records, ordered_search_ids) if searching? options
@@ -94,7 +93,7 @@ module Brainstem
 
         if models.length > 0
           presenter = for!(models.first.class)
-          assoc = includes_hash.to_a.find { |k, v| v.json_name == json_name }
+          assoc = includes_hash.to_a.find { |_k, v| v.json_name == json_name }
           struct[json_name] = presenter.group_present(models, [])
         else
           struct[json_name] = []
@@ -104,7 +103,7 @@ module Brainstem
       if primary_models.length > 0
         presented_primary_models = options[:presenter].group_present(models, includes_hash.keys)
         struct[options[:as]] += presented_primary_models
-        struct[:results] = presented_primary_models.map { |model| { :key => options[:as].to_s, :id => model[:id] } }
+        struct[:results] = presented_primary_models.map { |model| { key: options[:as].to_s, id: model[:id] } }
       end
 
       rewrite_keys_as_objects!(struct)
@@ -133,7 +132,7 @@ module Brainstem
     # @return [Brainstem::Presenter] The presenter that knows how to present the class +klass+.
     # @raise [ArgumentError] if there is no known presenter for +klass+.
     def for!(klass)
-      self.for(klass) || raise(ArgumentError, "Unable to find a presenter for class #{klass}")
+      self.for(klass) || fail(ArgumentError, "Unable to find a presenter for class #{klass}")
     end
 
     private
@@ -185,7 +184,7 @@ module Brainstem
           if association && !association.options[:polymorphic]
             v.json_name = association && association.table_name.to_sym
             if v.json_name.nil?
-              raise ":json_name is a required option for method-based associations (#{presented_class}##{v.method_name})"
+              fail ":json_name is a required option for method-based associations (#{presented_class}##{v.method_name})"
             end
           end
         end
@@ -197,7 +196,7 @@ module Brainstem
     def filter_includes(user_includes, allowed_includes)
       filtered_includes = {}
 
-      (user_includes || '').split(',').each do |k|
+      (user_includes || "").split(",").each do |k|
         allowed = allowed_includes[k]
         if allowed
           filtered_includes[k] = allowed
@@ -207,8 +206,8 @@ module Brainstem
     end
 
     def handle_only(scope, only)
-      ids = (only || "").split(",").select {|id| id =~ /\A\d+\Z/}.uniq
-      [scope.where(:id => ids), scope.where(:id => ids).count]
+      ids = (only || "").split(",").select { |id| id =~ /\A\d+\Z/ }.uniq
+      [scope.where(id: ids), scope.where(id: ids).count]
     end
 
     def run_filters(scope, options)
@@ -250,8 +249,8 @@ module Brainstem
       return scope unless searching? options
 
       search_options = HashWithIndifferentAccess.new(
-        :include => includes,
-        :order => { :sort_order => sort_name, :direction => direction },
+        include: includes,
+        order: { sort_order: sort_name, direction: direction }
       )
 
       if options[:params][:limit].present? && options[:params][:offset].present?
@@ -266,9 +265,9 @@ module Brainstem
 
       result_ids, count = options[:presenter].search_block.call(options[:params][:search], search_options)
       if result_ids
-        [scope.where(:id => result_ids ), count, result_ids]
+        [scope.where(id: result_ids), count, result_ids]
       else
-        raise(SearchUnavailableError, 'Search is currently unavailable')
+        fail(SearchUnavailableError, "Search is currently unavailable")
       end
     end
 
@@ -321,19 +320,19 @@ module Brainstem
         direction = default_direction
       end
 
-      [sort_name, direction == 'desc' ? 'desc' : 'asc']
+      [sort_name, direction == "desc" ? "desc" : "asc"]
     end
 
     def perform_preloading(records, includes_hash)
       records.tap do |models|
-        association_names_to_preload = includes_hash.values.map {|i| i.method_name }
+        association_names_to_preload = includes_hash.values.map(&:method_name)
         if models.first
           reflections = Brainstem::PresenterCollection.reflections(models.first.class)
-          association_names_to_preload.reject! { |association| !reflections.has_key?(association.to_s) }
+          association_names_to_preload.reject! { |association| !reflections.key?(association.to_s) }
         end
         if association_names_to_preload.any?
           Brainstem::PresenterCollection.preload(models, association_names_to_preload)
-          Brainstem.logger.info "Eager loaded #{association_names_to_preload.join(", ")}."
+          Brainstem.logger.info "Eager loaded #{association_names_to_preload.join(', ')}."
         end
       end
     end
@@ -342,14 +341,14 @@ module Brainstem
       record_hash = {}
       primary_models = []
 
-      includes_hash.each do |include, include_data|
+      includes_hash.each do |_include, include_data|
         record_hash[include_data.json_name] ||= [] if include_data.json_name
       end
 
       models.each do |model|
         primary_models << model
 
-        includes_hash.each do |include, include_data|
+        includes_hash.each do |_include, include_data|
           models = Array(include_data.call(model))
 
           if include_data.json_name
@@ -370,12 +369,12 @@ module Brainstem
 
     def rewrite_keys_as_objects!(struct)
       (struct.keys - [:count, :results]).each do |key|
-        struct[key] = struct[key].inject({}) {|memo, obj| memo[obj[:id] || obj["id"] || "unknown_id"] = obj; memo }
+        struct[key] = struct[key].inject({}) { |memo, obj| memo[obj[:id] || obj["id"] || "unknown_id"] = obj; memo }
       end
     end
 
     def set_default_filters_option!(options)
-      return unless options[:params].has_key?(:apply_default_filters)
+      return unless options[:params].key?(:apply_default_filters)
 
       options[:apply_default_filters] = [true, "true", "TRUE", 1, "1"].include? options[:params].delete(:apply_default_filters)
     end
@@ -388,7 +387,7 @@ module Brainstem
     end
 
     def self.preload(models, association_names)
-      if Gem.loaded_specs['activerecord'].version >= Gem::Version.create('4.1')
+      if Gem.loaded_specs["activerecord"].version >= Gem::Version.create("4.1")
         ActiveRecord::Associations::Preloader.new.preload(models, association_names)
       else
         ActiveRecord::Associations::Preloader.new(models, association_names).run

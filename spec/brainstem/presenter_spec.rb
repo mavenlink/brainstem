@@ -1,8 +1,7 @@
-require 'spec_helper'
+require "spec_helper"
 
 describe Brainstem::Presenter do
   describe "class methods" do
-
     describe "presents method" do
       before do
         @klass = Class.new(Brainstem::Presenter)
@@ -70,8 +69,8 @@ describe Brainstem::Presenter do
       end
 
       it "creates an entry in the filters class ivar" do
-        @klass.filter(:foo, :default => true) { 1 }
-        expect(@klass.filters[:foo][0]).to eq({"default" => true})
+        @klass.filter(:foo, default: true) { 1 }
+        expect(@klass.filters[:foo][0]).to eq("default" => true)
         expect(@klass.filters[:foo][1]).to be_a(Proc)
       end
 
@@ -87,7 +86,7 @@ describe Brainstem::Presenter do
       end
 
       it "creates an entry in the search class ivar" do
-        @klass.search do end
+        @klass.search {}
         expect(@klass.search_block).to be_a(Proc)
       end
     end
@@ -101,7 +100,7 @@ describe Brainstem::Presenter do
 
           def present(model)
             {
-              :body => model.body,
+              body: model.body
             }
           end
         end
@@ -120,14 +119,14 @@ describe Brainstem::Presenter do
     describe "converting dates and times" do
       it "should convert all Time-and-date-like objects to iso8601" do
         class TimePresenter < Brainstem::Presenter
-          def present(model)
+          def present(_model)
             {
-              :time => Time.now,
-              :date => Date.new,
-              :recursion => {
-                  :time => Time.now,
-                  :something => [Time.now, :else],
-                  :foo => :bar
+              time: Time.now,
+              date: Date.new,
+              recursion: {
+                time: Time.now,
+                something: [Time.now, :else],
+                foo: :bar
               }
             }
           end
@@ -153,10 +152,10 @@ describe Brainstem::Presenter do
 
           def present(model)
             {
-              :body => model.body,
-              :subject => association(:subject),
-              :another_subject => association(:subject),
-              :something_else => association(:subject, :ignore_type => true)
+              body: model.body,
+              subject: association(:subject),
+              another_subject: association(:subject),
+              something_else: association(:subject, ignore_type: true)
             }
           end
         end
@@ -169,15 +168,14 @@ describe Brainstem::Presenter do
       context "when polymorphic association exists" do
         let(:post) { Post.find(1) }
 
-
         it "outputs the object as a hash with the id & class table name" do
-          expect(presented_data[:subject_ref]).to eq({ :id => post.subject.id.to_s,
-                                                       :key => post.subject.class.table_name })
+          expect(presented_data[:subject_ref]).to eq(id: post.subject.id.to_s,
+                                                     key: post.subject.class.table_name)
         end
 
         it "outputs custom names for the object as a hash with the id & class table name" do
-          expect(presented_data[:another_subject_ref]).to eq({ :id => post.subject.id.to_s,
-                                                               :key => post.subject.class.table_name })
+          expect(presented_data[:another_subject_ref]).to eq(id: post.subject.id.to_s,
+                                                             key: post.subject.class.table_name)
         end
 
         it "skips the polymorphic handling when ignore_type is true" do
@@ -207,14 +205,14 @@ describe Brainstem::Presenter do
 
           def present(model)
             {
-                :updated_at                 => model.updated_at,
-                :tasks                      => association(:tasks),
-                :user                       => association(:user),
-                :something                  => association(:user),
-                :lead_user                  => association(:lead_user),
-                :lead_user_with_lambda      => association(:json_name => "users") { |model| model.user },
-                :tasks_with_lambda          => association(:json_name => "tasks") { |model| Task.where(:workspace_id => model) },
-                :synthetic                  => association(:synthetic)
+              updated_at: model.updated_at,
+              tasks: association(:tasks),
+              user: association(:user),
+              something: association(:user),
+              lead_user: association(:lead_user),
+              lead_user_with_lambda: association(json_name: "users") { |model| model.user },
+              tasks_with_lambda: association(json_name: "tasks") { |model| Task.where(workspace_id: model) },
+              synthetic: association(:synthetic)
             }
           end
         end
@@ -267,7 +265,7 @@ describe Brainstem::Presenter do
       context "when the model has an <association>_id method but no column" do
         it "does not include the <association>_id field" do
           def @workspace.synthetic_id
-            raise "this explodes because it's not an association"
+            fail "this explodes because it's not an association"
           end
           expect(@presenter.present_and_post_process(@workspace, [])).not_to have_key(:synthetic_id)
         end

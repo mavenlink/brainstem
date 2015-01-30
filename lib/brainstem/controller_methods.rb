@@ -1,10 +1,8 @@
 module Brainstem
-
   # ControllerMethods are intended to be included into controllers that will be handling requests for presented objects.
   # The present method will pass through +params+, so that any allowed and requested includes, filters, sort orders
   # will be applied to the presented data.
   module ControllerMethods
-
     # Return a Ruby hash that contains models requested by the user's params and allowed
     # by the +name+ presenter's configuration.
     #
@@ -16,7 +14,7 @@ module Brainstem
     # @yield (see PresenterCollection#presenting)
     # @return (see PresenterCollection#presenting)
     def present(name, options = {}, &block)
-      Brainstem.presenter_collection(options[:namespace]).presenting(name, options.reverse_merge(:params => params), &block)
+      Brainstem.presenter_collection(options[:namespace]).presenting(name, options.reverse_merge(params: params), &block)
     end
 
     # Similar to ControllerMethods#present, but always returns all of the given objects, not just those that match any provided
@@ -27,10 +25,10 @@ module Brainstem
     #                           only required if the name cannot be inferred.
     # @return (see PresenterCollection#presenting)
     def present_object(objects, options = {})
-      options.merge!(:params => params, :apply_default_filters => false)
+      options.merge!(params: params, apply_default_filters: false)
 
       if objects.is_a?(ActiveRecord::Relation) || objects.is_a?(Array)
-        raise ActiveRecord::RecordNotFound if objects.empty?
+        fail ActiveRecord::RecordNotFound if objects.empty?
         klass = objects.first.class
         ids = objects.map(&:id)
       else
@@ -40,7 +38,7 @@ module Brainstem
       end
 
       options[:as] = (options[:key_map] || {})[klass.to_s] || klass.table_name
-      present(klass, options) { klass.where(:id => ids) }
+      present(klass, options) { klass.where(id: ids) }
     end
     alias_method :present_objects, :present_object
   end

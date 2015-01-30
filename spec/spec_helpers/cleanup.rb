@@ -1,7 +1,6 @@
 module Brainstem
-
   def self.clear_collections!
-    presenter_collection.presenters.each do |klass, presenter|
+    presenter_collection.presenters.each do |_klass, presenter|
       presenter.clear_options!
     end
     @presenter_collection = {}
@@ -19,5 +18,4 @@ module Brainstem
       self.class.clear_options!
     end
   end
-
 end
