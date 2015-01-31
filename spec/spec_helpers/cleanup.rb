@@ -2,7 +2,7 @@ module Brainstem
 
   def self.clear_collections!
     presenter_collection.presenters.each do |klass, presenter|
-      presenter.clear_options!
+      presenter.clear_options! if presenter.respond_to?(:clear_options!)
     end
     @presenter_collection = {}
   end

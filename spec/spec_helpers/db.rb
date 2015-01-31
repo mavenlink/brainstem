@@ -51,6 +51,10 @@ class Workspace < ActiveRecord::Base
   scope :owned_by, -> id { where(:user_id => id) }
   scope :numeric_description, -> description { where(:description => ["1", "2", "3"]) }
 
+  def secret_info
+    "this is secret!"
+  end
+
   def lead_user
     user
   end

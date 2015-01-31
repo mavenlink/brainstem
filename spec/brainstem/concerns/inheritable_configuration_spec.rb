@@ -64,25 +64,25 @@ describe Brainstem::Concerns::InheritableConfiguration do
       end
     end
 
-    describe '#nest' do
+    describe '#nest!' do
       it 'builds nested objects' do
-        parent_class.configuration.nest('top_level')
+        parent_class.configuration.nest!('top_level')
         expect(parent_class.configuration['top_level']).to be_a(Brainstem::Concerns::InheritableConfiguration::Configuration)
-        parent_class.configuration.nest('top_level').nest('next_level')
+        parent_class.configuration.nest!('top_level').nest!('next_level')
         expect(parent_class.configuration['top_level']['next_level']).to be_a(Brainstem::Concerns::InheritableConfiguration::Configuration)
       end
 
       it 'is chainable' do
-        parent_class.configuration.nest('top_level').nest('sub_one')
-        sub_two = parent_class.configuration.nest('top_level').nest('sub_two')
+        parent_class.configuration.nest!('top_level').nest!('sub_one')
+        sub_two = parent_class.configuration.nest!('top_level').nest!('sub_two')
         expect(parent_class.configuration['top_level']['sub_one']).to be_a(Brainstem::Concerns::InheritableConfiguration::Configuration)
         expect(parent_class.configuration['top_level']['sub_two']).to be_a(Brainstem::Concerns::InheritableConfiguration::Configuration)
         expect(parent_class.configuration['top_level']['sub_two']).to be sub_two
       end
 
       it 'inherits nested values' do
-        parent_class.configuration.nest('top_level').nest('sub_one')
-        parent_class.configuration.nest('top_level').nest('sub_two')
+        parent_class.configuration.nest!('top_level').nest!('sub_one')
+        parent_class.configuration.nest!('top_level').nest!('sub_two')
         parent_class.configuration['top_level']['key'] = 'value'
         parent_class.configuration['top_level']['key2'] = 'value2'
         parent_class.configuration['top_level']['sub_one']['sub_one_key1'] = 'sub_one_value1'
@@ -100,11 +100,11 @@ describe Brainstem::Concerns::InheritableConfiguration do
         expect(subclass.configuration['top_level']['sub_two']['sub_two_key']).to eq 'sub_two_value'
 
         # These should have no affect
-        subclass.configuration['top_level'].nest('sub_one')
-        subclass.configuration['top_level'].nest('sub_two')
+        subclass.configuration['top_level'].nest!('sub_one')
+        subclass.configuration['top_level'].nest!('sub_two')
 
         # This should add a new nested configuration
-        subclass.configuration['top_level'].nest('new_nesting')['key'] = 'hello'
+        subclass.configuration['top_level'].nest!('new_nesting')['key'] = 'hello'
 
         subclass.configuration['top_level']['key'] = 'overriden value'
         subclass.configuration['top_level']['new_key'] = 'new value'
@@ -145,7 +145,7 @@ describe Brainstem::Concerns::InheritableConfiguration do
         expect(subclass.configuration['top_level']['added_later']).to eq 5
 
         # Can add nesting to sub only
-        subclass.configuration['top_level'].nest('only_sub')
+        subclass.configuration['top_level'].nest!('only_sub')
         subclass.configuration['top_level']['only_sub']['two'] = 2
         expect(subclass.configuration['top_level']['only_sub']['two']).to eq 2
         expect(parent_class.configuration['top_level']['only_sub']).to be_nil
@@ -159,18 +159,18 @@ describe Brainstem::Concerns::InheritableConfiguration do
       end
 
       it 'will not override nested values' do
-        parent_class.configuration.nest('top_level').nest('sub_one')
+        parent_class.configuration.nest!('top_level').nest!('sub_one')
         subclass = Class.new(parent_class)
         expect(lambda { subclass.configuration['top_level']['sub_one'] = 2 }).to raise_error('You cannot override a nested value')
       end
     end
 
-    describe '#array' do
-      let!(:array) { parent_class.configuration.array('list') }
+    describe '#array!' do
+      let!(:array) { parent_class.configuration.array!('list') }
 
       it 'builds an InheritableAppendSet' do
         expect(array).to be_a(Brainstem::Concerns::InheritableConfiguration::InheritableAppendSet)
-        expect(parent_class.configuration.array('list')).to be array
+        expect(parent_class.configuration.array!('list')).to be array
       end
 
       it 'is inherited' do

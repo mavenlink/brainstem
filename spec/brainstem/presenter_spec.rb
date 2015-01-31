@@ -3,38 +3,46 @@ require 'spec_helper'
 describe Brainstem::Presenter do
   describe "class methods" do
 
-    describe "presents method" do
-      before do
-        @klass = Class.new(Brainstem::Presenter)
+    describe '.presents' do
+      let!(:presenter_class) { Class.new(Brainstem::Presenter) }
+
+      it 'records itself as the presenter for the named class as a string' do
+        presenter_class.presents 'String'
+        expect(Brainstem.presenter_collection.for(String)).to be_a(presenter_class)
       end
 
-      it "records itself as the presenter for the named class as a string" do
-        @klass.presents "String"
-        expect(Brainstem.presenter_collection.for(String)).to be_a(@klass)
+      it 'records itself as the presenter for the given class' do
+        presenter_class.presents String
+        expect(Brainstem.presenter_collection.for(String)).to be_a(presenter_class)
       end
 
-      it "records itself as the presenter for the given class" do
-        @klass.presents String
-        expect(Brainstem.presenter_collection.for(String)).to be_a(@klass)
+      it 'records itself as the presenter for the named classes' do
+        presenter_class.presents String, Array
+        expect(Brainstem.presenter_collection.for(String)).to be_a(presenter_class)
+        expect(Brainstem.presenter_collection.for(Array)).to be_a(presenter_class)
       end
 
-      it "records itself as the presenter for the named classes" do
-        @klass.presents String, Array
-        expect(Brainstem.presenter_collection.for(String)).to be_a(@klass)
-        expect(Brainstem.presenter_collection.for(Array)).to be_a(@klass)
+      it 'can be called more than once' do
+        presenter_class.presents String
+        presenter_class.presents Array
+        expect(Brainstem.presenter_collection.for(String)).to be_a(presenter_class)
+        expect(Brainstem.presenter_collection.for(Array)).to be_a(presenter_class)
       end
 
-      it "can be called more than once" do
-        @klass.presents String
-        @klass.presents Array
-        expect(Brainstem.presenter_collection.for(String)).to be_a(@klass)
-        expect(Brainstem.presenter_collection.for(Array)).to be_a(@klass)
+      it 'returns the set of presented class names' do
+        expect(presenter_class.presents(String)).to eq(['String'])
+        expect(presenter_class.presents('Array')).to eq(['String', 'Array'])
+        expect(presenter_class.presents).to eq(['String', 'Array'])
       end
 
-      it "returns the set of presented class names" do
-        expect(@klass.presents(String)).to eq(["String"])
-        expect(@klass.presents("Array")).to eq(["String", "Array"])
-        expect(@klass.presents).to eq(["String", "Array"])
+      it 'should not be inherited' do
+        presenter_class.presents(String)
+        expect(presenter_class.presents).to eq ['String']
+        subclass = Class.new(presenter_class)
+        expect(subclass.presents).to eq []
+        subclass.presents(Array)
+        expect(subclass.presents).to eq ['Array']
+        expect(presenter_class.presents).to eq ['String']
       end
     end
 

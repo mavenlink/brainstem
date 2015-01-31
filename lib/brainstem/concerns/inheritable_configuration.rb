@@ -36,12 +36,12 @@ module Brainstem
           end
         end
 
-        def nest(key)
+        def nest!(key)
           get!(key)
           @storage[key] ||= Configuration.new
         end
 
-        def array(key)
+        def array!(key)
           get!(key)
           @storage[key] ||= InheritableAppendSet.new
         end

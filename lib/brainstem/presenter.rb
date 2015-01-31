@@ -1,10 +1,12 @@
 require 'date'
 require 'brainstem/association_field'
 require 'brainstem/time_classes'
+require 'brainstem/concerns/presenter_dsl'
 
 module Brainstem
   # @abstract Subclass and override {#present} to implement a presenter.
   class Presenter
+    include Concerns::PresenterDSL
 
     # Class methods
 
@@ -12,8 +14,10 @@ module Brainstem
     # @param [String, [String]] klasses Any number of names of classes this presenter presents.
     def self.presents(*klasses)
       @presents ||= []
-      @presents += klasses.map(&:to_s)
-      Brainstem.add_presenter_class(self, *klasses)
+      if klasses.length > 0
+        @presents += klasses.map(&:to_s)
+        Brainstem.add_presenter_class(self, *klasses)
+      end
       @presents
     end
 
