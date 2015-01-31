@@ -46,6 +46,10 @@ module Brainstem
           @storage[key] ||= InheritableAppendSet.new
         end
 
+        def keys
+          @parent_configuration.keys | @storage.keys
+        end
+
         private
 
         def get!(key)

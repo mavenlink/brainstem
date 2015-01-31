@@ -33,7 +33,38 @@ describe Brainstem::Concerns::InheritableConfiguration do
       expect(parent_class.configuration['ten']).to be_nil
     end
 
-    describe '.nest' do
+    describe '#keys' do
+      it "returns the union of this class's keys with any parent keys" do
+        parent_class.configuration['1'] = :a
+        parent_class.configuration['2'] = :b
+
+        subclass = Class.new(parent_class)
+        subclass.configuration['2'] = :c
+        subclass.configuration['3'] = :d
+
+        subsubclass = Class.new(subclass)
+        subsubclass.configuration['3'] = :e
+        subsubclass.configuration['4'] = :f
+
+        expect(parent_class.configuration.keys).to eq ['1', '2']
+        expect(subclass.configuration.keys).to eq ['1', '2', '3']
+        expect(subsubclass.configuration.keys).to eq ['1', '2', '3', '4']
+
+        expect(parent_class.configuration['1']).to eq :a
+        expect(parent_class.configuration['2']).to eq :b
+        expect(parent_class.configuration['3']).to be_nil
+        expect(subclass.configuration['1']).to eq :a
+        expect(subclass.configuration['2']).to eq :c
+        expect(subclass.configuration['3']).to eq :d
+        expect(subclass.configuration['4']).to be_nil
+        expect(subsubclass.configuration['1']).to eq :a
+        expect(subsubclass.configuration['2']).to eq :c
+        expect(subsubclass.configuration['3']).to eq :e
+        expect(subsubclass.configuration['4']).to eq :f
+      end
+    end
+
+    describe '#nest' do
       it 'builds nested objects' do
         parent_class.configuration.nest('top_level')
         expect(parent_class.configuration['top_level']).to be_a(Brainstem::Concerns::InheritableConfiguration::Configuration)
@@ -118,6 +149,13 @@ describe Brainstem::Concerns::InheritableConfiguration do
         subclass.configuration['top_level']['only_sub']['two'] = 2
         expect(subclass.configuration['top_level']['only_sub']['two']).to eq 2
         expect(parent_class.configuration['top_level']['only_sub']).to be_nil
+
+        # Go even deeper
+        subsubclass = Class.new(subclass)
+        expect(subsubclass.configuration['top_level']['only_sub']['two']).to eq 2
+        subsubclass.configuration['top_level']['only_sub']['two'] = 3
+        expect(subsubclass.configuration['top_level']['only_sub']['two']).to eq 3
+        expect(subclass.configuration['top_level']['only_sub']['two']).to eq 2
       end
 
       it 'will not override nested values' do
@@ -127,7 +165,7 @@ describe Brainstem::Concerns::InheritableConfiguration do
       end
     end
 
-    describe '.array' do
+    describe '#array' do
       let!(:array) { parent_class.configuration.array('list') }
 
       it 'builds an InheritableAppendSet' do
