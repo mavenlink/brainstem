@@ -68,11 +68,17 @@ describe Brainstem::Concerns::InheritableConfiguration do
         expect(subclass.configuration['top_level']['sub_one']['sub_one_key2']).to eq 'sub_one_value2'
         expect(subclass.configuration['top_level']['sub_two']['sub_two_key']).to eq 'sub_two_value'
 
+        # These should have no affect
+        subclass.configuration['top_level'].nest('sub_one')
+        subclass.configuration['top_level'].nest('sub_two')
+
+        # This should add a new nested configuration
+        subclass.configuration['top_level'].nest('new_nesting')['key'] = 'hello'
+
         subclass.configuration['top_level']['key'] = 'overriden value'
         subclass.configuration['top_level']['new_key'] = 'new value'
         subclass.configuration['top_level']['sub_one']['sub_one_key1'] = 'overriden nested value'
         subclass.configuration['top_level']['sub_one']['new_key'] = 'new nested value'
-        subclass.configuration['top_level'].nest('new_nesting')['key'] = 'hello'
 
         expect(subclass.configuration['top_level']['key']).to eq 'overriden value'
         expect(subclass.configuration['top_level']['key2']).to eq 'value2'
@@ -112,6 +118,47 @@ describe Brainstem::Concerns::InheritableConfiguration do
         subclass.configuration['top_level']['only_sub']['two'] = 2
         expect(subclass.configuration['top_level']['only_sub']['two']).to eq 2
         expect(parent_class.configuration['top_level']['only_sub']).to be_nil
+      end
+
+      it 'will not override nested values' do
+        parent_class.configuration.nest('top_level').nest('sub_one')
+        subclass = Class.new(parent_class)
+        expect(lambda { subclass.configuration['top_level']['sub_one'] = 2 }).to raise_error('You cannot override a nested value')
+      end
+    end
+
+    describe '.array' do
+      let!(:array) { parent_class.configuration.array('list') }
+
+      it 'builds an InheritableAppendSet' do
+        expect(array).to be_a(Brainstem::Concerns::InheritableConfiguration::InheritableAppendSet)
+        expect(parent_class.configuration.array('list')).to be array
+      end
+
+      it 'is inherited' do
+        parent_class.configuration['list'] << '2'
+        parent_class.configuration['list'].push 3
+
+        subclass = Class.new(parent_class)
+        expect(parent_class.configuration['list'].to_a).to eq ['2', 3]
+        expect(subclass.configuration['list'].to_a).to eq ['2', 3]
+
+        parent_class.configuration['list'].push 4
+        expect(parent_class.configuration['list'].to_a).to eq ['2', 3, 4]
+        expect(subclass.configuration['list'].to_a).to eq ['2', 3, 4]
+
+        subclass.configuration['list'].push 5
+        expect(parent_class.configuration['list'].to_a).to eq ['2', 3, 4]
+        expect(subclass.configuration['list'].to_a).to eq ['2', 3, 4, 5]
+
+        parent_class.configuration['list'].push 6
+        expect(parent_class.configuration['list'].to_a).to eq ['2', 3, 4, 6]
+        expect(subclass.configuration['list'].to_a).to eq ['2', 3, 4, 6, 5]
+      end
+
+      it 'will not override arrays' do
+        subclass = Class.new(parent_class)
+        expect(lambda { subclass.configuration['list'] = 2 }).to raise_error('You cannot override an inheritable array once set')
       end
     end
   end

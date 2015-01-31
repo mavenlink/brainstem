@@ -26,8 +26,11 @@ module Brainstem
         end
 
         def []=(key, value)
-          if get!(key).is_a?(Configuration)
+          existing_value = get!(key)
+          if existing_value.is_a?(Configuration)
             raise 'You cannot override a nested value'
+          elsif existing_value.is_a?(InheritableAppendSet)
+            raise 'You cannot override an inheritable array once set'
           else
             @storage[key] = value
           end
@@ -38,16 +41,43 @@ module Brainstem
           @storage[key] ||= Configuration.new
         end
 
+        def array(key)
+          get!(key)
+          @storage[key] ||= InheritableAppendSet.new
+        end
+
         private
 
         def get!(key)
           @storage[key] || begin
             if @parent_configuration[key].is_a?(Configuration)
               @storage[key] = Configuration.new(@parent_configuration[key])
+            elsif @parent_configuration[key].is_a?(InheritableAppendSet)
+              @storage[key] = InheritableAppendSet.new(@parent_configuration[key])
             else
               @parent_configuration[key]
             end
           end
+        end
+      end
+
+      class InheritableAppendSet
+        def initialize(parent_array = nil)
+          @parent_array = parent_array || []
+          @storage = []
+        end
+
+        def push(item)
+          @storage.push item
+        end
+        alias_method :<<, :push
+
+        def concat(items)
+          @storage.concat items
+        end
+
+        def to_a
+          @parent_array.to_a + @storage
         end
       end
     end
