@@ -1,4 +1,3 @@
-require 'pry'
 require 'brainstem/concerns/inheritable_configuration'
 
 module Brainstem
