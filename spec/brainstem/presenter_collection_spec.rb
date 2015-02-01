@@ -474,7 +474,7 @@ describe Brainstem::PresenterCollection do
 
         before do
           WorkspacePresenter.filter(:owned_by, :default => bob.id)
-          WorkspacePresenter.presents("Workspace")
+          WorkspacePresenter.presents Workspace
         end
 
         it "calls the named scope with default arguments" do

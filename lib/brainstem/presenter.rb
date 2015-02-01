@@ -15,7 +15,10 @@ module Brainstem
     def self.presents(*klasses)
       @presents ||= []
       if klasses.length > 0
-        @presents += klasses.map(&:to_s)
+        if klasses.any? { |klass| klass.is_a?(String) || klass.is_a?(Symbol) }
+          raise "Brainstem Presenter#presents now expects a Class instead of a class name"
+        end
+        @presents += klasses
         Brainstem.add_presenter_class(self, *klasses)
       end
       @presents

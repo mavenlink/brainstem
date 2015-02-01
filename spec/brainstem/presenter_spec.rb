@@ -6,17 +6,12 @@ describe Brainstem::Presenter do
     describe '.presents' do
       let!(:presenter_class) { Class.new(Brainstem::Presenter) }
 
-      it 'records itself as the presenter for the named class as a string' do
-        presenter_class.presents 'String'
-        expect(Brainstem.presenter_collection.for(String)).to be_a(presenter_class)
-      end
-
       it 'records itself as the presenter for the given class' do
         presenter_class.presents String
         expect(Brainstem.presenter_collection.for(String)).to be_a(presenter_class)
       end
 
-      it 'records itself as the presenter for the named classes' do
+      it 'records itself as the presenter for the given classes' do
         presenter_class.presents String, Array
         expect(Brainstem.presenter_collection.for(String)).to be_a(presenter_class)
         expect(Brainstem.presenter_collection.for(Array)).to be_a(presenter_class)
@@ -29,20 +24,26 @@ describe Brainstem::Presenter do
         expect(Brainstem.presenter_collection.for(Array)).to be_a(presenter_class)
       end
 
-      it 'returns the set of presented class names' do
-        expect(presenter_class.presents(String)).to eq(['String'])
-        expect(presenter_class.presents('Array')).to eq(['String', 'Array'])
-        expect(presenter_class.presents).to eq(['String', 'Array'])
+      it 'returns the set of presented classes' do
+        expect(presenter_class.presents(String)).to eq([String])
+        expect(presenter_class.presents(Array)).to eq([String, Array])
+        expect(presenter_class.presents).to eq([String, Array])
       end
 
       it 'should not be inherited' do
         presenter_class.presents(String)
-        expect(presenter_class.presents).to eq ['String']
+        expect(presenter_class.presents).to eq [String]
         subclass = Class.new(presenter_class)
         expect(subclass.presents).to eq []
         subclass.presents(Array)
-        expect(subclass.presents).to eq ['Array']
-        expect(presenter_class.presents).to eq ['String']
+        expect(subclass.presents).to eq [Array]
+        expect(presenter_class.presents).to eq [String]
+      end
+
+      it 'raises an error when given a string' do
+        expect(lambda {
+          presenter_class.presents 'Array'
+        }).to raise_error(/Brainstem Presenter#presents now expects a Class instead of a class name/)
       end
     end
 
