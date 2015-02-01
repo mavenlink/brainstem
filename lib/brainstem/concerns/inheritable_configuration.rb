@@ -50,6 +50,14 @@ module Brainstem
           @parent_configuration.keys | @storage.keys
         end
 
+        def each
+          keys.each do |key|
+            yield key, get!(key)
+          end
+        end
+
+        delegate :empty?, to: :keys
+
         private
 
         def get!(key)
@@ -83,6 +91,8 @@ module Brainstem
         def to_a
           @parent_array.to_a + @storage
         end
+
+        delegate :each, :empty?, to: :to_a
       end
     end
   end

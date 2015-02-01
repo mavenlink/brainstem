@@ -16,22 +16,29 @@ module Brainstem
           block.arity < 1 ? self.instance_eval(&block) : block.call(self) if block_given?
         end
 
-        def descend(klass, new_options = {}, &block)
-          klass.new(configuration, block_options.merge(new_options), &block)
-        end
-
         def with_options(new_options = {}, &block)
           descend self.class, new_options, &block
         end
 
+        protected
+
+        def descend(klass, new_options = {}, &block)
+          klass.new(configuration, block_options.merge(new_options), &block)
+        end
+
         def setup_defaults!
-          # override me
+        end
+
+        def parse_args(args)
+          options = args.last.is_a?(Hash) ? args.pop : {}
+          description = args.shift
+          [description, options]
         end
       end
 
       class PresenterBlock < BaseBlock
         def preload(*args)
-          configuration.array!(:preload).concat args
+          configuration.array!(:preloads).concat args
         end
 
         def conditionals(&block)
@@ -50,7 +57,7 @@ module Brainstem
 
         def setup_defaults!
           super
-          configuration.array!(:preload)
+          configuration.array!(:preloads)
           configuration.nest!(:conditionals)
           configuration.nest!(:fields)
           configuration.nest!(:associations)
@@ -68,13 +75,15 @@ module Brainstem
       end
 
       class FieldsBlock < BaseBlock
-        def field(name, type, description = nil, options = {})
+        def field(name, type, *args)
+          description, options = parse_args(args)
           configuration[:fields][name] = { type: type, description: description, options: block_options.merge(options) }
         end
       end
 
       class AssociationsBlock < BaseBlock
-        def association(name, klass, description = nil, options = {})
+        def association(name, klass, *args)
+          description, options = parse_args(args)
           configuration[:associations][name] = { class: klass, description: description, options: block_options.merge(options) }
         end
       end

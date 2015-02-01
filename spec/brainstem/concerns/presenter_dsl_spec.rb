@@ -28,7 +28,8 @@ require 'brainstem/concerns/presenter_dsl'
 #                 restrict_to_only: true
 #     association :lead_user, User, 'The user who runs this Workspace'
 #     association :subtasks, Task, 'Only Tasks in this Workspace that are subtasks',
-#                 dynamic: lambda { |workspace| workspace.tasks.where('parent_id IS NOT NULL') }
+#                 dynamic: lambda { |workspace| workspace.tasks.where('parent_id IS NOT NULL') },
+#                 brainstem_key: 'sub_tasks'
 #   end
 # end
 
@@ -43,17 +44,17 @@ describe Brainstem::Concerns::PresenterDSL do
     describe '#preload directive' do
       it 'builds a list of associations to preload' do
         presenter_class.presenter { preload :tasks }
-        expect(presenter_class.configuration[:preload].to_a).to eq [:tasks]
+        expect(presenter_class.configuration[:preloads].to_a).to eq [:tasks]
         presenter_class.presenter { preload(lead_user: { workspaces: [:lead_user, :tasks] }) }
-        expect(presenter_class.configuration[:preload].to_a).to eq [ :tasks, lead_user: { workspaces: [:lead_user, :tasks] } ]
+        expect(presenter_class.configuration[:preloads].to_a).to eq [ :tasks, lead_user: { workspaces: [:lead_user, :tasks] } ]
       end
 
       it 'is inherited' do
         presenter_class.presenter { preload :tasks }
         subclass = Class.new(presenter_class)
         subclass.presenter { preload :lead_user }
-        expect(presenter_class.configuration[:preload].to_a).to eq [:tasks]
-        expect(subclass.configuration[:preload].to_a).to eq [:tasks, :lead_user]
+        expect(presenter_class.configuration[:preloads].to_a).to eq [:tasks]
+        expect(subclass.configuration[:preloads].to_a).to eq [:tasks, :lead_user]
       end
     end
 
@@ -97,7 +98,7 @@ describe Brainstem::Concerns::PresenterDSL do
         presenter_class.presenter do
           fields do
             field :updated_at, :datetime
-            field :secret, :string, 'a secret, via secret_info',
+            field :secret, :string,
                   via: :secret_info,
                   if: [:user_is_bob, :title_is_hello]
 
@@ -114,7 +115,7 @@ describe Brainstem::Concerns::PresenterDSL do
         expect(presenter_class.configuration[:fields][:updated_at][:type]).to eq :datetime
         expect(presenter_class.configuration[:fields][:updated_at][:description]).to be_nil
         expect(presenter_class.configuration[:fields][:secret][:type]).to eq :string
-        expect(presenter_class.configuration[:fields][:secret][:description]).to eq 'a secret, via secret_info'
+        expect(presenter_class.configuration[:fields][:secret][:description]).to be_nil
         expect(presenter_class.configuration[:fields][:secret][:options]).to eq({ via: :secret_info, if: [:user_is_bob, :title_is_hello] })
         expect(presenter_class.configuration[:fields][:bob_title][:type]).to eq :string
         expect(presenter_class.configuration[:fields][:bob_title][:description]).to eq 'another name for the title, only for Bob'
@@ -147,7 +148,8 @@ describe Brainstem::Concerns::PresenterDSL do
             association :tasks, Task, 'The Tasks in this Workspace',
                         restrict_to_only: true
             association :subtasks, Task, 'Only Tasks in this Workspace that are subtasks',
-                        dynamic: lambda { |workspace| workspace.tasks.where('parent_id IS NOT NULL') }
+                        dynamic: lambda { |workspace| workspace.tasks.where('parent_id IS NOT NULL') },
+                        brainstem_key: 'sub_tasks'
           end
         end
       end
@@ -159,7 +161,7 @@ describe Brainstem::Concerns::PresenterDSL do
         expect(presenter_class.configuration[:associations][:tasks][:options]).to eq({ restrict_to_only: true })
         expect(presenter_class.configuration[:associations][:subtasks][:class]).to eq Task
         expect(presenter_class.configuration[:associations][:subtasks][:description]).to eq 'Only Tasks in this Workspace that are subtasks'
-        expect(presenter_class.configuration[:associations][:subtasks][:options].keys).to eq [:dynamic]
+        expect(presenter_class.configuration[:associations][:subtasks][:options].keys).to eq [:dynamic, :brainstem_key]
       end
 
       it 'is inherited and overridable' do
