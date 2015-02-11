@@ -200,4 +200,11 @@ describe Brainstem::Concerns::InheritableConfiguration do
       end
     end
   end
+
+  describe '#configuration' do
+    it 'is available on the instance' do
+      parent_class.configuration['two'] = 2
+      expect(parent_class.new.configuration['two']).to eq 2
+    end
+  end
 end

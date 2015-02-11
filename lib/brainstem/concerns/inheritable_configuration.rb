@@ -15,6 +15,10 @@ module Brainstem
         end
       end
 
+      def configuration
+        self.class.configuration
+      end
+
       class Configuration
         def initialize(parent_configuration = nil)
           @parent_configuration = parent_configuration || {}

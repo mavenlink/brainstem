@@ -66,25 +66,25 @@ module Brainstem
 
       class ConditionalsBlock < BaseBlock
         def collection(name, action, description = nil)
-          configuration[:conditionals][name] = { type: :collection, action: action, description: description }
+          configuration[:conditionals][name] = { name: name, type: :collection, action: action, description: description }
         end
 
         def model(name, action, description = nil)
-          configuration[:conditionals][name] = { type: :model, action: action, description: description }
+          configuration[:conditionals][name] = { name: name, type: :model, action: action, description: description }
         end
       end
 
       class FieldsBlock < BaseBlock
         def field(name, type, *args)
           description, options = parse_args(args)
-          configuration[:fields][name] = { type: type, description: description, options: block_options.merge(options) }
+          configuration[:fields][name] = { name: name, type: type, description: description, options: block_options.merge(options) }
         end
       end
 
       class AssociationsBlock < BaseBlock
         def association(name, klass, *args)
           description, options = parse_args(args)
-          configuration[:associations][name] = { class: klass, description: description, options: block_options.merge(options) }
+          configuration[:associations][name] = { name: name, class: klass, description: description, options: block_options.merge(options) }
         end
       end
 
