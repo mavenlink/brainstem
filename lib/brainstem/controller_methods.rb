@@ -39,7 +39,7 @@ module Brainstem
         options[:params][:only] = ids.to_s
       end
 
-      options[:as] = (options[:key_map] || {})[klass.to_s] || klass.table_name
+      options[:brainstem_key] = (options[:key_map] || {})[klass.to_s] || klass.table_name
       present(klass, options) { klass.where(:id => ids) }
     end
     alias_method :present_objects, :present_object

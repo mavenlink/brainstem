@@ -34,28 +34,28 @@ describe Brainstem::ControllerMethods do
       it "works with arrays of ActiveRecord objects" do
         @controller.present_object([Workspace.find(1), Workspace.find(3)])
         expect(@controller.call_results[:klass]).to eq(Workspace)
-        expect(@controller.call_results[:options][:as]).to eq("workspaces")
+        expect(@controller.call_results[:options][:brainstem_key]).to eq("workspaces")
         expect(@controller.call_results[:block_result].pluck(:id)).to eq([1, 3])
       end
 
       it "works with a Relation" do
         @controller.present_object(Workspace.owned_by(1))
         expect(@controller.call_results[:klass]).to eq(Workspace)
-        expect(@controller.call_results[:options][:as]).to eq("workspaces")
+        expect(@controller.call_results[:options][:brainstem_key]).to eq("workspaces")
         expect(@controller.call_results[:block_result].pluck(:id)).to eq([1, 2, 3, 4])
       end
 
       it "works with singleton objects" do
         @controller.present_object(Workspace.find(1))
         expect(@controller.call_results[:klass]).to eq(Workspace)
-        expect(@controller.call_results[:options][:as]).to eq("workspaces")
+        expect(@controller.call_results[:options][:brainstem_key]).to eq("workspaces")
         expect(@controller.call_results[:block_result].pluck(:id)).to eq([1])
       end
 
       it "accepts a key map" do
         @controller.present_object(Workspace.find(1), :key_map => { "Workspace" => "your_workspaces" })
         expect(@controller.call_results[:klass]).to eq(Workspace)
-        expect(@controller.call_results[:options][:as]).to eq("your_workspaces")
+        expect(@controller.call_results[:options][:brainstem_key]).to eq("your_workspaces")
         expect(@controller.call_results[:block_result].pluck(:id)).to eq([1])
       end
 

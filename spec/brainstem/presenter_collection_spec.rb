@@ -821,10 +821,16 @@ describe Brainstem::PresenterCollection do
       end
     end
 
-    describe "the :as param" do
+    describe "the brainstem_key: param" do
       it "determines the chosen top-level key name" do
-        result = @presenter_collection.presenting("workspaces", :as => :my_workspaces) { Workspace.where(:id => 1) }
+        result = @presenter_collection.presenting("workspaces", brainstem_key: :my_workspaces) { Workspace.where(:id => 1) }
         expect(result.keys).to eq([:count, :my_workspaces, :results])
+      end
+
+      it "used to be called 'as'" do
+        expect(lambda {
+          @presenter_collection.presenting("workspaces", as: :my_workspaces) { Workspace.where(:id => 1) }
+        }).to raise_error(/The 'as' parameter has been renamed to 'brainstem_key'/)
       end
     end
 

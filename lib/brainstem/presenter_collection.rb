@@ -25,7 +25,7 @@ module Brainstem
     # @param [Hash] options The options that will be applied as the objects are converted.
     # @option options [Hash] :params The +params+ hash included in a request for the presented object.
     # @option options [ActiveRecord::Base] :model The model that is being presented (if different from +name+).
-    # @option options [String] :as The top-level key the presented objects will be assigned to (if different from +name.tableize+)
+    # @option options [String] :brainstem_key The top-level key the presented objects will be assigned to (if different from +name.tableize+)
     # @option options [Integer] :max_per_page The maximum number of items that can be requested by <code>params[:per_page]</code>.
     # @option options [Integer] :per_page The number of items that will be returned if <code>params[:per_page]</code> is not set.
     # @option options [Boolean] :apply_default_filters Determine if Presenter's filter defaults should be applied.  On by default.
@@ -33,6 +33,7 @@ module Brainstem
     # @return [Hash] A hash of arrays of hashes. Top-level hash keys are pluralized model names, with values of arrays containing one hash per object that was found by the given given options.
     def presenting(name, options = {}, &block)
       options[:params] = HashWithIndifferentAccess.new(options[:params] || {})
+      check_for_old_options(options)
       set_default_filters_option!(options)
       presented_class = (options[:model] || name)
       presented_class = presented_class.classify.constantize if presented_class.is_a?(String)
@@ -46,7 +47,7 @@ module Brainstem
       options[:table_name] = presented_class.table_name
 
       # key these models will use in the struct that is output
-      options[:as] = (options[:as] || name.to_s.tableize).to_sym
+      options[:brainstem_key] = (options[:brainstem_key] || name.to_s.tableize).to_sym
 
       allowed_includes = calculate_allowed_includes options[:presenter], presented_class, options[:params][:only].present?
       includes_hash = filter_includes options[:params][:include], allowed_includes
@@ -86,7 +87,7 @@ module Brainstem
 
       models = perform_preloading records, includes_hash
       primary_models, associated_models = gather_associations(models, includes_hash)
-      struct = { :count => count, options[:as] => [], :results => [] }
+      struct = { :count => count, options[:brainstem_key] => [], :results => [] }
 
       associated_models.each do |json_name, models|
         models.flatten!
@@ -103,8 +104,8 @@ module Brainstem
 
       if primary_models.length > 0
         presented_primary_models = options[:presenter].group_present(models, includes_hash.keys)
-        struct[options[:as]] += presented_primary_models
-        struct[:results] = presented_primary_models.map { |model| { :key => options[:as].to_s, :id => model[:id] } }
+        struct[options[:brainstem_key]] += presented_primary_models
+        struct[:results] = presented_primary_models.map { |model| { :key => options[:brainstem_key].to_s, :id => model[:id] } }
       end
 
       rewrite_keys_as_objects!(struct)
@@ -378,6 +379,10 @@ module Brainstem
       return unless options[:params].has_key?(:apply_default_filters)
 
       options[:apply_default_filters] = [true, "true", "TRUE", 1, "1"].include? options[:params].delete(:apply_default_filters)
+    end
+
+    def check_for_old_options(options)
+      raise "The 'as' parameter has been renamed to 'brainstem_key'" if options[:as].present?
     end
 
     # Class Methods
