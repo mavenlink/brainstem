@@ -30,6 +30,7 @@ require 'brainstem/concerns/presenter_dsl'
 #     association :subtasks, Task, 'Only Tasks in this Workspace that are subtasks',
 #                 dynamic: lambda { |workspace| workspace.tasks.where('parent_id IS NOT NULL') },
 #                 brainstem_key: 'sub_tasks'
+#     association :something, :polymorphic
 #   end
 # end
 
@@ -150,18 +151,21 @@ describe Brainstem::Concerns::PresenterDSL do
             association :subtasks, Task, 'Only Tasks in this Workspace that are subtasks',
                         dynamic: lambda { |workspace| workspace.tasks.where('parent_id IS NOT NULL') },
                         brainstem_key: 'sub_tasks'
+            association :something, :polymorphic
           end
         end
       end
 
       it 'is stored in the configuration' do
-        expect(presenter_class.configuration[:associations].keys).to match_array [:tasks, :subtasks]
+        expect(presenter_class.configuration[:associations].keys).to match_array [:tasks, :subtasks, :something]
         expect(presenter_class.configuration[:associations][:tasks][:class]).to eq Task
         expect(presenter_class.configuration[:associations][:tasks][:description]).to eq 'The Tasks in this Workspace'
         expect(presenter_class.configuration[:associations][:tasks][:options]).to eq({ restrict_to_only: true })
         expect(presenter_class.configuration[:associations][:subtasks][:class]).to eq Task
         expect(presenter_class.configuration[:associations][:subtasks][:description]).to eq 'Only Tasks in this Workspace that are subtasks'
         expect(presenter_class.configuration[:associations][:subtasks][:options].keys).to eq [:dynamic, :brainstem_key]
+        expect(presenter_class.configuration[:associations][:something][:class]).to eq :polymorphic
+        expect(presenter_class.configuration[:associations][:something][:description]).to be_nil
       end
 
       it 'is inherited and overridable' do

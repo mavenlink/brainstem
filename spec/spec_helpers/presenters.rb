@@ -41,7 +41,7 @@ class PostPresenter < Brainstem::Presenter
     }
   end
 end
-#
+
 # class WorkspacePresenter < Brainstem::Presenter
 #   presenter do
 #     preload :lead_user
