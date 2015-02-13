@@ -821,7 +821,7 @@ describe Brainstem::PresenterCollection do
       end
     end
 
-    describe "the brainstem_key: param" do
+    describe "the :brainstem_key option" do
       it "determines the chosen top-level key name" do
         result = @presenter_collection.presenting("workspaces", brainstem_key: :my_workspaces) { Workspace.where(:id => 1) }
         expect(result.keys).to eq([:count, :my_workspaces, :results])
@@ -849,6 +849,21 @@ describe Brainstem::PresenterCollection do
 
         result = @presenter_collection.presenting("workspaces", :params => { :owned_by => bob.to_param }) { Workspace.group(:id) }
         expect(result[:count]).to eq(Workspace.owned_by(bob.to_param).count)
+      end
+    end
+
+    describe "providing a specific Presenter with the :primary_presenter option" do
+      it "overrides the infered presenter" do
+        some_presenter_klass = Class.new(WorkspacePresenter) do
+          def present(workspace)
+            {
+              hello: "world"
+            }
+          end
+        end
+
+        result = @presenter_collection.presenting("workspaces", primary_presenter: some_presenter_klass.new) { Workspace.where(id: 1) }
+        expect(result[:workspaces]['1'][:hello]).to eq('world')
       end
     end
   end

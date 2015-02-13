@@ -29,6 +29,7 @@ module Brainstem
     # @option options [Integer] :max_per_page The maximum number of items that can be requested by <code>params[:per_page]</code>.
     # @option options [Integer] :per_page The number of items that will be returned if <code>params[:per_page]</code> is not set.
     # @option options [Boolean] :apply_default_filters Determine if Presenter's filter defaults should be applied.  On by default.
+    # @option options [Brainstem::Presenter] :primary_presenter The Presenter to use for filters and sorts. If unspecified, the +:model+ or +name+ will be used to find an appropriate Presenter.
     # @yield Must return a scope on the model +name+, which will then be presented.
     # @return [Hash] A hash of arrays of hashes. Top-level hash keys are pluralized model names, with values of arrays containing one hash per object that was found by the given given options.
     def presenting(name, options = {}, &block)
@@ -41,7 +42,7 @@ module Brainstem
       count = 0
 
       # grab the presenter that knows about filters and sorting etc.
-      options[:presenter] = for!(presented_class)
+      options[:primary_presenter] ||= for!(presented_class)
 
       # table name will be used to query the database for the filtered data
       options[:table_name] = presented_class.table_name
@@ -49,7 +50,7 @@ module Brainstem
       # key these models will use in the struct that is output
       options[:brainstem_key] = (options[:brainstem_key] || name.to_s.tableize).to_sym
 
-      allowed_includes = calculate_allowed_includes options[:presenter], presented_class, options[:params][:only].present?
+      allowed_includes = calculate_allowed_includes options[:primary_presenter], presented_class, options[:params][:only].present?
       includes_hash = filter_includes options[:params][:include], allowed_includes
 
       if searching? options
@@ -103,7 +104,7 @@ module Brainstem
       end
 
       if primary_models.length > 0
-        presented_primary_models = options[:presenter].group_present(models, includes_hash.keys)
+        presented_primary_models = options[:primary_presenter].group_present(models, includes_hash.keys)
         struct[options[:brainstem_key]] += presented_primary_models
         struct[:results] = presented_primary_models.map { |model| { :key => options[:brainstem_key].to_s, :id => model[:id] } }
       end
@@ -215,7 +216,7 @@ module Brainstem
     def run_filters(scope, options)
       extract_filters(options).each do |filter_name, arg|
         next if arg.nil?
-        filter_lambda = options[:presenter].filters[filter_name][1]
+        filter_lambda = options[:primary_presenter].filters[filter_name][1]
 
         if filter_lambda
           scope = filter_lambda.call(scope, arg)
@@ -231,7 +232,7 @@ module Brainstem
       filters_hash = {}
       run_defaults = options.fetch(:apply_default_filters) { true }
 
-      (options[:presenter].filters || {}).each do |filter_name, filter|
+      (options[:primary_presenter].filters || {}).each do |filter_name, filter|
         requested = options[:params][filter_name]
         requested = requested.is_a?(Array) ? requested : (requested.present? ? requested.to_s : nil)
         requested = requested == "true" ? true : (requested == "false" ? false : requested)
@@ -265,7 +266,7 @@ module Brainstem
 
       search_options.reverse_merge!(extract_filters(options))
 
-      result_ids, count = options[:presenter].search_block.call(options[:params][:search], search_options)
+      result_ids, count = options[:primary_presenter].search_block.call(options[:params][:search], search_options)
       if result_ids
         [scope.where(:id => result_ids ), count, result_ids]
       else
@@ -274,7 +275,7 @@ module Brainstem
     end
 
     def searching?(options)
-      options[:params][:search] && options[:presenter].search_block.present?
+      options[:params][:search] && options[:primary_presenter].search_block.present?
     end
 
     def order_for_search(records, ordered_search_ids)
@@ -307,16 +308,16 @@ module Brainstem
 
     def calculate_order_and_direction(options)
       sort_name, direction = calculate_sort_name_and_direction(options)
-      sort_orders = (options[:presenter].sort_orders || {})
+      sort_orders = (options[:primary_presenter].sort_orders || {})
       order = sort_orders[sort_name]
 
       [order, direction]
     end
 
     def calculate_sort_name_and_direction(options)
-      default_column, default_direction = (options[:presenter].default_sort_order || "updated_at:desc").split(":")
+      default_column, default_direction = (options[:primary_presenter].default_sort_order || "updated_at:desc").split(":")
       sort_name, direction = (options[:params][:order] || "").split(":")
-      sort_orders = options[:presenter].sort_orders || {}
+      sort_orders = options[:primary_presenter].sort_orders || {}
       unless sort_name.present? && sort_orders[sort_name]
         sort_name = default_column
         direction = default_direction
