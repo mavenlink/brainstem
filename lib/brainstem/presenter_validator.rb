@@ -23,7 +23,7 @@ module Brainstem
 
     def fields_exist
       presenter_class.configuration[:fields].each do |name, field|
-        field_name = field[:options][:via] || name
+        field_name = field.options[:via] || name
         if presenter_class.presents.any? { |klass| !klass.new.respond_to?(field_name) }
           errors.add(:fields, "'#{name}' is not valid because not all presented classes respond to '#{field_name}'")
         end
@@ -32,8 +32,8 @@ module Brainstem
 
     def conditionals_exist
       presenter_class.configuration[:fields].each do |name, field|
-        if field[:options][:if].present?
-          if Array.wrap(field[:options][:if]).any? { |conditional| presenter_class.configuration[:conditionals][conditional].nil? }
+        if field.options[:if].present?
+          if Array.wrap(field.options[:if]).any? { |conditional| presenter_class.configuration[:conditionals][conditional].nil? }
             errors.add(:fields, "'#{name}' is not valid because one or more of the specified conditions does not exist")
           end
         end

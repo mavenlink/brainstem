@@ -1,4 +1,7 @@
 require 'brainstem/concerns/inheritable_configuration'
+require 'brainstem/dsl/association'
+require 'brainstem/dsl/field'
+require 'brainstem/dsl/conditional'
 
 module Brainstem
   module Concerns
@@ -66,25 +69,25 @@ module Brainstem
 
       class ConditionalsBlock < BaseBlock
         def collection(name, action, description = nil)
-          configuration[:conditionals][name] = { name: name, type: :collection, action: action, description: description }
+          configuration[:conditionals][name] = DSL::Conditional.new(name, :collection, action, description)
         end
 
         def model(name, action, description = nil)
-          configuration[:conditionals][name] = { name: name, type: :model, action: action, description: description }
+          configuration[:conditionals][name] = DSL::Conditional.new(name, :model, action, description)
         end
       end
 
       class FieldsBlock < BaseBlock
         def field(name, type, *args)
           description, options = parse_args(args)
-          configuration[:fields][name] = { name: name, type: type, description: description, options: block_options.merge(options) }
+          configuration[:fields][name] = DSL::Field.new(name, type, description, block_options.merge(options))
         end
       end
 
       class AssociationsBlock < BaseBlock
-        def association(name, klass, *args)
+        def association(name, target_class, *args)
           description, options = parse_args(args)
-          configuration[:associations][name] = { name: name, class: klass, description: description, options: block_options.merge(options) }
+          configuration[:associations][name] = DSL::Association.new(name, target_class, description, block_options.merge(options))
         end
       end
 

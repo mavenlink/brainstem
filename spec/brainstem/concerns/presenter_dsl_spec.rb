@@ -71,12 +71,12 @@ describe Brainstem::Concerns::PresenterDSL do
 
       it 'is stored in the configuration' do
         expect(presenter_class.configuration[:conditionals].keys).to eq [:title_is_hello, :user_is_bob]
-        expect(presenter_class.configuration[:conditionals][:title_is_hello][:action]).to be_present
-        expect(presenter_class.configuration[:conditionals][:title_is_hello][:type]).to eq :model
-        expect(presenter_class.configuration[:conditionals][:title_is_hello][:description]).to eq 'visible when the title is hello'
-        expect(presenter_class.configuration[:conditionals][:user_is_bob][:action]).to be_present
-        expect(presenter_class.configuration[:conditionals][:user_is_bob][:type]).to eq :collection
-        expect(presenter_class.configuration[:conditionals][:user_is_bob][:description]).to eq 'visible only to bob'
+        expect(presenter_class.configuration[:conditionals][:title_is_hello].action).to be_present
+        expect(presenter_class.configuration[:conditionals][:title_is_hello].type).to eq :model
+        expect(presenter_class.configuration[:conditionals][:title_is_hello].description).to eq 'visible when the title is hello'
+        expect(presenter_class.configuration[:conditionals][:user_is_bob].action).to be_present
+        expect(presenter_class.configuration[:conditionals][:user_is_bob].type).to eq :collection
+        expect(presenter_class.configuration[:conditionals][:user_is_bob].description).to eq 'visible only to bob'
       end
 
       it 'is inherited and overridable' do
@@ -89,8 +89,8 @@ describe Brainstem::Concerns::PresenterDSL do
         end
         expect(presenter_class.configuration[:conditionals].keys).to eq [:title_is_hello, :user_is_bob]
         expect(subclass.configuration[:conditionals].keys).to eq [:title_is_hello, :user_is_bob, :silly_conditional]
-        expect(presenter_class.configuration[:conditionals][:title_is_hello][:description]).to eq "visible when the title is hello"
-        expect(subclass.configuration[:conditionals][:title_is_hello][:description]).to eq "visible when the title is hello (in all caps)"
+        expect(presenter_class.configuration[:conditionals][:title_is_hello].description).to eq "visible when the title is hello"
+        expect(subclass.configuration[:conditionals][:title_is_hello].description).to eq "visible when the title is hello (in all caps)"
       end
     end
 
@@ -113,14 +113,14 @@ describe Brainstem::Concerns::PresenterDSL do
 
       it 'is stored in the configuration' do
         expect(presenter_class.configuration[:fields].keys).to match_array [:updated_at, :secret, :bob_title]
-        expect(presenter_class.configuration[:fields][:updated_at][:type]).to eq :datetime
-        expect(presenter_class.configuration[:fields][:updated_at][:description]).to be_nil
-        expect(presenter_class.configuration[:fields][:secret][:type]).to eq :string
-        expect(presenter_class.configuration[:fields][:secret][:description]).to be_nil
-        expect(presenter_class.configuration[:fields][:secret][:options]).to eq({ via: :secret_info, if: [:user_is_bob, :title_is_hello] })
-        expect(presenter_class.configuration[:fields][:bob_title][:type]).to eq :string
-        expect(presenter_class.configuration[:fields][:bob_title][:description]).to eq 'another name for the title, only for Bob'
-        expect(presenter_class.configuration[:fields][:bob_title][:options]).to eq({ via: :title, if: :user_is_bob })
+        expect(presenter_class.configuration[:fields][:updated_at].type).to eq :datetime
+        expect(presenter_class.configuration[:fields][:updated_at].description).to be_nil
+        expect(presenter_class.configuration[:fields][:secret].type).to eq :string
+        expect(presenter_class.configuration[:fields][:secret].description).to be_nil
+        expect(presenter_class.configuration[:fields][:secret].options).to eq({ via: :secret_info, if: [:user_is_bob, :title_is_hello] })
+        expect(presenter_class.configuration[:fields][:bob_title].type).to eq :string
+        expect(presenter_class.configuration[:fields][:bob_title].description).to eq 'another name for the title, only for Bob'
+        expect(presenter_class.configuration[:fields][:bob_title].options).to eq({ via: :title, if: :user_is_bob })
       end
 
       it 'is inherited and overridable' do
@@ -135,10 +135,10 @@ describe Brainstem::Concerns::PresenterDSL do
         end
         expect(presenter_class.configuration[:fields].keys).to match_array [:updated_at, :secret, :bob_title]
         expect(subclass.configuration[:fields].keys).to match_array [:updated_at, :secret, :bob_title, :title]
-        expect(presenter_class.configuration[:fields][:updated_at][:description]).to be_nil
-        expect(presenter_class.configuration[:fields][:updated_at][:options]).to eq({})
-        expect(subclass.configuration[:fields][:updated_at][:description]).to eq 'this time I have a description and condition'
-        expect(subclass.configuration[:fields][:updated_at][:options]).to eq({ if: [:some_condition, :some_other_condition] })
+        expect(presenter_class.configuration[:fields][:updated_at].description).to be_nil
+        expect(presenter_class.configuration[:fields][:updated_at].options).to eq({})
+        expect(subclass.configuration[:fields][:updated_at].description).to eq 'this time I have a description and condition'
+        expect(subclass.configuration[:fields][:updated_at].options).to eq({ if: [:some_condition, :some_other_condition] })
       end
     end
 
@@ -158,14 +158,14 @@ describe Brainstem::Concerns::PresenterDSL do
 
       it 'is stored in the configuration' do
         expect(presenter_class.configuration[:associations].keys).to match_array [:tasks, :subtasks, :something]
-        expect(presenter_class.configuration[:associations][:tasks][:class]).to eq Task
-        expect(presenter_class.configuration[:associations][:tasks][:description]).to eq 'The Tasks in this Workspace'
-        expect(presenter_class.configuration[:associations][:tasks][:options]).to eq({ restrict_to_only: true })
-        expect(presenter_class.configuration[:associations][:subtasks][:class]).to eq Task
-        expect(presenter_class.configuration[:associations][:subtasks][:description]).to eq 'Only Tasks in this Workspace that are subtasks'
-        expect(presenter_class.configuration[:associations][:subtasks][:options].keys).to eq [:dynamic, :brainstem_key]
-        expect(presenter_class.configuration[:associations][:something][:class]).to eq :polymorphic
-        expect(presenter_class.configuration[:associations][:something][:description]).to be_nil
+        expect(presenter_class.configuration[:associations][:tasks].target_class).to eq Task
+        expect(presenter_class.configuration[:associations][:tasks].description).to eq 'The Tasks in this Workspace'
+        expect(presenter_class.configuration[:associations][:tasks].options).to eq({ restrict_to_only: true })
+        expect(presenter_class.configuration[:associations][:subtasks].target_class).to eq Task
+        expect(presenter_class.configuration[:associations][:subtasks].description).to eq 'Only Tasks in this Workspace that are subtasks'
+        expect(presenter_class.configuration[:associations][:subtasks].options.keys).to eq [:dynamic, :brainstem_key]
+        expect(presenter_class.configuration[:associations][:something].target_class).to eq :polymorphic
+        expect(presenter_class.configuration[:associations][:something].description).to be_nil
       end
 
       it 'is inherited and overridable' do
@@ -177,15 +177,15 @@ describe Brainstem::Concerns::PresenterDSL do
           end
         end
 
-        expect(presenter_class.configuration[:associations].keys).to match_array [:tasks, :subtasks]
-        expect(subclass.configuration[:associations].keys).to match_array [:tasks, :subtasks, :lead_user]
+        expect(presenter_class.configuration[:associations].keys).to match_array [:tasks, :subtasks, :something]
+        expect(subclass.configuration[:associations].keys).to match_array [:tasks, :subtasks, :lead_user, :something]
 
-        expect(presenter_class.configuration[:associations][:tasks][:options]).to eq({ restrict_to_only: true })
+        expect(presenter_class.configuration[:associations][:tasks].options).to eq({ restrict_to_only: true })
         expect(presenter_class.configuration[:associations][:lead_user]).to be_nil
 
-        expect(subclass.configuration[:associations][:tasks][:options]).to eq({})
-        expect(subclass.configuration[:associations][:lead_user][:class]).to eq User
-        expect(subclass.configuration[:associations][:lead_user][:description]).to eq 'The user who runs this Workspace'
+        expect(subclass.configuration[:associations][:tasks].options).to eq({})
+        expect(subclass.configuration[:associations][:lead_user].target_class).to eq User
+        expect(subclass.configuration[:associations][:lead_user].description).to eq 'The user who runs this Workspace'
       end
     end
   end
