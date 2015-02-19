@@ -126,6 +126,12 @@ describe Brainstem::Presenter do
               :body => model.body,
             }
           end
+
+          presenter do
+            fields do
+              field :body, :string
+            end
+          end
         end
 
         @presenter = post_presenter.new
@@ -141,7 +147,7 @@ describe Brainstem::Presenter do
 
     describe "converting dates and times" do
       it "should convert all Time-and-date-like objects to iso8601" do
-        class TimePresenter < Brainstem::Presenter
+        presenter = Class.new(Brainstem::Presenter) do
           def present(model)
             {
               :time => Time.now,
@@ -153,12 +159,15 @@ describe Brainstem::Presenter do
               }
             }
           end
+
+          presenter do
+          end
         end
 
         iso8601_time = /\d{4}-\d{2}-\d{2}T\d{2}\:\d{2}\:\d{2}[-+]\d{2}:\d{2}/
         iso8601_date = /\d{4}-\d{2}-\d{2}/
 
-        struct = TimePresenter.new.present_and_post_process(Workspace.first)
+        struct = presenter.new.present_and_post_process(Workspace.first)
         expect(struct[:time]).to match(iso8601_time)
         expect(struct[:date]).to match(iso8601_date)
         expect(struct[:recursion][:time]).to match(iso8601_time)
@@ -175,11 +184,20 @@ describe Brainstem::Presenter do
 
           def present(model)
             {
-              :body => model.body,
-              :subject => association(:subject),
-              :another_subject => association(:subject),
-              :something_else => association(:subject, :ignore_type => true)
+              :body => model.body
             }
+          end
+
+          presenter do
+            fields do
+              field :body, :string
+            end
+
+            associations do
+              association :subject, :polymorphic
+              association :another_subject, :polymorphic, via: :subject
+              association :forced_model, Workspace, via: :subject
+            end
           end
         end
 
@@ -191,7 +209,6 @@ describe Brainstem::Presenter do
       context "when polymorphic association exists" do
         let(:post) { Post.find(1) }
 
-
         it "outputs the object as a hash with the id & class table name" do
           expect(presented_data[:subject_ref]).to eq({ :id => post.subject.id.to_s,
                                                        :key => post.subject.class.table_name })
@@ -202,10 +219,10 @@ describe Brainstem::Presenter do
                                                                :key => post.subject.class.table_name })
         end
 
-        it "skips the polymorphic handling when ignore_type is true" do
-          expect(presented_data[:something_else_id]).to eq(post.subject.id.to_s)
-          expect(presented_data).not_to have_key(:something_else_type)
-          expect(presented_data).not_to have_key(:something_else_ref)
+        it "skips the polymorphic handling when a model is given" do
+          expect(presented_data[:forced_model_id]).to eq(post.subject.id.to_s)
+          expect(presented_data).not_to have_key(:forced_model_type)
+          expect(presented_data).not_to have_key(:forced_model_ref)
         end
       end
 
@@ -229,15 +246,24 @@ describe Brainstem::Presenter do
 
           def present(model)
             {
-                :updated_at                 => model.updated_at,
-                :tasks                      => association(:tasks),
-                :user                       => association(:user),
-                :something                  => association(:user),
-                :lead_user                  => association(:lead_user),
-                :lead_user_with_lambda      => association(:json_name => "users") { |model| model.user },
-                :tasks_with_lambda          => association(:json_name => "tasks") { |model| Task.where(:workspace_id => model) },
-                :synthetic                  => association(:synthetic)
+                :updated_at                 => model.updated_at
             }
+          end
+
+          presenter do
+            fields do
+              field :updated_at, :datetime
+            end
+
+            associations do
+              association :tasks, Task
+              association :user, User
+              association :something, User, via: :user
+              association :lead_user, User
+              association :lead_user_with_lambda, User, dynamic: lambda { |model| model.user }
+              association :tasks_with_lambda, Task, dynamic: lambda { |model| Task.where(:workspace_id => model) }
+              association :synthetic, :polymorphic
+            end
           end
         end
 
@@ -252,24 +278,24 @@ describe Brainstem::Presenter do
 
       it "should convert requested has_many associations (includes) into the <association>_ids format" do
         expect(@workspace.tasks.length).to be > 0
-        expect(@presenter.present_and_post_process(@workspace, ["tasks"])[:task_ids]).to match_array(@workspace.tasks.map(&:id).map(&:to_s))
+        expect(@presenter.present_and_post_process(@workspace, [:tasks])[:task_ids]).to match_array(@workspace.tasks.map(&:id).map(&:to_s))
       end
 
       it "should convert requested belongs_to and has_one associations into the <association>_id format when requested" do
-        expect(@presenter.present_and_post_process(@workspace, ["user"])[:user_id]).to eq(@workspace.user.id.to_s)
+        expect(@presenter.present_and_post_process(@workspace, [:user])[:user_id]).to eq(@workspace.user.id.to_s)
       end
 
       it "converts non-association models into <model>_id format when they are requested" do
-        expect(@presenter.present_and_post_process(@workspace, ["lead_user"])[:lead_user_id]).to eq(@workspace.lead_user.id.to_s)
+        expect(@presenter.present_and_post_process(@workspace, [:lead_user])[:lead_user_id]).to eq(@workspace.lead_user.id.to_s)
       end
 
       it "handles associations provided with lambdas" do
-        expect(@presenter.present_and_post_process(@workspace, ["lead_user_with_lambda"])[:lead_user_with_lambda_id]).to eq(@workspace.lead_user.id.to_s)
-        expect(@presenter.present_and_post_process(@workspace, ["tasks_with_lambda"])[:tasks_with_lambda_ids]).to eq(@workspace.tasks.map(&:id).map(&:to_s))
+        expect(@presenter.present_and_post_process(@workspace, [:lead_user_with_lambda])[:lead_user_with_lambda_id]).to eq(@workspace.lead_user.id.to_s)
+        expect(@presenter.present_and_post_process(@workspace, [:tasks_with_lambda])[:tasks_with_lambda_ids]).to eq(@workspace.tasks.map(&:id).map(&:to_s))
       end
 
       it "should return <association>_id fields when the given association ids exist on the model whether it is requested or not" do
-        expect(@presenter.present_and_post_process(@workspace, ["user"])[:user_id]).to eq(@workspace.user_id.to_s)
+        expect(@presenter.present_and_post_process(@workspace, [:user])[:user_id]).to eq(@workspace.user_id.to_s)
 
         json = @presenter.present_and_post_process(@workspace, [])
         expect(json.keys).to match_array([:user_id, :something_id, :id, :updated_at])
@@ -280,10 +306,10 @@ describe Brainstem::Presenter do
       it "should return null, not empty string when ids are missing" do
         @workspace.user = nil
         @workspace.tasks = []
-        expect(@presenter.present_and_post_process(@workspace, ["lead_user_with_lambda"])[:lead_user_with_lambda_id]).to eq(nil)
-        expect(@presenter.present_and_post_process(@workspace, ["user"])[:user_id]).to eq(nil)
-        expect(@presenter.present_and_post_process(@workspace, ["something"])[:something_id]).to eq(nil)
-        expect(@presenter.present_and_post_process(@workspace, ["tasks"])[:task_ids]).to eq([])
+        expect(@presenter.present_and_post_process(@workspace, [:lead_user_with_lambda])[:lead_user_with_lambda_id]).to eq(nil)
+        expect(@presenter.present_and_post_process(@workspace, [:user])[:user_id]).to eq(nil)
+        expect(@presenter.present_and_post_process(@workspace, [:something])[:something_id]).to eq(nil)
+        expect(@presenter.present_and_post_process(@workspace, [:tasks])[:task_ids]).to eq([])
       end
 
       context "when the model has an <association>_id method but no column" do
@@ -294,6 +320,30 @@ describe Brainstem::Presenter do
           expect(@presenter.present_and_post_process(@workspace, [])).not_to have_key(:synthetic_id)
         end
       end
+    end
+  end
+
+  describe '#allowed_associations' do
+    let(:presenter_class) do
+      Class.new(Brainstem::Presenter) do
+        presenter do
+          associations do
+            association :user, User
+            association :workspace, Workspace
+            association :task, Task, restrict_to_only: true
+          end
+        end
+      end
+    end
+
+    let(:presenter_instance) { presenter_class.new }
+
+    it 'returns all associations that are not restrict_to_only' do
+      expect(presenter_instance.allowed_associations(is_only_query = false).keys).to match_array ['user', 'workspace']
+    end
+
+    it 'returns associations that are restrict_to_only if is_only_query is true' do
+      expect(presenter_instance.allowed_associations(is_only_query = true).keys).to match_array ['user', 'workspace', 'task']
     end
   end
 end

@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'spec_helpers/presenters'
 
 describe Brainstem::PresenterCollection do
   before do
@@ -258,6 +257,7 @@ describe Brainstem::PresenterCollection do
       end
 
       it "preloads associations when they are full model-level associations" do
+        pending
         # Here, primary_maven is a method on Workspace, not a true association.
         mock(Brainstem::PresenterCollection).preload(anything, [:tasks])
         result = @presenter_collection.presenting("workspaces", :params => { :include => "tasks" }) { Workspace.order('id desc') }

@@ -58,4 +58,19 @@ module Brainstem
   def self.logger=(logger)
     @logger = logger
   end
+
+  # Reset all PresenterCollection's Presenters, clear the known collections, and reset the default namespace.
+  # This is mostly intended for resetting between tests.
+  def self.reset!
+    if @presenter_collection
+      @presenter_collection.each do |namespace, collection|
+        collection.presenters.each do |klass, presenter|
+          presenter.class.reset! if presenter.class.respond_to?(:reset!)
+        end
+      end
+    end
+
+    @presenter_collection = {}
+    @default_namespace = nil
+  end
 end

@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'spec_helpers/presenters'
 
 describe Brainstem::ControllerMethods do
   class FakeController

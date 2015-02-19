@@ -1,5 +1,4 @@
 require 'spec_helper'
-require 'spec_helpers/presenters'
 require 'brainstem/presenter_validator'
 
 describe Brainstem::PresenterValidator do

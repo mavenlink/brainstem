@@ -13,6 +13,10 @@ module Brainstem
             end
           end
         end
+
+        def clear_configuration!
+          @configuration = nil
+        end
       end
 
       def configuration

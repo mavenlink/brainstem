@@ -1,4 +1,3 @@
-require 'brainstem/association_field'
 require 'brainstem/search_unavailable_error'
 
 module Brainstem
@@ -50,13 +49,13 @@ module Brainstem
       # key these models will use in the struct that is output
       options[:brainstem_key] = (options[:brainstem_key] || name.to_s.tableize).to_sym
 
-      allowed_includes = calculate_allowed_includes options[:primary_presenter], presented_class, options[:params][:only].present?
-      includes_hash = filter_includes options[:params][:include], allowed_includes
+      # filter the incoming :includes list by those available from this Presenter in the current context
+      selected_associations = filter_includes(options)
 
       if searching? options
         # Search
         sort_name, direction = calculate_sort_name_and_direction options
-        scope, count, ordered_search_ids = run_search(scope, includes_hash.keys.map(&:to_s), sort_name, direction, options)
+        scope, count, ordered_search_ids = run_search(scope, selected_associations.map(&:name).map(&:to_s), sort_name, direction, options)
       else
         # Filter
         scope = run_filters scope, options
@@ -75,36 +74,40 @@ module Brainstem
         scope = handle_ordering scope, options
       end
 
-      # Load Includes
-      records = scope.to_a
+      # Load models!
+      primary_models = scope.to_a
 
       # Determine if an exception should be raised on an empty result set.
-      if options[:raise_on_empty] && records.empty?
+      if options[:raise_on_empty] && primary_models.empty?
         raise options[:empty_error_class] || ActiveRecord::RecordNotFound
       end
 
-      records = order_for_search(records, ordered_search_ids) if searching? options
-      model = records.first
+      primary_models = order_for_search(primary_models, ordered_search_ids) if searching?(options)
 
-      models = perform_preloading records, includes_hash
-      primary_models, associated_models = gather_associations(models, includes_hash)
+      # Preload associations
+      # Preloader.new(primary_models, options[:primary_presenter], selected_associations).preload!
+
+      # Load request associations
+      associated_models = gather_associations(primary_models, selected_associations)
+
       struct = { :count => count, options[:brainstem_key] => [], :results => [] }
 
-      associated_models.each do |json_name, models|
+      associated_models.each do |brainstem_key, models|
         models.flatten!
         models.uniq!
 
         if models.length > 0
+          # TODO: handle polymorphism here
           presenter = for!(models.first.class)
-          assoc = includes_hash.to_a.find { |k, v| v.json_name == json_name }
-          struct[json_name] = presenter.group_present(models, [])
+          struct[brainstem_key] = presenter.group_present(models)
         else
-          struct[json_name] = []
+          struct[brainstem_key] = []
         end
       end
 
       if primary_models.length > 0
-        presented_primary_models = options[:primary_presenter].group_present(models, includes_hash.keys)
+        # TODO: handle polymorphism here
+        presented_primary_models = options[:primary_presenter].group_present(primary_models, selected_associations.map(&:name))
         struct[options[:brainstem_key]] += presented_primary_models
         struct[:results] = presented_primary_models.map { |model| { :key => options[:brainstem_key].to_s, :id => model[:id] } }
       end
@@ -170,46 +173,21 @@ module Brainstem
       [options[:params][:offset].to_i, 0].max
     end
 
-    # Gather allowed includes by inspecting the presented hash.  For now, this requires that a new instance of the
-    # presented class always be presentable.
-    def calculate_allowed_includes(presenter, presented_class, is_only_query)
-      allowed_includes = {}
-      model = presented_class.new
-      reflections = Brainstem::PresenterCollection.reflections(model.class)
-      presenter.present(model).each do |k, v|
-        next unless v.is_a?(AssociationField)
-        next if v.restrict_to_only && !is_only_query
+    def filter_includes(options)
+      allowed_associations = options[:primary_presenter].allowed_associations(options[:params][:only].present?)
 
-        if v.json_name
-          v.json_name = v.json_name.tableize.to_sym
-        else
-          association = reflections[v.method_name.to_s]
-          if association && !association.options[:polymorphic]
-            v.json_name = association && association.table_name.to_sym
-            if v.json_name.nil?
-              raise ":json_name is a required option for method-based associations (#{presented_class}##{v.method_name})"
-            end
+      [].tap do |selected_associations|
+        (options[:params][:include] || '').split(',').each do |k|
+          # TODO: make sure a spec breaks if this line is changed (it should)
+          if association = allowed_associations[k]
+            selected_associations << association
           end
         end
-        allowed_includes[k.to_s] = v
       end
-      allowed_includes
-    end
-
-    def filter_includes(user_includes, allowed_includes)
-      filtered_includes = {}
-
-      (user_includes || '').split(',').each do |k|
-        allowed = allowed_includes[k]
-        if allowed
-          filtered_includes[k] = allowed
-        end
-      end
-      filtered_includes
     end
 
     def handle_only(scope, only)
-      ids = (only || "").split(",").select {|id| id =~ /\A\d+\Z/}.uniq
+      ids = (only || "").split(",").select {|id| id =~ /\A\d+\z/}.uniq
       [scope.where(:id => ids), scope.where(:id => ids).count]
     end
 
@@ -326,48 +304,10 @@ module Brainstem
       [sort_name, direction == 'desc' ? 'desc' : 'asc']
     end
 
-    def perform_preloading(records, includes_hash)
-      records.tap do |models|
-        association_names_to_preload = includes_hash.values.map {|i| i.method_name }
-        if models.first
-          reflections = Brainstem::PresenterCollection.reflections(models.first.class)
-          association_names_to_preload.reject! { |association| !reflections.has_key?(association.to_s) }
-        end
-        if association_names_to_preload.any?
-          Brainstem::PresenterCollection.preload(models, association_names_to_preload)
-          Brainstem.logger.info "Eager loaded #{association_names_to_preload.join(", ")}."
-        end
+    def gather_associations(models, selected_associations)
+      selected_associations.each.with_object({}) do |association, record_hash|
+        association.load_records_into_hash!(models, record_hash)
       end
-    end
-
-    def gather_associations(models, includes_hash)
-      record_hash = {}
-      primary_models = []
-
-      includes_hash.each do |include, include_data|
-        record_hash[include_data.json_name] ||= [] if include_data.json_name
-      end
-
-      models.each do |model|
-        primary_models << model
-
-        includes_hash.each do |include, include_data|
-          models = Array(include_data.call(model))
-
-          if include_data.json_name
-            record_hash[include_data.json_name] += models
-          else
-            # polymorphic associations' tables must be figured out now
-            models.each do |record|
-              json_name = record.class.table_name.to_sym
-              record_hash[json_name] ||= []
-              record_hash[json_name] << record
-            end
-          end
-        end
-      end
-
-      [primary_models, record_hash]
     end
 
     def rewrite_keys_as_objects!(struct)

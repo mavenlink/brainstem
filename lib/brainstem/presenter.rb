@@ -1,5 +1,4 @@
 require 'date'
-require 'brainstem/association_field'
 require 'brainstem/time_classes'
 require 'brainstem/concerns/presenter_dsl'
 
@@ -91,27 +90,32 @@ module Brainstem
       extend mod
     end
 
+    def self.reset!
+      clear_configuration!
+      @presents = @default_sort_order = @sort_orders = @filters = @search_block = nil
+    end
+
 
     # Instance methods
 
-    # @raise [RuntimeError] if this method has not been overridden in the presenter subclass.
+    # @deprecated
     def present(model)
-      raise "Please override #present(model) in your subclass of Brainstem::Presenter"
+      raise "#present is now deprecated"
     end
 
     # @api private
     # Calls {#post_process} on the output from {#present}.
     # @return (see #post_process)
-    def present_and_post_process(model, associations = [])
-      post_process(present(model), model, associations)
+    def present_and_post_process(model, requested_associations = [])
+      post_process(present(model), model, requested_associations)
     end
 
     # @api private
     # Loads associations and converts dates to epoch strings.
     # @return [Hash] The hash representing the models and associations, ready to be converted to JSON.
-    def post_process(struct, model, associations = [])
+    def post_process(struct, model, requested_associations = [])
       add_id(model, struct)
-      load_associations!(model, struct, associations)
+      load_associations!(model, struct, requested_associations)
       datetimes_to_json(struct)
     end
 
@@ -125,16 +129,28 @@ module Brainstem
 
     # @api private
     # Calls {#custom_preload}, and then {#present} and {#post_process}, for each model.
-    def group_present(models, associations = [])
-      custom_preload models, associations
+    def group_present(models, requested_associations = [])
+      custom_preload models, requested_associations.map(&:to_s)
 
       models.map do |model|
-        present_and_post_process model, associations
+        present_and_post_process model, requested_associations
+      end
+    end
+
+    # @api private
+    # Determines which associations are valid for inclusion in the current context.
+    # Mostly just removes only-restricted associations when needed.
+    # @return [Hash] The associations that can be included.
+    def allowed_associations(is_only_query)
+      ActiveSupport::HashWithIndifferentAccess.new.tap do |associations|
+        configuration[:associations].each do |name, association|
+          associations[name] = association unless association.options[:restrict_to_only] && !is_only_query
+        end
       end
     end
 
     # Subclasses can define this if they wish. This method will be called before {#present}.
-    def custom_preload(models, associations = [])
+    def custom_preload(models, requested_associations = [])
     end
 
     # @api private
@@ -158,38 +174,35 @@ module Brainstem
 
     # @api private
     # Makes sure that associations are loaded and converted into ids.
-    def load_associations!(model, struct, associations)
+    def load_associations!(model, struct, requested_associations)
+      # TODO: optimize this out of the model loop
+      requested_associations_hash = requested_associations.inject({}) { |memo, association| memo[association] = true; memo }
       reflections = Brainstem::PresenterCollection.reflections(model.class)
-      struct.to_a.each do |key, value|
-        if value.is_a?(AssociationField)
-          struct.delete key
-          id_attr = value.method_name ? "#{value.method_name}_id" : nil
 
-          if id_attr && model.class.columns_hash.has_key?(id_attr)
-            reflection = value.method_name && reflections[value.method_name.to_s]
-            if reflection && reflection.options[:polymorphic] && !value.ignore_type
-              struct["#{key.to_s.singularize}_ref".to_sym] = begin
-                if (id_attr = model.send(id_attr)).present?
-                  {
-                    :id => to_s_except_nil(id_attr),
-                    :key => model.send("#{value.method_name}_type").try(:constantize).try(:table_name)
-                  }
-                end
-              end
-            else
-              struct["#{key}_id".to_sym] = to_s_except_nil(model.send(id_attr))
-            end
-          elsif associations.include?(key.to_s)
-            result = value.call(model)
-            if result.is_a?(Array) || result.is_a?(ActiveRecord::Relation)
-              struct["#{key.to_s.singularize}_ids".to_sym] = result.map {|a| to_s_except_nil(a.is_a?(ActiveRecord::Base) ? a.id : a) }
-            else
-              if result.is_a?(ActiveRecord::Base)
-                struct["#{key.to_s.singularize}_id".to_sym] = to_s_except_nil(result.id)
-              else
-                struct["#{key.to_s.singularize}_id".to_sym] = to_s_except_nil(result)
+      configuration[:associations].each do |name, association|
+        external_name = association.name
+        method_name = association.method_name && association.method_name.to_s
+        id_attr = method_name && "#{method_name}_id"
+
+        if id_attr && model.class.columns_hash.has_key?(id_attr)
+          if association.polymorphic? && (reflection = reflections[method_name]) && reflection.options[:polymorphic]
+            struct["#{external_name}_ref".to_sym] = begin
+              if (id = model.send(id_attr)).present?
+                {
+                  :id => to_s_except_nil(id),
+                  :key => model.send("#{method_name}_type").try(:tableize)
+                }
               end
             end
+          else
+            struct["#{external_name}_id".to_sym] = to_s_except_nil(model.send(id_attr))
+          end
+        elsif requested_associations_hash[external_name]
+          result = association.run_on(model)
+          if result.is_a?(Array) || result.is_a?(ActiveRecord::Relation)
+            struct["#{external_name.to_s.singularize}_ids".to_sym] = result.map {|a| to_s_except_nil(a.is_a?(ActiveRecord::Base) ? a.id : a) }
+          else
+            struct["#{external_name.to_s.singularize}_id".to_sym] = to_s_except_nil(result.is_a?(ActiveRecord::Base) ? result.id : result)
           end
         end
       end
@@ -215,11 +228,6 @@ module Brainstem
 
     def search_block
       self.class.search_block
-    end
-
-    # An association on the object being presented that should be included in the presented data.
-    def association(*args, &block)
-      AssociationField.new *args, &block
     end
 
     def to_s_except_nil(thing)
