@@ -20,13 +20,13 @@ module Brainstem
         end
 
         def with_options(new_options = {}, &block)
-          descend self.class, new_options, &block
+          descend self.class, configuration, new_options, &block
         end
 
         protected
 
-        def descend(klass, new_options = {}, &block)
-          klass.new(configuration, block_options.merge(new_options), &block)
+        def descend(klass, new_config = configuration, new_options = {}, &block)
+          klass.new(new_config, block_options.merge(new_options), &block)
         end
 
         def setup_defaults!
@@ -49,7 +49,7 @@ module Brainstem
         end
 
         def fields(&block)
-          descend FieldsBlock, &block
+          descend FieldsBlock, configuration[:fields], &block
         end
 
         def associations(&block)
@@ -80,7 +80,11 @@ module Brainstem
       class FieldsBlock < BaseBlock
         def field(name, type, *args)
           description, options = parse_args(args)
-          configuration[:fields][name] = DSL::Field.new(name, type, description, block_options.merge(options))
+          configuration[name] = DSL::Field.new(name, type, description, block_options.merge(options))
+        end
+
+        def fields(name, &block)
+          descend FieldsBlock, configuration.nest!(name), &block
         end
       end
 

@@ -67,16 +67,16 @@ describe Brainstem::Concerns::InheritableConfiguration do
     describe '#nest!' do
       it 'builds nested objects' do
         parent_class.configuration.nest!('top_level')
-        expect(parent_class.configuration['top_level']).to be_a(Brainstem::Concerns::InheritableConfiguration::Configuration)
+        expect(parent_class.configuration['top_level']).to be_a(Brainstem::DSL::Configuration)
         parent_class.configuration.nest!('top_level').nest!('next_level')
-        expect(parent_class.configuration['top_level']['next_level']).to be_a(Brainstem::Concerns::InheritableConfiguration::Configuration)
+        expect(parent_class.configuration['top_level']['next_level']).to be_a(Brainstem::DSL::Configuration)
       end
 
       it 'is chainable' do
         parent_class.configuration.nest!('top_level').nest!('sub_one')
         sub_two = parent_class.configuration.nest!('top_level').nest!('sub_two')
-        expect(parent_class.configuration['top_level']['sub_one']).to be_a(Brainstem::Concerns::InheritableConfiguration::Configuration)
-        expect(parent_class.configuration['top_level']['sub_two']).to be_a(Brainstem::Concerns::InheritableConfiguration::Configuration)
+        expect(parent_class.configuration['top_level']['sub_one']).to be_a(Brainstem::DSL::Configuration)
+        expect(parent_class.configuration['top_level']['sub_two']).to be_a(Brainstem::DSL::Configuration)
         expect(parent_class.configuration['top_level']['sub_two']).to be sub_two
       end
 
@@ -169,7 +169,7 @@ describe Brainstem::Concerns::InheritableConfiguration do
       let!(:array) { parent_class.configuration.array!('list') }
 
       it 'builds an InheritableAppendSet' do
-        expect(array).to be_a(Brainstem::Concerns::InheritableConfiguration::InheritableAppendSet)
+        expect(array).to be_a(Brainstem::DSL::Configuration::InheritableAppendSet)
         expect(parent_class.configuration.array!('list')).to be array
       end
 

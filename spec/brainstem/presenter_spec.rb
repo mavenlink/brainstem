@@ -1,6 +1,23 @@
 require 'spec_helper'
 
 describe Brainstem::Presenter do
+  describe "implicit namespacing" do
+    module V1
+      class SomePresenter < Brainstem::Presenter
+      end
+    end
+
+    it "uses the closest module name as the presenter namespace" do
+      V1::SomePresenter.presents String
+      expect(Brainstem.presenter_collection(:v1).for(String)).to be_a(V1::SomePresenter)
+    end
+
+    it "does not map namespaced presenters into the default namespace" do
+      V1::SomePresenter.presents String
+      expect(Brainstem.presenter_collection.for(String)).to be_nil
+    end
+  end
+
   describe "class methods" do
 
     describe '.presents' do
@@ -47,24 +64,7 @@ describe Brainstem::Presenter do
       end
     end
 
-    describe "implicit namespacing" do
-      module V1
-        class SomePresenter < Brainstem::Presenter
-        end
-      end
-
-      it "uses the closest module name as the presenter namespace" do
-        V1::SomePresenter.presents String
-        expect(Brainstem.presenter_collection(:v1).for(String)).to be_a(V1::SomePresenter)
-      end
-
-      it "does not map namespaced presenters into the default namespace" do
-        V1::SomePresenter.presents String
-        expect(Brainstem.presenter_collection.for(String)).to be_nil
-      end
-    end
-
-    describe "helper method" do
+    describe ".helper" do
       before do
         @klass = Class.new(Brainstem::Presenter) do
           def call_helper
@@ -86,7 +86,7 @@ describe Brainstem::Presenter do
       end
     end
 
-    describe "filter method" do
+    describe ".filter" do
       before do
         @klass = Class.new(Brainstem::Presenter)
       end
@@ -103,7 +103,7 @@ describe Brainstem::Presenter do
       end
     end
 
-    describe "search method" do
+    describe ".search" do
       before do
         @klass = Class.new(Brainstem::Presenter)
       end
@@ -115,17 +115,37 @@ describe Brainstem::Presenter do
     end
   end
 
+  describe "#present_fields" do
+    let(:presenter) { WorkspacePresenter.new }
+    let(:model) { Workspace.find(1) }
+
+    it 'only includes fields' do
+      expect(presenter.present_fields(model).length).to eq presenter.configuration[:fields].length
+    end
+
+    it 'calls named methods' do
+      expect(presenter.present_fields(model)[:title]).to eq model.title
+    end
+
+    it 'can call methods with :via' do
+      presenter.configuration[:fields][:title].options[:via] = :description
+      expect(presenter.present_fields(model)[:title]).to eq model.description
+    end
+
+    it 'can call a dynamic lambda' do
+      expect(presenter.present_fields(model)[:dynamic_title]).to eq "title: #{model.title}"
+    end
+
+    it 'handles nesting' do
+      expect(presenter.present_fields(model)[:permissions][:access_level]).to eq 2
+    end
+  end
+
   describe "post_process hooks" do
     describe "adding object ids as strings" do
       before do
         post_presenter = Class.new(Brainstem::Presenter) do
           presents Post
-
-          def present(model)
-            {
-              :body => model.body,
-            }
-          end
 
           presenter do
             fields do
@@ -148,19 +168,16 @@ describe Brainstem::Presenter do
     describe "converting dates and times" do
       it "should convert all Time-and-date-like objects to iso8601" do
         presenter = Class.new(Brainstem::Presenter) do
-          def present(model)
-            {
-              :time => Time.now,
-              :date => Date.new,
-              :recursion => {
-                  :time => Time.now,
-                  :something => [Time.now, :else],
-                  :foo => :bar
-              }
-            }
-          end
-
           presenter do
+            fields do
+              field :time, :datetime, dynamic: lambda { Time.now }
+              field :date, :date, dynamic: lambda { Date.new }
+              fields :recursion do
+                field :time, :datetime, dynamic: lambda { Time.now }
+                field :something, :datetime, dynamic: lambda { [Time.now, :else] }
+                field :foo, :string, dynamic: lambda { :bar }
+              end
+            end
           end
         end
 
@@ -181,12 +198,6 @@ describe Brainstem::Presenter do
       before do
         some_presenter = Class.new(Brainstem::Presenter) do
           presents Post
-
-          def present(model)
-            {
-              :body => model.body
-            }
-          end
 
           presenter do
             fields do
@@ -243,12 +254,6 @@ describe Brainstem::Presenter do
       before do
         some_presenter = Class.new(Brainstem::Presenter) do
           presents Workspace
-
-          def present(model)
-            {
-                :updated_at                 => model.updated_at
-            }
-          end
 
           presenter do
             fields do

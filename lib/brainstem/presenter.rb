@@ -107,7 +107,23 @@ module Brainstem
     # Calls {#post_process} on the output from {#present}.
     # @return (see #post_process)
     def present_and_post_process(model, requested_associations = [])
-      post_process(present(model), model, requested_associations)
+      post_process(present_fields(model), model, requested_associations)
+    end
+
+    # @api private
+    # Uses the fields DSL to output a presented model.
+    # @return [Hash]  A hash representation of the model.
+    def present_fields(model, result = {}, fields = configuration[:fields])
+      fields.each do |name, field_or_fields|
+        case field_or_fields
+          when DSL::Field
+            result[name] = field_or_fields.run_on(model)
+          when DSL::Configuration
+            result[name] ||= {}
+            present_fields(model, result[name], field_or_fields)
+        end
+      end
+      result
     end
 
     # @api private

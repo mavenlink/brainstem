@@ -854,15 +854,15 @@ describe Brainstem::PresenterCollection do
     describe "providing a specific Presenter with the :primary_presenter option" do
       it "overrides the infered presenter" do
         some_presenter_klass = Class.new(WorkspacePresenter) do
-          def present(workspace)
-            {
-              hello: "world"
-            }
+          presenter do
+            fields do
+              field :secret_info, :string
+            end
           end
         end
 
         result = @presenter_collection.presenting("workspaces", primary_presenter: some_presenter_klass.new) { Workspace.where(id: 1) }
-        expect(result[:workspaces]['1'][:hello]).to eq('world')
+        expect(result[:workspaces]['1'][:secret_info]).to eq(Workspace.find(1).secret_info)
       end
     end
   end

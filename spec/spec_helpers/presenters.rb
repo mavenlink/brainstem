@@ -1,32 +1,30 @@
 class WorkspacePresenter < Brainstem::Presenter
-  def present(model)
-    {
-      :title        => model.title,
-      :description  => model.description,
-      :updated_at   => model.updated_at
-    }
-  end
-
   presenter do
-    preload :lead_user
+    # preload :lead_user
 
-    conditionals do
-      model :title_is_hello, lambda { workspace.title == 'hello' }, 'visible when the title is hello'
-      model :user_is_bob, lambda { current_user.username == 'bob' }, 'visible only to bob'
-    end
+    # conditionals do
+    #   model :title_is_hello, lambda { workspace.title == 'hello' }, 'visible when the title is hello'
+    #   model :user_is_bob, lambda { current_user.username == 'bob' }, 'visible only to bob'
+    # end
 
     fields do
       field :title, :string
       field :description, :string
       field :updated_at, :datetime
-      field :secret, :string, 'a secret, via secret_info',
-            via: :secret_info,
-            if: [:user_is_bob, :title_is_hello]
+      field :dynamic_title, :string, dynamic: lambda { |model| "title: #{model.title}" }
 
-      with_options if: :user_is_bob do
-        field :bob_title, :string, 'another name for the title, only for Bob',
-              via: :title
+      fields :permissions do
+        field :access_level, :integer, dynamic: lambda { 2 }
       end
+
+      # field :secret, :string, 'a secret, via secret_info',
+      #       via: :secret_info,
+      #       if: [:user_is_bob, :title_is_hello]
+      #
+      # with_options if: :user_is_bob do
+      #   field :bob_title, :string, 'another name for the title, only for Bob',
+      #         via: :title
+      # end
     end
 
     associations do
@@ -40,12 +38,6 @@ class WorkspacePresenter < Brainstem::Presenter
 end
 
 class TaskPresenter < Brainstem::Presenter
-  def present(model)
-    {
-      :name         => model.name
-    }
-  end
-
   presenter do
     fields do
       field :name, :string
@@ -66,12 +58,6 @@ class TaskPresenter < Brainstem::Presenter
 end
 
 class UserPresenter < Brainstem::Presenter
-  def present(model)
-    {
-      :username => model.username
-    }
-  end
-
   presenter do
     fields do
       field :username, :string
@@ -86,12 +72,6 @@ class UserPresenter < Brainstem::Presenter
 end
 
 class PostPresenter < Brainstem::Presenter
-  def present(model)
-    {
-      :body => model.body
-    }
-  end
-
   presenter do
     fields do
       field :body, :string

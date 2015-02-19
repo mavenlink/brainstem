@@ -9,6 +9,26 @@ module Brainstem
         @description = description
         @options = options
       end
+
+      def method_name
+        if options[:dynamic]
+          nil
+        else
+          options[:via].presence || name
+        end
+      end
+
+      def run_on(model)
+        if options[:dynamic]
+          if options[:dynamic].arity > 0
+            options[:dynamic].call(model)
+          else
+            options[:dynamic].call
+          end
+        else
+          model.send(method_name)
+        end
+      end
     end
   end
 end

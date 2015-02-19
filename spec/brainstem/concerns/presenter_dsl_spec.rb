@@ -13,6 +13,7 @@ require 'brainstem/concerns/presenter_dsl'
 #     field :title, :string
 #     field :description, :string
 #     field :updated_at, :datetime
+#     field :dynamic_title, :string, dynamic: lambda { |model| model.title }
 #     field :secret, :string, 'a secret, via secret_info',
 #           via: :secret_info,
 #           if: [:user_is_bob, :title_is_hello]
@@ -20,6 +21,10 @@ require 'brainstem/concerns/presenter_dsl'
 #     with_options if: :user_is_bob do
 #       field :bob_title, :string, 'another name for the title, only for Bob',
 #             via: :title
+#     end
+#     fields :nested_permissions do
+#       field :something_title, :string, via: :title
+#       field :random, :number, dynamic: lambda { rand }
 #     end
 #   end
 #
@@ -99,6 +104,7 @@ describe Brainstem::Concerns::PresenterDSL do
         presenter_class.presenter do
           fields do
             field :updated_at, :datetime
+            field :dynamic_title, :string, dynamic: lambda { |model| model.title }
             field :secret, :string,
                   via: :secret_info,
                   if: [:user_is_bob, :title_is_hello]
@@ -107,20 +113,33 @@ describe Brainstem::Concerns::PresenterDSL do
               field :bob_title, :string, 'another name for the title, only for Bob',
                     via: :title
             end
+            fields :nested_permissions do
+              field :something_title, :string, via: :title
+              field :random, :number, dynamic: lambda { rand }
+            end
           end
         end
       end
 
       it 'is stored in the configuration' do
-        expect(presenter_class.configuration[:fields].keys).to match_array [:updated_at, :secret, :bob_title]
+        expect(presenter_class.configuration[:fields].keys).to match_array [:updated_at, :dynamic_title, :secret, :bob_title, :nested_permissions]
         expect(presenter_class.configuration[:fields][:updated_at].type).to eq :datetime
         expect(presenter_class.configuration[:fields][:updated_at].description).to be_nil
+        expect(presenter_class.configuration[:fields][:dynamic_title].type).to eq :string
+        expect(presenter_class.configuration[:fields][:dynamic_title].description).to be_nil
+        expect(presenter_class.configuration[:fields][:dynamic_title].options[:dynamic]).to be_a(Proc)
         expect(presenter_class.configuration[:fields][:secret].type).to eq :string
         expect(presenter_class.configuration[:fields][:secret].description).to be_nil
         expect(presenter_class.configuration[:fields][:secret].options).to eq({ via: :secret_info, if: [:user_is_bob, :title_is_hello] })
         expect(presenter_class.configuration[:fields][:bob_title].type).to eq :string
         expect(presenter_class.configuration[:fields][:bob_title].description).to eq 'another name for the title, only for Bob'
         expect(presenter_class.configuration[:fields][:bob_title].options).to eq({ via: :title, if: :user_is_bob })
+      end
+
+      it 'handles nesting' do
+        expect(presenter_class.configuration[:fields][:nested_permissions][:something_title].type).to eq :string
+        expect(presenter_class.configuration[:fields][:nested_permissions][:something_title].options[:via]).to eq :title
+        expect(presenter_class.configuration[:fields][:nested_permissions][:random].options[:dynamic]).to be_a(Proc)
       end
 
       it 'is inherited and overridable' do
@@ -133,12 +152,49 @@ describe Brainstem::Concerns::PresenterDSL do
             end
           end
         end
-        expect(presenter_class.configuration[:fields].keys).to match_array [:updated_at, :secret, :bob_title]
-        expect(subclass.configuration[:fields].keys).to match_array [:updated_at, :secret, :bob_title, :title]
+        expect(presenter_class.configuration[:fields].keys).to match_array [:updated_at, :dynamic_title,
+                                                                            :secret, :bob_title, :nested_permissions]
+        expect(subclass.configuration[:fields].keys).to match_array [:updated_at, :dynamic_title, :secret,
+                                                                     :bob_title, :title, :nested_permissions]
         expect(presenter_class.configuration[:fields][:updated_at].description).to be_nil
         expect(presenter_class.configuration[:fields][:updated_at].options).to eq({})
         expect(subclass.configuration[:fields][:updated_at].description).to eq 'this time I have a description and condition'
         expect(subclass.configuration[:fields][:updated_at].options).to eq({ if: [:some_condition, :some_other_condition] })
+      end
+
+      it 'allows nesting to be inherited and overridden too' do
+        subclass = Class.new(presenter_class)
+        subclass.presenter do
+          fields do
+            fields :nested_permissions do
+              field :something_title, :number, via: :title
+              field :new, :string, via: :title
+              fields :deeper do
+                field :something, :string, via: :title
+              end
+            end
+
+            fields :new_nested_permissions do
+              field :something, :string, via: :title
+            end
+          end
+        end
+        expect(presenter_class.configuration[:fields].keys).to match_array [:updated_at, :dynamic_title, :secret,
+                                                                            :bob_title, :nested_permissions]
+        expect(subclass.configuration[:fields].keys).to match_array [:updated_at, :dynamic_title, :secret, :bob_title,
+                                                                     :nested_permissions, :new_nested_permissions]
+
+        expect(presenter_class.configuration[:fields][:nested_permissions][:something_title].type).to eq :string
+        expect(presenter_class.configuration[:fields][:nested_permissions][:random].type).to eq :number
+        expect(presenter_class.configuration[:fields][:nested_permissions][:new]).to be_nil
+        expect(presenter_class.configuration[:fields][:nested_permissions][:deeper]).to be_nil
+        expect(presenter_class.configuration[:fields][:new_nested_permissions]).to be_nil
+
+        expect(subclass.configuration[:fields][:nested_permissions][:something_title].type).to eq :number # changed this
+        expect(subclass.configuration[:fields][:nested_permissions][:random].type).to eq :number
+        expect(subclass.configuration[:fields][:nested_permissions][:new].type).to eq :string
+        expect(subclass.configuration[:fields][:nested_permissions][:deeper][:something]).to be_present
+        expect(subclass.configuration[:fields][:new_nested_permissions]).to be_present
       end
     end
 
