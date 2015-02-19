@@ -85,7 +85,7 @@ module Brainstem
       primary_models = order_for_search(primary_models, ordered_search_ids) if searching?(options)
 
       # Preload associations
-      # Preloader.new(primary_models, options[:primary_presenter], selected_associations).preload!
+      perform_preloading primary_models, selected_associations
 
       # Load request associations
       associated_models = gather_associations(primary_models, selected_associations)
@@ -304,6 +304,19 @@ module Brainstem
       [sort_name, direction == 'desc' ? 'desc' : 'asc']
     end
 
+    def perform_preloading(models, selected_associations)
+      if models.first
+        association_names_to_preload = selected_associations.map(&:method_name).compact
+        if association_names_to_preload.any?
+          reflections = Brainstem::PresenterCollection.reflections(models.first.class)
+          association_names_to_preload.reject! { |association| !reflections.has_key?(association.to_s) }
+          if association_names_to_preload.any?
+            Brainstem::PresenterCollection.ar_preload(models, association_names_to_preload)
+          end
+        end
+      end
+    end
+
     def gather_associations(models, selected_associations)
       selected_associations.each.with_object({}) do |association, record_hash|
         association.load_records_into_hash!(models, record_hash)
@@ -333,7 +346,7 @@ module Brainstem
       klass.reflections.each_with_object({}) { |(key, value), memo| memo[key.to_s] = value }
     end
 
-    def self.preload(models, association_names)
+    def self.ar_preload(models, association_names)
       if Gem.loaded_specs['activerecord'].version >= Gem::Version.create('4.1')
         ActiveRecord::Associations::Preloader.new.preload(models, association_names)
       else

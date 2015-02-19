@@ -257,9 +257,8 @@ describe Brainstem::PresenterCollection do
       end
 
       it "preloads associations when they are full model-level associations" do
-        pending
         # Here, primary_maven is a method on Workspace, not a true association.
-        mock(Brainstem::PresenterCollection).preload(anything, [:tasks])
+        mock(Brainstem::PresenterCollection).ar_preload(anything, [:tasks])
         result = @presenter_collection.presenting("workspaces", :params => { :include => "tasks" }) { Workspace.order('id desc') }
         expect(result[:tasks].length).to be > 0
       end
