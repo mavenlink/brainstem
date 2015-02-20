@@ -126,17 +126,17 @@ module Brainstem
     # @param [*Class] klasses One or more classes that can be presented by +presenter_class+.
     def add_presenter_class(presenter_class, *klasses)
       klasses.each do |klass|
-        presenters[klass.to_s] = presenter_class.new
+        presenters[klass.to_s] = presenter_class
       end
     end
 
-    # @return [Brainstem::Presenter, nil] The presenter that knows how to present the class +klass+, or +nil+ if there isn't one.
+    # @return [Brainstem::Presenter, nil] A new instance of the Presenter that knows how to present the class +klass+, or +nil+ if there isn't one.
     def for(klass)
-      presenters[klass.to_s]
+      presenters[klass.to_s].try(:new)
     end
 
-    # @return [Brainstem::Presenter] The presenter that knows how to present the class +klass+.
-    # @raise [ArgumentError] if there is no known presenter for +klass+.
+    # @return [Brainstem::Presenter] A new instance of the Presenter that knows how to present the class +klass+.
+    # @raise [ArgumentError] if there is no known Presenter for +klass+.
     def for!(klass)
       self.for(klass) || raise(ArgumentError, "Unable to find a presenter for class #{klass}")
     end

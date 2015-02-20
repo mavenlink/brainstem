@@ -11,13 +11,6 @@ describe Brainstem::ControllerMethods do
     end
   end
 
-  before do
-    UserPresenter.presents User
-    TaskPresenter.presents Task
-    WorkspacePresenter.presents Workspace
-    PostPresenter.presents Post
-  end
-
   describe "#present_object" do
     before do
       @controller = FakeController.new

@@ -1,10 +1,12 @@
 class WorkspacePresenter < Brainstem::Presenter
+  presents Workspace
+
   presenter do
     # preload :lead_user
 
     # conditionals do
+    #   request :user_is_bob, lambda { current_user.username == 'bob' }, 'visible only to bob'
     #   model :title_is_hello, lambda { workspace.title == 'hello' }, 'visible when the title is hello'
-    #   model :user_is_bob, lambda { current_user.username == 'bob' }, 'visible only to bob'
     # end
 
     fields do
@@ -38,6 +40,8 @@ class WorkspacePresenter < Brainstem::Presenter
 end
 
 class TaskPresenter < Brainstem::Presenter
+  presents Task
+
   presenter do
     fields do
       field :name, :string
@@ -58,6 +62,8 @@ class TaskPresenter < Brainstem::Presenter
 end
 
 class UserPresenter < Brainstem::Presenter
+  presents User
+
   presenter do
     fields do
       field :username, :string
@@ -72,6 +78,8 @@ class UserPresenter < Brainstem::Presenter
 end
 
 class PostPresenter < Brainstem::Presenter
+  presents Post
+
   presenter do
     fields do
       field :body, :string

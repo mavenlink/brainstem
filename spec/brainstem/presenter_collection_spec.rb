@@ -2,10 +2,6 @@ require 'spec_helper'
 
 describe Brainstem::PresenterCollection do
   before do
-    UserPresenter.presents User
-    TaskPresenter.presents Task
-    WorkspacePresenter.presents Workspace
-    PostPresenter.presents Post
     @presenter_collection = Brainstem.presenter_collection
   end
 
@@ -880,6 +876,12 @@ describe Brainstem::PresenterCollection do
 
       it "returns the presenter for a given class" do
         expect(Brainstem.presenter_collection("v1").for(Array)).to be_a(V1::ArrayPresenter)
+      end
+
+      it "returns a new instance of the presenter class each time" do
+        presenter1 = Brainstem.presenter_collection("v1").for(Array)
+        presenter2 = Brainstem.presenter_collection("v1").for(Array)
+        expect(presenter1).not_to eq presenter2
       end
 
       it "returns nil when given nil" do

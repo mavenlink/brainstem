@@ -65,7 +65,7 @@ module Brainstem
     if @presenter_collection
       @presenter_collection.each do |namespace, collection|
         collection.presenters.each do |klass, presenter|
-          presenter.class.reset! if presenter.class.respond_to?(:reset!)
+          presenter.reset! if presenter.respond_to?(:reset!)
         end
       end
     end
