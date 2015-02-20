@@ -65,24 +65,82 @@ describe Brainstem::Presenter do
     end
 
     describe ".helper" do
-      before do
-        @klass = Class.new(Brainstem::Presenter) do
-          def call_helper
-            foo
+      let(:model) { Workspace.first }
+      let(:presenter) do
+        Class.new(Brainstem::Presenter) do
+          helper do
+            def method_in_block
+              'method_in_block'
+            end
+
+            def block_to_module
+              'i am in a block, but can see ' + method_in_module
+            end
           end
-        end
-        @helper = Module.new do
-          def foo
-            "I work"
+
+          presenter do
+            fields do
+              field :from_module, :string, dynamic: lambda { method_in_module }
+              field :from_block, :string, dynamic: lambda { method_in_block }
+              field :block_to_module, :string, dynamic: lambda { block_to_module }
+              field :module_to_block, :string, dynamic: lambda { module_to_block }
+            end
           end
         end
       end
 
-      it "includes and extends the given module" do
-        expect { @klass.new.call_helper }.to raise_error
-        @klass.helper @helper
-        expect(@klass.new.call_helper).to eq("I work")
-        expect(@klass.foo).to eq("I work")
+      let(:helper_module) do
+        Module.new do
+          def method_in_module
+            'method_in_module'
+          end
+
+          def module_to_block
+            'i am in a module, but can see ' + method_in_block
+          end
+        end
+      end
+
+      it 'provides any methods from given blocks to the lambda' do
+        presenter.helper helper_module
+        expect(presenter.new.present_fields(model)[:from_block]).to eq 'method_in_block'
+      end
+
+      it 'provides any methods from given Modules to the lambda' do
+        presenter.helper helper_module
+        expect(presenter.new.present_fields(model)[:from_module]).to eq 'method_in_module'
+      end
+
+      it 'allows methods in modules and blocks to see each other' do
+        presenter.helper helper_module
+        expect(presenter.new.present_fields(model)[:block_to_module]).to eq 'i am in a block, but can see method_in_module'
+        expect(presenter.new.present_fields(model)[:module_to_block]).to eq 'i am in a module, but can see method_in_block'
+      end
+
+      it 'merges the blocks and modules into a combined helper' do
+        presenter.helper helper_module
+        expect(presenter.merged_helper_class.instance_methods).to include(:method_in_module, :module_to_block, :method_in_block, :block_to_module)
+      end
+
+      it 'can be cleaned up' do
+        expect(presenter.merged_helper_class.instance_methods).to include(:method_in_block)
+        expect(presenter.merged_helper_class.instance_methods).to_not include(:method_in_module)
+        presenter.helper helper_module
+        expect(presenter.merged_helper_class.instance_methods).to include(:method_in_block, :method_in_module)
+        presenter.reset!
+        expect(presenter.merged_helper_class.instance_methods).to_not include(:method_in_block)
+        expect(presenter.merged_helper_class.instance_methods).to_not include(:method_in_module)
+      end
+
+      it 'caches the generated class' do
+        class1 = presenter.merged_helper_class
+        class2 = presenter.merged_helper_class
+        expect(class1).to eq class2
+        presenter.helper helper_module
+        class3 = presenter.merged_helper_class
+        class4 = presenter.merged_helper_class
+        expect(class1).not_to eq class3
+        expect(class3).to eq class4
       end
     end
 

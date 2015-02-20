@@ -85,14 +85,33 @@ module Brainstem
     # Declares a helper module whose methods will be available in instances of the presenter class and available inside sort and filter blocks.
     # @param [Module] mod A module whose methods will be made available to filter and sort blocks, as well as inside the {#present} method.
     # @return [self]
-    def self.helper(mod)
-      include mod
-      extend mod
+    def self.helper(mod = nil, &block)
+      @helper_class = nil
+      @helpers ||= []
+
+      if mod
+        @helpers << mod
+      end
+
+      if block
+        @helpers << Module.new.tap { |mod| mod.module_eval(&block) }
+      end
+
+      # include mod
+      # extend mod
+    end
+
+    def self.merged_helper_class
+      @helper_class ||= Class.new.tap do |klass|
+        (@helpers || []).each do |helper|
+          klass.include helper
+        end
+      end
     end
 
     def self.reset!
       clear_configuration!
-      @presents = @default_sort_order = @sort_orders = @filters = @search_block = nil
+      @helper_class = @helpers = @presents = @default_sort_order = @sort_orders = @filters = @search_block = nil
     end
 
 
@@ -113,17 +132,23 @@ module Brainstem
     # @api private
     # Uses the fields DSL to output a presented model.
     # @return [Hash]  A hash representation of the model.
-    def present_fields(model, result = {}, fields = configuration[:fields])
+    def present_fields(model, helper_instance = fresh_helper_instance, result = {}, fields = configuration[:fields])
       fields.each do |name, field_or_fields|
         case field_or_fields
           when DSL::Field
-            result[name] = field_or_fields.run_on(model)
+            result[name] = field_or_fields.run_on(model, helper_instance)
           when DSL::Configuration
             result[name] ||= {}
-            present_fields(model, result[name], field_or_fields)
+            present_fields(model, helper_instance, result[name], field_or_fields)
         end
       end
       result
+    end
+
+    # @api private
+    # Instantiate and return a new instance of the merged helper class for this presenter.
+    def fresh_helper_instance
+      self.class.merged_helper_class.new
     end
 
     # @api private

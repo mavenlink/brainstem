@@ -18,12 +18,13 @@ module Brainstem
         end
       end
 
-      def run_on(model)
+      def run_on(model, helper_instance)
         if options[:dynamic]
-          if options[:dynamic].arity > 0
-            options[:dynamic].call(model)
+          proc = options[:dynamic]
+          if proc.arity > 0
+            helper_instance.instance_exec(model, &proc)
           else
-            options[:dynamic].call
+            helper_instance.instance_exec(&proc)
           end
         else
           model.send(method_name)
