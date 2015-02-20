@@ -104,7 +104,7 @@ module Brainstem
     def self.merged_helper_class
       @helper_class ||= Class.new.tap do |klass|
         (@helpers || []).each do |helper|
-          klass.include helper
+          klass.send :include, helper
         end
       end
     end
