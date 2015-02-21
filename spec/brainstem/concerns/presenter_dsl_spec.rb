@@ -5,8 +5,8 @@ require 'brainstem/concerns/presenter_dsl'
 #   preload :lead_user
 #
 #   conditionals do
-#     model :title_is_hello, lambda { workspace.title == 'hello' }, 'visible when the title is hello'
-#     model :user_is_bob, lambda { current_user.username == 'bob' }, 'visible only to bob'
+#     model   :title_is_hello, lambda { workspace.title == 'hello' }, 'visible when the title is hello'
+#     request :user_is_bob, lambda { current_user.username == 'bob' }, 'visible only to bob'
 #   end
 #
 #   fields do
@@ -69,7 +69,7 @@ describe Brainstem::Concerns::PresenterDSL do
         presenter_class.presenter do
           conditionals do
             model      :title_is_hello, lambda { workspace.title == 'hello' }, 'visible when the title is hello'
-            collection :user_is_bob, lambda { current_user.username == 'bob' }, 'visible only to bob'
+            request    :user_is_bob, lambda { current_user == 'bob' }, 'visible only to bob'
           end
         end
       end
@@ -80,7 +80,7 @@ describe Brainstem::Concerns::PresenterDSL do
         expect(presenter_class.configuration[:conditionals][:title_is_hello].type).to eq :model
         expect(presenter_class.configuration[:conditionals][:title_is_hello].description).to eq 'visible when the title is hello'
         expect(presenter_class.configuration[:conditionals][:user_is_bob].action).to be_present
-        expect(presenter_class.configuration[:conditionals][:user_is_bob].type).to eq :collection
+        expect(presenter_class.configuration[:conditionals][:user_is_bob].type).to eq :request
         expect(presenter_class.configuration[:conditionals][:user_is_bob].description).to eq 'visible only to bob'
       end
 

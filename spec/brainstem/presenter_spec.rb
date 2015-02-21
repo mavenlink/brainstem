@@ -1,24 +1,23 @@
 require 'spec_helper'
 
 describe Brainstem::Presenter do
-  describe "implicit namespacing" do
-    module V1
-      class SomePresenter < Brainstem::Presenter
+  describe "class behavior" do
+    describe "implicit namespacing" do
+      module V1
+        class SomePresenter < Brainstem::Presenter
+        end
+      end
+
+      it "uses the closest module name as the presenter namespace" do
+        V1::SomePresenter.presents String
+        expect(Brainstem.presenter_collection(:v1).for(String)).to be_a(V1::SomePresenter)
+      end
+
+      it "does not map namespaced presenters into the default namespace" do
+        V1::SomePresenter.presents String
+        expect(Brainstem.presenter_collection.for(String)).to be_nil
       end
     end
-
-    it "uses the closest module name as the presenter namespace" do
-      V1::SomePresenter.presents String
-      expect(Brainstem.presenter_collection(:v1).for(String)).to be_a(V1::SomePresenter)
-    end
-
-    it "does not map namespaced presenters into the default namespace" do
-      V1::SomePresenter.presents String
-      expect(Brainstem.presenter_collection.for(String)).to be_nil
-    end
-  end
-
-  describe "class methods" do
 
     describe '.presents' do
       let!(:presenter_class) { Class.new(Brainstem::Presenter) }
@@ -173,33 +172,57 @@ describe Brainstem::Presenter do
     end
   end
 
-  describe "#present_fields" do
-    let(:presenter) { WorkspacePresenter.new }
-    let(:model) { Workspace.find(1) }
+  describe "presenting models" do
+    describe "#present_fields" do
+      let(:presenter) { WorkspacePresenter.new }
+      let(:model) { Workspace.find(1) }
 
-    it 'only includes fields' do
-      expect(presenter.present_fields(model).length).to eq presenter.configuration[:fields].length
+      it 'calls named methods' do
+        expect(presenter.present_fields(model)[:title]).to eq model.title
+      end
+
+      it 'can call methods with :via' do
+        presenter.configuration[:fields][:title].options[:via] = :description
+        expect(presenter.present_fields(model)[:title]).to eq model.description
+      end
+
+      it 'can call a dynamic lambda' do
+        expect(presenter.present_fields(model)[:dynamic_title]).to eq "title: #{model.title}"
+      end
+
+      it 'handles nesting' do
+        expect(presenter.present_fields(model)[:permissions][:access_level]).to eq 2
+      end
+
+      describe 'handling of conditional fields' do
+        it 'does not return conditional fields when their :if conditionals do not match' do
+          expect(presenter.present_fields(model)[:secret]).to be_nil
+          expect(presenter.present_fields(model)[:bob_title]).to be_nil
+        end
+
+        it 'returns conditional fields when their :if matches' do
+          model.title = 'hello'
+          expect(presenter.present_fields(model)[:hello_title]).to eq 'title is hello'
+        end
+
+        it 'returns fields with the :if option only when all of the conditionals in that :if are true' do
+          model.title = 'hello'
+          presenter.class.helper do
+            def current_user
+              'not bob'
+            end
+          end
+          expect(presenter.present_fields(model)[:secret]).to be_nil
+          presenter.class.helper do
+            def current_user
+              'bob'
+            end
+          end
+          expect(presenter.present_fields(model)[:secret]).to eq model.secret_info
+        end
+      end
     end
 
-    it 'calls named methods' do
-      expect(presenter.present_fields(model)[:title]).to eq model.title
-    end
-
-    it 'can call methods with :via' do
-      presenter.configuration[:fields][:title].options[:via] = :description
-      expect(presenter.present_fields(model)[:title]).to eq model.description
-    end
-
-    it 'can call a dynamic lambda' do
-      expect(presenter.present_fields(model)[:dynamic_title]).to eq "title: #{model.title}"
-    end
-
-    it 'handles nesting' do
-      expect(presenter.present_fields(model)[:permissions][:access_level]).to eq 2
-    end
-  end
-
-  describe "post_process hooks" do
     describe "adding object ids as strings" do
       before do
         post_presenter = Class.new(Brainstem::Presenter) do
@@ -217,7 +240,7 @@ describe Brainstem::Presenter do
       end
 
       it "outputs the associated object's id and type" do
-        data = @presenter.present_and_post_process(@post)
+        data = @presenter.group_present([@post]).first
         expect(data[:id]).to eq(@post.id.to_s)
         expect(data[:body]).to eq(@post.body)
       end
@@ -242,7 +265,7 @@ describe Brainstem::Presenter do
         iso8601_time = /\d{4}-\d{2}-\d{2}T\d{2}\:\d{2}\:\d{2}[-+]\d{2}:\d{2}/
         iso8601_date = /\d{4}-\d{2}-\d{2}/
 
-        struct = presenter.new.present_and_post_process(Workspace.first)
+        struct = presenter.new.group_present([Workspace.first]).first
         expect(struct[:time]).to match(iso8601_time)
         expect(struct[:date]).to match(iso8601_date)
         expect(struct[:recursion][:time]).to match(iso8601_time)
@@ -273,7 +296,7 @@ describe Brainstem::Presenter do
         @presenter = some_presenter.new
       end
 
-      let(:presented_data) { @presenter.present_and_post_process(post) }
+      let(:presented_data) { @presenter.group_present([post]).first }
 
       context "when polymorphic association exists" do
         let(:post) { Post.find(1) }
@@ -335,32 +358,32 @@ describe Brainstem::Presenter do
       end
 
       it "should not convert or return non-included associations, but should return <association>_id for belongs_to relationships, plus all fields" do
-        json = @presenter.present_and_post_process(@workspace, [])
+        json = @presenter.group_present([@workspace], []).first
         expect(json.keys).to match_array([:id, :updated_at, :something_id, :user_id])
       end
 
       it "should convert requested has_many associations (includes) into the <association>_ids format" do
         expect(@workspace.tasks.length).to be > 0
-        expect(@presenter.present_and_post_process(@workspace, [:tasks])[:task_ids]).to match_array(@workspace.tasks.map(&:id).map(&:to_s))
+        expect(@presenter.group_present([@workspace], [:tasks]).first[:task_ids]).to match_array(@workspace.tasks.map(&:id).map(&:to_s))
       end
 
       it "should convert requested belongs_to and has_one associations into the <association>_id format when requested" do
-        expect(@presenter.present_and_post_process(@workspace, [:user])[:user_id]).to eq(@workspace.user.id.to_s)
+        expect(@presenter.group_present([@workspace], [:user]).first[:user_id]).to eq(@workspace.user.id.to_s)
       end
 
       it "converts non-association models into <model>_id format when they are requested" do
-        expect(@presenter.present_and_post_process(@workspace, [:lead_user])[:lead_user_id]).to eq(@workspace.lead_user.id.to_s)
+        expect(@presenter.group_present([@workspace], [:lead_user]).first[:lead_user_id]).to eq(@workspace.lead_user.id.to_s)
       end
 
       it "handles associations provided with lambdas" do
-        expect(@presenter.present_and_post_process(@workspace, [:lead_user_with_lambda])[:lead_user_with_lambda_id]).to eq(@workspace.lead_user.id.to_s)
-        expect(@presenter.present_and_post_process(@workspace, [:tasks_with_lambda])[:tasks_with_lambda_ids]).to eq(@workspace.tasks.map(&:id).map(&:to_s))
+        expect(@presenter.group_present([@workspace], [:lead_user_with_lambda]).first[:lead_user_with_lambda_id]).to eq(@workspace.lead_user.id.to_s)
+        expect(@presenter.group_present([@workspace], [:tasks_with_lambda]).first[:tasks_with_lambda_ids]).to eq(@workspace.tasks.map(&:id).map(&:to_s))
       end
 
       it "should return <association>_id fields when the given association ids exist on the model whether it is requested or not" do
-        expect(@presenter.present_and_post_process(@workspace, [:user])[:user_id]).to eq(@workspace.user_id.to_s)
+        expect(@presenter.group_present([@workspace], [:user]).first[:user_id]).to eq(@workspace.user_id.to_s)
 
-        json = @presenter.present_and_post_process(@workspace, [])
+        json = @presenter.group_present([@workspace], []).first
         expect(json.keys).to match_array([:user_id, :something_id, :id, :updated_at])
         expect(json[:user_id]).to eq(@workspace.user_id.to_s)
         expect(json[:something_id]).to eq(@workspace.user_id.to_s)
@@ -369,10 +392,10 @@ describe Brainstem::Presenter do
       it "should return null, not empty string when ids are missing" do
         @workspace.user = nil
         @workspace.tasks = []
-        expect(@presenter.present_and_post_process(@workspace, [:lead_user_with_lambda])[:lead_user_with_lambda_id]).to eq(nil)
-        expect(@presenter.present_and_post_process(@workspace, [:user])[:user_id]).to eq(nil)
-        expect(@presenter.present_and_post_process(@workspace, [:something])[:something_id]).to eq(nil)
-        expect(@presenter.present_and_post_process(@workspace, [:tasks])[:task_ids]).to eq([])
+        expect(@presenter.group_present([@workspace], [:lead_user_with_lambda]).first[:lead_user_with_lambda_id]).to eq(nil)
+        expect(@presenter.group_present([@workspace], [:user]).first[:user_id]).to eq(nil)
+        expect(@presenter.group_present([@workspace], [:something]).first[:something_id]).to eq(nil)
+        expect(@presenter.group_present([@workspace], [:tasks]).first[:task_ids]).to eq([])
       end
 
       context "when the model has an <association>_id method but no column" do
@@ -380,7 +403,7 @@ describe Brainstem::Presenter do
           def @workspace.synthetic_id
             raise "this explodes because it's not an association"
           end
-          expect(@presenter.present_and_post_process(@workspace, [])).not_to have_key(:synthetic_id)
+          expect(@presenter.group_present([@workspace], []).first).not_to have_key(:synthetic_id)
         end
       end
     end

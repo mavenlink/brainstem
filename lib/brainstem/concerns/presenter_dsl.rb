@@ -68,8 +68,8 @@ module Brainstem
       end
 
       class ConditionalsBlock < BaseBlock
-        def collection(name, action, description = nil)
-          configuration[:conditionals][name] = DSL::Conditional.new(name, :collection, action, description)
+        def request(name, action, description = nil)
+          configuration[:conditionals][name] = DSL::Conditional.new(name, :request, action, description)
         end
 
         def model(name, action, description = nil)

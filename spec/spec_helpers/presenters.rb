@@ -1,13 +1,19 @@
 class WorkspacePresenter < Brainstem::Presenter
   presents Workspace
 
+  helper do
+    def current_user
+      'jane'
+    end
+  end
+
   presenter do
     # preload :lead_user
 
-    # conditionals do
-    #   request :user_is_bob, lambda { current_user.username == 'bob' }, 'visible only to bob'
-    #   model :title_is_hello, lambda { workspace.title == 'hello' }, 'visible when the title is hello'
-    # end
+    conditionals do
+      model   :title_is_hello, lambda { |model| model.title == 'hello' }, 'visible when the title is hello'
+      request :user_is_bob, lambda { current_user == 'bob' }, 'visible only to bob'
+    end
 
     fields do
       field :title, :string
@@ -19,14 +25,18 @@ class WorkspacePresenter < Brainstem::Presenter
         field :access_level, :integer, dynamic: lambda { 2 }
       end
 
-      # field :secret, :string, 'a secret, via secret_info',
-      #       via: :secret_info,
-      #       if: [:user_is_bob, :title_is_hello]
-      #
-      # with_options if: :user_is_bob do
-      #   field :bob_title, :string, 'another name for the title, only for Bob',
-      #         via: :title
-      # end
+      field :hello_title, :string, 'the title, when hello',
+            dynamic: lambda { 'title is hello' },
+            if: :title_is_hello
+
+      field :secret, :string, 'a secret, via secret_info',
+            via: :secret_info,
+            if: [:user_is_bob, :title_is_hello]
+
+      with_options if: :user_is_bob do
+        field :bob_title, :string, 'another name for the title, only for Bob',
+              via: :title
+      end
     end
 
     associations do

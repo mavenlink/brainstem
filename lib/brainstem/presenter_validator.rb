@@ -42,7 +42,7 @@ module Brainstem
           when DSL::Field
             if field_or_fields.options[:if].present?
               if Array.wrap(field_or_fields.options[:if]).any? { |conditional| presenter_class.configuration[:conditionals][conditional].nil? }
-                errors.add(:fields, "'#{name}' is not valid because one or more of the specified conditions does not exist")
+                errors.add(:fields, "'#{name}' is not valid because one or more of the specified conditionals does not exist")
               end
             end
           when DSL::Configuration

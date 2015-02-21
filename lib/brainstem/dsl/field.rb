@@ -1,13 +1,18 @@
 module Brainstem
   module DSL
     class Field
-      attr_reader :name, :type, :description, :options
+      attr_reader :name, :type, :description, :conditionals, :options
 
       def initialize(name, type, description, options)
         @name = name
         @type = type
         @description = description
+        @conditionals = [options[:if]].flatten.compact
         @options = options
+      end
+
+      def conditional?
+        conditionals.length > 0
       end
 
       def method_name
@@ -29,6 +34,14 @@ module Brainstem
         else
           model.send(method_name)
         end
+      end
+
+      def conditionals_match?(model, presenter_conditionals, helper_instance = Object.new, conditional_cache = {})
+        return true unless conditional?
+
+        conditionals.all? { |conditional|
+          presenter_conditionals[conditional].matches?(model, helper_instance, conditional_cache)
+        }
       end
     end
   end

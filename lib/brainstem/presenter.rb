@@ -123,23 +123,21 @@ module Brainstem
     end
 
     # @api private
-    # Calls {#post_process} on the output from {#present}.
-    # @return (see #post_process)
-    def present_and_post_process(model, requested_associations = [])
-      post_process(present_fields(model), model, requested_associations)
-    end
-
-    # @api private
     # Uses the fields DSL to output a presented model.
     # @return [Hash]  A hash representation of the model.
-    def present_fields(model, helper_instance = fresh_helper_instance, result = {}, fields = configuration[:fields])
-      fields.each do |name, field_or_fields|
-        case field_or_fields
+    def present_fields(model, conditional_cache = {}, helper_instance = fresh_helper_instance, result = {},
+                       fields = configuration[:fields], conditionals = configuration[:conditionals])
+      fields.each do |name, field|
+        case field
           when DSL::Field
-            result[name] = field_or_fields.run_on(model, helper_instance)
+            if field.conditionals_match?(model, conditionals, helper_instance, conditional_cache)
+              result[name] = field.run_on(model, helper_instance)
+            end
           when DSL::Configuration
             result[name] ||= {}
-            present_fields(model, helper_instance, result[name], field_or_fields)
+            present_fields(model, conditional_cache, helper_instance, result[name], field, conditionals)
+          else
+            raise "Unknown Brianstem Field type encountered: #{field}"
         end
       end
       result
@@ -152,17 +150,8 @@ module Brainstem
     end
 
     # @api private
-    # Loads associations and converts dates to epoch strings.
-    # @return [Hash] The hash representing the models and associations, ready to be converted to JSON.
-    def post_process(struct, model, requested_associations = [])
-      add_id(model, struct)
-      load_associations!(model, struct, requested_associations)
-      datetimes_to_json(struct)
-    end
-
-    # @api private
     # Adds :id as a string from the given model.
-    def add_id(model, struct)
+    def add_id!(model, struct)
       if model.class.respond_to?(:primary_key)
         struct[:id] = model[model.class.primary_key].to_s
       end
@@ -173,8 +162,15 @@ module Brainstem
     def group_present(models, requested_associations = [])
       custom_preload models, requested_associations.map(&:to_s)
 
+      conditional_cache = {}
+      helper_instance = fresh_helper_instance
+      fields = configuration[:fields]
+      conditionals = configuration[:conditionals]
       models.map do |model|
-        present_and_post_process model, requested_associations
+        result = present_fields(model, conditional_cache, helper_instance, {}, fields, conditionals)
+        add_id!(model, result)
+        load_associations!(model, result, requested_associations)
+        datetimes_to_json(result)
       end
     end
 

@@ -147,7 +147,7 @@ describe Brainstem::PresenterValidator do
       end
 
       expect(validator).not_to be_valid
-      expect(validator.errors[:fields]).to eq ["'title' is not valid because one or more of the specified conditions does not exist"]
+      expect(validator.errors[:fields]).to eq ["'title' is not valid because one or more of the specified conditionals does not exist"]
     end
 
     it "checks conditionals on nested fields too" do
@@ -160,7 +160,7 @@ describe Brainstem::PresenterValidator do
       end
 
       expect(validator).not_to be_valid
-      expect(validator.errors[:fields]).to eq ["'title' is not valid because one or more of the specified conditions does not exist"]
+      expect(validator.errors[:fields]).to eq ["'title' is not valid because one or more of the specified conditionals does not exist"]
     end
   end
 
