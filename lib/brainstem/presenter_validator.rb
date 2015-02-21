@@ -21,21 +21,32 @@ module Brainstem
       end
     end
 
-    def fields_exist
-      presenter_class.configuration[:fields].each do |name, field|
-        field_name = field.options[:via] || name
-        if presenter_class.presents.any? { |klass| !klass.new.respond_to?(field_name) }
-          errors.add(:fields, "'#{name}' is not valid because not all presented classes respond to '#{field_name}'")
+    def fields_exist(fields = presenter_class.configuration[:fields])
+      fields.each do |name, field_or_fields|
+        case field_or_fields
+          when DSL::Field
+            method_name = field_or_fields.method_name
+            next unless method_name
+            if presenter_class.presents.any? { |klass| !klass.new.respond_to?(method_name) }
+              errors.add(:fields, "'#{name}' is not valid because not all presented classes respond to '#{method_name}'")
+            end
+          when DSL::Configuration
+            fields_exist(field_or_fields)
         end
       end
     end
 
-    def conditionals_exist
-      presenter_class.configuration[:fields].each do |name, field|
-        if field.options[:if].present?
-          if Array.wrap(field.options[:if]).any? { |conditional| presenter_class.configuration[:conditionals][conditional].nil? }
-            errors.add(:fields, "'#{name}' is not valid because one or more of the specified conditions does not exist")
-          end
+    def conditionals_exist(fields = presenter_class.configuration[:fields])
+      fields.each do |name, field_or_fields|
+        case field_or_fields
+          when DSL::Field
+            if field_or_fields.options[:if].present?
+              if Array.wrap(field_or_fields.options[:if]).any? { |conditional| presenter_class.configuration[:conditionals][conditional].nil? }
+                errors.add(:fields, "'#{name}' is not valid because one or more of the specified conditions does not exist")
+              end
+            end
+          when DSL::Configuration
+            conditionals_exist(field_or_fields)
         end
       end
     end

@@ -11,7 +11,7 @@ describe Brainstem::PresenterValidator do
 
         conditionals do
           model :title_is_hello, lambda { workspace.title == 'hello' }, 'visible when the title is hello'
-          model :user_is_bob, lambda { current_user.username == 'bob' }, 'visible only to bob'
+          model :user_is_bob, lambda { current_user == 'bob' }, 'visible only to bob'
         end
 
         fields do
@@ -96,6 +96,39 @@ describe Brainstem::PresenterValidator do
       expect(validator).to be_valid
     end
 
+    it 'supports dynamic fields' do
+      presenter_class.presenter do
+        fields do
+          field :foo, :string, dynamic: lambda { 2 }
+        end
+      end
+
+      expect(validator).to be_valid
+    end
+
+    it 'supports nested fields' do
+      presenter_class.presenter do
+        fields do
+          fields :permissions do
+            field :title, :string
+          end
+        end
+      end
+
+      expect(validator).to be_valid
+
+      presenter_class.presenter do
+        fields do
+          fields :permissions do
+            field :missing, :string
+          end
+        end
+      end
+
+      expect(validator).not_to be_valid
+      expect(validator.errors[:fields]).to eq ["'missing' is not valid because not all presented classes respond to 'missing'"]
+    end
+
     it "checks that any 'if' option has a matching conditional(s)" do
       expect(presenter_class.configuration[:conditionals][:title_is_hello]).to be_present
 
@@ -116,16 +149,24 @@ describe Brainstem::PresenterValidator do
       expect(validator).not_to be_valid
       expect(validator.errors[:fields]).to eq ["'title' is not valid because one or more of the specified conditions does not exist"]
     end
+
+    it "checks conditionals on nested fields too" do
+      presenter_class.presenter do
+        fields do
+          fields :permissions do
+            field :title, :string, if: [:title_is_hello, :wat]
+          end
+        end
+      end
+
+      expect(validator).not_to be_valid
+      expect(validator.errors[:fields]).to eq ["'title' is not valid because one or more of the specified conditions does not exist"]
+    end
   end
 
-  # specify 'all spec presenters should be valid' do
-  #   UserPresenter.presents User
-  #   TaskPresenter.presents Task
-  #   WorkspacePresenter.presents Workspace
-  #   PostPresenter.presents Post
-  #
-  #   Brainstem.presenter_collection.presenters.each do |klass, instance|
-  #     expect(Brainstem::PresenterValidator.new(instance.class)).to be_valid
-  #   end
-  # end
+  specify 'all spec presenters should be valid' do
+    Brainstem.presenter_collection.presenters.each do |name, klass|
+      expect(Brainstem::PresenterValidator.new(klass)).to be_valid
+    end
+  end
 end
