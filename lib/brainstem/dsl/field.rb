@@ -18,7 +18,7 @@ module Brainstem
         end
       end
 
-      def run_on(model, helper_instance)
+      def run_on(model, helper_instance = Object.new)
         if options[:dynamic]
           proc = options[:dynamic]
           if proc.arity > 0
