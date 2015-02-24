@@ -71,7 +71,7 @@ describe Brainstem::Concerns::PresenterDSL do
       end
 
       it 'is stored in the configuration' do
-        expect(presenter_class.configuration[:conditionals].keys).to eq [:title_is_hello, :user_is_bob]
+        expect(presenter_class.configuration[:conditionals].keys).to eq %w[title_is_hello user_is_bob]
         expect(presenter_class.configuration[:conditionals][:title_is_hello].action).to be_present
         expect(presenter_class.configuration[:conditionals][:title_is_hello].type).to eq :model
         expect(presenter_class.configuration[:conditionals][:title_is_hello].description).to eq 'visible when the title is hello'
@@ -86,8 +86,8 @@ describe Brainstem::Concerns::PresenterDSL do
           model :silly_conditional, lambda { rand > 0.5 }, 'visible half the time'
           model :title_is_hello, lambda { workspace.title == 'HELLO' }, 'visible when the title is hello (in all caps)'
         end
-        expect(presenter_class.configuration[:conditionals].keys).to eq [:title_is_hello, :user_is_bob]
-        expect(subclass.configuration[:conditionals].keys).to eq [:title_is_hello, :user_is_bob, :silly_conditional]
+        expect(presenter_class.configuration[:conditionals].keys).to eq %w[title_is_hello user_is_bob]
+        expect(subclass.configuration[:conditionals].keys).to eq %w[title_is_hello user_is_bob silly_conditional]
         expect(presenter_class.configuration[:conditionals][:title_is_hello].description).to eq "visible when the title is hello"
         expect(subclass.configuration[:conditionals][:title_is_hello].description).to eq "visible when the title is hello (in all caps)"
       end
@@ -114,7 +114,7 @@ describe Brainstem::Concerns::PresenterDSL do
       end
 
       it 'is stored in the configuration' do
-        expect(presenter_class.configuration[:fields].keys).to match_array [:updated_at, :dynamic_title, :secret, :bob_title, :nested_permissions]
+        expect(presenter_class.configuration[:fields].keys).to match_array %w[updated_at dynamic_title secret bob_title nested_permissions]
         expect(presenter_class.configuration[:fields][:updated_at].type).to eq :datetime
         expect(presenter_class.configuration[:fields][:updated_at].description).to be_nil
         expect(presenter_class.configuration[:fields][:dynamic_title].type).to eq :string
@@ -142,10 +142,8 @@ describe Brainstem::Concerns::PresenterDSL do
             field :updated_at, :datetime, 'this time I have a description and condition'
           end
         end
-        expect(presenter_class.configuration[:fields].keys).to match_array [:updated_at, :dynamic_title,
-                                                                            :secret, :bob_title, :nested_permissions]
-        expect(subclass.configuration[:fields].keys).to match_array [:updated_at, :dynamic_title, :secret,
-                                                                     :bob_title, :title, :nested_permissions]
+        expect(presenter_class.configuration[:fields].keys).to match_array %w[updated_at dynamic_title secret bob_title nested_permissions]
+        expect(subclass.configuration[:fields].keys).to match_array %w[updated_at dynamic_title secret bob_title title nested_permissions]
         expect(presenter_class.configuration[:fields][:updated_at].description).to be_nil
         expect(presenter_class.configuration[:fields][:updated_at].options).to eq({})
         expect(subclass.configuration[:fields][:updated_at].description).to eq 'this time I have a description and condition'
@@ -167,10 +165,8 @@ describe Brainstem::Concerns::PresenterDSL do
             field :something, :string, via: :title
           end
         end
-        expect(presenter_class.configuration[:fields].keys).to match_array [:updated_at, :dynamic_title, :secret,
-                                                                            :bob_title, :nested_permissions]
-        expect(subclass.configuration[:fields].keys).to match_array [:updated_at, :dynamic_title, :secret, :bob_title,
-                                                                     :nested_permissions, :new_nested_permissions]
+        expect(presenter_class.configuration[:fields].keys).to match_array %w[updated_at dynamic_title secret bob_title nested_permissions]
+        expect(subclass.configuration[:fields].keys).to match_array %w[updated_at dynamic_title secret bob_title nested_permissions new_nested_permissions]
 
         expect(presenter_class.configuration[:fields][:nested_permissions][:something_title].type).to eq :string
         expect(presenter_class.configuration[:fields][:nested_permissions][:random].type).to eq :number
@@ -199,7 +195,7 @@ describe Brainstem::Concerns::PresenterDSL do
       end
 
       it 'is stored in the configuration' do
-        expect(presenter_class.configuration[:associations].keys).to match_array [:tasks, :subtasks, :something]
+        expect(presenter_class.configuration[:associations].keys).to match_array %w[tasks subtasks something]
         expect(presenter_class.configuration[:associations][:tasks].target_class).to eq Task
         expect(presenter_class.configuration[:associations][:tasks].description).to eq 'The Tasks in this Workspace'
         expect(presenter_class.configuration[:associations][:tasks].options).to eq({ restrict_to_only: true })
@@ -217,8 +213,8 @@ describe Brainstem::Concerns::PresenterDSL do
           association :lead_user, User, 'The user who runs this Workspace'
         end
 
-        expect(presenter_class.configuration[:associations].keys).to match_array [:tasks, :subtasks, :something]
-        expect(subclass.configuration[:associations].keys).to match_array [:tasks, :subtasks, :lead_user, :something]
+        expect(presenter_class.configuration[:associations].keys).to match_array %w[tasks subtasks something]
+        expect(subclass.configuration[:associations].keys).to match_array %w[tasks subtasks lead_user something]
 
         expect(presenter_class.configuration[:associations][:tasks].options).to eq({ restrict_to_only: true })
         expect(presenter_class.configuration[:associations][:lead_user]).to be_nil

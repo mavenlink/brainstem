@@ -1,9 +1,11 @@
+require 'active_support/hash_with_indifferent_access'
+
 module Brainstem
   module DSL
     class Configuration
       def initialize(parent_configuration = nil)
-        @parent_configuration = parent_configuration || {}
-        @storage = {}
+        @parent_configuration = parent_configuration || ActiveSupport::HashWithIndifferentAccess.new
+        @storage = ActiveSupport::HashWithIndifferentAccess.new
       end
 
       def [](key)

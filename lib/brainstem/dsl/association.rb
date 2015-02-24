@@ -21,12 +21,12 @@ module Brainstem
       def brainstem_key
         @brainstem_key ||= begin
           if options[:brainstem_key].present?
-            options[:brainstem_key].to_sym
+            options[:brainstem_key].to_s
           else
             if polymorphic?
               nil
             else
-              (options[:sti_uses_base] ? target_class.base_class : target_class).to_s.tableize.to_sym
+              (options[:sti_uses_base] ? target_class.base_class : target_class).to_s.tableize
             end
           end
         end
@@ -47,7 +47,7 @@ module Brainstem
           else
             # Polymorphic associations' keys must be figured out now.
             association_models.each do |model|
-              key = (options[:sti_uses_base] ? model.class.base_class : model.class).to_s.tableize.to_sym
+              key = (options[:sti_uses_base] ? model.class.base_class : model.class).to_s.tableize
               record_hash[key] ||= []
               record_hash[key] << model
             end

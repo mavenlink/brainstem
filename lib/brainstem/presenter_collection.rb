@@ -19,7 +19,7 @@ module Brainstem
 
     # The main presentation method, converting a model name and an optional scope into a hash structure, ready to be converted into JSON.
     # If searching, Brainstem filtering, only, pagination, and ordering are skipped and should be implemented with your search solution.
-    # All request options are passed to the +search_block+ for your convenience.
+    # All request options are passed to the +search block+ for your convenience.
     # @param [Class, String] name The class of the objects to be presented.
     # @param [Hash] options The options that will be applied as the objects are converted.
     # @option options [Hash] :params The +params+ hash included in a request for the presented object.
@@ -47,7 +47,7 @@ module Brainstem
       options[:table_name] = presented_class.table_name
 
       # key these models will use in the struct that is output
-      options[:brainstem_key] = (options[:brainstem_key] || name.to_s.tableize).to_sym
+      options[:brainstem_key] = (options[:brainstem_key] || name.to_s.tableize).to_s
 
       # filter the incoming :includes list by those available from this Presenter in the current context
       selected_associations = filter_includes(options)
@@ -88,9 +88,10 @@ module Brainstem
       perform_preloading primary_models, selected_associations
 
       # Load request associations
+      # This is silly!  We end up running all dynamic associations twice!  Let's figure out how to do it later.
       associated_models = gather_associations(primary_models, selected_associations)
 
-      struct = { :count => count, options[:brainstem_key] => [], :results => [] }
+      struct = { 'count' => count, options[:brainstem_key] => [], 'results' => [] }
 
       associated_models.each do |brainstem_key, models|
         models.flatten!
@@ -109,7 +110,7 @@ module Brainstem
         # TODO: handle polymorphism here
         presented_primary_models = options[:primary_presenter].group_present(primary_models, selected_associations.map(&:name))
         struct[options[:brainstem_key]] += presented_primary_models
-        struct[:results] = presented_primary_models.map { |model| { :key => options[:brainstem_key].to_s, :id => model[:id] } }
+        struct['results'] = presented_primary_models.map { |model| { 'key' => options[:brainstem_key].to_s, 'id' => model['id'] } }
       end
 
       rewrite_keys_as_objects!(struct)
@@ -194,7 +195,7 @@ module Brainstem
     def run_filters(scope, options)
       extract_filters(options).each do |filter_name, arg|
         next if arg.nil?
-        filter_lambda = options[:primary_presenter].filters[filter_name][1]
+        filter_lambda = options[:primary_presenter].configuration[:filters][filter_name][1]
 
         if filter_lambda
           scope = filter_lambda.call(scope, arg)
@@ -210,7 +211,7 @@ module Brainstem
       filters_hash = {}
       run_defaults = options.fetch(:apply_default_filters) { true }
 
-      (options[:primary_presenter].filters || {}).each do |filter_name, filter|
+      (options[:primary_presenter].configuration[:filters] || {}).each do |filter_name, filter|
         requested = options[:params][filter_name]
         requested = requested.is_a?(Array) ? requested : (requested.present? ? requested.to_s : nil)
         requested = requested == "true" ? true : (requested == "false" ? false : requested)
@@ -223,8 +224,8 @@ module Brainstem
       filters_hash
     end
 
-    # Runs the current search_block and returns an array of [scope of the resulting ids, result count, result ids]
-    # If the search_block returns a falsy value a SearchUnavailableError is raised.
+    # Runs the current search block and returns an array of [scope of the resulting ids, result count, result ids]
+    # If the search block returns a falsy value a SearchUnavailableError is raised.
     # Your search block should return a list of ids and the count of ids found, or false if search is unavailable.
     def run_search(scope, includes, sort_name, direction, options)
       return scope unless searching? options
@@ -244,7 +245,7 @@ module Brainstem
 
       search_options.reverse_merge!(extract_filters(options))
 
-      result_ids, count = options[:primary_presenter].search_block.call(options[:params][:search], search_options)
+      result_ids, count = options[:primary_presenter].configuration[:search].call(options[:params][:search], search_options)
       if result_ids
         [scope.where(:id => result_ids ), count, result_ids]
       else
@@ -253,7 +254,7 @@ module Brainstem
     end
 
     def searching?(options)
-      options[:params][:search] && options[:primary_presenter].search_block.present?
+      options[:params][:search] && options[:primary_presenter].configuration[:search].present?
     end
 
     def order_for_search(records, ordered_search_ids)
@@ -286,17 +287,15 @@ module Brainstem
 
     def calculate_order_and_direction(options)
       sort_name, direction = calculate_sort_name_and_direction(options)
-      sort_orders = (options[:primary_presenter].sort_orders || {})
-      order = sort_orders[sort_name]
+      order = options[:primary_presenter].configuration[:sort_orders][sort_name]
 
       [order, direction]
     end
 
     def calculate_sort_name_and_direction(options)
-      default_column, default_direction = (options[:primary_presenter].default_sort_order || "updated_at:desc").split(":")
+      default_column, default_direction = (options[:primary_presenter].configuration[:default_sort_order] || "updated_at:desc").split(":")
       sort_name, direction = (options[:params][:order] || "").split(":")
-      sort_orders = options[:primary_presenter].sort_orders || {}
-      unless sort_name.present? && sort_orders[sort_name]
+      unless sort_name.present? && options[:primary_presenter].configuration[:sort_orders][sort_name]
         sort_name = default_column
         direction = default_direction
       end
@@ -324,8 +323,8 @@ module Brainstem
     end
 
     def rewrite_keys_as_objects!(struct)
-      (struct.keys - [:count, :results]).each do |key|
-        struct[key] = struct[key].inject({}) {|memo, obj| memo[obj[:id] || obj["id"] || "unknown_id"] = obj; memo }
+      (struct.keys - ['count', 'results']).each do |key|
+        struct[key] = struct[key].inject({}) {|memo, obj| memo[obj[:id] || obj['id'] || 'unknown_id'] = obj; memo }
       end
     end
 

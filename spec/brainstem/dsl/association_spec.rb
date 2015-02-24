@@ -13,7 +13,7 @@ describe Brainstem::DSL::Association do
       let(:options) { { brainstem_key: 'my_users' } }
 
       it 'returns it' do
-        expect(association.brainstem_key).to eq :my_users
+        expect(association.brainstem_key).to eq 'my_users'
       end
     end
 
@@ -24,7 +24,7 @@ describe Brainstem::DSL::Association do
       let(:target_class) { AwesomeUser }
 
       it 'returns it underscored and pluralized' do
-        expect(association.brainstem_key).to eq :awesome_users
+        expect(association.brainstem_key).to eq 'awesome_users'
       end
     end
 
@@ -36,7 +36,7 @@ describe Brainstem::DSL::Association do
 
       describe 'by default' do
         it 'returns the subclass name underscored and pluralized' do
-          expect(association.brainstem_key).to eq :awesomer_users
+          expect(association.brainstem_key).to eq 'awesomer_users'
         end
       end
 
@@ -44,7 +44,7 @@ describe Brainstem::DSL::Association do
         let(:options) { { sti_uses_base: true } }
 
         it 'returns the base class name underscored and pluralized' do
-          expect(association.brainstem_key).to eq :users
+          expect(association.brainstem_key).to eq 'users'
         end
       end
     end
@@ -65,7 +65,7 @@ describe Brainstem::DSL::Association do
 
     it 'fills the hash' do
       association.load_records_into_hash!([post1, post2], record_hash)
-      expect(record_hash[:users]).to eq [post1.user, post2.user]
+      expect(record_hash['users']).to eq [post1.user, post2.user]
     end
 
     context 'on a polymorphic association' do
@@ -78,9 +78,9 @@ describe Brainstem::DSL::Association do
 
       it 'fills the hash with the model names' do
         association.load_records_into_hash!([post1, post2], record_hash)
-        expect(record_hash[:sub_workspaces]).to eq [Workspace.first]
-        expect(record_hash[:workspaces]).to be_nil
-        expect(record_hash[:tasks]).to eq [Task.first]
+        expect(record_hash['sub_workspaces']).to eq [Workspace.first]
+        expect(record_hash['workspaces']).to be_nil
+        expect(record_hash['tasks']).to eq [Task.first]
       end
 
       describe 'using :sti_uses_base' do
@@ -88,16 +88,16 @@ describe Brainstem::DSL::Association do
 
         it 'fills the hash with the model names, using their base classes' do
           association.load_records_into_hash!([post1, post2], record_hash)
-          expect(record_hash[:sub_workspaces]).to be_nil
-          expect(record_hash[:workspaces]).to eq [Workspace.first]
-          expect(record_hash[:tasks]).to eq [Task.first]
+          expect(record_hash['sub_workspaces']).to be_nil
+          expect(record_hash['workspaces']).to eq [Workspace.first]
+          expect(record_hash['tasks']).to eq [Task.first]
         end
       end
     end
 
     it 'creates the key, even when no models are present' do
       association.load_records_into_hash!([], record_hash)
-      expect(record_hash[:users]).to eq []
+      expect(record_hash['users']).to eq []
     end
   end
 
