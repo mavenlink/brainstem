@@ -12,6 +12,7 @@ Task.create!(:id => 1, :workspace_id => 1, :name => "Buy milk")
 Task.create!(:id => 2, :workspace_id => 1, :name => "Buy bananas")
 Task.create!(:id => 3, :workspace_id => 1, :parent_id => 2, :name => "Green preferred")
 Task.create!(:id => 4, :workspace_id => 1, :parent_id => 2, :name => "One bunch")
+Task.create!(:id => 5, :workspace_id => 6, :name => "In another Workspace")
 
 Post.create!(:id => 1, :user_id => 1, :subject => Workspace.first, :body => "first post!")
 Post.create!(:id => 2, :user_id => 1, :subject => Task.first, :body => "this is important. get on it!")

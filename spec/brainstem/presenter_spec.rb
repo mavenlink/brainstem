@@ -119,18 +119,18 @@ describe Brainstem::Presenter do
 
       it 'provides any methods from given blocks to the lambda' do
         presenter.helper helper_module
-        expect(presenter.new.present_fields(model)['from_block']).to eq 'method_in_block'
+        expect(presenter.new.group_present([model]).first['from_block']).to eq 'method_in_block'
       end
 
       it 'provides any methods from given Modules to the lambda' do
         presenter.helper helper_module
-        expect(presenter.new.present_fields(model)['from_module']).to eq 'method_in_module'
+        expect(presenter.new.group_present([model]).first['from_module']).to eq 'method_in_module'
       end
 
       it 'allows methods in modules and blocks to see each other' do
         presenter.helper helper_module
-        expect(presenter.new.present_fields(model)['block_to_module']).to eq 'i am in a block, but can see method_in_module'
-        expect(presenter.new.present_fields(model)['module_to_block']).to eq 'i am in a module, but can see method_in_block'
+        expect(presenter.new.group_present([model]).first['block_to_module']).to eq 'i am in a block, but can see method_in_module'
+        expect(presenter.new.group_present([model]).first['module_to_block']).to eq 'i am in a module, but can see method_in_block'
       end
 
       it 'merges the blocks and modules into a combined helper' do
@@ -161,15 +161,15 @@ describe Brainstem::Presenter do
 
       it 'is inheritable' do
         presenter.helper helper_module
-        expect(sub_presenter.new.present_fields(model)['from_block']).to eq 'overridden method_in_block'
-        expect(sub_presenter.new.present_fields(model)['from_module']).to eq 'method_in_module'
-        expect(sub_presenter.new.present_fields(model)['block_to_module']).to eq 'i am in a block, but can see method_in_module'
-        expect(sub_presenter.new.present_fields(model)['module_to_block']).to eq 'i am in a module, but can see overridden method_in_block'
+        expect(sub_presenter.new.group_present([model]).first['from_block']).to eq 'overridden method_in_block'
+        expect(sub_presenter.new.group_present([model]).first['from_module']).to eq 'method_in_module'
+        expect(sub_presenter.new.group_present([model]).first['block_to_module']).to eq 'i am in a block, but can see method_in_module'
+        expect(sub_presenter.new.group_present([model]).first['module_to_block']).to eq 'i am in a module, but can see overridden method_in_block'
         sub_presenter.helper sub_helper_module
-        expect(sub_presenter.new.present_fields(model)['from_module']).to eq 'overridden method_in_module'
-        expect(sub_presenter.new.present_fields(model)['block_to_module']).to eq 'i am in a block, but can see overridden method_in_module'
-        expect(presenter.new.present_fields(model)['from_module']).to eq 'method_in_module'
-        expect(presenter.new.present_fields(model)['block_to_module']).to eq 'i am in a block, but can see method_in_module'
+        expect(sub_presenter.new.group_present([model]).first['from_module']).to eq 'overridden method_in_module'
+        expect(sub_presenter.new.group_present([model]).first['block_to_module']).to eq 'i am in a block, but can see overridden method_in_module'
+        expect(presenter.new.group_present([model]).first['from_module']).to eq 'method_in_module'
+        expect(presenter.new.group_present([model]).first['block_to_module']).to eq 'i am in a block, but can see method_in_module'
       end
 
       it 'caches the generated classes with inheritance' do
@@ -215,36 +215,36 @@ describe Brainstem::Presenter do
   end
 
   describe "presenting models" do
-    describe "#present_fields" do
+    describe "the field DSL" do
       let(:presenter) { WorkspacePresenter.new }
       let(:model) { Workspace.find(1) }
 
       it 'calls named methods' do
-        expect(presenter.present_fields(model)['title']).to eq model.title
+        expect(presenter.group_present([model]).first['title']).to eq model.title
       end
 
       it 'can call methods with :via' do
         presenter.configuration[:fields][:title].options[:via] = :description
-        expect(presenter.present_fields(model)['title']).to eq model.description
+        expect(presenter.group_present([model]).first['title']).to eq model.description
       end
 
       it 'can call a dynamic lambda' do
-        expect(presenter.present_fields(model)['dynamic_title']).to eq "title: #{model.title}"
+        expect(presenter.group_present([model]).first['dynamic_title']).to eq "title: #{model.title}"
       end
 
       it 'handles nesting' do
-        expect(presenter.present_fields(model)['permissions']['access_level']).to eq 2
+        expect(presenter.group_present([model]).first['permissions']['access_level']).to eq 2
       end
 
       describe 'handling of conditional fields' do
         it 'does not return conditional fields when their :if conditionals do not match' do
-          expect(presenter.present_fields(model)['secret']).to be_nil
-          expect(presenter.present_fields(model)['bob_title']).to be_nil
+          expect(presenter.group_present([model]).first['secret']).to be_nil
+          expect(presenter.group_present([model]).first['bob_title']).to be_nil
         end
 
         it 'returns conditional fields when their :if matches' do
           model.title = 'hello'
-          expect(presenter.present_fields(model)['hello_title']).to eq 'title is hello'
+          expect(presenter.group_present([model]).first['hello_title']).to eq 'title is hello'
         end
 
         it 'returns fields with the :if option only when all of the conditionals in that :if are true' do
@@ -254,13 +254,13 @@ describe Brainstem::Presenter do
               'not bob'
             end
           end
-          expect(presenter.present_fields(model)['secret']).to be_nil
+          expect(presenter.group_present([model]).first['secret']).to be_nil
           presenter.class.helper do
             def current_user
               'bob'
             end
           end
-          expect(presenter.present_fields(model)['secret']).to eq model.secret_info
+          expect(presenter.group_present([model]).first['secret']).to eq model.secret_info
         end
       end
     end
@@ -406,6 +406,16 @@ describe Brainstem::Presenter do
       it "should convert requested has_many associations (includes) into the <association>_ids format" do
         expect(@workspace.tasks.length).to be > 0
         expect(@presenter.group_present([@workspace], [:tasks]).first['task_ids']).to match_array(@workspace.tasks.map(&:id).map(&:to_s))
+      end
+
+      it "should allow has_many associations to work on groups of models" do
+        result = @presenter.group_present(Workspace.all.to_a, [:tasks])
+        expect(result.length).to eq Workspace.count
+        first_workspace_tasks = Workspace.first.tasks.pluck(:id).map(&:to_s)
+        last_workspace_tasks = Workspace.last.tasks.pluck(:id).map(&:to_s)
+        expect(last_workspace_tasks.length).to eq 1
+        expect(result.last['task_ids']).to eq last_workspace_tasks
+        expect(result.first['task_ids']).to eq first_workspace_tasks
       end
 
       it "should convert requested belongs_to and has_one associations into the <association>_id format when requested" do

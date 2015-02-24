@@ -48,58 +48,24 @@ module Brainstem
       raise "#present is now deprecated"
     end
 
-    # @api private
-    # Uses the fields DSL to output a presented model.
-    # @return [Hash]  A hash representation of the model.
-    def present_fields(model, conditional_cache = {}, helper_instance = fresh_helper_instance, result = {},
-                       fields = configuration[:fields], conditionals = configuration[:conditionals])
-      fields.each do |name, field|
-        case field
-          when DSL::Field
-            if field.conditionals_match?(model, conditionals, helper_instance, conditional_cache)
-              result[name] = field.run_on(model, helper_instance)
-            end
-          when DSL::Configuration
-            result[name] ||= {}
-            present_fields(model, conditional_cache, helper_instance, result[name], field, conditionals)
-          else
-            raise "Unknown Brianstem Field type encountered: #{field}"
-        end
-      end
-      result
-    end
-
-    # @api private
-    # Instantiate and return a new instance of the merged helper class for this presenter.
-    def fresh_helper_instance
-      self.class.merged_helper_class.new
-    end
-
-    # @api private
-    # Adds :id as a string from the given model.
-    def add_id!(model, struct)
-      if model.class.respond_to?(:primary_key)
-        struct['id'] = model[model.class.primary_key].to_s
-      end
-    end
-
-    # @api private
-    # Calls {#custom_preload}, and then {#present} and {#post_process}, for each model.
+    # Calls {#custom_preload} and then presents all models.
     def group_present(models, requested_associations = [], options = {})
       custom_preload models, requested_associations.map(&:to_s)
 
-      requested_associations_hash = requested_associations.inject({}) { |memo, association| memo[association] = true; memo }
-      reflections = models.first && Brainstem::PresenterCollection.reflections(models.first.class)
-
-      conditional_cache = {}
-      helper_instance = fresh_helper_instance
-      fields = configuration[:fields]
-      conditionals = configuration[:conditionals]
-      associations = configuration[:associations]
+      # It's slightly ugly, but more efficient if we pre-load everything we need and pass it through.
+      context = {
+        conditional_cache: {},
+        helper_instance: fresh_helper_instance,
+        fields: configuration[:fields],
+        conditionals: configuration[:conditionals],
+        associations: configuration[:associations],
+        reflections: models.first && Brainstem::PresenterCollection.reflections(models.first.class),
+        requested_associations_hash: requested_associations.inject({}) { |memo, association| memo[association] = true; memo }
+      }
 
       models.map do |model|
-        result = present_fields(model, conditional_cache, helper_instance, {}, fields, conditionals)
-        load_associations!(model, result, associations, requested_associations_hash, reflections, helper_instance)
+        result = present_fields(model, context, context[:fields])
+        load_associations!(model, result, context, options)
         add_id!(model, result)
         datetimes_to_json(result)
       end
@@ -117,8 +83,24 @@ module Brainstem
       end
     end
 
-    # Subclasses can define this if they wish. This method will be called before {#present}.
+    # Subclasses can define this if they wish. This method will be called by {#group_present}.
     def custom_preload(models, requested_associations = [])
+    end
+
+    protected
+
+    # @api private
+    # Instantiate and return a new instance of the merged helper class for this presenter.
+    def fresh_helper_instance
+      self.class.merged_helper_class.new
+    end
+
+    # @api private
+    # Adds :id as a string from the given model.
+    def add_id!(model, struct)
+      if model.class.respond_to?(:primary_key)
+        struct['id'] = model[model.class.primary_key].to_s
+      end
     end
 
     # @api private
@@ -141,15 +123,35 @@ module Brainstem
     end
 
     # @api private
+    # Uses the fields DSL to output a presented model.
+    # @return [Hash]  A hash representation of the model.
+    def present_fields(model, context, fields, result = {})
+      fields.each do |name, field|
+        case field
+          when DSL::Field
+            if field.conditionals_match?(model, context[:conditionals], context[:helper_instance], context[:conditional_cache])
+              result[name] = field.run_on(model, context[:helper_instance])
+            end
+          when DSL::Configuration
+            result[name] ||= {}
+            present_fields(model, context, field, result[name])
+          else
+            raise "Unknown Brianstem Field type encountered: #{field}"
+        end
+      end
+      result
+    end
+
+    # @api private
     # Makes sure that associations are loaded and converted into ids.
-    def load_associations!(model, struct, associations, requested_associations_hash, reflections, helper_instance)
-      associations.each do |name, association|
+    def load_associations!(model, struct, context, options)
+      context[:associations].each do |name, association|
         external_name = association.name
         method_name = association.method_name && association.method_name.to_s
         id_attr = method_name && "#{method_name}_id"
 
         if id_attr && model.class.columns_hash.has_key?(id_attr)
-          if association.polymorphic? && (reflection = reflections[method_name]) && reflection.options[:polymorphic]
+          if association.polymorphic? && (reflection = context[:reflections][method_name]) && reflection.options[:polymorphic]
             struct["#{external_name}_ref"] = begin
               if (id = model.send(id_attr)).present?
                 {
@@ -161,8 +163,8 @@ module Brainstem
           else
             struct["#{external_name}_id"] = to_s_except_nil(model.send(id_attr))
           end
-        elsif requested_associations_hash[external_name]
-          result = association.run_on(model, helper_instance)
+        elsif context[:requested_associations_hash][external_name]
+          result = association.run_on(model, context[:helper_instance])
           if result.is_a?(Array) || result.is_a?(ActiveRecord::Relation)
             struct["#{external_name.to_s.singularize}_ids"] = result.map {|a| to_s_except_nil(a.is_a?(ActiveRecord::Base) ? a.id : a) }
           else
