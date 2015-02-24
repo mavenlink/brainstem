@@ -26,7 +26,7 @@ module Brainstem
             if polymorphic?
               nil
             else
-              (options[:sti_uses_base] ? target_class.base_class : target_class).to_s.tableize
+              self.class.brainstem_key_for(target_class, options[:sti_uses_base])
             end
           end
         end
@@ -36,27 +36,12 @@ module Brainstem
         options[:dynamic] ? helper_instance.instance_exec(model, &options[:dynamic]) : model.send(method_name)
       end
 
-      def load_records_into_hash!(models, record_hash)
-        record_hash[brainstem_key] ||= [] if brainstem_key
-
-        models.each do |model|
-          association_models = Array(run_on(model))
-
-          if brainstem_key
-            record_hash[brainstem_key] += association_models
-          else
-            # Polymorphic associations' keys must be figured out now.
-            association_models.each do |model|
-              key = (options[:sti_uses_base] ? model.class.base_class : model.class).to_s.tableize
-              record_hash[key] ||= []
-              record_hash[key] << model
-            end
-          end
-        end
-      end
-
       def polymorphic?
         target_class == :polymorphic
+      end
+
+      def self.brainstem_key_for(klass, use_base = false)
+        (use_base ? klass.base_class : klass).to_s.tableize
       end
     end
   end

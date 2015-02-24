@@ -58,49 +58,6 @@ describe Brainstem::DSL::Association do
     end
   end
 
-  describe '#load_records_into_hash!' do
-    let(:record_hash) { { } }
-    let(:post1) { Post.all[0] }
-    let(:post2) { Post.all[1] }
-
-    it 'fills the hash' do
-      association.load_records_into_hash!([post1, post2], record_hash)
-      expect(record_hash['users']).to eq [post1.user, post2.user]
-    end
-
-    context 'on a polymorphic association' do
-      let(:target_class) { :polymorphic }
-      let(:name) { :subject }
-
-      before do
-        Workspace.find(1).update_attribute :type, 'SubWorkspace'
-      end
-
-      it 'fills the hash with the model names' do
-        association.load_records_into_hash!([post1, post2], record_hash)
-        expect(record_hash['sub_workspaces']).to eq [Workspace.first]
-        expect(record_hash['workspaces']).to be_nil
-        expect(record_hash['tasks']).to eq [Task.first]
-      end
-
-      describe 'using :sti_uses_base' do
-        let(:options) { { sti_uses_base: true } }
-
-        it 'fills the hash with the model names, using their base classes' do
-          association.load_records_into_hash!([post1, post2], record_hash)
-          expect(record_hash['sub_workspaces']).to be_nil
-          expect(record_hash['workspaces']).to eq [Workspace.first]
-          expect(record_hash['tasks']).to eq [Task.first]
-        end
-      end
-    end
-
-    it 'creates the key, even when no models are present' do
-      association.load_records_into_hash!([], record_hash)
-      expect(record_hash['users']).to eq []
-    end
-  end
-
   describe "#run_on" do
     context 'with no special options' do
       it 'calls the method by name on the model' do

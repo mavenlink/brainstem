@@ -84,33 +84,31 @@ module Brainstem
 
       primary_models = order_for_search(primary_models, ordered_search_ids) if searching?(options)
 
-      # Preload associations
-      perform_preloading primary_models, selected_associations
-
-      # Load request associations
-      # This is silly!  We end up running all dynamic associations twice!  Let's figure out how to do it later.
-      associated_models = gather_associations(primary_models, selected_associations)
-
       struct = { 'count' => count, options[:brainstem_key] => [], 'results' => [] }
 
-      associated_models.each do |brainstem_key, models|
-        models.flatten!
-        models.uniq!
-
-        if models.length > 0
-          # TODO: handle polymorphism here
-          presenter = for!(models.first.class)
-          struct[brainstem_key] = presenter.group_present(models)
-        else
-          struct[brainstem_key] = []
-        end
+      # Build top-level keys for all requested associations.
+      selected_associations.each do |association|
+        struct[association.brainstem_key] ||= [] if association.brainstem_key
       end
 
       if primary_models.length > 0
+        # Preload associations
+        perform_preloading primary_models, selected_associations
+
         # TODO: handle polymorphism here
-        presented_primary_models = options[:primary_presenter].group_present(primary_models, selected_associations.map(&:name))
+        associated_models = {}
+        presented_primary_models = options[:primary_presenter].group_present(primary_models,
+                                                                             selected_associations.map(&:name),
+                                                                             load_associations_into: associated_models)
+
         struct[options[:brainstem_key]] += presented_primary_models
         struct['results'] = presented_primary_models.map { |model| { 'key' => options[:brainstem_key].to_s, 'id' => model['id'] } }
+
+        associated_models.each do |brainstem_key, associated_models_hash|
+          presenter = for!(associated_models_hash.values.first.class)
+          struct[brainstem_key] ||= []
+          struct[brainstem_key] += presenter.group_present(associated_models_hash.values)
+        end
       end
 
       rewrite_keys_as_objects!(struct)
@@ -313,12 +311,6 @@ module Brainstem
             Brainstem::PresenterCollection.ar_preload(models, association_names_to_preload)
           end
         end
-      end
-    end
-
-    def gather_associations(models, selected_associations)
-      selected_associations.each.with_object({}) do |association, record_hash|
-        association.load_records_into_hash!(models, record_hash)
       end
     end
 

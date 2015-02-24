@@ -297,6 +297,7 @@ describe Brainstem::PresenterCollection do
           expect(result['posts'][Post.first.id.to_s]).to be_present
           expect(result['workspaces'][Workspace.first.id.to_s]).to be_present
           expect(result['tasks'][Task.first.id.to_s]).to be_present
+          expect(result['posts']['1']['subject_ref']).to eq({ 'id' => Post.find(1).subject.id.to_s, 'key' => Post.find(1).subject.class.table_name })
         end
 
         it "does not return an empty hash when none are found" do

@@ -150,6 +150,18 @@ module Brainstem
         method_name = association.method_name && association.method_name.to_s
         id_attr = method_name && "#{method_name}_id"
 
+        if context[:requested_associations_hash][external_name]
+          associated_models = association.run_on(model, context[:helper_instance])
+
+          if options[:load_associations_into]
+            Array(associated_models).flatten.each do |associated_model|
+              key = association.brainstem_key || DSL::Association.brainstem_key_for(associated_model.class, association.options[:sti_uses_base])
+              options[:load_associations_into][key] ||= {}
+              options[:load_associations_into][key][associated_model.id.to_s] = associated_model
+            end
+          end
+        end
+
         if id_attr && model.class.columns_hash.has_key?(id_attr)
           if association.polymorphic? && (reflection = context[:reflections][method_name]) && reflection.options[:polymorphic]
             struct["#{external_name}_ref"] = begin
@@ -164,11 +176,10 @@ module Brainstem
             struct["#{external_name}_id"] = to_s_except_nil(model.send(id_attr))
           end
         elsif context[:requested_associations_hash][external_name]
-          result = association.run_on(model, context[:helper_instance])
-          if result.is_a?(Array) || result.is_a?(ActiveRecord::Relation)
-            struct["#{external_name.to_s.singularize}_ids"] = result.map {|a| to_s_except_nil(a.is_a?(ActiveRecord::Base) ? a.id : a) }
+          if associated_models.is_a?(Array) || associated_models.is_a?(ActiveRecord::Relation)
+            struct["#{external_name.to_s.singularize}_ids"] = associated_models.map {|a| to_s_except_nil(a.is_a?(ActiveRecord::Base) ? a.id : a) }
           else
-            struct["#{external_name.to_s.singularize}_id"] = to_s_except_nil(result.is_a?(ActiveRecord::Base) ? result.id : result)
+            struct["#{external_name.to_s.singularize}_id"] = to_s_except_nil(associated_models.is_a?(ActiveRecord::Base) ? associated_models.id : associated_models)
           end
         end
       end
