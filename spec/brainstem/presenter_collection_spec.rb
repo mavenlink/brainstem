@@ -262,13 +262,16 @@ describe Brainstem::PresenterCollection do
       it "works with model methods that load records (but without preloading)" do
         result = @presenter_collection.presenting("workspaces", :params => { :include => "lead_user" }) { Workspace.order('id desc') }
         expect(result[:workspaces][Workspace.first.id.to_s]).to be_present
+        expect(result[:workspaces][Workspace.first.id.to_s][:lead_user_id]).to eq Workspace.first.lead_user.id.to_s
         expect(result[:users][Workspace.first.lead_user.id.to_s]).to be_present
       end
 
       it "can accept a lambda for the association and uses that when present" do
         result = @presenter_collection.presenting("users", :params => { :include => "odd_workspaces" }) { User.where(:id => 1) }
-        expect(result[:odd_workspaces][Workspace.first.id.to_s]).to be_present
-        expect(result[:users][Workspace.first.lead_user.id.to_s]).to be_present
+        expect(result[:users][User.first.id.to_s]).to be_present
+        odd_workspace_ids = User.first.workspaces.select { |w| w.id % 2 == 1 }.map(&:id).map(&:to_s)
+        expect(result[:users][User.first.id.to_s][:odd_workspace_ids]).to eq odd_workspace_ids
+        expect(result[:odd_workspaces].keys).to eq odd_workspace_ids
       end
 
       describe "restricted associations" do

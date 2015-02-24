@@ -336,6 +336,12 @@ describe Brainstem::Presenter do
         some_presenter = Class.new(Brainstem::Presenter) do
           presents Workspace
 
+          helper do
+            def helper_method(model)
+              Task.where(:workspace_id => model.id)[0..1]
+            end
+          end
+
           presenter do
             fields do
               field :updated_at, :datetime
@@ -347,7 +353,8 @@ describe Brainstem::Presenter do
               association :something, User, via: :user
               association :lead_user, User
               association :lead_user_with_lambda, User, dynamic: lambda { |model| model.user }
-              association :tasks_with_lambda, Task, dynamic: lambda { |model| Task.where(:workspace_id => model) }
+              association :tasks_with_lambda, Task, dynamic: lambda { |model| Task.where(:workspace_id => model.id) }
+              association :tasks_with_helper_lambda, Task, dynamic: lambda { |model| helper_method(model) }
               association :synthetic, :polymorphic
             end
           end
@@ -378,6 +385,10 @@ describe Brainstem::Presenter do
       it "handles associations provided with lambdas" do
         expect(@presenter.group_present([@workspace], [:lead_user_with_lambda]).first[:lead_user_with_lambda_id]).to eq(@workspace.lead_user.id.to_s)
         expect(@presenter.group_present([@workspace], [:tasks_with_lambda]).first[:tasks_with_lambda_ids]).to eq(@workspace.tasks.map(&:id).map(&:to_s))
+      end
+
+      it "handles helpers method calls in association lambdas" do
+        expect(@presenter.group_present([@workspace], [:tasks_with_helper_lambda]).first[:tasks_with_helper_lambda_ids]).to eq(@workspace.tasks.map(&:id).map(&:to_s)[0..1])
       end
 
       it "should return <association>_id fields when the given association ids exist on the model whether it is requested or not" do

@@ -159,17 +159,22 @@ module Brainstem
 
     # @api private
     # Calls {#custom_preload}, and then {#present} and {#post_process}, for each model.
-    def group_present(models, requested_associations = [])
+    def group_present(models, requested_associations = [], options = {})
       custom_preload models, requested_associations.map(&:to_s)
+
+      requested_associations_hash = requested_associations.inject({}) { |memo, association| memo[association] = true; memo }
+      reflections = models.first && Brainstem::PresenterCollection.reflections(models.first.class)
 
       conditional_cache = {}
       helper_instance = fresh_helper_instance
       fields = configuration[:fields]
       conditionals = configuration[:conditionals]
+      associations = configuration[:associations]
+
       models.map do |model|
         result = present_fields(model, conditional_cache, helper_instance, {}, fields, conditionals)
         add_id!(model, result)
-        load_associations!(model, result, requested_associations)
+        load_associations!(model, result, associations, requested_associations_hash, reflections, helper_instance)
         datetimes_to_json(result)
       end
     end
@@ -211,12 +216,8 @@ module Brainstem
 
     # @api private
     # Makes sure that associations are loaded and converted into ids.
-    def load_associations!(model, struct, requested_associations)
-      # TODO: optimize this out of the model loop
-      requested_associations_hash = requested_associations.inject({}) { |memo, association| memo[association] = true; memo }
-      reflections = Brainstem::PresenterCollection.reflections(model.class)
-
-      configuration[:associations].each do |name, association|
+    def load_associations!(model, struct, associations, requested_associations_hash, reflections, helper_instance)
+      associations.each do |name, association|
         external_name = association.name
         method_name = association.method_name && association.method_name.to_s
         id_attr = method_name && "#{method_name}_id"
@@ -235,7 +236,7 @@ module Brainstem
             struct["#{external_name}_id".to_sym] = to_s_except_nil(model.send(id_attr))
           end
         elsif requested_associations_hash[external_name]
-          result = association.run_on(model)
+          result = association.run_on(model, helper_instance)
           if result.is_a?(Array) || result.is_a?(ActiveRecord::Relation)
             struct["#{external_name.to_s.singularize}_ids".to_sym] = result.map {|a| to_s_except_nil(a.is_a?(ActiveRecord::Base) ? a.id : a) }
           else

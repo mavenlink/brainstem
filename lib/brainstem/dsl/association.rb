@@ -32,8 +32,8 @@ module Brainstem
         end
       end
 
-      def run_on(model)
-        options[:dynamic] ? options[:dynamic].call(model) : model.send(method_name)
+      def run_on(model, helper_instance = Object.new)
+        options[:dynamic] ? helper_instance.instance_exec(model, &options[:dynamic]) : model.send(method_name)
       end
 
       def load_records_into_hash!(models, record_hash)

@@ -121,10 +121,12 @@ describe Brainstem::DSL::Association do
     end
 
     context 'when given a dynamic lambda' do
-      let(:options) { { dynamic: lambda { |model| expect(model).to eq(:anything); :return_value } } }
+      let(:options) { { dynamic: lambda { |model| some_instance_method; :return_value } } }
 
-      it 'calls the lambda' do
-        expect(association.run_on(:anything)).to eq :return_value
+      it 'calls the lambda in the context of the given instance' do
+        instance = Object.new
+        mock(instance).some_instance_method
+        expect(association.run_on(:anything, instance)).to eq :return_value
       end
     end
   end
