@@ -6,36 +6,34 @@ describe Brainstem::PresenterValidator do
     Class.new(Brainstem::Presenter) do
       presents Workspace
 
-      presenter do
-        preload :lead_user
+      preload :lead_user
 
-        conditionals do
-          model :title_is_hello, lambda { workspace.title == 'hello' }, 'visible when the title is hello'
-          model :user_is_bob, lambda { current_user == 'bob' }, 'visible only to bob'
+      conditionals do
+        model :title_is_hello, lambda { |model| model.title == 'hello' }, 'visible when the title is hello'
+        request :user_is_bob, lambda { current_user == 'bob' }, 'visible only to bob'
+      end
+
+      fields do
+        field :title, :string
+        field :description, :string
+        field :updated_at, :datetime
+        field :secret, :string, 'a secret, via secret_info',
+              via: :secret_info,
+              if: [:user_is_bob, :title_is_hello]
+
+        with_options if: :user_is_bob do
+          field :bob_title, :string, 'another name for the title, only for Bob',
+                via: :title
         end
+      end
 
-        fields do
-          field :title, :string
-          field :description, :string
-          field :updated_at, :datetime
-          field :secret, :string, 'a secret, via secret_info',
-                via: :secret_info,
-                if: [:user_is_bob, :title_is_hello]
-
-          with_options if: :user_is_bob do
-            field :bob_title, :string, 'another name for the title, only for Bob',
-                  via: :title
-          end
-        end
-
-        associations do
-          association :tasks, Task, 'The Tasks in this Workspace',
-                      restrict_to_only: true
-          association :lead_user, User, 'The user who runs this Workspace'
-          association :subtasks, Task, 'Only Tasks in this Workspace that are subtasks',
-                      dynamic: lambda { |workspace| workspace.tasks.where('parent_id IS NOT NULL') },
-                      brainstem_key: 'sub_tasks'
-        end
+      associations do
+        association :tasks, Task, 'The Tasks in this Workspace',
+                    restrict_to_only: true
+        association :lead_user, User, 'The user who runs this Workspace'
+        association :subtasks, Task, 'Only Tasks in this Workspace that are subtasks',
+                    dynamic: lambda { |workspace| workspace.tasks.where('parent_id IS NOT NULL') },
+                    brainstem_key: 'sub_tasks'
       end
     end
   end
@@ -51,10 +49,7 @@ describe Brainstem::PresenterValidator do
 
   describe 'validating preload' do
     it 'adds an error if the requested preload does not exist on the presented class' do
-      presenter_class.presenter do
-        preload :foo
-      end
-
+      presenter_class.preload :foo
       expect(validator).not_to be_valid
       expect(validator.errors[:preload]).to eq ["not all presented classes respond to 'foo'"]
     end
@@ -68,11 +63,9 @@ describe Brainstem::PresenterValidator do
 
   describe 'validating fields' do
     it 'adds an error for any field that is not on all presented classes' do
-      presenter_class.presenter do
-        fields do
-          field :foo, :string
-          field :bar, :integer
-        end
+      presenter_class.fields do
+        field :foo, :string
+        field :bar, :integer
       end
 
       expect(validator).not_to be_valid
@@ -87,41 +80,33 @@ describe Brainstem::PresenterValidator do
     end
 
     it 'supports :via' do
-      presenter_class.presenter do
-        fields do
-          field :foo, :string, via: :title
-        end
+      presenter_class.fields do
+        field :foo, :string, via: :title
       end
 
       expect(validator).to be_valid
     end
 
     it 'supports dynamic fields' do
-      presenter_class.presenter do
-        fields do
-          field :foo, :string, dynamic: lambda { 2 }
-        end
+      presenter_class.fields do
+        field :foo, :string, dynamic: lambda { 2 }
       end
 
       expect(validator).to be_valid
     end
 
     it 'supports nested fields' do
-      presenter_class.presenter do
-        fields do
-          fields :permissions do
-            field :title, :string
-          end
+      presenter_class.fields do
+        fields :permissions do
+          field :title, :string
         end
       end
 
       expect(validator).to be_valid
 
-      presenter_class.presenter do
-        fields do
-          fields :permissions do
-            field :missing, :string
-          end
+      presenter_class.fields do
+        fields :permissions do
+          field :missing, :string
         end
       end
 
@@ -132,18 +117,14 @@ describe Brainstem::PresenterValidator do
     it "checks that any 'if' option has a matching conditional(s)" do
       expect(presenter_class.configuration[:conditionals][:title_is_hello]).to be_present
 
-      presenter_class.presenter do
-        fields do
-          field :title, :string, if: :title_is_hello
-        end
+      presenter_class.fields do
+        field :title, :string, if: :title_is_hello
       end
 
       expect(validator).to be_valid
 
-      presenter_class.presenter do
-        fields do
-          field :title, :string, if: [:title_is_hello, :wat]
-        end
+      presenter_class.fields do
+        field :title, :string, if: [:title_is_hello, :wat]
       end
 
       expect(validator).not_to be_valid
@@ -151,11 +132,9 @@ describe Brainstem::PresenterValidator do
     end
 
     it "checks conditionals on nested fields too" do
-      presenter_class.presenter do
-        fields do
-          fields :permissions do
-            field :title, :string, if: [:title_is_hello, :wat]
-          end
+      presenter_class.fields do
+        fields :permissions do
+          field :title, :string, if: [:title_is_hello, :wat]
         end
       end
 

@@ -852,15 +852,9 @@ describe Brainstem::PresenterCollection do
 
     describe "providing a specific Presenter with the :primary_presenter option" do
       it "overrides the infered presenter" do
-
-        pending
-        # helpers need to inherit!
-
         some_presenter_klass = Class.new(WorkspacePresenter) do
-          presenter do
-            fields do
-              field :secret_info, :string
-            end
+          fields do
+            field :secret_info, :string
           end
         end
 

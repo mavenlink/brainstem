@@ -9,13 +9,20 @@ module Brainstem
       extend ActiveSupport::Concern
       include Brainstem::Concerns::InheritableConfiguration
 
+      included do
+        configuration.array!(:preloads)
+        configuration.array!(:helpers)
+        configuration.nest!(:conditionals)
+        configuration.nest!(:fields)
+        configuration.nest!(:associations)
+      end
+
       class BaseBlock
         attr_accessor :configuration, :block_options
 
         def initialize(configuration, block_options = {}, &block)
           @configuration = configuration
           @block_options = block_options
-          setup_defaults!
           block.arity < 1 ? self.instance_eval(&block) : block.call(self) if block_given?
         end
 
@@ -29,41 +36,10 @@ module Brainstem
           klass.new(new_config, block_options.merge(new_options), &block)
         end
 
-        def setup_defaults!
-        end
-
         def parse_args(args)
           options = args.last.is_a?(Hash) ? args.pop : {}
           description = args.shift
           [description, options]
-        end
-      end
-
-      class PresenterBlock < BaseBlock
-        def preload(*args)
-          configuration.array!(:preloads).concat args
-        end
-
-        def conditionals(&block)
-          descend ConditionalsBlock, &block
-        end
-
-        def fields(&block)
-          descend FieldsBlock, configuration[:fields], &block
-        end
-
-        def associations(&block)
-          descend AssociationsBlock, &block
-        end
-
-        protected
-
-        def setup_defaults!
-          super
-          configuration.array!(:preloads)
-          configuration.nest!(:conditionals)
-          configuration.nest!(:fields)
-          configuration.nest!(:associations)
         end
       end
 
@@ -96,8 +72,32 @@ module Brainstem
       end
 
       module ClassMethods
-        def presenter(&block)
-          PresenterBlock.new(configuration, &block)
+        def preload(*args)
+          configuration.array!(:preloads).concat args
+        end
+
+        def conditionals(&block)
+          ConditionalsBlock.new(configuration, &block)
+        end
+
+        def fields(&block)
+          FieldsBlock.new(configuration[:fields], &block)
+        end
+
+        def associations(&block)
+          AssociationsBlock.new(configuration, &block)
+        end
+
+        # Declare a helper module or block whose methods will be available in dynamic fields and associations.
+        # TODO: make available inside sort and filter blocks
+        def helper(mod = nil, &block)
+          if mod
+            configuration[:helpers] << mod
+          end
+
+          if block
+            configuration[:helpers] << Module.new.tap { |mod| mod.module_eval(&block) }
+          end
         end
       end
     end

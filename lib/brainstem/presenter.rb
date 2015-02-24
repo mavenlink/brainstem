@@ -82,36 +82,21 @@ module Brainstem
       @search_block
     end
 
-    # Declares a helper module whose methods will be available in instances of the presenter class and available inside sort and filter blocks.
-    # @param [Module] mod A module whose methods will be made available to filter and sort blocks, as well as inside the {#present} method.
-    # @return [self]
-    def self.helper(mod = nil, &block)
-      @helper_class = nil
-      @helpers ||= []
-
-      if mod
-        @helpers << mod
-      end
-
-      if block
-        @helpers << Module.new.tap { |mod| mod.module_eval(&block) }
-      end
-
-      # include mod
-      # extend mod
-    end
-
     def self.merged_helper_class
-      @helper_class ||= Class.new.tap do |klass|
-        (@helpers || []).each do |helper|
-          klass.send :include, helper
+      @helper_classes ||= {}
+
+      @helper_classes[configuration[:helpers].to_a.map(&:object_id)] ||= begin
+        Class.new.tap do |klass|
+          (configuration[:helpers] || []).each do |helper|
+            klass.send :include, helper
+          end
         end
       end
     end
 
     def self.reset!
       clear_configuration!
-      @helper_class = @helpers = @presents = @default_sort_order = @sort_orders = @filters = @search_block = nil
+      @helper_classes = @presents = @default_sort_order = @sort_orders = @filters = @search_block = nil
     end
 
 
@@ -173,8 +158,8 @@ module Brainstem
 
       models.map do |model|
         result = present_fields(model, conditional_cache, helper_instance, {}, fields, conditionals)
-        add_id!(model, result)
         load_associations!(model, result, associations, requested_associations_hash, reflections, helper_instance)
+        add_id!(model, result)
         datetimes_to_json(result)
       end
     end

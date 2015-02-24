@@ -1,42 +1,40 @@
 require 'spec_helper'
 require 'brainstem/concerns/presenter_dsl'
 
-# presenter do
-#   preload :lead_user
+# preload :lead_user
 #
-#   conditionals do
-#     model   :title_is_hello, lambda { workspace.title == 'hello' }, 'visible when the title is hello'
-#     request :user_is_bob, lambda { current_user.username == 'bob' }, 'visible only to bob'
+# conditionals do
+#   model   :title_is_hello, lambda { workspace.title == 'hello' }, 'visible when the title is hello'
+#   request :user_is_bob, lambda { current_user.username == 'bob' }, 'visible only to bob'
+# end
+#
+# fields do
+#   field :title, :string
+#   field :description, :string
+#   field :updated_at, :datetime
+#   field :dynamic_title, :string, dynamic: lambda { |model| model.title }
+#   field :secret, :string, 'a secret, via secret_info',
+#         via: :secret_info,
+#         if: [:user_is_bob, :title_is_hello]
+#
+#   with_options if: :user_is_bob do
+#     field :bob_title, :string, 'another name for the title, only for Bob',
+#           via: :title
 #   end
-#
-#   fields do
-#     field :title, :string
-#     field :description, :string
-#     field :updated_at, :datetime
-#     field :dynamic_title, :string, dynamic: lambda { |model| model.title }
-#     field :secret, :string, 'a secret, via secret_info',
-#           via: :secret_info,
-#           if: [:user_is_bob, :title_is_hello]
-#
-#     with_options if: :user_is_bob do
-#       field :bob_title, :string, 'another name for the title, only for Bob',
-#             via: :title
-#     end
-#     fields :nested_permissions do
-#       field :something_title, :string, via: :title
-#       field :random, :number, dynamic: lambda { rand }
-#     end
+#   fields :nested_permissions do
+#     field :something_title, :string, via: :title
+#     field :random, :number, dynamic: lambda { rand }
 #   end
+# end
 #
-#   associations do
-#     association :tasks, Task, 'The Tasks in this Workspace',
-#                 restrict_to_only: true
-#     association :lead_user, User, 'The user who runs this Workspace'
-#     association :subtasks, Task, 'Only Tasks in this Workspace that are subtasks',
-#                 dynamic: lambda { |workspace| workspace.tasks.where('parent_id IS NOT NULL') },
-#                 brainstem_key: 'sub_tasks'
-#     association :something, :polymorphic
-#   end
+# associations do
+#   association :tasks, Task, 'The Tasks in this Workspace',
+#               restrict_to_only: true
+#   association :lead_user, User, 'The user who runs this Workspace'
+#   association :subtasks, Task, 'Only Tasks in this Workspace that are subtasks',
+#               dynamic: lambda { |workspace| workspace.tasks.where('parent_id IS NOT NULL') },
+#               brainstem_key: 'sub_tasks'
+#   association :something, :polymorphic
 # end
 
 describe Brainstem::Concerns::PresenterDSL do
@@ -49,16 +47,16 @@ describe Brainstem::Concerns::PresenterDSL do
   describe 'the presenter block configuration' do
     describe '#preload directive' do
       it 'builds a list of associations to preload' do
-        presenter_class.presenter { preload :tasks }
+        presenter_class.preload :tasks
         expect(presenter_class.configuration[:preloads].to_a).to eq [:tasks]
-        presenter_class.presenter { preload(lead_user: { workspaces: [:lead_user, :tasks] }) }
+        presenter_class.preload(lead_user: { workspaces: [:lead_user, :tasks] })
         expect(presenter_class.configuration[:preloads].to_a).to eq [ :tasks, lead_user: { workspaces: [:lead_user, :tasks] } ]
       end
 
       it 'is inherited' do
-        presenter_class.presenter { preload :tasks }
+        presenter_class.preload :tasks
         subclass = Class.new(presenter_class)
-        subclass.presenter { preload :lead_user }
+        subclass.preload :lead_user
         expect(presenter_class.configuration[:preloads].to_a).to eq [:tasks]
         expect(subclass.configuration[:preloads].to_a).to eq [:tasks, :lead_user]
       end
@@ -66,11 +64,9 @@ describe Brainstem::Concerns::PresenterDSL do
 
     describe 'the conditional block' do
       before do
-        presenter_class.presenter do
-          conditionals do
-            model      :title_is_hello, lambda { workspace.title == 'hello' }, 'visible when the title is hello'
-            request    :user_is_bob, lambda { current_user == 'bob' }, 'visible only to bob'
-          end
+        presenter_class.conditionals do
+          model      :title_is_hello, lambda { workspace.title == 'hello' }, 'visible when the title is hello'
+          request    :user_is_bob, lambda { current_user == 'bob' }, 'visible only to bob'
         end
       end
 
@@ -86,11 +82,9 @@ describe Brainstem::Concerns::PresenterDSL do
 
       it 'is inherited and overridable' do
         subclass = Class.new(presenter_class)
-        subclass.presenter do
-          conditionals do
-            model :silly_conditional, lambda { rand > 0.5 }, 'visible half the time'
-            model :title_is_hello, lambda { workspace.title == 'HELLO' }, 'visible when the title is hello (in all caps)'
-          end
+        subclass.conditionals do
+          model :silly_conditional, lambda { rand > 0.5 }, 'visible half the time'
+          model :title_is_hello, lambda { workspace.title == 'HELLO' }, 'visible when the title is hello (in all caps)'
         end
         expect(presenter_class.configuration[:conditionals].keys).to eq [:title_is_hello, :user_is_bob]
         expect(subclass.configuration[:conditionals].keys).to eq [:title_is_hello, :user_is_bob, :silly_conditional]
@@ -101,22 +95,20 @@ describe Brainstem::Concerns::PresenterDSL do
 
     describe 'the fields block' do
       before do
-        presenter_class.presenter do
-          fields do
-            field :updated_at, :datetime
-            field :dynamic_title, :string, dynamic: lambda { |model| model.title }
-            field :secret, :string,
-                  via: :secret_info,
-                  if: [:user_is_bob, :title_is_hello]
+        presenter_class.fields do
+          field :updated_at, :datetime
+          field :dynamic_title, :string, dynamic: lambda { |model| model.title }
+          field :secret, :string,
+                via: :secret_info,
+                if: [:user_is_bob, :title_is_hello]
 
-            with_options if: :user_is_bob do
-              field :bob_title, :string, 'another name for the title, only for Bob',
-                    via: :title
-            end
-            fields :nested_permissions do
-              field :something_title, :string, via: :title
-              field :random, :number, dynamic: lambda { rand }
-            end
+          with_options if: :user_is_bob do
+            field :bob_title, :string, 'another name for the title, only for Bob',
+                  via: :title
+          end
+          fields :nested_permissions do
+            field :something_title, :string, via: :title
+            field :random, :number, dynamic: lambda { rand }
           end
         end
       end
@@ -144,12 +136,10 @@ describe Brainstem::Concerns::PresenterDSL do
 
       it 'is inherited and overridable' do
         subclass = Class.new(presenter_class)
-        subclass.presenter do
-          fields do
-            field :title, :string
-            with_options if: [:some_condition, :some_other_condition] do
-              field :updated_at, :datetime, 'this time I have a description and condition'
-            end
+        subclass.fields do
+          field :title, :string
+          with_options if: [:some_condition, :some_other_condition] do
+            field :updated_at, :datetime, 'this time I have a description and condition'
           end
         end
         expect(presenter_class.configuration[:fields].keys).to match_array [:updated_at, :dynamic_title,
@@ -164,19 +154,17 @@ describe Brainstem::Concerns::PresenterDSL do
 
       it 'allows nesting to be inherited and overridden too' do
         subclass = Class.new(presenter_class)
-        subclass.presenter do
-          fields do
-            fields :nested_permissions do
-              field :something_title, :number, via: :title
-              field :new, :string, via: :title
-              fields :deeper do
-                field :something, :string, via: :title
-              end
-            end
-
-            fields :new_nested_permissions do
+        subclass.fields do
+          fields :nested_permissions do
+            field :something_title, :number, via: :title
+            field :new, :string, via: :title
+            fields :deeper do
               field :something, :string, via: :title
             end
+          end
+
+          fields :new_nested_permissions do
+            field :something, :string, via: :title
           end
         end
         expect(presenter_class.configuration[:fields].keys).to match_array [:updated_at, :dynamic_title, :secret,
@@ -200,15 +188,13 @@ describe Brainstem::Concerns::PresenterDSL do
 
     describe 'the associations block' do
       before do
-        presenter_class.presenter do
-          associations do
-            association :tasks, Task, 'The Tasks in this Workspace',
-                        restrict_to_only: true
-            association :subtasks, Task, 'Only Tasks in this Workspace that are subtasks',
-                        dynamic: lambda { |workspace| workspace.tasks.where('parent_id IS NOT NULL') },
-                        brainstem_key: 'sub_tasks'
-            association :something, :polymorphic
-          end
+        presenter_class.associations do
+          association :tasks, Task, 'The Tasks in this Workspace',
+                      restrict_to_only: true
+          association :subtasks, Task, 'Only Tasks in this Workspace that are subtasks',
+                      dynamic: lambda { |workspace| workspace.tasks.where('parent_id IS NOT NULL') },
+                      brainstem_key: 'sub_tasks'
+          association :something, :polymorphic
         end
       end
 
@@ -226,11 +212,9 @@ describe Brainstem::Concerns::PresenterDSL do
 
       it 'is inherited and overridable' do
         subclass = Class.new(presenter_class)
-        subclass.presenter do
-          associations do
-            association :tasks, Task, 'The Tasks in this Workspace'
-            association :lead_user, User, 'The user who runs this Workspace'
-          end
+        subclass.associations do
+          association :tasks, Task, 'The Tasks in this Workspace'
+          association :lead_user, User, 'The user who runs this Workspace'
         end
 
         expect(presenter_class.configuration[:associations].keys).to match_array [:tasks, :subtasks, :something]

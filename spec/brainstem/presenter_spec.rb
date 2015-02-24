@@ -65,6 +65,7 @@ describe Brainstem::Presenter do
 
     describe ".helper" do
       let(:model) { Workspace.first }
+
       let(:presenter) do
         Class.new(Brainstem::Presenter) do
           helper do
@@ -77,12 +78,20 @@ describe Brainstem::Presenter do
             end
           end
 
-          presenter do
-            fields do
-              field :from_module, :string, dynamic: lambda { method_in_module }
-              field :from_block, :string, dynamic: lambda { method_in_block }
-              field :block_to_module, :string, dynamic: lambda { block_to_module }
-              field :module_to_block, :string, dynamic: lambda { module_to_block }
+          fields do
+            field :from_module, :string, dynamic: lambda { method_in_module }
+            field :from_block, :string, dynamic: lambda { method_in_block }
+            field :block_to_module, :string, dynamic: lambda { block_to_module }
+            field :module_to_block, :string, dynamic: lambda { module_to_block }
+          end
+        end
+      end
+
+      let(:sub_presenter) do
+        Class.new(presenter) do
+          helper do
+            def method_in_block
+              'overridden method_in_block'
             end
           end
         end
@@ -96,6 +105,14 @@ describe Brainstem::Presenter do
 
           def module_to_block
             'i am in a module, but can see ' + method_in_block
+          end
+        end
+      end
+
+      let(:sub_helper_module) do
+        Module.new do
+          def method_in_module
+            'overridden method_in_module'
           end
         end
       end
@@ -140,6 +157,31 @@ describe Brainstem::Presenter do
         class4 = presenter.merged_helper_class
         expect(class1).not_to eq class3
         expect(class3).to eq class4
+      end
+
+      it 'is inheritable' do
+        presenter.helper helper_module
+        expect(sub_presenter.new.present_fields(model)[:from_block]).to eq 'overridden method_in_block'
+        expect(sub_presenter.new.present_fields(model)[:from_module]).to eq 'method_in_module'
+        expect(sub_presenter.new.present_fields(model)[:block_to_module]).to eq 'i am in a block, but can see method_in_module'
+        expect(sub_presenter.new.present_fields(model)[:module_to_block]).to eq 'i am in a module, but can see overridden method_in_block'
+        sub_presenter.helper sub_helper_module
+        expect(sub_presenter.new.present_fields(model)[:from_module]).to eq 'overridden method_in_module'
+        expect(sub_presenter.new.present_fields(model)[:block_to_module]).to eq 'i am in a block, but can see overridden method_in_module'
+        expect(presenter.new.present_fields(model)[:from_module]).to eq 'method_in_module'
+        expect(presenter.new.present_fields(model)[:block_to_module]).to eq 'i am in a block, but can see method_in_module'
+      end
+
+      it 'caches the generated classes with inheritance' do
+        class1 = presenter.merged_helper_class
+        class2 = sub_presenter.merged_helper_class
+        expect(presenter.merged_helper_class).to eq class1
+        expect(sub_presenter.merged_helper_class).to eq class2
+
+        presenter.helper helper_module
+
+        expect(presenter.merged_helper_class).not_to eq class1
+        expect(sub_presenter.merged_helper_class).not_to eq class2
       end
     end
 
@@ -228,10 +270,8 @@ describe Brainstem::Presenter do
         post_presenter = Class.new(Brainstem::Presenter) do
           presents Post
 
-          presenter do
-            fields do
-              field :body, :string
-            end
+          fields do
+            field :body, :string
           end
         end
 
@@ -249,15 +289,13 @@ describe Brainstem::Presenter do
     describe "converting dates and times" do
       it "should convert all Time-and-date-like objects to iso8601" do
         presenter = Class.new(Brainstem::Presenter) do
-          presenter do
-            fields do
+          fields do
+            field :time, :datetime, dynamic: lambda { Time.now }
+            field :date, :date, dynamic: lambda { Date.new }
+            fields :recursion do
               field :time, :datetime, dynamic: lambda { Time.now }
-              field :date, :date, dynamic: lambda { Date.new }
-              fields :recursion do
-                field :time, :datetime, dynamic: lambda { Time.now }
-                field :something, :datetime, dynamic: lambda { [Time.now, :else] }
-                field :foo, :string, dynamic: lambda { :bar }
-              end
+              field :something, :datetime, dynamic: lambda { [Time.now, :else] }
+              field :foo, :string, dynamic: lambda { :bar }
             end
           end
         end
@@ -280,16 +318,14 @@ describe Brainstem::Presenter do
         some_presenter = Class.new(Brainstem::Presenter) do
           presents Post
 
-          presenter do
-            fields do
-              field :body, :string
-            end
+          fields do
+            field :body, :string
+          end
 
-            associations do
-              association :subject, :polymorphic
-              association :another_subject, :polymorphic, via: :subject
-              association :forced_model, Workspace, via: :subject
-            end
+          associations do
+            association :subject, :polymorphic
+            association :another_subject, :polymorphic, via: :subject
+            association :forced_model, Workspace, via: :subject
           end
         end
 
@@ -342,21 +378,19 @@ describe Brainstem::Presenter do
             end
           end
 
-          presenter do
-            fields do
-              field :updated_at, :datetime
-            end
+          fields do
+            field :updated_at, :datetime
+          end
 
-            associations do
-              association :tasks, Task
-              association :user, User
-              association :something, User, via: :user
-              association :lead_user, User
-              association :lead_user_with_lambda, User, dynamic: lambda { |model| model.user }
-              association :tasks_with_lambda, Task, dynamic: lambda { |model| Task.where(:workspace_id => model.id) }
-              association :tasks_with_helper_lambda, Task, dynamic: lambda { |model| helper_method(model) }
-              association :synthetic, :polymorphic
-            end
+          associations do
+            association :tasks, Task
+            association :user, User
+            association :something, User, via: :user
+            association :lead_user, User
+            association :lead_user_with_lambda, User, dynamic: lambda { |model| model.user }
+            association :tasks_with_lambda, Task, dynamic: lambda { |model| Task.where(:workspace_id => model.id) }
+            association :tasks_with_helper_lambda, Task, dynamic: lambda { |model| helper_method(model) }
+            association :synthetic, :polymorphic
           end
         end
 
@@ -423,12 +457,10 @@ describe Brainstem::Presenter do
   describe '#allowed_associations' do
     let(:presenter_class) do
       Class.new(Brainstem::Presenter) do
-        presenter do
-          associations do
-            association :user, User
-            association :workspace, Workspace
-            association :task, Task, restrict_to_only: true
-          end
+        associations do
+          association :user, User
+          association :workspace, Workspace
+          association :task, Task, restrict_to_only: true
         end
       end
     end
