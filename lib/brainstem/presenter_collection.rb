@@ -54,11 +54,11 @@ module Brainstem
 
       if searching? options
         # Search
-        sort_name, direction = calculate_sort_name_and_direction options
+        sort_name, direction = options[:primary_presenter].calculate_sort_name_and_direction options[:params]
         scope, count, ordered_search_ids = run_search(scope, selected_associations.map(&:name).map(&:to_s), sort_name, direction, options)
       else
         # Filter
-        scope = options[:primary_presenter].run_filters(scope, options[:params], options)
+        scope = options[:primary_presenter].apply_filters_to_scope(scope, options[:params], options)
 
         if options[:params][:only].present?
           # Handle Only
@@ -71,7 +71,7 @@ module Brainstem
         count = count.keys.length if count.is_a?(Hash)
 
         # Ordering
-        scope = handle_ordering scope, options
+        scope = options[:primary_presenter].apply_ordering_to_scope(scope, options[:params])
       end
 
       # Load models!
@@ -236,37 +236,6 @@ module Brainstem
       end
 
       ordered_records
-    end
-
-    def handle_ordering(scope, options)
-      order, direction = calculate_order_and_direction(options)
-
-      case order
-        when Proc
-          order.call(scope, direction)
-        when nil
-          scope
-        else
-          scope.order(order.to_s + " " + direction)
-      end
-    end
-
-    def calculate_order_and_direction(options)
-      sort_name, direction = calculate_sort_name_and_direction(options)
-      order = options[:primary_presenter].configuration[:sort_orders][sort_name]
-
-      [order, direction]
-    end
-
-    def calculate_sort_name_and_direction(options)
-      default_column, default_direction = (options[:primary_presenter].configuration[:default_sort_order] || "updated_at:desc").split(":")
-      sort_name, direction = (options[:params][:order] || "").split(":")
-      unless sort_name.present? && options[:primary_presenter].configuration[:sort_orders][sort_name]
-        sort_name = default_column
-        direction = default_direction
-      end
-
-      [sort_name, direction == 'desc' ? 'desc' : 'asc']
     end
 
     def perform_preloading(models, selected_associations)

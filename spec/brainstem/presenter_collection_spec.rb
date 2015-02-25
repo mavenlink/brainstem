@@ -539,12 +539,12 @@ describe Brainstem::PresenterCollection do
           end
 
           it "does not apply filters" do
-            mock(@presenter_collection).run_filters(anything, anything).times(0)
+            mock(@presenter_collection).apply_filters_to_scope(anything, anything).times(0)
             result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
           end
 
           it "does not apply ordering" do
-            mock(@presenter_collection).handle_ordering(anything, anything).times(0)
+            mock.any_instance_of(Brainstem::Presenter).apply_ordering_to_scope(anything, anything).times(0)
             result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
           end
 
@@ -831,6 +831,20 @@ describe Brainstem::PresenterCollection do
         # Desc
         result = @presenter_collection.presenting("workspaces", :params => { :order => "id:desc" }) { Workspace.where("id is not null") }
         expect(result['results'].map {|i| result['workspaces'][i['id']]['description'] }).to eq(%w(3 c 2 b 1 a))
+      end
+
+      it "runs procs in the context of any provided helpers" do
+        WorkspacePresenter.helper do
+          def some_method
+          end
+        end
+
+        called = false
+        WorkspacePresenter.sort_order(:id) { |scope, direction| some_method; called = true; scope.order("workspaces.id #{direction}") }
+        WorkspacePresenter.default_sort_order("id:asc")
+
+        result = @presenter_collection.presenting("workspaces") { Workspace.where("id is not null") }
+        expect(called).to be true
       end
     end
 

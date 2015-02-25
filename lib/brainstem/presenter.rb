@@ -107,7 +107,7 @@ module Brainstem
     end
 
     # Given user params, build a hash of validated filter names to their unsanitized arguments.
-    def run_filters(scope, user_params, options)
+    def apply_filters_to_scope(scope, user_params, options)
       helper_instance = fresh_helper_instance
 
       extract_filters(user_params, options).each do |filter_name, filter_arg|
@@ -121,6 +121,33 @@ module Brainstem
       end
 
       scope
+    end
+
+    # Given user params, apply a validated sort order to the given scope.
+    def apply_ordering_to_scope(scope, user_params)
+      sort_name, direction = calculate_sort_name_and_direction(user_params)
+      order = configuration[:sort_orders][sort_name]
+
+      case order
+        when Proc
+          fresh_helper_instance.instance_exec(scope, direction, &order)
+        when nil
+          scope
+        else
+          scope.order(order.to_s + " " + direction)
+      end
+    end
+
+    # Clean and validate a sort order and direction from user params.
+    def calculate_sort_name_and_direction(user_params = {})
+      default_column, default_direction = (configuration[:default_sort_order] || "updated_at:desc").split(":")
+      sort_name, direction = (user_params['order'] || "").split(":")
+      unless sort_name.present? && configuration[:sort_orders][sort_name]
+        sort_name = default_column
+        direction = default_direction
+      end
+
+      [sort_name, direction == 'desc' ? 'desc' : 'asc']
     end
 
     protected

@@ -351,7 +351,7 @@ describe Brainstem::Presenter do
     end
   end
 
-  describe "#run_filters" do
+  describe "#apply_filters_to_scope" do
     let(:presenter_class) { WorkspacePresenter }
     let(:presenter) { presenter_class.new }
     let(:scope) { Workspace.where(nil) }
@@ -365,15 +365,79 @@ describe Brainstem::Presenter do
     end
 
     it 'extracts valid filters from the params' do
-      presenter.run_filters(scope, params, options)
+      presenter.apply_filters_to_scope(scope, params, options)
     end
 
     it 'runs lambdas in the scope of the helper instance' do
-      expect(presenter.run_filters(scope, params, options).to_sql).to match(/id.\s*=\s*6/)
+      expect(presenter.apply_filters_to_scope(scope, params, options).to_sql).to match(/id.\s*=\s*6/)
     end
 
     it 'sends symbols to the scope' do
-      expect(presenter.run_filters(scope, params, options).to_sql).to match(/id.\s*=\s*2/)
+      expect(presenter.apply_filters_to_scope(scope, params, options).to_sql).to match(/id.\s*=\s*2/)
+    end
+  end
+
+  describe "#apply_ordering_to_scope" do
+    let(:presenter_class) { WorkspacePresenter }
+    let(:presenter) { presenter_class.new }
+    let(:scope) { Workspace.where(nil) }
+
+    it 'uses #calculate_sort_name_and_direction to extract a sort name and direction from user params' do
+      presenter_class.sort_order :title, "workspaces.title"
+      mock(presenter).calculate_sort_name_and_direction('order' => 'title:desc') { ['title', 'desc'] }
+      presenter.apply_ordering_to_scope(scope, 'order' => 'title:desc')
+    end
+
+    it 'runs procs in the context of any helpers' do
+      presenter_class.helper do
+        def some_method
+        end
+      end
+
+      direction = nil
+      presenter_class.sort_order(:title) do |scope, d|
+        some_method
+        direction = d
+        scope
+      end
+      presenter.apply_ordering_to_scope(scope, 'order' => 'title:asc')
+      expect(direction).to eq 'asc'
+    end
+
+    it 'applies the named ordering in the given direction' do
+      direction = nil
+      presenter_class.sort_order :title, 'workspaces.title'
+      expect(presenter.apply_ordering_to_scope(scope, 'order' => 'title:asc').to_sql).to match(/order by workspaces.title asc/i)
+    end
+  end
+
+  describe "#calculate_sort_name_and_direction" do
+    let(:presenter_class) { WorkspacePresenter }
+    let(:presenter) { presenter_class.new }
+
+    it 'uses default_sort_order by default when present' do
+      presenter_class.default_sort_order 'foo:asc'
+      expect(presenter.calculate_sort_name_and_direction).to eq ['foo', 'asc']
+    end
+
+    it 'uses updated_at:desc when no default has been set' do
+      expect(presenter.calculate_sort_name_and_direction).to eq ['updated_at', 'desc']
+    end
+
+    it 'ignores unknown sorts' do
+      presenter_class.sort_order :foo, 'workspaces.foo'
+      expect(presenter.calculate_sort_name_and_direction('order' => 'hello:desc')).to eq ['updated_at', 'desc']
+      expect(presenter.calculate_sort_name_and_direction('order' => 'foo:desc')).to eq ['foo', 'desc']
+    end
+
+    it 'sanitizes the direction' do
+      presenter_class.sort_order :foo, 'workspaces.foo'
+      expect(presenter.calculate_sort_name_and_direction('order' => 'foo:drop table')).to eq ['foo', 'asc']
+      expect(presenter.calculate_sort_name_and_direction('order' => 'foo:')).to eq ['foo', 'asc']
+      expect(presenter.calculate_sort_name_and_direction('order' => 'foo:hi')).to eq ['foo', 'asc']
+      expect(presenter.calculate_sort_name_and_direction('order' => 'foo:DESCE')).to eq ['foo', 'asc']
+      expect(presenter.calculate_sort_name_and_direction('order' => 'foo:asc')).to eq ['foo', 'asc']
+      expect(presenter.calculate_sort_name_and_direction('order' => 'foo:;;;droptable::;;')).to eq ['foo', 'asc']
     end
   end
 
