@@ -362,32 +362,32 @@ describe Brainstem::PresenterCollection do
       end
 
       it "converts boolean parameters from strings to booleans" do
-        WorkspacePresenter.filter(:owned_by_bob) { |scope, boolean| boolean ? scope.where(:user_id => bob.id) : scope.where(:user_id => jane.id) }
+        jane_id = jane.id
+        bob_id = bob.id
+        WorkspacePresenter.filter(:owned_by_bob) { |scope, boolean| boolean ? scope.where(:user_id => bob_id) : scope.where(:user_id => jane_id) }
         result = @presenter_collection.presenting("workspaces", :params => { :owned_by_bob => "false" }) { Workspace.where(nil) }
         expect(result['workspaces'].values.find { |workspace| workspace['title'].include?("jane") }).to be
         expect(result['workspaces'].values.find { |workspace| workspace['title'].include?("bob") }).not_to be
       end
 
       it "ensures arguments are strings if they are not arrays" do
-        filter_was_run = false
-        WorkspacePresenter.filter(:owned_by_bob) do |scope, string|
-          filter_was_run = true
-          expect(string).to be_a(String)
+        string = nil
+        WorkspacePresenter.filter(:owned_by_bob) do |scope, arg|
+          string = arg
           scope
         end
         @presenter_collection.presenting("workspaces", :params => { :owned_by_bob => { :wut => "is this?" } }) { Workspace.where(nil) }
-        expect(filter_was_run).to be_truthy
+        expect(string).to be_truthy
       end
 
       it "preserves array arguments" do
-        filter_was_run = false
-        WorkspacePresenter.filter(:owned_by_bob) do |scope, array|
-          filter_was_run = true
-          expect(array).to be_a(Array)
+        array = nil
+        WorkspacePresenter.filter(:owned_by_bob) do |scope, arg|
+          array = arg
           scope
         end
         @presenter_collection.presenting("workspaces", :params => { :owned_by_bob => [1, 2] }) { Workspace.where(nil) }
-        expect(filter_was_run).to be_truthy
+        expect(array).to be_a(Array)
       end
 
       it "allows filters to be called with false as an argument" do
@@ -399,14 +399,33 @@ describe Brainstem::PresenterCollection do
       end
 
       it "passes colon separated params through as a string" do
+        a, b = nil, nil
         WorkspacePresenter.filter(:between) { |scope, a_and_b|
           a, b = a_and_b.split(':')
-          expect(a).to eq("1")
-          expect(b).to eq("10")
           scope
         }
 
         @presenter_collection.presenting("workspaces", :params => { :between => "1:10" }) { Workspace.where(nil) }
+
+        expect(a).to eq("1")
+        expect(b).to eq("10")
+      end
+
+      it "provides helpers to the block" do
+        WorkspacePresenter.helper do
+          def some_method
+          end
+        end
+
+        called = false
+        WorkspacePresenter.filter(:something) { |scope, string|
+          called = true
+          some_method
+          scope
+        }
+
+        @presenter_collection.presenting("workspaces", :params => { :something => "hello" }) { Workspace.where(nil) }
+        expect(called).to eq true
       end
 
       context "with defaults" do

@@ -58,7 +58,7 @@ module Brainstem
         scope, count, ordered_search_ids = run_search(scope, selected_associations.map(&:name).map(&:to_s), sort_name, direction, options)
       else
         # Filter
-        scope = run_filters scope, options
+        scope = options[:primary_presenter].run_filters(scope, options[:params], options)
 
         if options[:params][:only].present?
           # Handle Only
@@ -190,38 +190,6 @@ module Brainstem
       [scope.where(:id => ids), scope.where(:id => ids).count]
     end
 
-    def run_filters(scope, options)
-      extract_filters(options).each do |filter_name, arg|
-        next if arg.nil?
-        filter_lambda = options[:primary_presenter].configuration[:filters][filter_name][1]
-
-        if filter_lambda
-          scope = filter_lambda.call(scope, arg)
-        else
-          scope = scope.send(filter_name, arg)
-        end
-      end
-
-      scope
-    end
-
-    def extract_filters(options)
-      filters_hash = {}
-      run_defaults = options.fetch(:apply_default_filters) { true }
-
-      (options[:primary_presenter].configuration[:filters] || {}).each do |filter_name, filter|
-        requested = options[:params][filter_name]
-        requested = requested.is_a?(Array) ? requested : (requested.present? ? requested.to_s : nil)
-        requested = requested == "true" ? true : (requested == "false" ? false : requested)
-
-        filter_options = filter[0]
-        args = run_defaults && requested.nil? ? filter_options[:default] : requested
-        filters_hash[filter_name] = args unless args.nil?
-      end
-
-      filters_hash
-    end
-
     # Runs the current search block and returns an array of [scope of the resulting ids, result count, result ids]
     # If the search block returns a falsy value a SearchUnavailableError is raised.
     # Your search block should return a list of ids and the count of ids found, or false if search is unavailable.
@@ -241,7 +209,7 @@ module Brainstem
         search_options[:page] = calculate_page(options)
       end
 
-      search_options.reverse_merge!(extract_filters(options))
+      search_options.reverse_merge!(options[:primary_presenter].extract_filters(options[:params], options))
 
       result_ids, count = options[:primary_presenter].configuration[:search].call(options[:params][:search], search_options)
       if result_ids

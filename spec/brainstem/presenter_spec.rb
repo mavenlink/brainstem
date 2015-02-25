@@ -62,159 +62,9 @@ describe Brainstem::Presenter do
         }).to raise_error(/Brainstem Presenter#presents now expects a Class instead of a class name/)
       end
     end
-
-    describe ".helper" do
-      let(:model) { Workspace.first }
-
-      let(:presenter) do
-        Class.new(Brainstem::Presenter) do
-          helper do
-            def method_in_block
-              'method_in_block'
-            end
-
-            def block_to_module
-              'i am in a block, but can see ' + method_in_module
-            end
-          end
-
-          fields do
-            field :from_module, :string, dynamic: lambda { method_in_module }
-            field :from_block, :string, dynamic: lambda { method_in_block }
-            field :block_to_module, :string, dynamic: lambda { block_to_module }
-            field :module_to_block, :string, dynamic: lambda { module_to_block }
-          end
-        end
-      end
-
-      let(:sub_presenter) do
-        Class.new(presenter) do
-          helper do
-            def method_in_block
-              'overridden method_in_block'
-            end
-          end
-        end
-      end
-
-      let(:helper_module) do
-        Module.new do
-          def method_in_module
-            'method_in_module'
-          end
-
-          def module_to_block
-            'i am in a module, but can see ' + method_in_block
-          end
-        end
-      end
-
-      let(:sub_helper_module) do
-        Module.new do
-          def method_in_module
-            'overridden method_in_module'
-          end
-        end
-      end
-
-      it 'provides any methods from given blocks to the lambda' do
-        presenter.helper helper_module
-        expect(presenter.new.group_present([model]).first['from_block']).to eq 'method_in_block'
-      end
-
-      it 'provides any methods from given Modules to the lambda' do
-        presenter.helper helper_module
-        expect(presenter.new.group_present([model]).first['from_module']).to eq 'method_in_module'
-      end
-
-      it 'allows methods in modules and blocks to see each other' do
-        presenter.helper helper_module
-        expect(presenter.new.group_present([model]).first['block_to_module']).to eq 'i am in a block, but can see method_in_module'
-        expect(presenter.new.group_present([model]).first['module_to_block']).to eq 'i am in a module, but can see method_in_block'
-      end
-
-      it 'merges the blocks and modules into a combined helper' do
-        presenter.helper helper_module
-        expect(presenter.merged_helper_class.instance_methods).to include(:method_in_module, :module_to_block, :method_in_block, :block_to_module)
-      end
-
-      it 'can be cleaned up' do
-        expect(presenter.merged_helper_class.instance_methods).to include(:method_in_block)
-        expect(presenter.merged_helper_class.instance_methods).to_not include(:method_in_module)
-        presenter.helper helper_module
-        expect(presenter.merged_helper_class.instance_methods).to include(:method_in_block, :method_in_module)
-        presenter.reset!
-        expect(presenter.merged_helper_class.instance_methods).to_not include(:method_in_block)
-        expect(presenter.merged_helper_class.instance_methods).to_not include(:method_in_module)
-      end
-
-      it 'caches the generated class' do
-        class1 = presenter.merged_helper_class
-        class2 = presenter.merged_helper_class
-        expect(class1).to eq class2
-        presenter.helper helper_module
-        class3 = presenter.merged_helper_class
-        class4 = presenter.merged_helper_class
-        expect(class1).not_to eq class3
-        expect(class3).to eq class4
-      end
-
-      it 'is inheritable' do
-        presenter.helper helper_module
-        expect(sub_presenter.new.group_present([model]).first['from_block']).to eq 'overridden method_in_block'
-        expect(sub_presenter.new.group_present([model]).first['from_module']).to eq 'method_in_module'
-        expect(sub_presenter.new.group_present([model]).first['block_to_module']).to eq 'i am in a block, but can see method_in_module'
-        expect(sub_presenter.new.group_present([model]).first['module_to_block']).to eq 'i am in a module, but can see overridden method_in_block'
-        sub_presenter.helper sub_helper_module
-        expect(sub_presenter.new.group_present([model]).first['from_module']).to eq 'overridden method_in_module'
-        expect(sub_presenter.new.group_present([model]).first['block_to_module']).to eq 'i am in a block, but can see overridden method_in_module'
-        expect(presenter.new.group_present([model]).first['from_module']).to eq 'method_in_module'
-        expect(presenter.new.group_present([model]).first['block_to_module']).to eq 'i am in a block, but can see method_in_module'
-      end
-
-      it 'caches the generated classes with inheritance' do
-        class1 = presenter.merged_helper_class
-        class2 = sub_presenter.merged_helper_class
-        expect(presenter.merged_helper_class).to eq class1
-        expect(sub_presenter.merged_helper_class).to eq class2
-
-        presenter.helper helper_module
-
-        expect(presenter.merged_helper_class).not_to eq class1
-        expect(sub_presenter.merged_helper_class).not_to eq class2
-      end
-    end
-
-    describe ".filter" do
-      before do
-        @klass = Class.new(Brainstem::Presenter)
-      end
-
-      it "creates an entry in the filters class ivar" do
-        @klass.filter(:foo, :default => true) { 1 }
-        expect(@klass.configuration[:filters][:foo][0]).to eq({"default" => true})
-        expect(@klass.configuration[:filters][:foo][1]).to be_a(Proc)
-      end
-
-      it "accepts names without blocks" do
-        @klass.filter(:foo)
-        expect(@klass.configuration[:filters][:foo][1]).to be_nil
-      end
-    end
-
-    describe ".search" do
-      before do
-        @klass = Class.new(Brainstem::Presenter)
-      end
-
-      it "creates an entry in the search class ivar" do
-        @klass.search do end
-        expect(@klass.configuration[:search]).to be_a(Proc)
-      end
-    end
   end
 
-  describe "presenting models" do
+  describe "#group_present" do
     describe "the field DSL" do
       let(:presenter) { WorkspacePresenter.new }
       let(:model) { Workspace.find(1) }
@@ -461,6 +311,69 @@ describe Brainstem::Presenter do
           expect(@presenter.group_present([@workspace], []).first).not_to have_key('synthetic_id')
         end
       end
+    end
+  end
+
+  describe "#extract_filters" do
+    let(:presenter_class) { WorkspacePresenter }
+    let(:presenter) { presenter_class.new }
+
+    it 'returns only known filters' do
+      presenter_class.filter :owned_by
+      presenter_class.filter(:bar) { |scope| scope }
+      expect(presenter.extract_filters({ 'foo' => 'hi' })).to eq({})
+      expect(presenter.extract_filters({ 'owned_by' => '2' })).to eq({ 'owned_by' => '2' })
+    end
+
+    it "converts 'true' and 'false' into true and false" do
+      presenter_class.filter :owned_by
+      expect(presenter.extract_filters({ 'owned_by' => 'true' })).to eq({ 'owned_by' => true })
+      expect(presenter.extract_filters({ 'owned_by' => 'false' })).to eq({ 'owned_by' => false })
+      expect(presenter.extract_filters({ 'owned_by' => 'hi' })).to eq({ 'owned_by' => 'hi' })
+    end
+
+    it 'defaults to applying default filters' do
+      presenter_class.filter :owned_by, default: '2'
+      expect(presenter.extract_filters({ 'owned_by' => '3' })).to eq({ 'owned_by' => '3' })
+      expect(presenter.extract_filters({})).to eq({ 'owned_by' => '2' })
+    end
+
+    it 'will skip default filters when asked' do
+      presenter_class.filter :owned_by, default: '2'
+      expect(presenter.extract_filters({ 'owned_by' => '3' }, apply_default_filters: false)).to eq({ 'owned_by' => '3' })
+      expect(presenter.extract_filters({}, apply_default_filters: false)).to eq({})
+    end
+
+    it 'ignores nil and blank values' do
+      presenter_class.filter :owned_by
+      expect(presenter.extract_filters({ 'owned_by' => nil })).to eq({})
+      expect(presenter.extract_filters({ 'owned_by' => '' })).to eq({})
+    end
+  end
+
+  describe "#run_filters" do
+    let(:presenter_class) { WorkspacePresenter }
+    let(:presenter) { presenter_class.new }
+    let(:scope) { Workspace.where(nil) }
+    let(:params) { { 'bar' => 'foo' } }
+    let(:options) { { apply_default_filters: true } }
+
+    before do
+      presenter_class.filter :owned_by, default: '2'
+      presenter_class.filter(:bar) { |scope| scope.where(id: 6) }
+      mock(presenter).extract_filters(params, options) { { 'bar' => 'foo', 'owned_by' => '2' } }
+    end
+
+    it 'extracts valid filters from the params' do
+      presenter.run_filters(scope, params, options)
+    end
+
+    it 'runs lambdas in the scope of the helper instance' do
+      expect(presenter.run_filters(scope, params, options).to_sql).to match(/id.\s*=\s*6/)
+    end
+
+    it 'sends symbols to the scope' do
+      expect(presenter.run_filters(scope, params, options).to_sql).to match(/id.\s*=\s*2/)
     end
   end
 

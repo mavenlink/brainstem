@@ -87,6 +87,42 @@ module Brainstem
     def custom_preload(models, requested_associations = [])
     end
 
+    # Given user params, build a hash of validated filter names to their unsanitized arguments.
+    def extract_filters(user_params, options = {})
+      filters_hash = {}
+
+      apply_default_filters = options.fetch(:apply_default_filters) { true }
+
+      configuration[:filters].each do |filter_name, filter|
+        user_value = user_params[filter_name]
+        user_value = user_value.is_a?(Array) ? user_value : (user_value.present? ? user_value.to_s : nil)
+        user_value = user_value == "true" ? true : (user_value == "false" ? false : user_value)
+
+        filter_options = filter[0]
+        filter_arg = apply_default_filters && user_value.nil? ? filter_options[:default] : user_value
+        filters_hash[filter_name] = filter_arg unless filter_arg.nil?
+      end
+
+      filters_hash
+    end
+
+    # Given user params, build a hash of validated filter names to their unsanitized arguments.
+    def run_filters(scope, user_params, options)
+      helper_instance = fresh_helper_instance
+
+      extract_filters(user_params, options).each do |filter_name, filter_arg|
+        filter_lambda = configuration[:filters][filter_name][1]
+
+        if filter_lambda
+          scope = helper_instance.instance_exec(scope, filter_arg, &filter_lambda)
+        else
+          scope = scope.send(filter_name, filter_arg)
+        end
+      end
+
+      scope
+    end
+
     protected
 
     # @api private
