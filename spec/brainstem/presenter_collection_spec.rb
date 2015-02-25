@@ -260,6 +260,7 @@ describe Brainstem::PresenterCollection do
       end
 
       it "works with model methods that load records (but without preloading)" do
+        do_not_allow(Brainstem::PresenterCollection).ar_preload(anything, anything)
         result = @presenter_collection.presenting("workspaces", :params => { :include => "lead_user" }) { Workspace.order('id desc') }
         expect(result['workspaces'][Workspace.first.id.to_s]).to be_present
         expect(result['workspaces'][Workspace.first.id.to_s]['lead_user_id']).to eq Workspace.first.lead_user.id.to_s
