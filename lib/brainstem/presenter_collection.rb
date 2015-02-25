@@ -92,9 +92,6 @@ module Brainstem
       end
 
       if primary_models.length > 0
-        # Preload associations
-        perform_preloading primary_models, selected_associations
-
         # TODO: handle polymorphism here
         associated_models = {}
         presented_primary_models = options[:primary_presenter].group_present(primary_models,
@@ -236,19 +233,6 @@ module Brainstem
       end
 
       ordered_records
-    end
-
-    def perform_preloading(models, selected_associations)
-      if models.first
-        association_names_to_preload = selected_associations.map(&:method_name).compact
-        if association_names_to_preload.any?
-          reflections = Brainstem::PresenterCollection.reflections(models.first.class)
-          association_names_to_preload.reject! { |association| !reflections.has_key?(association.to_s) }
-          if association_names_to_preload.any?
-            Brainstem::PresenterCollection.ar_preload(models, association_names_to_preload)
-          end
-        end
-      end
     end
 
     def rewrite_keys_as_objects!(struct)

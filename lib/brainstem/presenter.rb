@@ -50,8 +50,6 @@ module Brainstem
 
     # Calls {#custom_preload} and then presents all models.
     def group_present(models, requested_associations = [], options = {})
-      custom_preload models, requested_associations.map(&:to_s)
-
       # It's slightly ugly, but more efficient if we pre-load everything we need and pass it through.
       context = {
         conditional_cache: {},
@@ -60,8 +58,12 @@ module Brainstem
         conditionals: configuration[:conditionals],
         associations: configuration[:associations],
         reflections: models.first && Brainstem::PresenterCollection.reflections(models.first.class),
-        requested_associations_hash: requested_associations.inject({}) { |memo, association| memo[association] = true; memo }
+        requested_associations_hash: requested_associations.inject({}) { |memo, assoc_name| memo[assoc_name] = configuration[:associations][assoc_name]; memo }
       }
+
+      perform_preloading models, context
+
+      custom_preload models, requested_associations.map(&:to_s)
 
       models.map do |model|
         result = present_fields(model, context, context[:fields])
@@ -152,13 +154,28 @@ module Brainstem
 
     protected
 
-    # @api private
+    # @api protected
+    # Run preloading on the given models.
+    def perform_preloading(models, context)
+      if models.length > 0
+        association_names_to_preload = context[:requested_associations_hash].values.map(&:method_name).compact
+        if association_names_to_preload.any?
+          reflections = context[:reflections]
+          association_names_to_preload.reject! { |association| !reflections.has_key?(association.to_s) }
+          if association_names_to_preload.any?
+            Brainstem::PresenterCollection.ar_preload(models, association_names_to_preload)
+          end
+        end
+      end
+    end
+
+    # @api protected
     # Instantiate and return a new instance of the merged helper class for this presenter.
     def fresh_helper_instance
       self.class.merged_helper_class.new
     end
 
-    # @api private
+    # @api protected
     # Adds :id as a string from the given model.
     def add_id!(model, struct)
       if model.class.respond_to?(:primary_key)
@@ -166,7 +183,7 @@ module Brainstem
       end
     end
 
-    # @api private
+    # @api protected
     # Recurses through any nested Hash/Array data structure, converting dates and times to JSON standard values.
     def datetimes_to_json(struct)
       case struct
@@ -185,7 +202,7 @@ module Brainstem
       end
     end
 
-    # @api private
+    # @api protected
     # Uses the fields DSL to output a presented model.
     # @return [Hash]  A hash representation of the model.
     def present_fields(model, context, fields, result = {})
@@ -205,7 +222,7 @@ module Brainstem
       result
     end
 
-    # @api private
+    # @api protected
     # Makes sure that associations are loaded and converted into ids.
     def load_associations!(model, struct, context, options)
       context[:associations].each do |name, association|
@@ -248,6 +265,8 @@ module Brainstem
       end
     end
 
+    # @api protected
+    # Call to_s on the input unless the input is nil.
     def to_s_except_nil(thing)
       thing.nil? ? nil : thing.to_s
     end
