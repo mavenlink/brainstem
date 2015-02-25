@@ -886,6 +886,22 @@ describe Brainstem::PresenterCollection do
     end
   end
 
+  describe "#validate!" do
+    it 'should raise an error when a presenter is invalid' do
+      WorkspacePresenter.fields do
+        field :title, :string, if: [:wat]
+        field :oh_noes, :string
+      end
+      expect(lambda { Brainstem.presenter_collection.validate! }).to raise_error(/Workspace: Fields 'oh_noes' is not valid because/)
+    end
+
+    describe 'checking out spec fixtures' do
+      specify 'they should be valid' do
+        expect(lambda { Brainstem.presenter_collection.validate! }).to_not raise_error
+      end
+    end
+  end
+
   describe "collection methods" do
     describe "for method" do
       module V1

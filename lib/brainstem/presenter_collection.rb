@@ -1,4 +1,5 @@
 require 'brainstem/search_unavailable_error'
+require 'brainstem/presenter_validator'
 
 module Brainstem
   class PresenterCollection
@@ -135,6 +136,18 @@ module Brainstem
     # @raise [ArgumentError] if there is no known Presenter for +klass+.
     def for!(klass)
       self.for(klass) || raise(ArgumentError, "Unable to find a presenter for class #{klass}")
+    end
+
+    # @raise [StandardError] if any presenter in this collection is invalid.
+    def validate!
+      errors = []
+      presenters.each do |name, klass|
+        validator = Brainstem::PresenterValidator.new(klass)
+        unless validator.valid?
+          errors += validator.errors.full_messages.map { |error| "#{name}: #{error}" }
+        end
+      end
+      raise "PresenterCollection invalid:\n - #{errors.join("\n - ")}" if errors.length > 0
     end
 
     private
