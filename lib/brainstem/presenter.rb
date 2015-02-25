@@ -40,6 +40,19 @@ module Brainstem
       @helper_classes = @presents = nil
     end
 
+    # In Rails 4.2, ActiveRecord::Base#reflections started being keyed by strings instead of symbols.
+    def self.reflections(klass)
+      klass.reflections.each_with_object({}) { |(key, value), memo| memo[key.to_s] = value }
+    end
+
+    def self.ar_preload(models, association_names)
+      if Gem.loaded_specs['activerecord'].version >= Gem::Version.create('4.1')
+        ActiveRecord::Associations::Preloader.new.preload(models, association_names)
+      else
+        ActiveRecord::Associations::Preloader.new(models, association_names).run
+      end
+    end
+
 
     # Instance methods
 
@@ -57,13 +70,12 @@ module Brainstem
         fields: configuration[:fields],
         conditionals: configuration[:conditionals],
         associations: configuration[:associations],
-        reflections: models.first && Brainstem::PresenterCollection.reflections(models.first.class),
+        reflections: models.first && Brainstem::Presenter.reflections(models.first.class),
         requested_associations_hash: requested_associations.inject({}) { |memo, assoc_name| memo[assoc_name] = configuration[:associations][assoc_name]; memo }
       }
 
-      perform_preloading models, context
-
-      custom_preload models, requested_associations.map(&:to_s)
+      preload_associations! models, context
+      custom_preload(models, requested_associations.map(&:to_s))
 
       models.map do |model|
         result = present_fields(model, context, context[:fields])
@@ -156,14 +168,16 @@ module Brainstem
 
     # @api protected
     # Run preloading on the given models.
-    def perform_preloading(models, context)
+    def preload_associations!(models, context)
       if models.length > 0
         association_names_to_preload = context[:requested_associations_hash].values.map(&:method_name).compact
+        association_names_to_preload += configuration[:preloads].to_a.map(&:to_sym)
+        association_names_to_preload.uniq!
         if association_names_to_preload.any?
           reflections = context[:reflections]
           association_names_to_preload.reject! { |association| !reflections.has_key?(association.to_s) }
           if association_names_to_preload.any?
-            Brainstem::PresenterCollection.ar_preload(models, association_names_to_preload)
+            Brainstem::Presenter.ar_preload(models, association_names_to_preload)
           end
         end
       end

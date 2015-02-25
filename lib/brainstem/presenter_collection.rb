@@ -250,20 +250,5 @@ module Brainstem
     def check_for_old_options(options)
       raise "The 'as' parameter has been renamed to 'brainstem_key'" if options[:as].present?
     end
-
-    # Class Methods
-
-    # In Rails 4.2, ActiveRecord::Base#reflections started being keyed by strings instead of symbols.
-    def self.reflections(klass)
-      klass.reflections.each_with_object({}) { |(key, value), memo| memo[key.to_s] = value }
-    end
-
-    def self.ar_preload(models, association_names)
-      if Gem.loaded_specs['activerecord'].version >= Gem::Version.create('4.1')
-        ActiveRecord::Associations::Preloader.new.preload(models, association_names)
-      else
-        ActiveRecord::Associations::Preloader.new(models, association_names).run
-      end
-    end
   end
 end

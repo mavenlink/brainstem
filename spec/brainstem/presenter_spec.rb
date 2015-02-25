@@ -65,6 +65,36 @@ describe Brainstem::Presenter do
   end
 
   describe "#group_present" do
+    let(:presenter_class) do
+      Class.new(Brainstem::Presenter) do
+        presents Workspace
+
+        helper do
+          def helper_method(model)
+            Task.where(:workspace_id => model.id)[0..1]
+          end
+        end
+
+        fields do
+          field :updated_at, :datetime
+        end
+
+        associations do
+          association :tasks, Task
+          association :user, User
+          association :something, User, via: :user
+          association :lead_user, User
+          association :lead_user_with_lambda, User, dynamic: lambda { |model| model.user }
+          association :tasks_with_lambda, Task, dynamic: lambda { |model| Task.where(:workspace_id => model.id) }
+          association :tasks_with_helper_lambda, Task, dynamic: lambda { |model| helper_method(model) }
+          association :synthetic, :polymorphic
+        end
+      end
+    end
+    
+    let(:workspace) { Workspace.find_by_title("bob workspace 1") }
+    let(:presenter) { presenter_class.new }
+
     describe "the field DSL" do
       let(:presenter) { WorkspacePresenter.new }
       let(:model) { Workspace.find(1) }
@@ -218,48 +248,18 @@ describe Brainstem::Presenter do
     end
 
     describe "outputting associations" do
-      before do
-        some_presenter = Class.new(Brainstem::Presenter) do
-          presents Workspace
-
-          helper do
-            def helper_method(model)
-              Task.where(:workspace_id => model.id)[0..1]
-            end
-          end
-
-          fields do
-            field :updated_at, :datetime
-          end
-
-          associations do
-            association :tasks, Task
-            association :user, User
-            association :something, User, via: :user
-            association :lead_user, User
-            association :lead_user_with_lambda, User, dynamic: lambda { |model| model.user }
-            association :tasks_with_lambda, Task, dynamic: lambda { |model| Task.where(:workspace_id => model.id) }
-            association :tasks_with_helper_lambda, Task, dynamic: lambda { |model| helper_method(model) }
-            association :synthetic, :polymorphic
-          end
-        end
-
-        @presenter = some_presenter.new
-        @workspace = Workspace.find_by_title "bob workspace 1"
-      end
-
       it "should not convert or return non-included associations, but should return <association>_id for belongs_to relationships, plus all fields" do
-        json = @presenter.group_present([@workspace], []).first
+        json = presenter.group_present([workspace], []).first
         expect(json.keys).to match_array %w[id updated_at something_id user_id]
       end
 
       it "should convert requested has_many associations (includes) into the <association>_ids format" do
-        expect(@workspace.tasks.length).to be > 0
-        expect(@presenter.group_present([@workspace], [:tasks]).first['task_ids']).to match_array(@workspace.tasks.map(&:id).map(&:to_s))
+        expect(workspace.tasks.length).to be > 0
+        expect(presenter.group_present([workspace], [:tasks]).first['task_ids']).to match_array(workspace.tasks.map(&:id).map(&:to_s))
       end
 
       it "should allow has_many associations to work on groups of models" do
-        result = @presenter.group_present(Workspace.all.to_a, [:tasks])
+        result = presenter.group_present(Workspace.all.to_a, [:tasks])
         expect(result.length).to eq Workspace.count
         first_workspace_tasks = Workspace.first.tasks.pluck(:id).map(&:to_s)
         last_workspace_tasks = Workspace.last.tasks.pluck(:id).map(&:to_s)
@@ -269,47 +269,76 @@ describe Brainstem::Presenter do
       end
 
       it "should convert requested belongs_to and has_one associations into the <association>_id format when requested" do
-        expect(@presenter.group_present([@workspace], [:user]).first['user_id']).to eq(@workspace.user.id.to_s)
+        expect(presenter.group_present([workspace], [:user]).first['user_id']).to eq(workspace.user.id.to_s)
       end
 
       it "converts non-association models into <model>_id format when they are requested" do
-        expect(@presenter.group_present([@workspace], [:lead_user]).first['lead_user_id']).to eq(@workspace.lead_user.id.to_s)
+        expect(presenter.group_present([workspace], [:lead_user]).first['lead_user_id']).to eq(workspace.lead_user.id.to_s)
       end
 
       it "handles associations provided with lambdas" do
-        expect(@presenter.group_present([@workspace], [:lead_user_with_lambda]).first['lead_user_with_lambda_id']).to eq(@workspace.lead_user.id.to_s)
-        expect(@presenter.group_present([@workspace], [:tasks_with_lambda]).first['tasks_with_lambda_ids']).to eq(@workspace.tasks.map(&:id).map(&:to_s))
+        expect(presenter.group_present([workspace], [:lead_user_with_lambda]).first['lead_user_with_lambda_id']).to eq(workspace.lead_user.id.to_s)
+        expect(presenter.group_present([workspace], [:tasks_with_lambda]).first['tasks_with_lambda_ids']).to eq(workspace.tasks.map(&:id).map(&:to_s))
       end
 
       it "handles helpers method calls in association lambdas" do
-        expect(@presenter.group_present([@workspace], [:tasks_with_helper_lambda]).first['tasks_with_helper_lambda_ids']).to eq(@workspace.tasks.map(&:id).map(&:to_s)[0..1])
+        expect(presenter.group_present([workspace], [:tasks_with_helper_lambda]).first['tasks_with_helper_lambda_ids']).to eq(workspace.tasks.map(&:id).map(&:to_s)[0..1])
       end
 
       it "should return <association>_id fields when the given association ids exist on the model whether it is requested or not" do
-        expect(@presenter.group_present([@workspace], [:user]).first['user_id']).to eq(@workspace.user_id.to_s)
+        expect(presenter.group_present([workspace], [:user]).first['user_id']).to eq(workspace.user_id.to_s)
 
-        json = @presenter.group_present([@workspace], []).first
+        json = presenter.group_present([workspace], []).first
         expect(json.keys).to match_array %w[user_id something_id id updated_at]
-        expect(json['user_id']).to eq(@workspace.user_id.to_s)
-        expect(json['something_id']).to eq(@workspace.user_id.to_s)
+        expect(json['user_id']).to eq(workspace.user_id.to_s)
+        expect(json['something_id']).to eq(workspace.user_id.to_s)
       end
 
       it "should return null, not empty string when ids are missing" do
-        @workspace.user = nil
-        @workspace.tasks = []
-        expect(@presenter.group_present([@workspace], [:lead_user_with_lambda]).first['lead_user_with_lambda_id']).to eq(nil)
-        expect(@presenter.group_present([@workspace], [:user]).first['user_id']).to eq(nil)
-        expect(@presenter.group_present([@workspace], [:something]).first['something_id']).to eq(nil)
-        expect(@presenter.group_present([@workspace], [:tasks]).first['task_ids']).to eq([])
+        workspace.user = nil
+        workspace.tasks = []
+        expect(presenter.group_present([workspace], [:lead_user_with_lambda]).first['lead_user_with_lambda_id']).to eq(nil)
+        expect(presenter.group_present([workspace], [:user]).first['user_id']).to eq(nil)
+        expect(presenter.group_present([workspace], [:something]).first['something_id']).to eq(nil)
+        expect(presenter.group_present([workspace], [:tasks]).first['task_ids']).to eq([])
       end
 
       context "when the model has an <association>_id method but no column" do
         it "does not include the <association>_id field" do
-          def @workspace.synthetic_id
+          def workspace.synthetic_id
             raise "this explodes because it's not an association"
           end
-          expect(@presenter.group_present([@workspace], []).first).not_to have_key('synthetic_id')
+          expect(presenter.group_present([workspace], []).first).not_to have_key('synthetic_id')
         end
+      end
+    end
+
+    describe "preloading" do
+      it "preloads associations when they are full model-level associations" do
+        mock(Brainstem::Presenter).ar_preload(anything, anything) do |models, args|
+          expect(args).to eq [:tasks, :user]
+        end
+        result = presenter.group_present(Workspace.order('id desc'), [:tasks, :user, :lead_user, :tasks_with_lambda])
+      end
+      
+      it "includes any associations declared via the preload DSL directive" do
+        presenter_class.preload :posts
+
+        mock(Brainstem::Presenter).ar_preload(anything, anything) do |models, args|
+          expect(args).to eq [:tasks, :posts]
+        end
+
+        result = presenter.group_present(Workspace.order('id desc'), [:tasks, :lead_user, :tasks_with_lambda])
+      end
+
+      it "includes any string associations declared via the preload DSL directive" do
+        presenter_class.preload 'user'
+
+        mock(Brainstem::Presenter).ar_preload(anything, anything) do |models, args|
+          expect(args).to eq [:tasks, :user]
+        end
+
+        result = presenter.group_present(Workspace.order('id desc'), [:tasks, :user, :lead_user, :tasks_with_lambda])
       end
     end
   end
