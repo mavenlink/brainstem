@@ -12,7 +12,7 @@ describe Brainstem::DSL::Field do
   describe '#method_name' do
     describe 'by default' do
       it 'returns the name' do
-        expect(field.method_name).to eq :title
+        expect(field.method_name).to eq 'title'
       end
     end
 
@@ -28,7 +28,7 @@ describe Brainstem::DSL::Field do
       let(:options) { { via: :description } }
 
       it 'uses the :via method name' do
-        expect(field.method_name).to eq :description
+        expect(field.method_name).to eq 'description'
       end
     end
   end
@@ -48,7 +48,7 @@ describe Brainstem::DSL::Field do
     context 'on non-:dynamic fields' do
       it 'calls method_name on the model' do
         mock(model).foo
-        mock(field).method_name { :foo }
+        mock(field).method_name { 'foo' }
         field.run_on(model)
       end
     end

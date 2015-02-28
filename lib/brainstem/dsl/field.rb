@@ -19,7 +19,7 @@ module Brainstem
         if options[:dynamic]
           nil
         else
-          options[:via].presence || name
+          (options[:via].presence || name).to_s
         end
       end
 

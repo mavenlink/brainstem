@@ -64,7 +64,7 @@ describe Brainstem::Concerns::PresenterDSL do
   describe 'the conditional block' do
     before do
       presenter_class.conditionals do
-        model      :title_is_hello, lambda { workspace.title == 'hello' }, 'visible when the title is hello'
+        model      :title_is_hello, lambda { |workspace| workspace.title == 'hello' }, 'visible when the title is hello'
         request    :user_is_bob, lambda { current_user == 'bob' }, 'visible only to bob'
       end
     end
@@ -83,7 +83,7 @@ describe Brainstem::Concerns::PresenterDSL do
       subclass = Class.new(presenter_class)
       subclass.conditionals do
         model :silly_conditional, lambda { rand > 0.5 }, 'visible half the time'
-        model :title_is_hello, lambda { workspace.title == 'HELLO' }, 'visible when the title is hello (in all caps)'
+        model :title_is_hello, lambda { |workspace| workspace.title == 'HELLO' }, 'visible when the title is hello (in all caps)'
       end
       expect(presenter_class.configuration[:conditionals].keys).to eq %w[title_is_hello user_is_bob]
       expect(subclass.configuration[:conditionals].keys).to eq %w[title_is_hello user_is_bob silly_conditional]

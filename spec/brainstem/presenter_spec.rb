@@ -255,11 +255,11 @@ describe Brainstem::Presenter do
 
       it "should convert requested has_many associations (includes) into the <association>_ids format" do
         expect(workspace.tasks.length).to be > 0
-        expect(presenter.group_present([workspace], [:tasks]).first['task_ids']).to match_array(workspace.tasks.map(&:id).map(&:to_s))
+        expect(presenter.group_present([workspace], ['tasks']).first['task_ids']).to match_array(workspace.tasks.map(&:id).map(&:to_s))
       end
 
       it "should allow has_many associations to work on groups of models" do
-        result = presenter.group_present(Workspace.all.to_a, [:tasks])
+        result = presenter.group_present(Workspace.all.to_a, ['tasks'])
         expect(result.length).to eq Workspace.count
         first_workspace_tasks = Workspace.first.tasks.pluck(:id).map(&:to_s)
         last_workspace_tasks = Workspace.last.tasks.pluck(:id).map(&:to_s)
@@ -269,24 +269,24 @@ describe Brainstem::Presenter do
       end
 
       it "should convert requested belongs_to and has_one associations into the <association>_id format when requested" do
-        expect(presenter.group_present([workspace], [:user]).first['user_id']).to eq(workspace.user.id.to_s)
+        expect(presenter.group_present([workspace], ['user']).first['user_id']).to eq(workspace.user.id.to_s)
       end
 
       it "converts non-association models into <model>_id format when they are requested" do
-        expect(presenter.group_present([workspace], [:lead_user]).first['lead_user_id']).to eq(workspace.lead_user.id.to_s)
+        expect(presenter.group_present([workspace], ['lead_user']).first['lead_user_id']).to eq(workspace.lead_user.id.to_s)
       end
 
       it "handles associations provided with lambdas" do
-        expect(presenter.group_present([workspace], [:lead_user_with_lambda]).first['lead_user_with_lambda_id']).to eq(workspace.lead_user.id.to_s)
-        expect(presenter.group_present([workspace], [:tasks_with_lambda]).first['tasks_with_lambda_ids']).to eq(workspace.tasks.map(&:id).map(&:to_s))
+        expect(presenter.group_present([workspace], ['lead_user_with_lambda']).first['lead_user_with_lambda_id']).to eq(workspace.lead_user.id.to_s)
+        expect(presenter.group_present([workspace], ['tasks_with_lambda']).first['tasks_with_lambda_ids']).to eq(workspace.tasks.map(&:id).map(&:to_s))
       end
 
       it "handles helpers method calls in association lambdas" do
-        expect(presenter.group_present([workspace], [:tasks_with_helper_lambda]).first['tasks_with_helper_lambda_ids']).to eq(workspace.tasks.map(&:id).map(&:to_s)[0..1])
+        expect(presenter.group_present([workspace], ['tasks_with_helper_lambda']).first['tasks_with_helper_lambda_ids']).to eq(workspace.tasks.map(&:id).map(&:to_s)[0..1])
       end
 
       it "should return <association>_id fields when the given association ids exist on the model whether it is requested or not" do
-        expect(presenter.group_present([workspace], [:user]).first['user_id']).to eq(workspace.user_id.to_s)
+        expect(presenter.group_present([workspace], ['user']).first['user_id']).to eq(workspace.user_id.to_s)
 
         json = presenter.group_present([workspace], []).first
         expect(json.keys).to match_array %w[user_id something_id id updated_at]
@@ -297,10 +297,10 @@ describe Brainstem::Presenter do
       it "should return null, not empty string when ids are missing" do
         workspace.user = nil
         workspace.tasks = []
-        expect(presenter.group_present([workspace], [:lead_user_with_lambda]).first['lead_user_with_lambda_id']).to eq(nil)
-        expect(presenter.group_present([workspace], [:user]).first['user_id']).to eq(nil)
-        expect(presenter.group_present([workspace], [:something]).first['something_id']).to eq(nil)
-        expect(presenter.group_present([workspace], [:tasks]).first['task_ids']).to eq([])
+        expect(presenter.group_present([workspace], ['lead_user_with_lambda']).first['lead_user_with_lambda_id']).to eq(nil)
+        expect(presenter.group_present([workspace], ['user']).first['user_id']).to eq(nil)
+        expect(presenter.group_present([workspace], ['something']).first['something_id']).to eq(nil)
+        expect(presenter.group_present([workspace], ['tasks']).first['task_ids']).to eq([])
       end
 
       context "when the model has an <association>_id method but no column" do
@@ -316,29 +316,29 @@ describe Brainstem::Presenter do
     describe "preloading" do
       it "preloads associations when they are full model-level associations" do
         mock(Brainstem::Presenter).ar_preload(anything, anything) do |models, args|
-          expect(args).to eq [:tasks, :user]
+          expect(args).to eq %w[tasks user]
         end
-        result = presenter.group_present(Workspace.order('id desc'), [:tasks, :user, :lead_user, :tasks_with_lambda])
+        result = presenter.group_present(Workspace.order('id desc'), %w[tasks user lead_user tasks_with_lambda])
       end
       
       it "includes any associations declared via the preload DSL directive" do
         presenter_class.preload :posts
 
         mock(Brainstem::Presenter).ar_preload(anything, anything) do |models, args|
-          expect(args).to eq [:tasks, :posts]
+          expect(args).to eq ['tasks', :posts]
         end
 
-        result = presenter.group_present(Workspace.order('id desc'), [:tasks, :lead_user, :tasks_with_lambda])
+        result = presenter.group_present(Workspace.order('id desc'), %w[tasks lead_user tasks_with_lambda])
       end
 
       it "includes any string associations declared via the preload DSL directive" do
         presenter_class.preload 'user'
 
         mock(Brainstem::Presenter).ar_preload(anything, anything) do |models, args|
-          expect(args).to eq [:tasks, :user]
+          expect(args).to eq %w[tasks user]
         end
 
-        result = presenter.group_present(Workspace.order('id desc'), [:tasks, :user, :lead_user, :tasks_with_lambda])
+        result = presenter.group_present(Workspace.order('id desc'), %w[tasks user lead_user tasks_with_lambda])
       end
     end
   end

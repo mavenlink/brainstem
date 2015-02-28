@@ -56,7 +56,7 @@ module Brainstem
       if searching? options
         # Search
         sort_name, direction = options[:primary_presenter].calculate_sort_name_and_direction options[:params]
-        scope, count, ordered_search_ids = run_search(scope, selected_associations.map(&:name).map(&:to_s), sort_name, direction, options)
+        scope, count, ordered_search_ids = run_search(scope, selected_associations.map(&:name), sort_name, direction, options)
       else
         # Filter
         scope = options[:primary_presenter].apply_filters_to_scope(scope, options[:params], options)

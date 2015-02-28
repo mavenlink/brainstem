@@ -85,6 +85,10 @@ module Brainstem
       end
     end
 
+    def present_model(model, requested_associations = [], options = {})
+      group_present([model], requested_associations, options).first
+    end
+
     # @api private
     # Determines which associations are valid for inclusion in the current context.
     # Mostly just removes only-restricted associations when needed.
@@ -171,7 +175,8 @@ module Brainstem
     def preload_associations!(models, context)
       if models.length > 0
         association_names_to_preload = context[:requested_associations_hash].values.map(&:method_name).compact
-        association_names_to_preload += configuration[:preloads].to_a.map(&:to_sym)
+        association_names_to_preload += configuration[:preloads].to_a
+        # todo: better de-duping here when things might be nested hashes?
         association_names_to_preload.uniq!
         if association_names_to_preload.any?
           reflections = context[:reflections]
@@ -239,8 +244,7 @@ module Brainstem
     # @api protected
     # Makes sure that associations are loaded and converted into ids.
     def load_associations!(model, struct, context, options)
-      context[:associations].each do |name, association|
-        external_name = association.name
+      context[:associations].each do |external_name, association|
         method_name = association.method_name && association.method_name.to_s
         id_attr = method_name && "#{method_name}_id"
 

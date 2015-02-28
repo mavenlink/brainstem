@@ -4,7 +4,7 @@ module Brainstem
       attr_reader :name, :target_class, :description, :options
 
       def initialize(name, target_class, description, options)
-        @name = name
+        @name = name.to_s
         @target_class = target_class
         @description = description
         @options = options
@@ -14,7 +14,7 @@ module Brainstem
         if options[:dynamic]
           nil
         else
-          options[:via].presence || name
+          (options[:via].presence || name).to_s
         end
       end
 

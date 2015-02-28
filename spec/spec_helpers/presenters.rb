@@ -7,7 +7,7 @@ class WorkspacePresenter < Brainstem::Presenter
     end
   end
 
-  # preload :lead_user
+  preload :lead_user
 
   conditionals do
     model   :title_is_hello, lambda { |model| model.title == 'hello' }, 'visible when the title is hello'

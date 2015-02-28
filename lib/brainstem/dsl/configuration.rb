@@ -37,6 +37,10 @@ module Brainstem
         @parent_configuration.keys | @storage.keys
       end
 
+      def has_key?(key)
+        @storage.has_key?(key) || @parent_configuration.has_key?(key)
+      end
+
       def length
         keys.length
       end
