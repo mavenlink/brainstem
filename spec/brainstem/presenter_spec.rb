@@ -193,60 +193,6 @@ describe Brainstem::Presenter do
       end
     end
 
-    describe "outputting polymorphic associations" do
-      before do
-        some_presenter = Class.new(Brainstem::Presenter) do
-          presents Post
-
-          fields do
-            field :body, :string
-          end
-
-          associations do
-            association :subject, :polymorphic
-            association :another_subject, :polymorphic, via: :subject
-            association :forced_model, Workspace, via: :subject
-          end
-        end
-
-        @presenter = some_presenter.new
-      end
-
-      let(:presented_data) { @presenter.group_present([post]).first }
-
-      context "when polymorphic association exists" do
-        let(:post) { Post.find(1) }
-
-        it "outputs the object as a hash with the id & class table name" do
-          expect(presented_data['subject_ref']).to eq({ 'id' => post.subject.id.to_s,
-                                                        'key' => post.subject.class.table_name })
-        end
-
-        it "outputs custom names for the object as a hash with the id & class table name" do
-          expect(presented_data['another_subject_ref']).to eq({ 'id' => post.subject.id.to_s,
-                                                                'key' => post.subject.class.table_name })
-        end
-
-        it "skips the polymorphic handling when a model is given" do
-          expect(presented_data['forced_model_id']).to eq(post.subject.id.to_s)
-          expect(presented_data).not_to have_key('forced_model_type')
-          expect(presented_data).not_to have_key('forced_model_ref')
-        end
-      end
-
-      context "when polymorphic association does not exist" do
-        let(:post) { Post.find(3) }
-
-        it "outputs nil" do
-          expect(presented_data['subject_ref']).to be_nil
-        end
-
-        it "outputs nil" do
-          expect(presented_data['another_subject_ref']).to be_nil
-        end
-      end
-    end
-
     describe "outputting associations" do
       it "should not convert or return non-included associations, but should return <association>_id for belongs_to relationships, plus all fields" do
         json = presenter.group_present([workspace], []).first
@@ -256,6 +202,12 @@ describe Brainstem::Presenter do
       it "should convert requested has_many associations (includes) into the <association>_ids format" do
         expect(workspace.tasks.length).to be > 0
         expect(presenter.group_present([workspace], ['tasks']).first['task_ids']).to match_array(workspace.tasks.map(&:id).map(&:to_s))
+      end
+
+      it "should ignore unknown associations" do
+        result = presenter.group_present(Workspace.all.to_a, ['tasks', 'unknown'])
+        expect(result.length).to eq Workspace.count
+        expect(result.last['task_ids']).to eq Workspace.last.tasks.pluck(:id).map(&:to_s)
       end
 
       it "should allow has_many associations to work on groups of models" do
@@ -301,6 +253,60 @@ describe Brainstem::Presenter do
         expect(presenter.group_present([workspace], ['user']).first['user_id']).to eq(nil)
         expect(presenter.group_present([workspace], ['something']).first['something_id']).to eq(nil)
         expect(presenter.group_present([workspace], ['tasks']).first['task_ids']).to eq([])
+      end
+
+      describe "polymorphic associations" do
+        before do
+          some_presenter = Class.new(Brainstem::Presenter) do
+            presents Post
+
+            fields do
+              field :body, :string
+            end
+
+            associations do
+              association :subject, :polymorphic
+              association :another_subject, :polymorphic, via: :subject
+              association :forced_model, Workspace, via: :subject
+            end
+          end
+
+          @presenter = some_presenter.new
+        end
+
+        let(:presented_data) { @presenter.group_present([post]).first }
+
+        context "when polymorphic association exists" do
+          let(:post) { Post.find(1) }
+
+          it "outputs the object as a hash with the id & class table name" do
+            expect(presented_data['subject_ref']).to eq({ 'id' => post.subject.id.to_s,
+                                                          'key' => post.subject.class.table_name })
+          end
+
+          it "outputs custom names for the object as a hash with the id & class table name" do
+            expect(presented_data['another_subject_ref']).to eq({ 'id' => post.subject.id.to_s,
+                                                                  'key' => post.subject.class.table_name })
+          end
+
+          it "skips the polymorphic handling when a model is given" do
+            expect(presented_data['forced_model_id']).to eq(post.subject.id.to_s)
+            expect(presented_data).not_to have_key('forced_model_type')
+            expect(presented_data).not_to have_key('forced_model_ref')
+          end
+        end
+
+        context "when polymorphic association does not exist" do
+          let(:post) { Post.find(3) }
+
+          it "outputs nil" do
+            expect(presented_data['subject_ref']).to be_nil
+          end
+
+          it "outputs nil" do
+            expect(presented_data['another_subject_ref']).to be_nil
+          end
+        end
       end
 
       context "when the model has an <association>_id method but no column" do

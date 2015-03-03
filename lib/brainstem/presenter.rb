@@ -63,6 +63,10 @@ module Brainstem
 
     # Calls {#custom_preload} and then presents all models.
     def group_present(models, requested_associations = [], options = {})
+      requested_associations_hash = requested_associations.each_with_object({}) do |assoc_name, memo|
+        memo[assoc_name.to_s] = configuration[:associations][assoc_name] if configuration[:associations][assoc_name]
+      end
+
       # It's slightly ugly, but more efficient if we pre-load everything we need and pass it through.
       context = {
         conditional_cache: {},
@@ -71,11 +75,11 @@ module Brainstem
         conditionals: configuration[:conditionals],
         associations: configuration[:associations],
         reflections: models.first && Brainstem::Presenter.reflections(models.first.class),
-        requested_associations_hash: requested_associations.inject({}) { |memo, assoc_name| memo[assoc_name] = configuration[:associations][assoc_name]; memo }
+        requested_associations_hash: requested_associations_hash
       }
 
       preload_associations! models, context
-      custom_preload(models, requested_associations.map(&:to_s))
+      custom_preload(models, requested_associations_hash.keys)
 
       models.map do |model|
         result = present_fields(model, context, context[:fields])
