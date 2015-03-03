@@ -124,7 +124,7 @@ describe Brainstem::Concerns::PresenterDSL do
       expect(presenter_class.configuration[:fields][:secret].options).to eq({ via: :secret_info, if: [:user_is_bob, :title_is_hello] })
       expect(presenter_class.configuration[:fields][:bob_title].type).to eq :string
       expect(presenter_class.configuration[:fields][:bob_title].description).to eq 'another name for the title, only for Bob'
-      expect(presenter_class.configuration[:fields][:bob_title].options).to eq({ via: :title, if: :user_is_bob })
+      expect(presenter_class.configuration[:fields][:bob_title].options).to eq({ via: :title, if: [:user_is_bob] })
     end
 
     it 'handles nesting' do
@@ -147,6 +147,32 @@ describe Brainstem::Concerns::PresenterDSL do
       expect(presenter_class.configuration[:fields][:updated_at].options).to eq({})
       expect(subclass.configuration[:fields][:updated_at].description).to eq 'this time I have a description and condition'
       expect(subclass.configuration[:fields][:updated_at].options).to eq({ if: [:some_condition, :some_other_condition] })
+    end
+
+    it 'any :if options are combined and inherited using with_options' do
+      presenter_class.fields do
+        with_options if: :user_is_bob do
+          field :bob_title, :string, 'another name for the title, only for Bob',
+                via: :title, if: :another_condition
+          field :bob_title2, :string, 'another name for the title, only for Bob',
+                via: :title, if: :another_condition
+        end
+      end
+      subclass = Class.new(presenter_class)
+      subclass.fields do
+        with_options if: [:user_is_bob, :more_specific] do
+          field :bob_title, :string, 'another name for the title, only for Bob',
+                via: :title, if: [:another_condition]
+          field :bob_title2, :string, 'another name for the title, only for Bob',
+                via: :title
+        end
+      end
+
+      expect(presenter_class.configuration[:fields][:bob_title].options[:if]).to eq([:user_is_bob, :another_condition])
+      expect(subclass.configuration[:fields][:bob_title].options[:if]).to eq([:user_is_bob, :more_specific, :another_condition])
+
+      expect(presenter_class.configuration[:fields][:bob_title2].options[:if]).to eq([:user_is_bob, :another_condition])
+      expect(subclass.configuration[:fields][:bob_title2].options[:if]).to eq([:user_is_bob, :more_specific])
     end
 
     it 'allows nesting to be inherited and overridden too' do
