@@ -55,6 +55,9 @@ module Brainstem
         # Search
         sort_name, direction = calculate_sort_name_and_direction options
         scope, count, ordered_search_ids = run_search(scope, includes_hash.keys.map(&:to_s), sort_name, direction, options)
+
+        # Load Includes
+        records = scope.to_a
       else
         # Filter
         scope = run_filters scope, options
@@ -71,10 +74,14 @@ module Brainstem
 
         # Ordering
         scope = handle_ordering scope, options
-      end
 
-      # Load Includes
-      records = scope.to_a
+        # Load Includes
+
+        # On complex queries, MySQL can sometimes handle 'SELECT id FROM ... ORDER BY ...' much faster than
+        # 'SELECT * FROM ...', so we pluck the ids, then find those specific ids in a separate query.
+        new_scope = handle_ordering(scope.klass.where(id: scope.pluck("#{scope.table_name}.id")), options)
+        records = new_scope.to_a
+      end
 
       # Determine if an exception should be raised on an empty result set.
       if options[:raise_on_empty] && records.empty?
@@ -300,7 +307,7 @@ module Brainstem
         when nil
           scope
         else
-          scope.order(order.to_s + " " + direction)
+          scope.reorder(order.to_s + " " + direction)
       end
     end
 
