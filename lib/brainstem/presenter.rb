@@ -28,6 +28,32 @@ module Brainstem
       end
     end
 
+    # @overload exclude_count
+    #   set exclude_count = true and allow_count = false (i.e. exclude the count and do not
+    #   do not allow a request for the count via the url query string)
+    #   @return [Boolean, Boolean]
+    # @overload exclude_count( allow: true )
+    #   set exclude_count = true and allow_count = false (i.e. exclude the count by default
+    #   but allows a request for it via the url query string with (e.g. ?count=true)
+    #   @return [Boolean, Boolean]    
+    # @overload exclude_count( exclude: false )
+    #   set exclude_count = false. This is only needed for testing to toggle back to the
+    #   including the count by default, otherwise some of the subsequent tests may fail
+    #   @return [Boolean, Boolean]
+    def self.exclude_count(exclude: true, allow: false)
+      [@exclude_count = exclude, @allow_count = allow]
+    end
+
+    def self.exclude_count?
+      @exclude_count == true ? true : false
+    end
+
+    def self.allow_count?
+      (@exclude_count == true && @allow_count == true) ? true : false
+    end
+
+
+
     # @overload sort_order(name, order)
     #   @param [Symbol] name The name of the sort order.
     #   @param [String] order The SQL string to use to sort the presented data.
@@ -189,6 +215,19 @@ module Brainstem
     # The default sort order set on this presenter's class.
     def default_sort_order
       self.class.default_sort_order
+    end
+
+    # @!attribute [r] exclude_count
+    # The boolean value set in the definition of this presenter to indicate if the count is excluded
+    def exclude_count?
+      self.class.exclude_count?
+    end
+
+    # @!attribute [r] exclude_count
+    # The boolean value set in the definition of this presenter to indicate if the count may
+    # be included even if it has been excluded by default
+    def allow_count?
+      self.class.allow_count?
     end
 
     # @!attribute [r] sort_orders
