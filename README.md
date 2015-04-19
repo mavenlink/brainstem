@@ -79,12 +79,12 @@ class Api::WidgetsController < ActionController::Base
   include Brainstem::ControllerMethods
 
   def index
-    render :json => present("widgets") { Widgets.visible_to(current_user) }
+    render :json => brainstem_present("widgets") { Widgets.visible_to(current_user) }
   end
 end
 ```
 
-The scope passed to `present` could contain any starting conditions that you'd like.  Requests can have includes, filters, and sort orders.
+The scope passed to `brainstem_present` could contain any starting conditions that you'd like.  Requests can have includes, filters, and sort orders.
 
     GET /api/widgets.json?include=features&order=popularity:desc&location_name=san+francisco
 
