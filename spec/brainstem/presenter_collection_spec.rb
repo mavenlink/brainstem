@@ -26,77 +26,77 @@ describe Brainstem::PresenterCollection do
       end
 
       it "will not accept a per_page less than 1" do
-        expect(@presenter_collection.presenting("workspaces", :params => { :per_page => 0 }) { Workspace.order('id desc') }[:workspaces].length).to eq(2)
-        expect(@presenter_collection.presenting("workspaces", :per_page => 0) { Workspace.order('id desc') }[:workspaces].length).to eq(2)
+        expect(@presenter_collection.presenting("workspaces", :params => { :per_page => 0 }) { Workspace.unscoped }[:workspaces].length).to eq(2)
+        expect(@presenter_collection.presenting("workspaces", :per_page => 0) { Workspace.unscoped }[:workspaces].length).to eq(2)
       end
 
       it "will accept strings" do
-        struct = @presenter_collection.presenting("workspaces", :params => { :per_page => "1", :page => "2" }) { Workspace.order('id desc') }
-        expect(struct[:results].first[:id]).to eq(Workspace.order('id desc')[1].id.to_s)
+        struct = @presenter_collection.presenting("workspaces", :params => { :per_page => "1", :page => "2" }) { Workspace.unscoped }
+        expect(struct[:results].first[:id]).to eq(Workspace.unscoped[1].id.to_s)
       end
 
       it "has a global max_per_page default" do
-        expect(@presenter_collection.presenting("workspaces", :params => { :per_page => 5 }) { Workspace.order('id desc') }[:workspaces].length).to eq(3)
+        expect(@presenter_collection.presenting("workspaces", :params => { :per_page => 5 }) { Workspace.unscoped }[:workspaces].length).to eq(3)
       end
 
       it "takes a configurable default page size and max page size" do
-        expect(@presenter_collection.presenting("workspaces", :params => { :per_page => 5 }, :max_per_page => 4) { Workspace.order('id desc') }[:workspaces].length).to eq(4)
+        expect(@presenter_collection.presenting("workspaces", :params => { :per_page => 5 }, :max_per_page => 4) { Workspace.unscoped }[:workspaces].length).to eq(4)
       end
 
       describe "limits and offsets" do
         context "when only per_page and page are present" do
           it "honors the user's requested page size and page and returns counts" do
-            result = @presenter_collection.presenting("workspaces", :params => { :per_page => 1, :page => 2 }) { Workspace.order('id desc') }[:results]
+            result = @presenter_collection.presenting("workspaces", :params => { :per_page => 1, :page => 2 }) { Workspace.unscoped }[:results]
             expect(result.length).to eq(1)
-            expect(result.first[:id]).to eq(Workspace.order('id desc')[1].id.to_s)
+            expect(result.first[:id]).to eq(Workspace.unscoped[1].id.to_s)
 
-            result = @presenter_collection.presenting("workspaces", :params => { :per_page => 2, :page => 2 }) { Workspace.order('id desc') }[:results]
+            result = @presenter_collection.presenting("workspaces", :params => { :per_page => 2, :page => 2 }) { Workspace.unscoped }[:results]
             expect(result.length).to eq(2)
-            expect(result.map { |m| m[:id] }).to eq(Workspace.order('id desc')[2..3].map(&:id).map(&:to_s))
+            expect(result.map { |m| m[:id] }).to eq(Workspace.unscoped[2..3].map(&:id).map(&:to_s))
           end
 
           it "defaults to 1 if the page number is less than 1" do
-            result = @presenter_collection.presenting("workspaces", :params => { :per_page => 1, :page => 0 }) { Workspace.order('id desc') }[:results]
+            result = @presenter_collection.presenting("workspaces", :params => { :per_page => 1, :page => 0 }) { Workspace.unscoped }[:results]
             expect(result.length).to eq(1)
-            expect(result.first[:id]).to eq(Workspace.order('id desc')[0].id.to_s)
+            expect(result.first[:id]).to eq(Workspace.unscoped[0].id.to_s)
           end
         end
 
         context "when only limit and offset are present" do
           it "honors the user's requested limit and offset and returns counts" do
-            result = @presenter_collection.presenting("workspaces", :params => { :limit => 1, :offset => 2 }) { Workspace.order('id desc') }[:results]
+            result = @presenter_collection.presenting("workspaces", :params => { :limit => 1, :offset => 2 }) { Workspace.unscoped }[:results]
             expect(result.length).to eq(1)
-            expect(result.first[:id]).to eq(Workspace.order('id desc')[2].id.to_s)
+            expect(result.first[:id]).to eq(Workspace.unscoped[2].id.to_s)
 
-            result = @presenter_collection.presenting("workspaces", :params => { :limit => 2, :offset => 2 }) { Workspace.order('id desc') }[:results]
+            result = @presenter_collection.presenting("workspaces", :params => { :limit => 2, :offset => 2 }) { Workspace.unscoped }[:results]
             expect(result.length).to eq(2)
-            expect(result.map { |m| m[:id] }).to eq(Workspace.order('id desc')[2..3].map(&:id).map(&:to_s))
+            expect(result.map { |m| m[:id] }).to eq(Workspace.unscoped[2..3].map(&:id).map(&:to_s))
           end
 
           it "defaults to offset 0 if the passed offset is less than 0 and limit to 1 if the passed limit is less than 1" do
             stub.proxy(@presenter_collection).calculate_offset(anything).times(1)
             stub.proxy(@presenter_collection).calculate_limit(anything).times(1)
-            result = @presenter_collection.presenting("workspaces", :params => { :limit => -1, :offset => -1 }) { Workspace.order('id desc') }[:results]
+            result = @presenter_collection.presenting("workspaces", :params => { :limit => -1, :offset => -1 }) { Workspace.unscoped }[:results]
             expect(result.length).to eq(1)
-            expect(result.first[:id]).to eq(Workspace.order('id desc')[0].id.to_s)
+            expect(result.first[:id]).to eq(Workspace.unscoped[0].id.to_s)
           end
         end
 
         context "when both sets of params are present" do
           it "prefers limit and offset over per_page and page" do
-            result = @presenter_collection.presenting("workspaces", :params => { :limit => 1, :offset => 0, :per_page => 2, :page => 2 }) { Workspace.order('id desc') }[:results]
+            result = @presenter_collection.presenting("workspaces", :params => { :limit => 1, :offset => 0, :per_page => 2, :page => 2 }) { Workspace.unscoped }[:results]
             expect(result.length).to eq(1)
-            expect(result.first[:id]).to eq(Workspace.order('id desc')[0].id.to_s)
+            expect(result.first[:id]).to eq(Workspace.unscoped[0].id.to_s)
           end
 
           it "uses per_page and page if limit and offset are not complete" do
-            result = @presenter_collection.presenting("workspaces", :params => { :limit => 5, :per_page => 1, :page => 0 }) { Workspace.order('id desc') }[:results]
+            result = @presenter_collection.presenting("workspaces", :params => { :limit => 5, :per_page => 1, :page => 0 }) { Workspace.unscoped }[:results]
             expect(result.length).to eq(1)
-            expect(result.first[:id]).to eq(Workspace.order('id desc')[0].id.to_s)
+            expect(result.first[:id]).to eq(Workspace.unscoped[0].id.to_s)
 
-            result = @presenter_collection.presenting("workspaces", :params => { :offset => 5, :per_page => 1, :page => 0 }) { Workspace.order('id desc') }[:results]
+            result = @presenter_collection.presenting("workspaces", :params => { :offset => 5, :per_page => 1, :page => 0 }) { Workspace.unscoped }[:results]
             expect(result.length).to eq(1)
-            expect(result.first[:id]).to eq(Workspace.order('id desc')[0].id.to_s)
+            expect(result.first[:id]).to eq(Workspace.unscoped[0].id.to_s)
           end
         end
       end
@@ -752,6 +752,13 @@ describe Brainstem::PresenterCollection do
         WorkspacePresenter.default_sort_order("description:asc")
         result = @presenter_collection.presenting("workspaces") { Workspace.where("id is not null") }
         expect(result[:results].map {|i| result[:workspaces][i[:id]][:description] }).to eq(%w(1 2 3 a b c))
+      end
+
+      it "overrides any Arel ordering" do
+        WorkspacePresenter.sort_order(:description, "workspaces.description")
+        WorkspacePresenter.default_sort_order("description:desc")
+        result = @presenter_collection.presenting("workspaces") { Workspace.where("id is not null").reorder('workspaces.title asc') }
+        expect(result[:results].map {|i| result[:workspaces][i[:id]][:description] }).to eq(%w(c b a 3 2 1))
       end
 
       it "applies orders that match the default order" do
