@@ -223,7 +223,7 @@ module Brainstem
       self.class.exclude_count?
     end
 
-    # @!attribute [r] exclude_count
+    # @!attribute [r] allow_count
     # The boolean value set in the definition of this presenter to indicate if the count may
     # be included even if it has been excluded by default
     def allow_count?
