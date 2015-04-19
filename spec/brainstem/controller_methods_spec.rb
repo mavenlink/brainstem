@@ -1,7 +1,7 @@
 require 'spec_helper'
 
 describe Brainstem::ControllerMethods do
-  class FakeController
+  class TasksController
     include Brainstem::ControllerMethods
 
     attr_accessor :call_results
@@ -13,7 +13,7 @@ describe Brainstem::ControllerMethods do
 
   describe "#present_object" do
     before do
-      @controller = FakeController.new
+      @controller = TasksController.new
     end
 
     describe "calling #present with sensible params" do

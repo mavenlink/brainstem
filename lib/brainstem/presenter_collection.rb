@@ -57,6 +57,9 @@ module Brainstem
         # Search
         sort_name, direction = options[:primary_presenter].calculate_sort_name_and_direction options[:params]
         scope, count, ordered_search_ids = run_search(scope, selected_associations.map(&:name), sort_name, direction, options)
+
+        # Load models!
+        primary_models = scope.to_a
       else
         # Filter
         scope = options[:primary_presenter].apply_filters_to_scope(scope, options[:params], options)
@@ -73,10 +76,13 @@ module Brainstem
 
         # Ordering
         scope = options[:primary_presenter].apply_ordering_to_scope(scope, options[:params])
-      end
 
-      # Load models!
-      primary_models = scope.to_a
+        # Load models!
+        # On complex queries, MySQL can sometimes handle 'SELECT id FROM ... ORDER BY ...' much faster than
+        # 'SELECT * FROM ...', so we pluck the ids, then find those specific ids in a separate query.
+        new_scope = options[:primary_presenter].apply_ordering_to_scope(scope.klass.where(id: scope.pluck("#{scope.table_name}.id")), options[:params])
+        primary_models = new_scope.to_a
+      end
 
       # Determine if an exception should be raised on an empty result set.
       if options[:raise_on_empty] && primary_models.empty?

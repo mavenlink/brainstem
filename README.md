@@ -161,18 +161,16 @@ In Rails 3 it was acceptable to write scopes like this: `scope :popular, where(:
 If your scope does not take any parameters, this can cause a problem with Brainstem if you use a filter that delegates to that scope in your presenter. (e.g., `filter :popular`). The preferable way to handle this is to write a Brainstem scope that delegates to your model scope:
 
 ```ruby
-filter :popular do |scope|
-    scope.popular
- end
+filter :popular { |scope| scope.popular }
 ```
 
 --
 
-For more detailed examples, please see the documentation for methods on {Brainstem::Presenter} and our detailed [Rails example application](https://github.com/mavenlink/brainstem-demo-rails).
+For more detailed examples, please see the documentation for methods on `Brainstem::Presenter` and our detailed [Rails example application](https://github.com/mavenlink/brainstem-demo-rails).
 
 ## Consuming a Brainstem API
 
-APIs presented with Brainstem are just JSON APIs, so they can be consumed with just about any language.  As Brainstem evolves, we hope that people will contributed consumption libraries in various languages.
+APIs presented with Brainstem are just JSON APIs, so they can be consumed with just about any language.  As Brainstem evolves, we hope that people will contribute consumption libraries in various languages.
 
 ### The Results Array
 

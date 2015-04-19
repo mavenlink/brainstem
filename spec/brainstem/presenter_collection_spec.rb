@@ -17,81 +17,81 @@ describe Brainstem::PresenterCollection do
       end
 
       it "has a global per_page default" do
-        expect(@presenter_collection.presenting("workspaces") { Workspace.order('id desc') }['workspaces'].length).to eq(2)
+        expect(@presenter_collection.presenting("workspaces") { Workspace.unscoped }['workspaces'].length).to eq(2)
       end
 
       it "will not accept a per_page less than 1" do
-        expect(@presenter_collection.presenting("workspaces", :params => { :per_page => 0 }) { Workspace.order('id desc') }['workspaces'].length).to eq(2)
-        expect(@presenter_collection.presenting("workspaces", :per_page => 0) { Workspace.order('id desc') }['workspaces'].length).to eq(2)
+        expect(@presenter_collection.presenting("workspaces", :params => { :per_page => 0 }) { Workspace.unscoped }['workspaces'].length).to eq(2)
+        expect(@presenter_collection.presenting("workspaces", :per_page => 0) { Workspace.unscoped }['workspaces'].length).to eq(2)
       end
 
       it "will accept strings" do
-        struct = @presenter_collection.presenting("workspaces", :params => { :per_page => "1", :page => "2" }) { Workspace.order('id desc') }
-        expect(struct['results'].first['id']).to eq(Workspace.order('id desc')[1].id.to_s)
+        struct = @presenter_collection.presenting("workspaces", :params => { :per_page => "1", :page => "2" }) { Workspace.unscoped }
+        expect(struct['results'].first['id']).to eq(Workspace.unscoped[1].id.to_s)
       end
 
       it "has a global max_per_page default" do
-        expect(@presenter_collection.presenting("workspaces", :params => { :per_page => 5 }) { Workspace.order('id desc') }['workspaces'].length).to eq(3)
+        expect(@presenter_collection.presenting("workspaces", :params => { :per_page => 5 }) { Workspace.unscoped }['workspaces'].length).to eq(3)
       end
 
       it "takes a configurable default page size and max page size" do
-        expect(@presenter_collection.presenting("workspaces", :params => { :per_page => 5 }, :max_per_page => 4) { Workspace.order('id desc') }['workspaces'].length).to eq(4)
+        expect(@presenter_collection.presenting("workspaces", :params => { :per_page => 5 }, :max_per_page => 4) { Workspace.unscoped }['workspaces'].length).to eq(4)
       end
 
       describe "limits and offsets" do
         context "when only per_page and page are present" do
           it "honors the user's requested page size and page and returns counts" do
-            result = @presenter_collection.presenting("workspaces", :params => { :per_page => 1, :page => 2 }) { Workspace.order('id desc') }['results']
+            result = @presenter_collection.presenting("workspaces", :params => { :per_page => 1, :page => 2 }) { Workspace.unscoped }['results']
             expect(result.length).to eq(1)
-            expect(result.first['id']).to eq(Workspace.order('id desc')[1].id.to_s)
+            expect(result.first['id']).to eq(Workspace.unscoped[1].id.to_s)
 
-            result = @presenter_collection.presenting("workspaces", :params => { :per_page => 2, :page => 2 }) { Workspace.order('id desc') }['results']
+            result = @presenter_collection.presenting("workspaces", :params => { :per_page => 2, :page => 2 }) { Workspace.unscoped }['results']
             expect(result.length).to eq(2)
-            expect(result.map { |m| m['id'] }).to eq(Workspace.order('id desc')[2..3].map(&:id).map(&:to_s))
+            expect(result.map { |m| m['id'] }).to eq(Workspace.unscoped[2..3].map(&:id).map(&:to_s))
           end
 
           it "defaults to 1 if the page number is less than 1" do
-            result = @presenter_collection.presenting("workspaces", :params => { :per_page => 1, :page => 0 }) { Workspace.order('id desc') }['results']
+            result = @presenter_collection.presenting("workspaces", :params => { :per_page => 1, :page => 0 }) { Workspace.unscoped }['results']
             expect(result.length).to eq(1)
-            expect(result.first['id']).to eq(Workspace.order('id desc')[0].id.to_s)
+            expect(result.first['id']).to eq(Workspace.unscoped[0].id.to_s)
           end
         end
 
         context "when only limit and offset are present" do
           it "honors the user's requested limit and offset and returns counts" do
-            result = @presenter_collection.presenting("workspaces", :params => { :limit => 1, :offset => 2 }) { Workspace.order('id desc') }['results']
+            result = @presenter_collection.presenting("workspaces", :params => { :limit => 1, :offset => 2 }) { Workspace.unscoped }['results']
             expect(result.length).to eq(1)
-            expect(result.first['id']).to eq(Workspace.order('id desc')[2].id.to_s)
+            expect(result.first['id']).to eq(Workspace.unscoped[2].id.to_s)
 
-            result = @presenter_collection.presenting("workspaces", :params => { :limit => 2, :offset => 2 }) { Workspace.order('id desc') }['results']
+            result = @presenter_collection.presenting("workspaces", :params => { :limit => 2, :offset => 2 }) { Workspace.unscoped }['results']
             expect(result.length).to eq(2)
-            expect(result.map { |m| m['id'] }).to eq(Workspace.order('id desc')[2..3].map(&:id).map(&:to_s))
+            expect(result.map { |m| m['id'] }).to eq(Workspace.unscoped[2..3].map(&:id).map(&:to_s))
           end
 
           it "defaults to offset 0 if the passed offset is less than 0 and limit to 1 if the passed limit is less than 1" do
             stub.proxy(@presenter_collection).calculate_offset(anything).times(1)
             stub.proxy(@presenter_collection).calculate_limit(anything).times(1)
-            result = @presenter_collection.presenting("workspaces", :params => { :limit => -1, :offset => -1 }) { Workspace.order('id desc') }['results']
+            result = @presenter_collection.presenting("workspaces", :params => { :limit => -1, :offset => -1 }) { Workspace.unscoped }['results']
             expect(result.length).to eq(1)
-            expect(result.first['id']).to eq(Workspace.order('id desc')[0].id.to_s)
+            expect(result.first['id']).to eq(Workspace.unscoped[0].id.to_s)
           end
         end
 
         context "when both sets of params are present" do
           it "prefers limit and offset over per_page and page" do
-            result = @presenter_collection.presenting("workspaces", :params => { :limit => 1, :offset => 0, :per_page => 2, :page => 2 }) { Workspace.order('id desc') }['results']
+            result = @presenter_collection.presenting("workspaces", :params => { :limit => 1, :offset => 0, :per_page => 2, :page => 2 }) { Workspace.unscoped }['results']
             expect(result.length).to eq(1)
-            expect(result.first['id']).to eq(Workspace.order('id desc')[0].id.to_s)
+            expect(result.first['id']).to eq(Workspace.unscoped[0].id.to_s)
           end
 
           it "uses per_page and page if limit and offset are not complete" do
-            result = @presenter_collection.presenting("workspaces", :params => { :limit => 5, :per_page => 1, :page => 0 }) { Workspace.order('id desc') }['results']
+            result = @presenter_collection.presenting("workspaces", :params => { :limit => 5, :per_page => 1, :page => 0 }) { Workspace.unscoped }['results']
             expect(result.length).to eq(1)
-            expect(result.first['id']).to eq(Workspace.order('id desc')[0].id.to_s)
+            expect(result.first['id']).to eq(Workspace.unscoped[0].id.to_s)
 
-            result = @presenter_collection.presenting("workspaces", :params => { :offset => 5, :per_page => 1, :page => 0 }) { Workspace.order('id desc') }['results']
+            result = @presenter_collection.presenting("workspaces", :params => { :offset => 5, :per_page => 1, :page => 0 }) { Workspace.unscoped }['results']
             expect(result.length).to eq(1)
-            expect(result.first['id']).to eq(Workspace.order('id desc')[0].id.to_s)
+            expect(result.first['id']).to eq(Workspace.unscoped[0].id.to_s)
           end
         end
       end
@@ -119,7 +119,7 @@ describe Brainstem::PresenterCollection do
               expect(Workspace.count).to be > 0
 
               expect {
-                @presenter_collection.presenting("workspaces", :raise_on_empty => true) { Workspace.order('id desc') }
+                @presenter_collection.presenting("workspaces", :raise_on_empty => true) { Workspace.unscoped }
               }.not_to raise_error
             end
           end
@@ -141,7 +141,7 @@ describe Brainstem::PresenterCollection do
         end
 
         it "returns the unique count by model id" do
-          result = @presenter_collection.presenting("workspaces", :params => { :per_page => 2, :page => 1 }) { Workspace.order('id desc') }
+          result = @presenter_collection.presenting("workspaces", :params => { :per_page => 2, :page => 1 }) { Workspace.unscoped }
           expect(result['count']).to eq(Workspace.count)
         end
       end
@@ -149,22 +149,22 @@ describe Brainstem::PresenterCollection do
 
     describe "uses presenters" do
       it "finds presenter by table name string" do
-        result = @presenter_collection.presenting("workspaces") { Workspace.order('id desc') }
+        result = @presenter_collection.presenting("workspaces") { Workspace.unscoped }
         expect(result['workspaces'].length).to eq(Workspace.count)
       end
 
       it "finds presenter by model name string" do
-        result = @presenter_collection.presenting("Workspace") { order('id desc') }
+        result = @presenter_collection.presenting("Workspace") { Workspace.unscoped }
         expect(result['workspaces'].length).to eq(Workspace.count)
       end
 
       it "finds presenter by model" do
-        result = @presenter_collection.presenting(Workspace) { order('id desc') }
+        result = @presenter_collection.presenting(Workspace) { Workspace.unscoped }
         expect(result['workspaces'].length).to eq(Workspace.count)
       end
 
       it "infers the table name from the model" do
-        result = @presenter_collection.presenting("not_workspaces", :model => "Workspace", :params => { :per_page => 2, :page => 1 }) { Workspace.order('id desc') }
+        result = @presenter_collection.presenting("not_workspaces", :model => "Workspace", :params => { :per_page => 2, :page => 1 }) { Workspace.unscoped  }
         expect(result['not_workspaces']).not_to be_empty
         expect(result['count']).to eq(Workspace.count)
       end
@@ -181,16 +181,16 @@ describe Brainstem::PresenterCollection do
 
     describe "includes" do
       it "reads allowed includes from the presenter" do
-        result = @presenter_collection.presenting("workspaces", :params => { :include => "drop table,tasks,users" }) { Workspace.order('id desc') }
+        result = @presenter_collection.presenting("workspaces", :params => { :include => "drop table,tasks,users" }) { Workspace.unscoped }
         expect(result.keys).to match_array %w[count workspaces tasks results]
 
-        result = @presenter_collection.presenting("workspaces", :params => { :include => "foo,tasks,lead_user" }) { Workspace.order('id desc') }
+        result = @presenter_collection.presenting("workspaces", :params => { :include => "foo,tasks,lead_user" }) { Workspace.unscoped }
         expect(result.keys).to match_array %w[count workspaces tasks users results]
       end
 
       it "allows the allowed includes list to have different json names and association names" do
         result = @presenter_collection.presenting("tasks",
-          :params => { :include => "other_tasks" }) { Task.order('id desc') }
+          :params => { :include => "other_tasks" }) { Task.unscoped }
         expect(result['tasks']).to be_present
         expect(result['other_tasks']).to be_present
       end
@@ -240,7 +240,7 @@ describe Brainstem::PresenterCollection do
       end
 
       it "includes requested includes even when all records are filtered" do
-        result = @presenter_collection.presenting("workspaces", :params => { :only => "not an id", :include => "not an include,tasks" }) { Workspace.order("id desc") }
+        result = @presenter_collection.presenting("workspaces", :params => { :only => "not an id", :include => "not an include,tasks" }) { Workspace.unscoped }
         expect(result['workspaces'].length).to eq(0)
         expect(result['tasks'].length).to eq(0)
       end
@@ -253,7 +253,7 @@ describe Brainstem::PresenterCollection do
       end
 
       it "works with model methods that load records" do
-        result = @presenter_collection.presenting("workspaces", :params => { :include => "lead_user" }) { Workspace.order('id desc') }
+        result = @presenter_collection.presenting("workspaces", :params => { :include => "lead_user" }) { Workspace.unscoped }
         expect(result['workspaces'][Workspace.first.id.to_s]).to be_present
         expect(result['workspaces'][Workspace.first.id.to_s]['lead_user_id']).to eq Workspace.first.lead_user.id.to_s
         expect(result['users'][Workspace.first.lead_user.id.to_s]).to be_present
@@ -286,7 +286,7 @@ describe Brainstem::PresenterCollection do
 
       describe "polymorphic associations" do
         it "works with polymorphic associations" do
-          result = @presenter_collection.presenting("posts", :params => { :include => "subject" }) { Post.order('id desc') }
+          result = @presenter_collection.presenting("posts", :params => { :include => "subject" }) { Post.unscoped }
           expect(result['posts'][Post.first.id.to_s]).to be_present
           expect(result['workspaces'][Workspace.first.id.to_s]).to be_present
           expect(result['tasks'][Task.first.id.to_s]).to be_present
@@ -304,25 +304,25 @@ describe Brainstem::PresenterCollection do
 
     describe "handling of only" do
       it "accepts params[:only] as a list of ids to limit to" do
-        result = @presenter_collection.presenting("workspaces", :params => { :only => Workspace.limit(2).pluck(:id).join(",") }) { Workspace.order("id desc") }
+        result = @presenter_collection.presenting("workspaces", :params => { :only => Workspace.limit(2).pluck(:id).join(",") }) { Workspace.unscoped }
         expect(result['workspaces'].keys).to match_array(Workspace.limit(2).pluck(:id).map(&:to_s))
       end
 
       it "does not paginate only requests" do
         dont_allow(@presenter_collection).paginate
-        @presenter_collection.presenting("workspaces", :params => { :only => Workspace.limit(2).pluck(:id).join(",") }) { Workspace.order("id desc") }
+        @presenter_collection.presenting("workspaces", :params => { :only => Workspace.limit(2).pluck(:id).join(",") }) { Workspace.unscoped }
       end
 
       it "escapes ids" do
-        result = @presenter_collection.presenting("workspaces", :params => { :only => "#{Workspace.first.id}foo,;drop tables;,#{Workspace.first.id}" }) { Workspace.order("id desc") }
+        result = @presenter_collection.presenting("workspaces", :params => { :only => "#{Workspace.first.id}foo,;drop tables;,#{Workspace.first.id}" }) { Workspace.unscoped }
         expect(result['workspaces'].length).to eq(1)
       end
 
       it "only runs when it receives ids" do
-        result = @presenter_collection.presenting("workspaces", :params => { :only => "" }) { Workspace.order("id desc") }
+        result = @presenter_collection.presenting("workspaces", :params => { :only => "" }) { Workspace.unscoped }
         expect(result['workspaces'].length).to be > 1
 
-        result = @presenter_collection.presenting("workspaces", :params => { :only => "1" }) { Workspace.order("id desc") }
+        result = @presenter_collection.presenting("workspaces", :params => { :only => "1" }) { Workspace.unscoped }
         expect(result['workspaces'].length).to be <= 1
       end
     end
@@ -334,23 +334,23 @@ describe Brainstem::PresenterCollection do
       end
 
       it "limits records to those matching given filters" do
-        result = @presenter_collection.presenting("workspaces", :params => { :owned_by => bob.id.to_s }) { Workspace.order("id desc") } # hit the API, filtering on owned_by:bob
+        result = @presenter_collection.presenting("workspaces", :params => { :owned_by => bob.id.to_s }) { Workspace.unscoped } # hit the API, filtering on owned_by:bob
         expect(result['workspaces']).to be_present
         expect(result['workspaces'].keys.all? {|id| bob_workspaces_ids.map(&:to_s).include?(id) }).to be_truthy # all of the returned workspaces should contain bob
       end
 
       it "returns all records if filters are not given" do
-        result = @presenter_collection.presenting("workspaces") { Workspace.order("id desc") } # hit the API again, this time not filtering on anything
+        result = @presenter_collection.presenting("workspaces") { Workspace.unscoped } # hit the API again, this time not filtering on anything
         expect(result['workspaces'].keys.all? {|id| bob_workspaces_ids.map(&:to_s).include?(id) }).to be_falsey # the returned workspaces no longer all contain bob
       end
 
       it "ignores unknown filters" do
-        result = @presenter_collection.presenting("workspaces", :params => { :wut => "is this?" }) { Workspace.order("id desc") }
+        result = @presenter_collection.presenting("workspaces", :params => { :wut => "is this?" }) { Workspace.unscoped }
         expect(result['workspaces'].keys.all? {|id| bob_workspaces_ids.map(&:to_s).include?(id) }).to be_falsey
       end
 
       it "limits records to those matching all given filters" do
-        result = @presenter_collection.presenting("workspaces", :params => { :owned_by => bob.id.to_s, :title => "bob workspace 1" }) { Workspace.order("id desc") } # try two filters
+        result = @presenter_collection.presenting("workspaces", :params => { :owned_by => bob.id.to_s, :title => "bob workspace 1" }) { Workspace.unscoped } # try two filters
         expect(result['results'].first['id']).to eq(Workspace.where(:title => "bob workspace 1").first.id.to_s)
       end
 
@@ -429,7 +429,7 @@ describe Brainstem::PresenterCollection do
         let(:jane) { User.where(:username => "jane").first }
 
         it "applies the filter when it is not requested" do
-          result = @presenter_collection.presenting("workspaces") { Workspace.order('id desc') }
+          result = @presenter_collection.presenting("workspaces") { Workspace.unscoped }
           expect(result['workspaces'].keys).to match_array(bob.workspaces.map(&:id).map(&:to_s))
         end
 
@@ -470,7 +470,7 @@ describe Brainstem::PresenterCollection do
         end
 
         it "allows the default value to be overridden" do
-          result = @presenter_collection.presenting("workspaces", :params => { :owner => jane.id.to_s }) { Workspace.order('id desc') }
+          result = @presenter_collection.presenting("workspaces", :params => { :owner => jane.id.to_s }) { Workspace.unscoped }
           expect(result['workspaces'].keys).to match_array(jane.workspaces.map(&:id).map(&:to_s))
 
           WorkspacePresenter.filter(:include_early_workspaces, :default => true) { |scope, bool| bool ? scope : scope.where("id > 3") }
@@ -526,29 +526,29 @@ describe Brainstem::PresenterCollection do
 
         context "and a search request is made" do
           it "calls the search method and maintains the resulting order" do
-            result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
+            result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.unscoped }
             expect(result['workspaces'].keys).to eq(%w[5 3])
             expect(result['count']).to eq(2)
           end
 
           it "does not apply filters" do
             mock(@presenter_collection).apply_filters_to_scope(anything, anything).times(0)
-            result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
+            result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.unscoped }
           end
 
           it "does not apply ordering" do
             mock.any_instance_of(Brainstem::Presenter).apply_ordering_to_scope(anything, anything).times(0)
-            result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
+            result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.unscoped }
           end
 
           it "does not try to handle only's" do
             mock(@presenter_collection).handle_only(anything, anything).times(0)
-            result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
+            result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.unscoped }
           end
 
           it "does not apply pagination" do
             mock(@presenter_collection).paginate(anything, anything).times(0)
-            result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
+            result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.unscoped }
           end
 
           it "throws a SearchUnavailableError if the search block returns false" do
@@ -575,7 +575,7 @@ describe Brainstem::PresenterCollection do
                 [[1], 1] # returned ids, count - not testing this in this set of specs
               end
 
-              @presenter_collection.presenting("workspaces", :params => { :search => "blah", :include => "tasks,lead_user", :owned_by => "false", :order => "description:desc", :page => 2, :per_page => 5 }) { Workspace.order("id asc") }
+              @presenter_collection.presenting("workspaces", :params => { :search => "blah", :include => "tasks,lead_user", :owned_by => "false", :order => "description:desc", :page => 2, :per_page => 5 }) { Workspace.unscoped }
             end
 
             describe "includes" do
@@ -585,7 +585,7 @@ describe Brainstem::PresenterCollection do
                   [[1], 1]
                 end
 
-                @presenter_collection.presenting("workspaces", :params => { :search => "blah", :include => "users"}) { Workspace.order("id asc") }
+                @presenter_collection.presenting("workspaces", :params => { :search => "blah", :include => "users"}) { Workspace.unscoped }
               end
             end
 
@@ -597,7 +597,7 @@ describe Brainstem::PresenterCollection do
                   [[1], 1]
                 end
 
-                @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
+                @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.unscoped }
               end
 
               it "throws out requested filters that the presenter does not have" do
@@ -606,7 +606,7 @@ describe Brainstem::PresenterCollection do
                   [[1], 1]
                 end
 
-                @presenter_collection.presenting("workspaces", :params => { :search => "blah", :highest_rated => true}) { Workspace.order("id asc") }
+                @presenter_collection.presenting("workspaces", :params => { :search => "blah", :highest_rated => true}) { Workspace.unscoped }
               end
 
               it "does not pass through existing non-default filters that are not requested" do
@@ -616,7 +616,7 @@ describe Brainstem::PresenterCollection do
                   [[1], 1]
                 end
 
-                @presenter_collection.presenting("workspaces", :params => { :search => "blah"}) { Workspace.order("id asc") }
+                @presenter_collection.presenting("workspaces", :params => { :search => "blah"}) { Workspace.unscoped }
               end
             end
 
@@ -629,7 +629,7 @@ describe Brainstem::PresenterCollection do
                   [[1], 1]
                 end
 
-                @presenter_collection.presenting("workspaces", :params => { :search => "blah"}) { Workspace.order("id asc") }
+                @presenter_collection.presenting("workspaces", :params => { :search => "blah"}) { Workspace.unscoped }
               end
 
               it "makes the sort order 'updated_at:desc' if the requested order doesn't match an existing sort order and there is no default" do
@@ -639,7 +639,7 @@ describe Brainstem::PresenterCollection do
                   [[1], 1]
                 end
 
-                @presenter_collection.presenting("workspaces", :params => { :search => "blah", :order => "created_at:asc"}) { Workspace.order("id asc") }
+                @presenter_collection.presenting("workspaces", :params => { :search => "blah", :order => "created_at:asc"}) { Workspace.unscoped }
               end
 
               it "sanitizes sort orders" do
@@ -649,7 +649,7 @@ describe Brainstem::PresenterCollection do
                   [[1], 1]
                 end
 
-                @presenter_collection.presenting("workspaces", :params => { :search => "blah", :order => "description:owned"}) { Workspace.order("id asc") }
+                @presenter_collection.presenting("workspaces", :params => { :search => "blah", :order => "description:owned"}) { Workspace.unscoped }
               end
             end
 
@@ -661,7 +661,7 @@ describe Brainstem::PresenterCollection do
                   [[1], 1]
                 end
 
-                @presenter_collection.presenting("workspaces", :params => { :search => "blah", :limit => 1, :offset => 2}) { Workspace.order("id asc") }
+                @presenter_collection.presenting("workspaces", :params => { :search => "blah", :limit => 1, :offset => 2}) { Workspace.unscoped }
               end
 
               it "passes through only limit and offset if all pagination options are requested" do
@@ -673,7 +673,7 @@ describe Brainstem::PresenterCollection do
                   [[1], 1]
                 end
 
-                @presenter_collection.presenting("workspaces", :params => { :search => "blah", :limit => 1, :offset => 2, :per_page => 3, :page => 4}) { Workspace.order("id asc") }
+                @presenter_collection.presenting("workspaces", :params => { :search => "blah", :limit => 1, :offset => 2, :per_page => 3, :page => 4}) { Workspace.unscoped }
               end
 
               it "passes through page and per_page when limit not present" do
@@ -685,7 +685,7 @@ describe Brainstem::PresenterCollection do
                   [[1], 1]
                 end
 
-                @presenter_collection.presenting("workspaces", :params => { :search => "blah", :offset => 2, :per_page => 3, :page => 4}) { Workspace.order("id asc") }
+                @presenter_collection.presenting("workspaces", :params => { :search => "blah", :offset => 2, :per_page => 3, :page => 4}) { Workspace.unscoped }
               end
 
               it "passes through page and per_page when offset not present" do
@@ -697,7 +697,7 @@ describe Brainstem::PresenterCollection do
                   [[1], 1]
                 end
 
-                @presenter_collection.presenting("workspaces", :params => { :search => "blah", :limit => 1, :per_page => 3, :page => 4}) { Workspace.order("id asc") }
+                @presenter_collection.presenting("workspaces", :params => { :search => "blah", :limit => 1, :per_page => 3, :page => 4}) { Workspace.unscoped }
               end
 
               it "passes through page and per_page by default" do
@@ -709,7 +709,7 @@ describe Brainstem::PresenterCollection do
                   [[1], 1]
                 end
 
-                @presenter_collection.presenting("workspaces", :params => { :search => "blah"}) { Workspace.order("id asc") }
+                @presenter_collection.presenting("workspaces", :params => { :search => "blah"}) { Workspace.unscoped }
               end
             end
           end
@@ -717,7 +717,7 @@ describe Brainstem::PresenterCollection do
 
         context "and there is no search request" do
           it "does not call the search method" do
-            result = @presenter_collection.presenting("workspaces") { Workspace.order("id asc") }
+            result = @presenter_collection.presenting("workspaces") { Workspace.unscoped }
             expect(result['workspaces'].keys).to eq(Workspace.pluck(:id).map(&:to_s))
           end
         end
@@ -726,7 +726,7 @@ describe Brainstem::PresenterCollection do
       context "without search method defined" do
         context "and a search request is made" do
           it "returns as if there was no search" do
-            result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
+            result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.unscoped }
             expect(result['workspaces'].keys).to eq(Workspace.pluck(:id).map(&:to_s))
           end
         end
@@ -758,6 +758,13 @@ describe Brainstem::PresenterCollection do
         WorkspacePresenter.default_sort_order("description:asc")
         result = @presenter_collection.presenting("workspaces") { Workspace.where("id is not null") }
         expect(result['results'].map {|i| result['workspaces'][i['id']]['description'] }).to eq(%w(1 2 3 a b c))
+      end
+
+      it "overrides any Arel ordering" do
+        WorkspacePresenter.sort_order(:description, "workspaces.description")
+        WorkspacePresenter.default_sort_order("description:desc")
+        result = @presenter_collection.presenting("workspaces") { Workspace.where("id is not null").reorder('workspaces.title asc') }
+        expect(result['results'].map {|i| result['workspaces'][i['id']]['description'] }).to eq(%w(c b a 3 2 1))
       end
 
       it "applies orders that match the default order" do
