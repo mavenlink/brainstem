@@ -160,7 +160,6 @@ module Brainstem
         offset = limit * (calculate_page(options) - 1)
       end
 
-      # DBR
       paginate_results = []
       paginate_results << scope.limit(limit).offset(offset).uniq
       if present_count?(options)
@@ -171,7 +170,6 @@ module Brainstem
 
       paginate_results
 
-#      [scope.limit(limit).offset(offset).uniq, scope.select("distinct #{scope.connection.quote_table_name options[:table_name]}.id").count] # as of Rails 3.2.5, uniq.count generates the wrong SQL.
     end
 
     def calculate_per_page(options)
