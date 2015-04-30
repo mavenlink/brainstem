@@ -79,7 +79,10 @@ module Brainstem
 
         # On complex queries, MySQL can sometimes handle 'SELECT id FROM ... ORDER BY ...' much faster than
         # 'SELECT * FROM ...', so we pluck the ids, then find those specific ids in a separate query.
-        new_scope = handle_ordering(scope.klass.where(id: scope.pluck("#{scope.table_name}.id")), options)
+        ids = scope.pluck("#{scope.table_name}.id")
+        id_lookup = {}
+        ids.each.with_index { |id, index| id_lookup[id] = index }
+        new_scope = scope.klass.where(id: id_lookup.keys).sort_by { |model| id_lookup[model.id] }
         records = new_scope.to_a
       end
 
