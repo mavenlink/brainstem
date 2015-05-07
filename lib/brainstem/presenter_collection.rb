@@ -82,8 +82,7 @@ module Brainstem
         ids = scope.pluck("#{scope.table_name}.id")
         id_lookup = {}
         ids.each.with_index { |id, index| id_lookup[id] = index }
-        new_scope = scope.klass.where(id: id_lookup.keys).sort_by { |model| id_lookup[model.id] }
-        records = new_scope.to_a
+        records = scope.klass.where(id: id_lookup.keys).sort_by { |model| id_lookup[model.id] }
       end
 
       # Determine if an exception should be raised on an empty result set.
