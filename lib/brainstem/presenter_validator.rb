@@ -11,6 +11,7 @@ module Brainstem
 
     validate :preloads_exist
     validate :fields_exist
+    validate :associations_exist
     validate :conditionals_exist
 
     def preloads_exist
@@ -26,12 +27,25 @@ module Brainstem
         case field_or_fields
           when DSL::Field
             method_name = field_or_fields.method_name
-            next unless method_name
-            if presenter_class.presents.any? { |klass| !klass.new.respond_to?(method_name) }
+            if method_name && presenter_class.presents.any? { |klass| !klass.new.respond_to?(method_name) }
               errors.add(:fields, "'#{name}' is not valid because not all presented classes respond to '#{method_name}'")
             end
           when DSL::Configuration
             fields_exist(field_or_fields)
+        end
+      end
+    end
+
+    def associations_exist(associations = presenter_class.configuration[:associations])
+      associations.each do |name, association|
+        method_name = association.method_name
+
+        if !association.polymorphic? && !Brainstem.presenter_collection.for(association.target_class)
+          errors.add(:associations, "'#{name}' is not valid because no presenter could be found for the #{association.target_class} class")
+        end
+
+        if method_name && presenter_class.presents.any? { |klass| !klass.new.respond_to?(method_name) }
+          errors.add(:associations, "'#{name}' is not valid because not all presented classes respond to '#{method_name}'")
         end
       end
     end

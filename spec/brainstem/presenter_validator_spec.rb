@@ -61,6 +61,30 @@ describe Brainstem::PresenterValidator do
     end
   end
 
+  describe 'validating associations' do
+    it 'adds an error for any field that is not on all presented classes' do
+      presenter_class.associations do
+        association :foo, Workspace
+        association :bar, Workspace
+      end
+
+      expect(validator).not_to be_valid
+      expect(validator.errors[:associations]).to eq ["'foo' is not valid because not all presented classes respond to 'foo'",
+                                                     "'bar' is not valid because not all presented classes respond to 'bar'"]
+    end
+
+    it 'adds an error for any association that does not have a known presenter' do
+      class NewConcept; end
+
+      presenter_class.associations do
+        association :tasks, NewConcept
+      end
+
+      expect(validator).not_to be_valid
+      expect(validator.errors[:associations]).to eq ["'tasks' is not valid because no presenter could be found for the NewConcept class"]
+    end
+  end
+
   describe 'validating fields' do
     it 'adds an error for any field that is not on all presented classes' do
       presenter_class.fields do
