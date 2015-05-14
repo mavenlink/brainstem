@@ -156,7 +156,7 @@ module Brainstem
         when nil
           scope
         else
-          scope.order(order.to_s + " " + direction)
+          scope.reorder(order.to_s + " " + direction)
       end
     end
 

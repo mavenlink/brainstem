@@ -80,8 +80,14 @@ module Brainstem
         # Load models!
         # On complex queries, MySQL can sometimes handle 'SELECT id FROM ... ORDER BY ...' much faster than
         # 'SELECT * FROM ...', so we pluck the ids, then find those specific ids in a separate query.
-        new_scope = options[:primary_presenter].apply_ordering_to_scope(scope.klass.where(id: scope.pluck("#{scope.table_name}.id")), options[:params])
-        primary_models = new_scope.to_a
+        if(ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql|sqlite/i)
+          ids = scope.pluck("#{scope.table_name}.id")
+          id_lookup = {}
+          ids.each.with_index { |id, index| id_lookup[id] = index }
+          primary_models = scope.klass.where(id: id_lookup.keys).sort_by { |model| id_lookup[model.id] }
+        else
+          primary_models = scope.to_a
+        end
       end
 
       # Determine if an exception should be raised on an empty result set.
