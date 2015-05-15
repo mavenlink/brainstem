@@ -90,44 +90,46 @@ The scope passed to `brainstem_present` could contain any starting conditions th
 
 Responses will look like the following:
 
-    {
-      # Total number of results that matched the query.
-      count: 5,
+```js
+{
+  # Total number of results that matched the query.
+  count: 5,
 
-      # A lookup table to top-level keys.  Necessary
-      # because some objects can have associations of
-      # the same type as themselves.
-      results: [
-        { key: "widgets", id: "2" },
-        { key: "widgets", id: "10" }
-      ],
+  # A lookup table to top-level keys.  Necessary
+  # because some objects can have associations of
+  # the same type as themselves.
+  results: [
+    { key: "widgets", id: "2" },
+    { key: "widgets", id: "10" }
+  ],
 
-      # Serialized models with any requested associations, keyed by ID.
+  # Serialized models with any requested associations, keyed by ID.
 
-      widgets: {
-        "10": {
-          id: "10",
-          name: "disco ball",
-          feature_ids: ["5"],
-          popularity: 85,
-          location_id: "2"
-        },
+  widgets: {
+    "10": {
+      id: "10",
+      name: "disco ball",
+      feature_ids: ["5"],
+      popularity: 85,
+      location_id: "2"
+    },
 
-        "2": {
-       	  id: "2",
-       	  name: "flubber",
-       	  feature_ids: ["6", "12"],
-       	  popularity: 100,
-       	  location_id: "2"
-       	}
-      },
-
-      features: {
-        "5": { id: "5", name: "shiny" },
-        "6": { id: "6", name: "bouncy" },
-        "12": { id: "12", name: "physically impossible" }
-      }
+    "2": {
+      id: "2",
+      name: "flubber",
+      feature_ids: ["6", "12"],
+      popularity: 100,
+      location_id: "2"
     }
+  },
+
+  features: {
+    "5": { id: "5", name: "shiny" },
+    "6": { id: "6", name: "bouncy" },
+    "12": { id: "12", name: "physically impossible" }
+  }
+}
+```
 
 You may want to setup an initializer in `config/initializers/brainstem.rb` like the following:
 
