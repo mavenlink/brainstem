@@ -25,7 +25,6 @@ module Brainstem
     # @param [Hash] options The options that will be applied as the objects are converted.
     # @option options [Hash] :params The +params+ hash included in a request for the presented object.
     # @option options [ActiveRecord::Base] :model The model that is being presented (if different from +name+).
-    # @option options [String] :brainstem_key The top-level key the presented objects will be assigned to (if different from +name.tableize+)
     # @option options [Integer] :max_per_page The maximum number of items that can be requested by <code>params[:per_page]</code>.
     # @option options [Integer] :per_page The number of items that will be returned if <code>params[:per_page]</code> is not set.
     # @option options [Boolean] :apply_default_filters Determine if Presenter's filter defaults should be applied.  On by default.
@@ -34,7 +33,7 @@ module Brainstem
     # @return [Hash] A hash of arrays of hashes. Top-level hash keys are pluralized model names, with values of arrays containing one hash per object that was found by the given given options.
     def presenting(name, options = {}, &block)
       options[:params] = HashWithIndifferentAccess.new(options[:params] || {})
-      check_for_old_options(options)
+      check_for_old_options!(options)
       set_default_filters_option!(options)
       presented_class = (options[:model] || name)
       presented_class = presented_class.classify.constantize if presented_class.is_a?(String)
@@ -48,7 +47,7 @@ module Brainstem
       options[:table_name] = presented_class.table_name
 
       # key these models will use in the struct that is output
-      options[:brainstem_key] = (options[:brainstem_key] || name.to_s.tableize).to_s
+      brainstem_key = brainstem_key_for!(presented_class)
 
       # filter the incoming :includes list by those available from this Presenter in the current context
       selected_associations = filter_includes(options)
@@ -97,11 +96,11 @@ module Brainstem
 
       primary_models = order_for_search(primary_models, ordered_search_ids) if searching?(options)
 
-      struct = { 'count' => count, options[:brainstem_key] => [], 'results' => [] }
+      struct = { 'count' => count, brainstem_key => [], 'results' => [] }
 
       # Build top-level keys for all requested associations.
       selected_associations.each do |association|
-        struct[association.brainstem_key] ||= [] if association.brainstem_key
+        struct[brainstem_key_for!(association.target_class)] ||= [] unless association.polymorphic?
       end
 
       if primary_models.length > 0
@@ -111,13 +110,13 @@ module Brainstem
                                                                              selected_associations.map(&:name),
                                                                              load_associations_into: associated_models)
 
-        struct[options[:brainstem_key]] += presented_primary_models
-        struct['results'] = presented_primary_models.map { |model| { 'key' => options[:brainstem_key].to_s, 'id' => model['id'] } }
+        struct[brainstem_key] += presented_primary_models
+        struct['results'] = presented_primary_models.map { |model| { 'key' => brainstem_key, 'id' => model['id'] } }
 
-        associated_models.each do |brainstem_key, associated_models_hash|
+        associated_models.each do |association_brainstem_key, associated_models_hash|
           presenter = for!(associated_models_hash.values.first.class)
-          struct[brainstem_key] ||= []
-          struct[brainstem_key] += presenter.group_present(associated_models_hash.values)
+          struct[association_brainstem_key] ||= []
+          struct[association_brainstem_key] += presenter.group_present(associated_models_hash.values)
         end
       end
 
@@ -148,6 +147,12 @@ module Brainstem
     # @raise [ArgumentError] if there is no known Presenter for +klass+.
     def for!(klass)
       self.for(klass) || raise(ArgumentError, "Unable to find a presenter for class #{klass}")
+    end
+
+    def brainstem_key_for!(klass)
+      presenter = presenters[klass.to_s]
+      raise(ArgumentError, "Unable to find a presenter for class #{klass}") unless presenter
+      presenter.configuration[:brainstem_key] || klass.table_name
     end
 
     # @raise [StandardError] if any presenter in this collection is invalid.
@@ -272,8 +277,10 @@ module Brainstem
       options[:apply_default_filters] = [true, "true", "TRUE", 1, "1"].include? options[:params].delete(:apply_default_filters)
     end
 
-    def check_for_old_options(options)
-      raise "The 'as' parameter has been renamed to 'brainstem_key'" if options[:as].present?
+    def check_for_old_options!(options)
+      if options[:as].present?
+        raise "PresenterCollection#presenting no longer accepts the :as option.  Use the brainstem_key annotation in your presenters instead."
+      end
     end
   end
 end

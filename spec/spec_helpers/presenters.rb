@@ -47,6 +47,18 @@ class WorkspacePresenter < Brainstem::Presenter
   end
 end
 
+class GroupPresenter < Brainstem::Presenter
+  presents Group
+
+  fields do
+    field :title, :string
+  end
+
+  associations do
+    association :tasks, Task, 'The Tasks in this Group'
+  end
+end
+
 class TaskPresenter < Brainstem::Presenter
   presents Task
 
@@ -57,13 +69,11 @@ class TaskPresenter < Brainstem::Presenter
   associations do
     association :sub_tasks, Task
     association :other_tasks, Task, 'another copy of the sub_tasks association',
-                brainstem_key: 'other_tasks',
                 via: :sub_tasks
     association :workspace, Workspace
     association :restricted, Task, 'only available on only / show requests',
-                dynamic: lambda { |task| task },
-                restrict_to_only: true,
-                brainstem_key: 'restricted_associations'
+                dynamic: lambda { |task| Task.last },
+                restrict_to_only: true
   end
 end
 
@@ -76,7 +86,6 @@ class UserPresenter < Brainstem::Presenter
 
   associations do
     association :odd_workspaces, Workspace, 'only the odd numbered workspaces',
-                brainstem_key: 'odd_workspaces',
                 dynamic: lambda { |user| user.workspaces.select { |workspace| workspace.id % 2 == 1 } }
   end
 end
@@ -90,5 +99,26 @@ class PostPresenter < Brainstem::Presenter
 
   associations do
     association :subject, :polymorphic
+    association :attachments, Attachments::PostAttachment
+  end
+end
+
+class AttachmentBasePresenter < Brainstem::Presenter
+  presents Attachments::Base, Attachments::TaskAttachment
+
+  fields do
+    field :filename, :string
+  end
+
+  associations do
+    association :subject, :polymorphic
+  end
+end
+
+class AttachmentsPostPresenter < AttachmentBasePresenter
+  presents Attachments::PostAttachment
+
+  fields do
+    field :another_filename, :string, via: :filename
   end
 end

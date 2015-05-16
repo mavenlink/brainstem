@@ -29,6 +29,14 @@ ActiveRecord::Schema.define do
     t.integer :user_id
     t.timestamps null: true
   end
+
+  create_table :attachments, :force => true do |t|
+    t.string :type, null: false
+    t.string :filename
+    t.integer :subject_id
+    t.string :subject_type
+    t.timestamps null: true
+  end
 end
 
 class User < ActiveRecord::Base
@@ -62,10 +70,27 @@ class Workspace < ActiveRecord::Base
   end
 end
 
-class SubWorkspace < Workspace
+class Group < Workspace
+  def secret_info
+    "groups have different secret info"
+  end
 end
 
 class Post < ActiveRecord::Base
   belongs_to :user
-  belongs_to :subject, :polymorphic => true
+  belongs_to :subject, polymorphic: true
+  has_many :attachments, as: :subject, class_name: 'Attachments::PostAttachment'
+end
+
+module Attachments
+  class Base < ActiveRecord::Base
+    self.table_name = :attachments
+    belongs_to :subject, polymorphic: true
+  end
+
+  class PostAttachment < Base
+  end
+
+  class TaskAttachment < Base
+  end
 end

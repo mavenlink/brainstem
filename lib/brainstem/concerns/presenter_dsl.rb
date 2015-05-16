@@ -150,6 +150,10 @@ module Brainstem
         def search(&block)
           configuration[:search] = block
         end
+
+        def brainstem_key(key)
+          configuration[:brainstem_key] = key.to_s
+        end
       end
     end
   end

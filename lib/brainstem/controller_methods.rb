@@ -43,7 +43,10 @@ module Brainstem
         options[:params][:only] = ids.to_s
       end
 
-      options[:brainstem_key] = (options[:key_map] || {})[klass.to_s] || klass.table_name
+      if options[:key_map]
+        raise "brainstem_present_object no longer accepts a :key_map.  Use brainstem_key annotations on your presenters instead."
+      end
+
       brainstem_present(klass, options) { klass.where(:id => ids) }
     end
     alias_method :brainstem_present_objects, :brainstem_present_object

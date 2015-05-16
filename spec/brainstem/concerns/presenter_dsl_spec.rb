@@ -3,6 +3,8 @@ require 'brainstem/concerns/presenter_dsl'
 
 # preload :lead_user
 #
+# brainstem_key :projects
+#
 # conditionals do
 #   model   :title_is_hello, lambda { workspace.title == 'hello' }, 'visible when the title is hello'
 #   request :user_is_bob, lambda { current_user.username == 'bob' }, 'visible only to bob'
@@ -32,8 +34,7 @@ require 'brainstem/concerns/presenter_dsl'
 #               restrict_to_only: true
 #   association :lead_user, User, 'The user who runs this Workspace'
 #   association :subtasks, Task, 'Only Tasks in this Workspace that are subtasks',
-#               dynamic: lambda { |workspace| workspace.tasks.where('parent_id IS NOT NULL') },
-#               brainstem_key: 'sub_tasks'
+#               dynamic: lambda { |workspace| workspace.tasks.where('parent_id IS NOT NULL') }
 #   association :something, :polymorphic
 # end
 
@@ -213,8 +214,7 @@ describe Brainstem::Concerns::PresenterDSL do
         association :tasks, Task, 'The Tasks in this Workspace',
                     restrict_to_only: true
         association :subtasks, Task, 'Only Tasks in this Workspace that are subtasks',
-                    dynamic: lambda { |workspace| workspace.tasks.where('parent_id IS NOT NULL') },
-                    brainstem_key: 'sub_tasks'
+                    dynamic: lambda { |workspace| workspace.tasks.where('parent_id IS NOT NULL') }
         association :something, :polymorphic
       end
     end
@@ -226,7 +226,7 @@ describe Brainstem::Concerns::PresenterDSL do
       expect(presenter_class.configuration[:associations][:tasks].options).to eq({ restrict_to_only: true })
       expect(presenter_class.configuration[:associations][:subtasks].target_class).to eq Task
       expect(presenter_class.configuration[:associations][:subtasks].description).to eq 'Only Tasks in this Workspace that are subtasks'
-      expect(presenter_class.configuration[:associations][:subtasks].options.keys).to eq [:dynamic, :brainstem_key]
+      expect(presenter_class.configuration[:associations][:subtasks].options.keys).to eq [:dynamic]
       expect(presenter_class.configuration[:associations][:something].target_class).to eq :polymorphic
       expect(presenter_class.configuration[:associations][:something].description).to be_nil
     end
@@ -389,6 +389,24 @@ describe Brainstem::Concerns::PresenterDSL do
     it "creates an entry in the search configuration" do
       presenter_class.search do end
       expect(presenter_class.configuration[:search]).to be_a(Proc)
+    end
+  end
+
+  describe ".brainstem_key" do
+    before do
+      presenter_class.brainstem_key(:foo)
+    end
+
+    it "creates an entry in the brainstem_key configuration" do
+      expect(presenter_class.configuration[:brainstem_key]).to eq('foo')
+    end
+
+    it 'is inherited and overridable' do
+      subclass = Class.new(presenter_class)
+      expect(subclass.configuration[:brainstem_key]).to eq('foo')
+      subclass.brainstem_key(:bar)
+      expect(subclass.configuration[:brainstem_key]).to eq('bar')
+      expect(presenter_class.configuration[:brainstem_key]).to eq('foo')
     end
   end
 end

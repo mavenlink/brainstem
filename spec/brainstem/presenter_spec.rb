@@ -281,12 +281,12 @@ describe Brainstem::Presenter do
 
           it "outputs the object as a hash with the id & class table name" do
             expect(presented_data['subject_ref']).to eq({ 'id' => post.subject.id.to_s,
-                                                          'key' => post.subject.class.table_name })
+                                                          'key' => 'workspaces' })
           end
 
           it "outputs custom names for the object as a hash with the id & class table name" do
             expect(presented_data['another_subject_ref']).to eq({ 'id' => post.subject.id.to_s,
-                                                                  'key' => post.subject.class.table_name })
+                                                                  'key' => 'workspaces' })
           end
 
           it "skips the polymorphic handling when a model is given" do

@@ -32,8 +32,7 @@ describe Brainstem::PresenterValidator do
                     restrict_to_only: true
         association :lead_user, User, 'The user who runs this Workspace'
         association :subtasks, Task, 'Only Tasks in this Workspace that are subtasks',
-                    dynamic: lambda { |workspace| workspace.tasks.where('parent_id IS NOT NULL') },
-                    brainstem_key: 'sub_tasks'
+                    dynamic: lambda { |workspace| workspace.tasks.where('parent_id IS NOT NULL') }
       end
     end
   end

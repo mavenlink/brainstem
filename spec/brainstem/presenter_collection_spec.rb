@@ -162,12 +162,6 @@ describe Brainstem::PresenterCollection do
         result = @presenter_collection.presenting(Workspace) { Workspace.unscoped }
         expect(result['workspaces'].length).to eq(Workspace.count)
       end
-
-      it "infers the table name from the model" do
-        result = @presenter_collection.presenting("not_workspaces", :model => "Workspace", :params => { :per_page => 2, :page => 1 }) { Workspace.unscoped  }
-        expect(result['not_workspaces']).not_to be_empty
-        expect(result['count']).to eq(Workspace.count)
-      end
     end
 
     describe "the 'results' top level key" do
@@ -186,13 +180,6 @@ describe Brainstem::PresenterCollection do
 
         result = @presenter_collection.presenting("workspaces", :params => { :include => "foo,tasks,lead_user" }) { Workspace.unscoped }
         expect(result.keys).to match_array %w[count workspaces tasks users results]
-      end
-
-      it "allows the allowed includes list to have different json names and association names" do
-        result = @presenter_collection.presenting("tasks",
-          :params => { :include => "other_tasks" }) { Task.unscoped }
-        expect(result['tasks']).to be_present
-        expect(result['other_tasks']).to be_present
       end
 
       it "defaults to not include any allowed includes" do
@@ -264,7 +251,7 @@ describe Brainstem::PresenterCollection do
         expect(result['users'][User.first.id.to_s]).to be_present
         odd_workspace_ids = User.first.workspaces.select { |w| w.id % 2 == 1 }.map(&:id).map(&:to_s)
         expect(result['users'][User.first.id.to_s]['odd_workspace_ids']).to eq odd_workspace_ids
-        expect(result['odd_workspaces'].keys).to eq odd_workspace_ids
+        expect(result['workspaces'].keys).to eq odd_workspace_ids
       end
 
       describe "restricted associations" do
@@ -272,7 +259,7 @@ describe Brainstem::PresenterCollection do
           t = Task.first
           result = @presenter_collection.presenting("tasks", :params => { :include => "restricted", :only => t.id.to_s }, :max_per_page => 2) { Task.where(:id => t.id) }
           expect(result['tasks'][t.id.to_s].keys).to include('restricted_id')
-          expect(result.keys).to include('restricted_associations')
+          expect(result['tasks'][Task.last.id.to_s]).to be_present
         end
 
         it "does not apply includes that are restricted to only queries in a non-only query" do
@@ -280,7 +267,7 @@ describe Brainstem::PresenterCollection do
           result = @presenter_collection.presenting("tasks", :params => { :include => "restricted" }, :max_per_page => 2) { Task.where(:id => t.id) }
 
           expect(result['tasks'][t.id.to_s].keys).not_to include('restricted_id')
-          expect(result.keys).not_to include('restricted_associations')
+          expect(result['tasks'][Task.last.id.to_s]).not_to be_present
         end
       end
 
@@ -290,7 +277,16 @@ describe Brainstem::PresenterCollection do
           expect(result['posts'][Post.first.id.to_s]).to be_present
           expect(result['workspaces'][Workspace.first.id.to_s]).to be_present
           expect(result['tasks'][Task.first.id.to_s]).to be_present
-          expect(result['posts']['1']['subject_ref']).to eq({ 'id' => Post.find(1).subject.id.to_s, 'key' => Post.find(1).subject.class.table_name })
+          expect(result['posts']['1']['subject_ref']).to eq({ 'id' => '1', 'key' => 'workspaces' })
+          expect(result['posts']['2']['subject_ref']).to eq({ 'id' => '1', 'key' => 'tasks' })
+        end
+
+        it "uses the correct brainstem_key from the associated presenter" do
+          result = @presenter_collection.presenting("posts", :params => { :include => "attachments" }) { Post.unscoped }
+          expect(result['posts']['1']).to be_present
+          expect(result['attachments']['1']).to be_present
+          expect(result['posts']['1']['attachment_ids']).to eq ['1']
+          expect(result['attachments']['1']['subject_ref']).to eq({ 'key' => 'posts', 'id' => '1' })
         end
 
         it "does not return an empty hash when none are found" do
@@ -848,16 +844,11 @@ describe Brainstem::PresenterCollection do
       end
     end
 
-    describe "the :brainstem_key option" do
-      it "determines the chosen top-level key name" do
-        result = @presenter_collection.presenting("workspaces", brainstem_key: :my_workspaces) { Workspace.where(:id => 1) }
-        expect(result.keys).to eq(%w[count my_workspaces results])
-      end
-
-      it "used to be called 'as'" do
+    describe "the :as option" do
+      it "is no longer supported" do
         expect(lambda {
           @presenter_collection.presenting("workspaces", as: :my_workspaces) { Workspace.where(:id => 1) }
-        }).to raise_error(/The 'as' parameter has been renamed to 'brainstem_key'/)
+        }).to raise_error(/brainstem_key annotation/)
       end
     end
 
@@ -946,6 +937,31 @@ describe Brainstem::PresenterCollection do
     describe "for! method" do
       it "raises if there is no presenter for the given class" do
         expect{ Brainstem.presenter_collection("v1").for!(String) }.to raise_error(ArgumentError)
+      end
+    end
+
+    describe "brainstem_key_for! method" do
+      class AnotherWorkspace < Workspace
+      end
+
+      let!(:another_workspace_presenter_class) do
+        Class.new(Brainstem::Presenter) do
+          presents AnotherWorkspace
+        end
+      end
+
+      it "defaults to the table name" do
+        expect(Brainstem.presenter_collection.for!(AnotherWorkspace)).to be_a(another_workspace_presenter_class)
+        expect(Brainstem.presenter_collection.brainstem_key_for!(AnotherWorkspace)).to eq 'workspaces'
+      end
+
+      it "uses the given brainstem_key if present" do
+        another_workspace_presenter_class.brainstem_key(:projects)
+        expect(Brainstem.presenter_collection.brainstem_key_for!(AnotherWorkspace)).to eq 'projects'
+      end
+
+      it "raises if there is no presenter for the given class" do
+        expect{ Brainstem.presenter_collection("v1").brainstem_key_for!(String) }.to raise_error(ArgumentError)
       end
     end
   end

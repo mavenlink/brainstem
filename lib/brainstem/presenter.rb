@@ -257,7 +257,8 @@ module Brainstem
 
           if options[:load_associations_into]
             Array(associated_models).flatten.each do |associated_model|
-              key = association.brainstem_key || DSL::Association.brainstem_key_for(associated_model.class, association.options[:sti_uses_base])
+              # FIXME: know our own namespace and put it here
+              key = Brainstem.presenter_collection.brainstem_key_for!(associated_model.class)
               options[:load_associations_into][key] ||= {}
               options[:load_associations_into][key][associated_model.id.to_s] = associated_model
             end
@@ -270,7 +271,11 @@ module Brainstem
               if (id = model.send(id_attr)).present?
                 {
                   'id' => to_s_except_nil(id),
-                  'key' => model.send("#{method_name}_type").try(:tableize)
+                  'key' => Brainstem.presenter_collection.brainstem_key_for!(model.send("#{method_name}_type").try(:constantize))
+                  # For polymorphic associations to STI models, for now we always look at the base class presenter, which may be wrong.
+                  # This could be more correct if we instantiated the object to check it's class.
+                  # Look at Mavenlink code and see if we can simply change this to never return a *_ref unless explictly asked, when we
+                  # would always have all the knowledge we need.
                 }
               end
             end

@@ -8,56 +8,6 @@ describe Brainstem::DSL::Association do
   let(:options) { { } }
   let(:association) { Brainstem::DSL::Association.new(name, target_class, description, options) }
 
-  describe '#brainstem_key' do
-    describe 'when the :brainstem_key is in the options' do
-      let(:options) { { brainstem_key: 'my_users' } }
-
-      it 'returns it' do
-        expect(association.brainstem_key).to eq 'my_users'
-      end
-    end
-
-    describe 'when a target class is present' do
-      class AwesomeUser < ActiveRecord::Base
-      end
-
-      let(:target_class) { AwesomeUser }
-
-      it 'returns it underscored and pluralized' do
-        expect(association.brainstem_key).to eq 'awesome_users'
-      end
-    end
-
-    describe 'when a STI class is present' do
-      class AwesomerUser < User
-      end
-
-      let(:target_class) { AwesomerUser }
-
-      describe 'by default' do
-        it 'returns the subclass name underscored and pluralized' do
-          expect(association.brainstem_key).to eq 'awesomer_users'
-        end
-      end
-
-      describe 'when :sti_uses_base is true' do
-        let(:options) { { sti_uses_base: true } }
-
-        it 'returns the base class name underscored and pluralized' do
-          expect(association.brainstem_key).to eq 'users'
-        end
-      end
-    end
-
-    describe 'when the target class is :polymorphic' do
-      let(:target_class) { :polymorphic }
-
-      it 'returns nil' do
-        expect(association.brainstem_key).to be_nil
-      end
-    end
-  end
-
   describe "#run_on" do
     context 'with no special options' do
       it 'calls the method by name on the model' do

@@ -26,6 +26,8 @@ module Brainstem
     @presenter_collection[namespace.to_s.downcase] ||= PresenterCollection.new
   end
 
+  # TODO: pull these into the presenter
+
   # Helper method to quickly add presenter classes that are in a namespace. For example, +add_presenter_class(Api::V1::UserPresenter, "User")+ would add +UserPresenter+ to the PresenterCollection for the +:v1+ namespace as the presenter for the +User+ class.
   # @param [Brainstem::Presenter] presenter_class The presenter class that is being registered.
   # @param [Array<String, Class>] klasses Classes that will be presented by the given presenter.
