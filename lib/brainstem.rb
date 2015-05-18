@@ -31,15 +31,8 @@ module Brainstem
   # Helper method to quickly add presenter classes that are in a namespace. For example, +add_presenter_class(Api::V1::UserPresenter, "User")+ would add +UserPresenter+ to the PresenterCollection for the +:v1+ namespace as the presenter for the +User+ class.
   # @param [Brainstem::Presenter] presenter_class The presenter class that is being registered.
   # @param [Array<String, Class>] klasses Classes that will be presented by the given presenter.
-  def self.add_presenter_class(presenter_class, *klasses)
-    presenter_collection(namespace_of(presenter_class)).add_presenter_class(presenter_class, *klasses)
-  end
-
-  # @param [Class] klass The Ruby class whose namespace we would like to know.
-  # @return [String] The name of the module containing the passed-in class.
-  def self.namespace_of(klass)
-    names = klass.to_s.split("::")
-    names[-2] ? names[-2] : default_namespace
+  def self.add_presenter_class(presenter_class, namespace, *klasses)
+    presenter_collection(namespace).add_presenter_class(presenter_class, *klasses)
   end
 
   # @return [Logger] The Brainstem logger. If Rails is loaded, defaults to the Rails logger. If Rails is not loaded, defaults to a STDOUT logger.

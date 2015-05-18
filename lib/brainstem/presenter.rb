@@ -18,9 +18,16 @@ module Brainstem
           raise "Brainstem Presenter#presents now expects a Class instead of a class name"
         end
         @presents += klasses
-        Brainstem.add_presenter_class(self, *klasses)
+        Brainstem.add_presenter_class(self, namespace, *klasses)
       end
       @presents
+    end
+
+    # Return the second-to-last module in the name of this presenter, which Brainstem considers to be the 'namespace'.
+    # E.g., Api::V1::FooPresenter has a namespace of "V1".
+    # @return [String] The name of the second-to-last module containing this presenter.
+    def self.namespace
+      self.to_s.split("::")[-2].try(:downcase)
     end
 
     def self.merged_helper_class
@@ -258,7 +265,7 @@ module Brainstem
           if options[:load_associations_into]
             Array(associated_model_or_models).flatten.each do |associated_model|
               # FIXME: know our own namespace and put it here
-              key = Brainstem.presenter_collection.brainstem_key_for!(associated_model.class)
+              key = presenter_collection.brainstem_key_for!(associated_model.class)
               options[:load_associations_into][key] ||= {}
               options[:load_associations_into][key][associated_model.id.to_s] = associated_model
             end
@@ -275,7 +282,7 @@ module Brainstem
             if (id = model.send(id_attr)).present?
               {
                 'id' => to_s_except_nil(id),
-                'key' => Brainstem.presenter_collection.brainstem_key_for!(model.send("#{method_name}_type").try(:constantize))
+                'key' => presenter_collection.brainstem_key_for!(model.send("#{method_name}_type").try(:constantize))
               }
             end
           end
@@ -311,11 +318,17 @@ module Brainstem
       if model
         {
           'id' => to_s_except_nil(model.id),
-          'key' => Brainstem.presenter_collection.brainstem_key_for!(model.class)
+          'key' => presenter_collection.brainstem_key_for!(model.class)
         }
       else
         nil
       end
+    end
+
+    # @api protected
+    # Find the global presenter collection for our namespace.
+    def presenter_collection
+      Brainstem.presenter_collection(self.class.namespace)
     end
   end
 end

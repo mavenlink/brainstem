@@ -10,7 +10,8 @@ describe Brainstem::Presenter do
 
       it "uses the closest module name as the presenter namespace" do
         V1::SomePresenter.presents String
-        expect(Brainstem.presenter_collection(:v1).for(String)).to be_a(V1::SomePresenter)
+        expect(Brainstem.presenter_collection('v1').for(String)).to be_a(V1::SomePresenter)
+        expect(V1::SomePresenter.namespace).to eq 'v1'
       end
 
       it "does not map namespaced presenters into the default namespace" do
@@ -307,6 +308,22 @@ describe Brainstem::Presenter do
               it "uses the brainstem_key from the presenter" do
                 expect(presented_data['subject_ref']).to eq({ 'id' => post.subject_id.to_s,
                                                               'key' => 'attachments' })
+              end
+
+              it "uses the correct namespace when finding a presenter" do
+                module V2
+                  class NewPostPresenter < Brainstem::Presenter
+                    presents Post
+
+                    associations do
+                      association :subject, :polymorphic
+                    end
+                  end
+                end
+
+                expect {
+                  V2::NewPostPresenter.new.group_present([post], %w[subject]).first
+                }.to raise_error(/Unable to find a presenter for class Attachments::PostAttachment/)
               end
             end
 
