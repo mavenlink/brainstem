@@ -25,6 +25,10 @@ module Brainstem
       def polymorphic?
         target_class == :polymorphic
       end
+
+      def always_return_ref_with_sti_base?
+        options[:always_return_ref_with_sti_base]
+      end
     end
   end
 end

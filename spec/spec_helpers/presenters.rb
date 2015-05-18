@@ -103,8 +103,8 @@ class PostPresenter < Brainstem::Presenter
   end
 end
 
-class AttachmentBasePresenter < Brainstem::Presenter
-  presents Attachments::Base, Attachments::TaskAttachment
+class AttachmentPresenter < Brainstem::Presenter
+  presents Attachments::TaskAttachment, Attachments::PostAttachment
 
   fields do
     field :filename, :string
@@ -115,10 +115,4 @@ class AttachmentBasePresenter < Brainstem::Presenter
   end
 end
 
-class AttachmentsPostPresenter < AttachmentBasePresenter
-  presents Attachments::PostAttachment
-
-  fields do
-    field :another_filename, :string, via: :filename
-  end
-end
+# TODO: inheritance of presenters

@@ -80,6 +80,10 @@ class Post < ActiveRecord::Base
   belongs_to :user
   belongs_to :subject, polymorphic: true
   has_many :attachments, as: :subject, class_name: 'Attachments::PostAttachment'
+
+  def things
+    [Workspace.first, Post.first, Task.first]
+  end
 end
 
 module Attachments

@@ -286,7 +286,7 @@ describe Brainstem::PresenterCollection do
           expect(result['posts']['1']).to be_present
           expect(result['attachments']['1']).to be_present
           expect(result['posts']['1']['attachment_ids']).to eq ['1']
-          expect(result['attachments']['1']['subject_ref']).to eq({ 'key' => 'posts', 'id' => '1' })
+          expect(result['attachments']['1']).to_not have_key('subject_ref')
         end
 
         it "does not return an empty hash when none are found" do

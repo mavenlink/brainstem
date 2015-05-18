@@ -253,10 +253,10 @@ module Brainstem
         id_attr = method_name && "#{method_name}_id"
 
         if context[:requested_associations_hash][external_name]
-          associated_models = association.run_on(model, context[:helper_instance])
+          associated_model_or_models = association.run_on(model, context[:helper_instance])
 
           if options[:load_associations_into]
-            Array(associated_models).flatten.each do |associated_model|
+            Array(associated_model_or_models).flatten.each do |associated_model|
               # FIXME: know our own namespace and put it here
               key = Brainstem.presenter_collection.brainstem_key_for!(associated_model.class)
               options[:load_associations_into][key] ||= {}
@@ -265,28 +265,35 @@ module Brainstem
           end
         end
 
-        if id_attr && model.class.columns_hash.has_key?(id_attr)
-          if association.polymorphic? && (reflection = context[:reflections][method_name]) && reflection.options[:polymorphic]
-            struct["#{external_name}_ref"] = begin
-              if (id = model.send(id_attr)).present?
-                {
-                  'id' => to_s_except_nil(id),
-                  'key' => Brainstem.presenter_collection.brainstem_key_for!(model.send("#{method_name}_type").try(:constantize))
-                  # For polymorphic associations to STI models, for now we always look at the base class presenter, which may be wrong.
-                  # This could be more correct if we instantiated the object to check it's class.
-                  # Look at Mavenlink code and see if we can simply change this to never return a *_ref unless explictly asked, when we
-                  # would always have all the knowledge we need.
-                }
-              end
+        if id_attr && model.class.columns_hash.has_key?(id_attr) && !association.polymorphic?
+          # We return *_id keys when they exist in the database, because it's free to do so.
+          struct["#{external_name}_id"] = to_s_except_nil(model.send(id_attr))
+        elsif association.always_return_ref_with_sti_base?
+          # Deprecated support for legacy always-return-ref mode without loading the association.
+          # It tries to find the key based on the *_type value in the DB (which will be the STI base class, and may error if no presenter exists)
+          struct["#{external_name}_ref"] = begin
+            if (id = model.send(id_attr)).present?
+              {
+                'id' => to_s_except_nil(id),
+                'key' => Brainstem.presenter_collection.brainstem_key_for!(model.send("#{method_name}_type").try(:constantize))
+              }
             end
-          else
-            struct["#{external_name}_id"] = to_s_except_nil(model.send(id_attr))
           end
         elsif context[:requested_associations_hash][external_name]
-          if associated_models.is_a?(Array) || associated_models.is_a?(ActiveRecord::Relation)
-            struct["#{external_name.to_s.singularize}_ids"] = associated_models.map {|a| to_s_except_nil(a.is_a?(ActiveRecord::Base) ? a.id : a) }
+          # This association has been explicitly requested and the models have been loaded above.
+          singular_external_name = external_name.to_s.singularize
+          if association.polymorphic?
+            if associated_model_or_models.is_a?(Array) || associated_model_or_models.is_a?(ActiveRecord::Relation)
+              struct["#{singular_external_name}_refs"] = associated_model_or_models.map { |associated_model| make_model_ref(associated_model) }
+            else
+              struct["#{singular_external_name}_ref"] = make_model_ref(associated_model_or_models)
+            end
           else
-            struct["#{external_name.to_s.singularize}_id"] = to_s_except_nil(associated_models.is_a?(ActiveRecord::Base) ? associated_models.id : associated_models)
+            if associated_model_or_models.is_a?(Array) || associated_model_or_models.is_a?(ActiveRecord::Relation)
+              struct["#{singular_external_name}_ids"] = associated_model_or_models.map { |associated_model| to_s_except_nil(associated_model.try(:id)) }
+            else
+              struct["#{singular_external_name}_id"] = to_s_except_nil(associated_model_or_models.try(:id))
+            end
           end
         end
       end
@@ -296,6 +303,19 @@ module Brainstem
     # Call to_s on the input unless the input is nil.
     def to_s_except_nil(thing)
       thing.nil? ? nil : thing.to_s
+    end
+
+    # @api protected
+    # Return a polymorphic id/key object for a model, or nil if no model was given.
+    def make_model_ref(model)
+      if model
+        {
+          'id' => to_s_except_nil(model.id),
+          'key' => Brainstem.presenter_collection.brainstem_key_for!(model.class)
+        }
+      else
+        nil
+      end
     end
   end
 end

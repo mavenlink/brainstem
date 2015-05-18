@@ -256,8 +256,8 @@ describe Brainstem::Presenter do
       end
 
       describe "polymorphic associations" do
-        before do
-          some_presenter = Class.new(Brainstem::Presenter) do
+        let(:some_presenter) do
+          Class.new(Brainstem::Presenter) do
             presents Post
 
             fields do
@@ -268,43 +268,110 @@ describe Brainstem::Presenter do
               association :subject, :polymorphic
               association :another_subject, :polymorphic, via: :subject
               association :forced_model, Workspace, via: :subject
+              association :things, :polymorphic
+            end
+          end
+        end
+
+        let(:presenter) { some_presenter.new }
+
+        context "when asking for the association" do
+          let(:presented_data) { presenter.group_present([post], %w[subject another_subject forced_model things]).first }
+
+          context "when polymorphic association exists" do
+            let(:post) { Post.find(1) }
+
+            it "outputs the object as a hash with the id & class table name" do
+              expect(presented_data['subject_ref']).to eq({ 'id' => post.subject.id.to_s,
+                                                            'key' => 'workspaces' })
+            end
+
+            it "outputs custom names for the object as a hash with the id & class table name" do
+              expect(presented_data['another_subject_ref']).to eq({ 'id' => post.subject.id.to_s,
+                                                                    'key' => 'workspaces' })
+            end
+
+            context "presenting a mixture of things" do
+              it 'will return a *_refs array' do
+                expect(presented_data['thing_refs']).to eq [
+                                                             { 'id' => '1', 'key' => 'workspaces' },
+                                                             { 'id' => '1', 'key' => 'posts' },
+                                                             { 'id' => '1', 'key' => 'tasks' }
+                                                           ]
+              end
+            end
+
+            context "for STI targets" do
+              let(:post) { Post.create!(subject: Attachments::PostAttachment.first, user: User.first, body: '1 2 3') }
+
+              it "uses the brainstem_key from the presenter" do
+                expect(presented_data['subject_ref']).to eq({ 'id' => post.subject_id.to_s,
+                                                              'key' => 'attachments' })
+              end
+            end
+
+            it "skips the polymorphic handling when a model is given" do
+              expect(presented_data['forced_model_id']).to eq(post.subject.id.to_s)
+              expect(presented_data).not_to have_key('forced_model_type')
+              expect(presented_data).not_to have_key('forced_model_ref')
+            end
+
+            describe "the legacy :always_return_ref_with_sti_base option" do
+              before do
+                some_presenter.associations do
+                  association :always_subject, :polymorphic, via: :subject,
+                              always_return_ref_with_sti_base: true
+                end
+              end
+
+              let(:post) { Post.create!(subject: Attachments::PostAttachment.first, user: User.first, body: '1 2 3') }
+
+              describe 'when the presenter can be found' do
+                before do
+                  Class.new(Brainstem::Presenter) do
+                    presents Attachments::Base
+
+                    brainstem_key :foo
+                  end
+                end
+
+                it "always returns the *_ref object, even when not included" do
+                  expect(presented_data['always_subject_ref']).to eq({ 'id' => post.subject.id.to_s,
+                                                                       'key' => 'foo' })
+                end
+              end
+
+              # It tries to find the key based on the *_type value in the DB (which will be the STI base class, and may error if no presenter exists)
+              describe 'when the presenter cannot be found' do
+                it "raises an error" do
+                  expect { presented_data['always_subject_ref'] }.to raise_error(/Unable to find a presenter for class Attachments::Base/)
+                end
+              end
             end
           end
 
-          @presenter = some_presenter.new
+          context "when polymorphic association does not exist" do
+            let(:post) { Post.find(3) }
+
+            it "outputs nil" do
+              expect(presented_data).to have_key('subject_ref')
+              expect(presented_data['subject_ref']).to be_nil
+            end
+
+            it "outputs nil" do
+              expect(presented_data).to have_key('another_subject_ref')
+              expect(presented_data['another_subject_ref']).to be_nil
+            end
+          end
         end
 
-        let(:presented_data) { @presenter.group_present([post]).first }
-
-        context "when polymorphic association exists" do
+        context "when not asking for the association" do
+          let(:presented_data) { presenter.group_present([post]).first }
           let(:post) { Post.find(1) }
 
-          it "outputs the object as a hash with the id & class table name" do
-            expect(presented_data['subject_ref']).to eq({ 'id' => post.subject.id.to_s,
-                                                          'key' => 'workspaces' })
-          end
-
-          it "outputs custom names for the object as a hash with the id & class table name" do
-            expect(presented_data['another_subject_ref']).to eq({ 'id' => post.subject.id.to_s,
-                                                                  'key' => 'workspaces' })
-          end
-
-          it "skips the polymorphic handling when a model is given" do
-            expect(presented_data['forced_model_id']).to eq(post.subject.id.to_s)
-            expect(presented_data).not_to have_key('forced_model_type')
-            expect(presented_data).not_to have_key('forced_model_ref')
-          end
-        end
-
-        context "when polymorphic association does not exist" do
-          let(:post) { Post.find(3) }
-
-          it "outputs nil" do
-            expect(presented_data['subject_ref']).to be_nil
-          end
-
-          it "outputs nil" do
-            expect(presented_data['another_subject_ref']).to be_nil
+          it "does not include the reference" do
+            expect(presented_data).to_not have_key('subject_ref')
+            expect(presented_data).to_not have_key('another_subject_ref')
           end
         end
       end
