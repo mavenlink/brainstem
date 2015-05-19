@@ -259,12 +259,13 @@ module Brainstem
         method_name = association.method_name && association.method_name.to_s
         id_attr = method_name && "#{method_name}_id"
 
+        # If this association has been explictly requested, execute the association here.  Additionally, store
+        # the loaded models in the :load_associations_into hash for later use.
         if context[:requested_associations_hash][external_name]
           associated_model_or_models = association.run_on(model, context[:helper_instance])
 
           if options[:load_associations_into]
             Array(associated_model_or_models).flatten.each do |associated_model|
-              # FIXME: know our own namespace and put it here
               key = presenter_collection.brainstem_key_for!(associated_model.class)
               options[:load_associations_into][key] ||= {}
               options[:load_associations_into][key][associated_model.id.to_s] = associated_model
@@ -277,32 +278,42 @@ module Brainstem
           struct["#{external_name}_id"] = to_s_except_nil(model.send(id_attr))
         elsif association.always_return_ref_with_sti_base?
           # Deprecated support for legacy always-return-ref mode without loading the association.
-          # It tries to find the key based on the *_type value in the DB (which will be the STI base class, and may error if no presenter exists)
-          struct["#{external_name}_ref"] = begin
-            if (id = model.send(id_attr)).present?
-              {
-                'id' => to_s_except_nil(id),
-                'key' => presenter_collection.brainstem_key_for!(model.send("#{method_name}_type").try(:constantize))
-              }
-            end
-          end
+          struct["#{external_name}_ref"] = legacy_polymorphic_base_ref(model, id_attr, method_name)
         elsif context[:requested_associations_hash][external_name]
-          # This association has been explicitly requested and the models have been loaded above.
-          singular_external_name = external_name.to_s.singularize
-          if association.polymorphic?
-            if associated_model_or_models.is_a?(Array) || associated_model_or_models.is_a?(ActiveRecord::Relation)
-              struct["#{singular_external_name}_refs"] = associated_model_or_models.map { |associated_model| make_model_ref(associated_model) }
-            else
-              struct["#{singular_external_name}_ref"] = make_model_ref(associated_model_or_models)
-            end
-          else
-            if associated_model_or_models.is_a?(Array) || associated_model_or_models.is_a?(ActiveRecord::Relation)
-              struct["#{singular_external_name}_ids"] = associated_model_or_models.map { |associated_model| to_s_except_nil(associated_model.try(:id)) }
-            else
-              struct["#{singular_external_name}_id"] = to_s_except_nil(associated_model_or_models.try(:id))
-            end
-          end
+          # This association has been explicitly requested.  Add the *_id, *_ids, *_ref, or *_refs keys to the presented data.
+          add_ids_or_refs_to_struct!(struct, association, external_name, associated_model_or_models)
         end
+      end
+    end
+
+    # @api protected
+    # Inject 'foo_ids' keys into the presented data if the foos association has been requested.
+    def add_ids_or_refs_to_struct!(struct, association, external_name, associated_model_or_models)
+      singular_external_name = external_name.to_s.singularize
+      if association.polymorphic?
+        if associated_model_or_models.is_a?(Array) || associated_model_or_models.is_a?(ActiveRecord::Relation)
+          struct["#{singular_external_name}_refs"] = associated_model_or_models.map { |associated_model| make_model_ref(associated_model) }
+        else
+          struct["#{singular_external_name}_ref"] = make_model_ref(associated_model_or_models)
+        end
+      else
+        if associated_model_or_models.is_a?(Array) || associated_model_or_models.is_a?(ActiveRecord::Relation)
+          struct["#{singular_external_name}_ids"] = associated_model_or_models.map { |associated_model| to_s_except_nil(associated_model.try(:id)) }
+        else
+          struct["#{singular_external_name}_id"] = to_s_except_nil(associated_model_or_models.try(:id))
+        end
+      end
+    end
+
+    # @api protected
+    # Deprecated support for legacy always-return-ref mode without loading the association.
+    # This tries to find the key based on the *_type value in the DB (which will be the STI base class, and may error if no presenter exists)
+    def legacy_polymorphic_base_ref(model, id_attr, method_name)
+      if (id = model.send(id_attr)).present?
+        {
+          'id' => to_s_except_nil(id),
+          'key' => presenter_collection.brainstem_key_for!(model.send("#{method_name}_type").try(:constantize))
+        }
       end
     end
 
