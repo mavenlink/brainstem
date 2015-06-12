@@ -16,8 +16,10 @@ module Brainstem
 
     def preloads_exist
       presenter_class.configuration[:preloads].each do |preload|
-        if presenter_class.presents.any? { |klass| !klass.new.respond_to?(preload) }
-          errors.add(:preload, "not all presented classes respond to '#{preload}'")
+        Array(preload.is_a?(Hash) ? preload.keys : preload).each do |association_name|
+          if presenter_class.presents.any? { |klass| !klass.new.respond_to?(association_name) }
+            errors.add(:preload, "not all presented classes respond to '#{association_name}'")
+          end
         end
       end
     end

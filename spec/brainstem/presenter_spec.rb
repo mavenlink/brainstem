@@ -415,7 +415,7 @@ describe Brainstem::Presenter do
         presenter_class.preload :posts
 
         mock(Brainstem::Presenter).ar_preload(anything, anything) do |models, args|
-          expect(args).to eq ['tasks', :posts]
+          expect(args).to eq ['tasks', "posts"]
         end
 
         result = presenter.group_present(Workspace.order('id desc'), %w[tasks lead_user tasks_with_lambda])
@@ -426,6 +426,16 @@ describe Brainstem::Presenter do
 
         mock(Brainstem::Presenter).ar_preload(anything, anything) do |models, args|
           expect(args).to eq %w[tasks user]
+        end
+
+        result = presenter.group_present(Workspace.order('id desc'), %w[tasks user lead_user tasks_with_lambda])
+      end
+
+      it "includes any nested hash associations declared via the preload DSL directive" do
+        presenter_class.preload :tasks, "user", "unknown", { "posts" => "subject", "foo" => "bar" },{ :user => :workspaces, "posts" => "user" }
+
+        mock(Brainstem::Presenter).ar_preload(anything, anything) do |models, args|
+          expect(args).to eq(["tasks", { "user" => :workspaces, "posts" => ["subject", "user"] }])
         end
 
         result = presenter.group_present(Workspace.order('id desc'), %w[tasks user lead_user tasks_with_lambda])
