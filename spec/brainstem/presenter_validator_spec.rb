@@ -58,6 +58,12 @@ describe Brainstem::PresenterValidator do
       expect(validator).not_to be_valid
       expect(validator.errors[:preload]).to eq ["not all presented classes respond to 'lead_user'"]
     end
+
+    it 'supports nested preloads' do
+      presenter_class.preload foo: :bar
+      expect(validator).not_to be_valid
+      expect(validator.errors[:preload]).to eq ["not all presented classes respond to 'foo'"]
+    end
   end
 
   describe 'validating associations' do

@@ -185,16 +185,41 @@ module Brainstem
     # Run preloading on the given models.
     def preload_associations!(models, context)
       if models.length > 0
-        association_names_to_preload = context[:requested_associations_hash].values.map(&:method_name).compact
-        association_names_to_preload += configuration[:preloads].to_a
-        # todo: better de-duping here when things might be nested hashes?
-        association_names_to_preload.uniq!
-        if association_names_to_preload.any?
-          reflections = context[:reflections]
-          association_names_to_preload.reject! { |association| !reflections.has_key?(association.to_s) }
-          if association_names_to_preload.any?
-            Brainstem::Presenter.ar_preload(models, association_names_to_preload)
+        reflections = context[:reflections]
+
+        preloads = context[:requested_associations_hash].values.map(&:method_name).compact
+        preloads += configuration[:preloads].to_a
+
+        hash_preloads = {}
+        single_preloads = []
+
+        preloads.each do |preload_name|
+          case preload_name
+            when Hash
+              preload_name.each do |key, value|
+                if hash_preloads[key]
+                  hash_preloads[key.to_s] = Array[hash_preloads[key], value]
+                else
+                  hash_preloads[key.to_s] = value
+                end
+              end
+            when NilClass
+            else
+              single_preloads << preload_name.to_s
           end
+        end
+
+        single_preloads -= hash_preloads.keys
+
+        single_preloads.uniq!
+
+        single_preloads.reject! { |preload_name| !reflections.has_key?(preload_name) }
+        hash_preloads.reject! { |preload_name, value| !reflections.has_key?(preload_name) }
+
+        single_preloads << hash_preloads if hash_preloads.any?
+
+        if single_preloads.any?
+          Brainstem::Presenter.ar_preload(models, single_preloads)
         end
       end
     end
