@@ -432,41 +432,73 @@ describe Brainstem::Presenter do
     end
 
     describe "preloading" do
-      it "preloads associations when they are full model-level associations" do
-        mock(Brainstem::Presenter).ar_preload(anything, anything) do |models, args|
-          expect(args).to eq %w[tasks user]
+
+      #
+      # We have three strategies for introspecting what the AR Preloader
+      # receives:
+      #
+      # 1. Actually looking at what AR receives.
+      #
+      #    This is sub-optimal because AR works differently between versions
+      #    3 and 4, so introspecting is difficult.
+      #
+      # 2. Looking at what the proc that encapsulates the AR methods is
+      #    called with.
+      #
+      #    This is difficult to do because we don't control the instantiation
+      #    of the Preloader, which makes injecting this hard.
+      #
+      # 3. Intercept the instantiating parent function and append the
+      #    inspectable proc.
+      #
+      #    This is probably the grossest of all the above options, and I
+      #    suspect it's the greatest indication that we're testing
+      #    inappropriately here -- a fact that I think bears weight given
+      #    we're making unit-level assertions in an integration spec.
+      #    However, there's also some value in asserting that these are
+      #    passed through without digging into Rails internals. However,
+      #    further 'purity' improvements could be made by introspecting on
+      #    AR's actual data structures.
+      #
+      #    That's about three shades on the side of overkill, though.
+      #
+      def preloader_should_receive(hsh)
+        preload_method = Object.new
+        mock(preload_method).call(anything, anything) do |models, args|
+          expect(args).to eq(hsh)
         end
-        result = presenter.group_present(Workspace.order('id desc'), %w[tasks user lead_user tasks_with_lambda])
+
+        stub(Brainstem::Preloader).preload(anything, anything, anything) do |*args|
+          args << preload_method
+          Brainstem::Preloader.new(*args).call
+        end
       end
-      
+
+
+      it "preloads associations when they are full model-level associations" do
+        preloader_should_receive("tasks" => [], "user" => [])
+        presenter.group_present(Workspace.order('id desc'), %w[tasks user lead_user tasks_with_lambda])
+      end
+
       it "includes any associations declared via the preload DSL directive" do
+        preloader_should_receive("tasks" => [], "posts" => [])
         presenter_class.preload :posts
 
-        mock(Brainstem::Presenter).ar_preload(anything, anything) do |models, args|
-          expect(args).to eq ['tasks', "posts"]
-        end
-
-        result = presenter.group_present(Workspace.order('id desc'), %w[tasks lead_user tasks_with_lambda])
+        presenter.group_present(Workspace.order('id desc'), %w[tasks lead_user tasks_with_lambda])
       end
 
       it "includes any string associations declared via the preload DSL directive" do
+        preloader_should_receive("tasks" => [], "user" => [])
         presenter_class.preload 'user'
 
-        mock(Brainstem::Presenter).ar_preload(anything, anything) do |models, args|
-          expect(args).to eq %w[tasks user]
-        end
-
-        result = presenter.group_present(Workspace.order('id desc'), %w[tasks user lead_user tasks_with_lambda])
+        presenter.group_present(Workspace.order('id desc'), %w[tasks user lead_user tasks_with_lambda])
       end
 
       it "includes any nested hash associations declared via the preload DSL directive" do
+        preloader_should_receive("tasks" => [], "user" => [:workspaces], "posts" => ["subject", "user"])
         presenter_class.preload :tasks, "user", "unknown", { "posts" => "subject", "foo" => "bar" },{ :user => :workspaces, "posts" => "user" }
 
-        mock(Brainstem::Presenter).ar_preload(anything, anything) do |models, args|
-          expect(args).to eq(["tasks", { "user" => :workspaces, "posts" => ["subject", "user"] }])
-        end
-
-        result = presenter.group_present(Workspace.order('id desc'), %w[tasks user lead_user tasks_with_lambda])
+        presenter.group_present(Workspace.order('id desc'), %w[tasks user lead_user tasks_with_lambda])
       end
     end
   end
