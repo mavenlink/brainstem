@@ -144,6 +144,34 @@ describe Brainstem::Presenter do
           expect(presenter.group_present([model]).first['secret']).to eq model.secret_info
         end
       end
+
+      describe 'helpers in dynamic fields' do
+        let(:presenter_class) do
+          Class.new(Brainstem::Presenter) do
+            helper do
+              def counter
+                @count ||= 0
+                @count += 1
+              end
+            end
+
+            fields do
+              field :memoized_helper_value1, :integer, dynamic: lambda { |model| counter }
+              field :memoized_helper_value2, :integer, dynamic: lambda { |model| counter }
+              field :memoized_helper_value3, :integer, dynamic: lambda { |model| counter }
+              field :memoized_helper_value4, :integer, dynamic: lambda { |model| counter }
+            end
+          end
+        end
+
+        let(:presenter) { presenter_class.new }
+
+        it 'shares the helper instance across fields, but not across instances' do
+          fields = presenter.group_present([model, model])
+          expect(fields[0].slice(*%w[memoized_helper_value1 memoized_helper_value2 memoized_helper_value3 memoized_helper_value4]).values).to match_array [1, 2, 3, 4]
+          expect(fields[1].slice(*%w[memoized_helper_value1 memoized_helper_value2 memoized_helper_value3 memoized_helper_value4]).values).to match_array [1, 2, 3, 4]
+        end
+      end
     end
 
     describe "adding object ids as strings" do
