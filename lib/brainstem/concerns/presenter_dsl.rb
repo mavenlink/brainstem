@@ -3,6 +3,12 @@ require 'brainstem/dsl/association'
 require 'brainstem/dsl/field'
 require 'brainstem/dsl/conditional'
 
+require 'brainstem/dsl/base_block'
+require 'brainstem/dsl/conditionals_block'
+require 'brainstem/dsl/fields_block'
+require 'brainstem/dsl/associations_block'
+
+
 module Brainstem
   module Concerns
     module PresenterDSL
@@ -17,69 +23,6 @@ module Brainstem
         configuration.nest!(:filters)
         configuration.nest!(:sort_orders)
         configuration.nest!(:associations)
-      end
-
-      class BaseBlock
-        attr_accessor :configuration, :block_options
-
-        def initialize(configuration, block_options = {}, &block)
-          @configuration = configuration
-          @block_options = block_options
-          block.arity < 1 ? self.instance_eval(&block) : block.call(self) if block_given?
-        end
-
-        def with_options(new_options = {}, &block)
-          descend self.class, configuration, new_options, &block
-        end
-
-        protected
-
-        def descend(klass, new_config = configuration, new_options = {}, &block)
-          klass.new(new_config, block_options.merge(new_options), &block)
-        end
-
-        def parse_args(args)
-          options = args.last.is_a?(Hash) ? args.pop : {}
-          description = args.shift
-          [description, options]
-        end
-      end
-
-      class ConditionalsBlock < BaseBlock
-        def request(name, action, description = nil)
-          configuration[:conditionals][name] = DSL::Conditional.new(name, :request, action, description)
-        end
-
-        def model(name, action, description = nil)
-          configuration[:conditionals][name] = DSL::Conditional.new(name, :model, action, description)
-        end
-      end
-
-      class FieldsBlock < BaseBlock
-        def field(name, type, *args)
-          description, options = parse_args(args)
-          configuration[name] = DSL::Field.new(name, type, description, smart_merge(block_options, options))
-        end
-
-        def fields(name, &block)
-          descend FieldsBlock, configuration.nest!(name), &block
-        end
-
-        private
-
-        def smart_merge(block_options, options)
-          if_clause = ([block_options[:if]] + [options[:if]]).flatten(2).compact.uniq
-          block_options.merge(options).tap do |opts|
-            opts.merge!(if: if_clause) if if_clause.present?
-          end
-        end
-      end
-
-      class AssociationsBlock < BaseBlock
-        def association(name, target_class, *args)
-          description, options = parse_args(args)
-          configuration[:associations][name] = DSL::Association.new(name, target_class, description, block_options.merge(options))
-        end
       end
 
       module ClassMethods

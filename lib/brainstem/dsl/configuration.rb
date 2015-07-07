@@ -1,8 +1,15 @@
 require 'active_support/hash_with_indifferent_access'
 
+# A hash-like object that accepts a parent configuration object that defers to
+# the parent in the absence of one of its own keys (thus simulating inheritance).
 module Brainstem
   module DSL
     class Configuration
+
+      # Returns a new configuration object.
+      #
+      # @params [Object] parent_configuration The parent configuration object
+      #   which the new configuration object should use as a base.
       def initialize(parent_configuration = nil)
         @parent_configuration = parent_configuration || ActiveSupport::HashWithIndifferentAccess.new
         @storage = ActiveSupport::HashWithIndifferentAccess.new
@@ -55,6 +62,16 @@ module Brainstem
 
       private
 
+      # @api private
+      #
+      # Retrieves the value stored at key.
+      #
+      # - If +key+ is already defined, it returns that;
+      # - If +key+ in the parent is a +Configuration+, returns a new
+      #   +Configuration+ with the parent set;
+      # - If +key+ in the parent is an +InheritableAppendSet+, returns a new
+      #   +InheritableAppendSet+ with the parent set;
+      # - Elsewise returns the parent configuration's value for the key.
       def get!(key)
         @storage[key] || begin
           if @parent_configuration[key].is_a?(Configuration)

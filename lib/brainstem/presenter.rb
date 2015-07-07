@@ -1,5 +1,6 @@
 require 'date'
 require 'brainstem/time_classes'
+require 'brainstem/preloader'
 require 'brainstem/concerns/presenter_dsl'
 
 module Brainstem
@@ -52,15 +53,6 @@ module Brainstem
       klass.reflections.each_with_object({}) { |(key, value), memo| memo[key.to_s] = value }
     end
 
-    def self.ar_preload(models, association_names)
-      if Gem.loaded_specs['activerecord'].version >= Gem::Version.create('4.1')
-        ActiveRecord::Associations::Preloader.new.preload(models, association_names)
-      else
-        ActiveRecord::Associations::Preloader.new(models, association_names).run
-      end
-    end
-
-
     # Instance methods
 
     # @deprecated
@@ -69,23 +61,30 @@ module Brainstem
     end
 
     # Calls {#custom_preload} and then presents all models.
+    # @params [ActiveRecord::Relation, Array] models
+    # @params [Array] requested_associations An array of permitted lower-case string association names, e.g. 'post'
+    # @params [Hash] options The options passed to `load_associations!`
     def group_present(models, requested_associations = [], options = {})
-      requested_associations_hash = requested_associations.each_with_object({}) do |assoc_name, memo|
+      association_objects_by_name = requested_associations.each_with_object({}) do |assoc_name, memo|
         memo[assoc_name.to_s] = configuration[:associations][assoc_name] if configuration[:associations][assoc_name]
       end
 
-      # It's slightly ugly, but more efficient if we pre-load everything we need and pass it through.
+      # It's slightly ugly, but more efficient if we pre-load everything we
+      # need and pass it through.
       context = {
-        conditional_cache: {},
-        fields: configuration[:fields],
-        conditionals: configuration[:conditionals],
-        associations: configuration[:associations],
-        reflections: models.first && Brainstem::Presenter.reflections(models.first.class),
-        requested_associations_hash: requested_associations_hash
+        conditional_cache:            {},
+        fields:                       configuration[:fields],
+        conditionals:                 configuration[:conditionals],
+        associations:                 configuration[:associations],
+        reflections:                  reflections_for_model(models.first),
+        association_objects_by_name:  association_objects_by_name
       }
 
-      preload_associations! models, context
-      custom_preload(models, requested_associations_hash.keys)
+      sanitized_association_names = association_objects_by_name.values.map(&:method_name)
+      preload_associations! models, sanitized_association_names, context[:reflections]
+
+      # Legacy: Overridable for custom preload behavior.
+      custom_preload(models, association_objects_by_name.keys)
 
       models.map do |model|
         context[:helper_instance] = fresh_helper_instance
@@ -99,6 +98,14 @@ module Brainstem
     def present_model(model, requested_associations = [], options = {})
       group_present([model], requested_associations, options).first
     end
+
+    # @api private
+    #
+    # Returns the reflections for a model's class if the model is not nil.
+    def reflections_for_model(model)
+      model && Brainstem::Presenter.reflections(model.class)
+    end
+    private :reflections_for_model
 
     # @api private
     # Determines which associations are valid for inclusion in the current context.
@@ -182,46 +189,12 @@ module Brainstem
     protected
 
     # @api protected
-    # Run preloading on the given models.
-    def preload_associations!(models, context)
-      if models.length > 0
-        reflections = context[:reflections]
+    # Run preloading on the given models, asking Rails to include both any named associations and any preloads declared in the Brainstem DSL..
+    def preload_associations!(models, sanitized_association_names, memoized_reflections)
+      return unless models.any?
 
-        preloads = context[:requested_associations_hash].values.map(&:method_name).compact
-        preloads += configuration[:preloads].to_a
-
-        hash_preloads = {}
-        single_preloads = []
-
-        preloads.each do |preload_name|
-          case preload_name
-            when Hash
-              preload_name.each do |key, value|
-                if hash_preloads[key]
-                  hash_preloads[key.to_s] = Array[hash_preloads[key], value]
-                else
-                  hash_preloads[key.to_s] = value
-                end
-              end
-            when NilClass
-            else
-              single_preloads << preload_name.to_s
-          end
-        end
-
-        single_preloads -= hash_preloads.keys
-
-        single_preloads.uniq!
-
-        single_preloads.reject! { |preload_name| !reflections.has_key?(preload_name) }
-        hash_preloads.reject! { |preload_name, value| !reflections.has_key?(preload_name) }
-
-        single_preloads << hash_preloads if hash_preloads.any?
-
-        if single_preloads.any?
-          Brainstem::Presenter.ar_preload(models, single_preloads)
-        end
-      end
+      preloads  = sanitized_association_names + configuration[:preloads].to_a
+      Brainstem::Preloader.preload(models, preloads, memoized_reflections)
     end
 
     # @api protected
@@ -286,7 +259,7 @@ module Brainstem
 
         # If this association has been explictly requested, execute the association here.  Additionally, store
         # the loaded models in the :load_associations_into hash for later use.
-        if context[:requested_associations_hash][external_name]
+        if context[:association_objects_by_name][external_name]
           associated_model_or_models = association.run_on(model, context[:helper_instance])
 
           if options[:load_associations_into]
@@ -304,7 +277,7 @@ module Brainstem
         elsif association.always_return_ref_with_sti_base?
           # Deprecated support for legacy always-return-ref mode without loading the association.
           struct["#{external_name}_ref"] = legacy_polymorphic_base_ref(model, id_attr, method_name)
-        elsif context[:requested_associations_hash][external_name]
+        elsif context[:association_objects_by_name][external_name]
           # This association has been explicitly requested.  Add the *_id, *_ids, *_ref, or *_refs keys to the presented data.
           add_ids_or_refs_to_struct!(struct, association, external_name, associated_model_or_models)
         end
