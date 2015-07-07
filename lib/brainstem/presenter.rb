@@ -72,7 +72,7 @@ module Brainstem
       # It's slightly ugly, but more efficient if we pre-load everything we
       # need and pass it through.
       context = {
-        conditional_cache:            {},
+        conditional_cache:            { request: {} },
         fields:                       configuration[:fields],
         conditionals:                 configuration[:conditionals],
         associations:                 configuration[:associations],
@@ -87,6 +87,7 @@ module Brainstem
       custom_preload(models, association_objects_by_name.keys)
 
       models.map do |model|
+        context[:conditional_cache][:model] = {}
         context[:helper_instance] = fresh_helper_instance
         result = present_fields(model, context, context[:fields])
         load_associations!(model, result, context, options)

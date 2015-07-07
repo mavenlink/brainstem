@@ -32,10 +32,16 @@ describe Brainstem::DSL::Conditional do
         end
       end
 
-      it 'does not cache' do
-        hash = {}
+      it 'caches in the model conditional cache' do
+        hash = { model: {}, request: {} }
         expect(conditional.matches?(model, Object.new, hash)).to be false
-        expect(hash).to eq({})
+        expect(hash).to eq({ model: { title_is_hello: false }, request: {} })
+
+        model.title = 'hello'
+        expect(conditional.matches?(model, Object.new, hash)).to be false
+
+        hash = { model: {}, request: {} }
+        expect(conditional.matches?(model, Object.new, hash)).to be true
       end
     end
 
@@ -62,7 +68,7 @@ describe Brainstem::DSL::Conditional do
       end
 
       it 'performs caching' do
-        cache = {}
+        cache = { model: {}, request: {} }
 
         helper_class = Class.new do
           def current_user
@@ -70,6 +76,7 @@ describe Brainstem::DSL::Conditional do
           end
         end
         expect(conditional.matches?(model, helper_class.new, cache)).to be false
+        expect(cache[:request][:user_is_bob]).to be false
 
         helper_class = Class.new do
           def current_user
@@ -78,7 +85,7 @@ describe Brainstem::DSL::Conditional do
         end
         expect(conditional.matches?(model, helper_class.new, cache)).to be false
 
-        cache = {}
+        cache = { model: {}, request: {} }
         expect(conditional.matches?(model, helper_class.new, cache)).to be true
       end
     end

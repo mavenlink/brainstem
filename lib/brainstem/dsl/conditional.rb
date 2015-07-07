@@ -10,12 +10,12 @@ module Brainstem
         @description = description
       end
 
-      def matches?(model, helper_instance = Object.new, conditional_cache = {})
+      def matches?(model, helper_instance = Object.new, conditional_cache = { model: {}, request: {} })
         case type
           when :model
-            helper_instance.instance_exec(model, &action)
+            conditional_cache[:model].fetch(name) { conditional_cache[:model][name] = helper_instance.instance_exec(model, &action) }
           when :request
-            conditional_cache.fetch(name) { conditional_cache[name] = helper_instance.instance_exec(&action) }
+            conditional_cache[:request].fetch(name) { conditional_cache[:request][name] = helper_instance.instance_exec(&action) }
           else
             raise "Unknown Brainstem Conditional type #{type}"
         end

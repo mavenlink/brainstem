@@ -36,7 +36,7 @@ module Brainstem
         end
       end
 
-      def conditionals_match?(model, presenter_conditionals, helper_instance = Object.new, conditional_cache = {})
+      def conditionals_match?(model, presenter_conditionals, helper_instance = Object.new, conditional_cache = { model: {}, request: {} })
         return true unless conditional?
 
         conditionals.all? { |conditional|

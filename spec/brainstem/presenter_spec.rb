@@ -97,7 +97,8 @@ describe Brainstem::Presenter do
     let(:presenter) { presenter_class.new }
 
     describe "the field DSL" do
-      let(:presenter) { WorkspacePresenter.new }
+      let(:presenter_class) { Class.new(WorkspacePresenter) }
+      let(:presenter) { presenter_class.new }
       let(:model) { Workspace.find(1) }
 
       it 'calls named methods' do
@@ -142,6 +143,56 @@ describe Brainstem::Presenter do
             end
           end
           expect(presenter.group_present([model]).first['secret']).to eq model.secret_info
+        end
+
+        describe "caching of conditional evaluations" do
+          it 'only runs model conditionals once per model' do
+            model_id_call_count = { 1 => 0, 2 => 0 }
+
+            presenter_class.conditionals do
+              model :model_id_is_two, lambda { |model| model_id_call_count[model.id] += 1; model.id == 2 }
+            end
+
+            presenter_class.fields do
+              field :only_on_model_two, :string,
+                    dynamic: lambda { "some value" },
+                    if: :model_id_is_two
+              field :another_only_on_model_two, :string,
+                    dynamic: lambda { "some value" },
+                    if: :model_id_is_two
+            end
+
+            results = presenter.group_present([Workspace.find(1), Workspace.find(2)])
+            expect(results.first['only_on_model_two']).not_to be_present
+            expect(results.last['only_on_model_two']).to be_present
+            expect(results.first['another_only_on_model_two']).not_to be_present
+            expect(results.last['another_only_on_model_two']).to be_present
+            expect(results.first['id']).to eq '1'
+            expect(results.last['id']).to eq '2'
+
+            expect(model_id_call_count).to eq({ 1 => 1, 2 => 1 })
+          end
+
+          it 'only runs request conditionals once per request' do
+            call_count = 0
+
+            presenter_class.conditionals do
+              request :new_request_conditional, lambda { call_count += 1 }
+            end
+
+            presenter_class.fields do
+              field :new_field, :string,
+                    dynamic: lambda { "new_field value" },
+                    if: :new_request_conditional
+              field :new_field2, :string,
+                    dynamic: lambda { "new_field2 value" },
+                    if: :new_request_conditional
+            end
+
+            presenter.group_present([Workspace.find(1), Workspace.find(2)])
+
+            expect(call_count).to eq 1
+          end
         end
       end
 
