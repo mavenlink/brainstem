@@ -527,6 +527,18 @@ describe Brainstem::PresenterCollection do
             expect(result['count']).to eq(2)
           end
 
+          it "calls the search block in the context of helpers" do
+            called = false
+            WorkspacePresenter.search { |string|
+              current_user
+              called = true
+              [[5, 3], 2]
+            }
+
+            result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.unscoped }
+            expect(called).to eq true
+          end
+
           it "does not apply filters" do
             mock(@presenter_collection).apply_filters_to_scope(anything, anything).times(0)
             result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.unscoped }
@@ -560,152 +572,180 @@ describe Brainstem::PresenterCollection do
           describe "passing options to the search block" do
             it "passes the search method, the search string, includes, order, and paging options" do
               WorkspacePresenter.filter(:owned_by) { |scope| scope }
-              WorkspacePresenter.search do |string, options|
-                expect(string).to eq("blah")
-                expect(options[:include]).to eq(["tasks", "lead_user"])
-                expect(options[:owned_by]).to eq(false)
-                expect(options[:order][:sort_order]).to eq("description")
-                expect(options[:order][:direction]).to eq("desc")
-                expect(options[:page]).to eq(2)
-                expect(options[:per_page]).to eq(5)
+              search_args = nil
+              WorkspacePresenter.search do |*args|
+                search_args = args
                 [[1], 1] # returned ids, count - not testing this in this set of specs
               end
 
               @presenter_collection.presenting("workspaces", :params => { :search => "blah", :include => "tasks,lead_user", :owned_by => "false", :order => "description:desc", :page => 2, :per_page => 5 }) { Workspace.unscoped }
+
+              string, options = search_args
+              expect(string).to eq("blah")
+              expect(options[:include]).to eq(["tasks", "lead_user"])
+              expect(options[:owned_by]).to eq(false)
+              expect(options[:order][:sort_order]).to eq("description")
+              expect(options[:order][:direction]).to eq("desc")
+              expect(options[:page]).to eq(2)
+              expect(options[:per_page]).to eq(5)
             end
 
             describe "includes" do
               it "throws out requested inlcudes that the presenter does not have associations for" do
+                search_options = nil
                 WorkspacePresenter.search do |string, options|
-                  expect(options[:include]).to eq([])
+                  search_options = options
                   [[1], 1]
                 end
 
                 @presenter_collection.presenting("workspaces", :params => { :search => "blah", :include => "users"}) { Workspace.unscoped }
+                expect(search_options[:include]).to eq([])
               end
             end
 
             describe "filters" do
               it "passes through the default filters if no filter is requested" do
                 WorkspacePresenter.filter(:owned_by, :default => true) { |scope| scope }
+                search_options = nil
                 WorkspacePresenter.search do |string, options|
-                  expect(options[:owned_by]).to eq(true)
+                  search_options = options
                   [[1], 1]
                 end
 
                 @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.unscoped }
+                expect(search_options[:owned_by]).to eq(true)
               end
 
               it "throws out requested filters that the presenter does not have" do
+                search_options = nil
                 WorkspacePresenter.search do |string, options|
-                  expect(options[:highest_rated]).to be_nil
+                  search_options = options
                   [[1], 1]
                 end
 
                 @presenter_collection.presenting("workspaces", :params => { :search => "blah", :highest_rated => true}) { Workspace.unscoped }
+                expect(search_options[:highest_rated]).to be_nil
               end
 
               it "does not pass through existing non-default filters that are not requested" do
                 WorkspacePresenter.filter(:owned_by) { |scope| scope }
+                search_options = nil
                 WorkspacePresenter.search do |string, options|
-                  expect(options.has_key?(:owned_by)).to eq(false)
+                  search_options = options
                   [[1], 1]
                 end
 
                 @presenter_collection.presenting("workspaces", :params => { :search => "blah"}) { Workspace.unscoped }
+                expect(search_options.has_key?(:owned_by)).to eq(false)
               end
             end
 
             describe "orders" do
               it "passes through the default sort order if no order is requested" do
                 WorkspacePresenter.default_sort_order("description:desc")
+                search_options = nil
                 WorkspacePresenter.search do |string, options|
-                  expect(options[:order][:sort_order]).to eq("description")
-                  expect(options[:order][:direction]).to eq("desc")
+                  search_options = options
                   [[1], 1]
                 end
 
                 @presenter_collection.presenting("workspaces", :params => { :search => "blah"}) { Workspace.unscoped }
+                expect(search_options[:order][:sort_order]).to eq("description")
+                expect(search_options[:order][:direction]).to eq("desc")
               end
 
               it "makes the sort order 'updated_at:desc' if the requested order doesn't match an existing sort order and there is no default" do
+                search_options = nil
                 WorkspacePresenter.search do |string, options|
-                  expect(options[:order][:sort_order]).to eq("updated_at")
-                  expect(options[:order][:direction]).to eq("desc")
+                  search_options = options
                   [[1], 1]
                 end
 
                 @presenter_collection.presenting("workspaces", :params => { :search => "blah", :order => "created_at:asc"}) { Workspace.unscoped }
+                expect(search_options[:order][:sort_order]).to eq("updated_at")
+                expect(search_options[:order][:direction]).to eq("desc")
               end
 
               it "sanitizes sort orders" do
+                search_options = nil
                 WorkspacePresenter.search do |string, options|
-                  expect(options[:order][:sort_order]).to eq("description")
-                  expect(options[:order][:direction]).to eq("asc")
+                  search_options = options
                   [[1], 1]
                 end
 
                 @presenter_collection.presenting("workspaces", :params => { :search => "blah", :order => "description:owned"}) { Workspace.unscoped }
+                expect(search_options[:order][:sort_order]).to eq("description")
+                expect(search_options[:order][:direction]).to eq("asc")
               end
             end
 
             describe "pagination" do
               it "passes through limit and offset if they are requested" do
+                search_options = nil
                 WorkspacePresenter.search do |string, options|
-                  expect(options[:limit]).to eq(1)
-                  expect(options[:offset]).to eq(2)
+                  search_options = options
                   [[1], 1]
                 end
 
                 @presenter_collection.presenting("workspaces", :params => { :search => "blah", :limit => 1, :offset => 2}) { Workspace.unscoped }
+                expect(search_options[:limit]).to eq(1)
+                expect(search_options[:offset]).to eq(2)
               end
 
               it "passes through only limit and offset if all pagination options are requested" do
+                search_options = nil
                 WorkspacePresenter.search do |string, options|
-                  expect(options[:limit]).to eq(1)
-                  expect(options[:offset]).to eq(2)
-                  expect(options[:per_page]).to eq(nil)
-                  expect(options[:page]).to eq(nil)
+                  search_options = options
                   [[1], 1]
                 end
 
                 @presenter_collection.presenting("workspaces", :params => { :search => "blah", :limit => 1, :offset => 2, :per_page => 3, :page => 4}) { Workspace.unscoped }
+                expect(search_options[:limit]).to eq(1)
+                expect(search_options[:offset]).to eq(2)
+                expect(search_options[:per_page]).to eq(nil)
+                expect(search_options[:page]).to eq(nil)
               end
 
               it "passes through page and per_page when limit not present" do
+                search_options = nil
                 WorkspacePresenter.search do |string, options|
-                  expect(options[:limit]).to eq(nil)
-                  expect(options[:offset]).to eq(nil)
-                  expect(options[:per_page]).to eq(3)
-                  expect(options[:page]).to eq(4)
+                  search_options = options
                   [[1], 1]
                 end
 
                 @presenter_collection.presenting("workspaces", :params => { :search => "blah", :offset => 2, :per_page => 3, :page => 4}) { Workspace.unscoped }
+                expect(search_options[:limit]).to eq(nil)
+                expect(search_options[:offset]).to eq(nil)
+                expect(search_options[:per_page]).to eq(3)
+                expect(search_options[:page]).to eq(4)
               end
 
               it "passes through page and per_page when offset not present" do
+                search_options = nil
                 WorkspacePresenter.search do |string, options|
-                  expect(options[:limit]).to eq(nil)
-                  expect(options[:offset]).to eq(nil)
-                  expect(options[:per_page]).to eq(3)
-                  expect(options[:page]).to eq(4)
+                  search_options = options
                   [[1], 1]
                 end
 
                 @presenter_collection.presenting("workspaces", :params => { :search => "blah", :limit => 1, :per_page => 3, :page => 4}) { Workspace.unscoped }
+                expect(search_options[:limit]).to eq(nil)
+                expect(search_options[:offset]).to eq(nil)
+                expect(search_options[:per_page]).to eq(3)
+                expect(search_options[:page]).to eq(4)
               end
 
               it "passes through page and per_page by default" do
+                search_options = nil
                 WorkspacePresenter.search do |string, options|
-                  expect(options[:limit]).to eq(nil)
-                  expect(options[:offset]).to eq(nil)
-                  expect(options[:per_page]).to eq(20)
-                  expect(options[:page]).to eq(1)
+                  search_options = options
                   [[1], 1]
                 end
 
                 @presenter_collection.presenting("workspaces", :params => { :search => "blah"}) { Workspace.unscoped }
+                expect(search_options[:limit]).to eq(nil)
+                expect(search_options[:offset]).to eq(nil)
+                expect(search_options[:per_page]).to eq(20)
+                expect(search_options[:page]).to eq(1)
               end
             end
           end

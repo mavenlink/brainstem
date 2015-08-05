@@ -175,6 +175,11 @@ module Brainstem
       end
     end
 
+    # Execute the stored search block
+    def run_search(query, search_options)
+      fresh_helper_instance.instance_exec(query, search_options, &configuration[:search])
+    end
+
     # Clean and validate a sort order and direction from user params.
     def calculate_sort_name_and_direction(user_params = {})
       default_column, default_direction = (configuration[:default_sort_order] || "updated_at:desc").split(":")

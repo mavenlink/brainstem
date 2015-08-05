@@ -238,7 +238,7 @@ module Brainstem
 
       search_options.reverse_merge!(options[:primary_presenter].extract_filters(options[:params], options))
 
-      result_ids, count = options[:primary_presenter].configuration[:search].call(options[:params][:search], search_options)
+      result_ids, count = options[:primary_presenter].run_search(options[:params][:search], search_options)
       if result_ids
         [scope.where(:id => result_ids ), count, result_ids]
       else
