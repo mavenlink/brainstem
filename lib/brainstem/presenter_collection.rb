@@ -279,15 +279,11 @@ module Brainstem
       end
 
       extracted_filters = extract_filters(options)
-      extracted_filters.each do |key, val|
-        if val[:arg].nil?
-          extracted_filters.delete(key)
-        else
-          extracted_filters[key] = val[:arg]
-        end
+      extracted_filters_for_search = extracted_filters.each.with_object({}) do |(key, val), hash|
+        hash[key] = val[:arg] unless val[:arg].nil?
       end
 
-      search_options.reverse_merge!(extracted_filters)
+      search_options.reverse_merge!(extracted_filters_for_search)
 
       result_ids, count = options[:presenter].search_block.call(options[:params][:search], search_options)
       if result_ids
