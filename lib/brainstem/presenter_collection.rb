@@ -225,14 +225,17 @@ module Brainstem
     end
 
     def run_filters(scope, options)
-      extract_filters(options).each do |filter_name, arg|
+      extracted_filters = extract_filters(options)
+      extracted_filters.each do |filter_name, filter_opts|
+        arg = filter_opts[:arg]
+        include_params = filter_opts[:include_params]
         next if arg.nil?
         filter_lambda = options[:presenter].filters[filter_name][1]
 
         if filter_lambda
-          scope = filter_lambda.call(scope, arg)
+          scope = include_params ? filter_lambda.call(scope, arg, extracted_filters) : filter_lambda.call(scope, arg)
         else
-          scope = scope.send(filter_name, arg)
+          scope = include_params ? scope.send(filter_name, arg, extracted_filters) : scope.send(filter_name, arg)
         end
       end
 
@@ -249,8 +252,8 @@ module Brainstem
         requested = requested == "true" ? true : (requested == "false" ? false : requested)
 
         filter_options = filter[0]
-        args = run_defaults && requested.nil? ? filter_options[:default] : requested
-        filters_hash[filter_name] = args unless args.nil?
+        arg = run_defaults && requested.nil? ? filter_options[:default] : requested
+        filters_hash[filter_name] = { arg: arg, include_params: filter_options[:include_params] }
       end
 
       filters_hash
@@ -275,7 +278,12 @@ module Brainstem
         search_options[:page] = calculate_page(options)
       end
 
-      search_options.reverse_merge!(extract_filters(options))
+      extracted_filters = extract_filters(options)
+      extracted_filters_for_search = extracted_filters.each.with_object({}) do |(key, val), hash|
+        hash[key] = val[:arg] unless val[:arg].nil?
+      end
+
+      search_options.reverse_merge!(extracted_filters_for_search)
 
       result_ids, count = options[:presenter].search_block.call(options[:params][:search], search_options)
       if result_ids
