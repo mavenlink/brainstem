@@ -569,6 +569,20 @@ describe Brainstem::PresenterCollection do
             }.to raise_error(Brainstem::SearchUnavailableError)
           end
 
+          context "when the search results give ids that cannot be found" do
+            before  do
+              WorkspacePresenter.search do |string|
+                [[5, 8, 3], 3]
+              end
+            end
+
+            it "will generate a compacted list, without nil or 0 values" do
+              result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
+              expect(result['workspaces'].keys).to eq(%w[5 3])
+              expect(result['count']).to eq(3)
+            end
+          end
+
           describe "passing options to the search block" do
             it "passes the search method, the search string, includes, order, and paging options" do
               WorkspacePresenter.filter(:owned_by) { |scope| scope }

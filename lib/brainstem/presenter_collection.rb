@@ -262,7 +262,7 @@ module Brainstem
         ordered_records[ids_to_position[record.id]] = record
       end
 
-      ordered_records
+      ordered_records.compact
     end
 
     def rewrite_keys_as_objects!(struct)
