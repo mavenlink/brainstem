@@ -226,6 +226,11 @@ module Brainstem
 
     def run_filters(scope, options)
       extracted_filters = extract_filters(options)
+
+      params = extracted_filters.each.with_object({}) do |(key, val), hash|
+        hash[key] = val[:arg] unless val[:arg].nil?
+      end
+
       extracted_filters.each do |filter_name, filter_opts|
         arg = filter_opts[:arg]
         include_params = filter_opts[:include_params]
@@ -233,9 +238,9 @@ module Brainstem
         filter_lambda = options[:presenter].filters[filter_name][1]
 
         if filter_lambda
-          scope = include_params ? filter_lambda.call(scope, arg, extracted_filters) : filter_lambda.call(scope, arg)
+          scope = include_params ? filter_lambda.call(scope, arg, params) : filter_lambda.call(scope, arg)
         else
-          scope = include_params ? scope.send(filter_name, arg, extracted_filters) : scope.send(filter_name, arg)
+          scope = include_params ? scope.send(filter_name, arg, params) : scope.send(filter_name, arg)
         end
       end
 
