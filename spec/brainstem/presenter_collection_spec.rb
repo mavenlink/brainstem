@@ -507,8 +507,6 @@ describe Brainstem::PresenterCollection do
         it "passes the params into the filter block" do
           WorkspacePresenter.filter(:other_filter) { |scope, opt| scope }
           WorkspacePresenter.filter :filter_with_param, :include_params => true do |scope, option, params|
-            expect(params["owned_by"]).to be_nil
-            expect(params["title"]).to be_nil
             expect(params["filter_with_param"]).to eq("arg")
             expect(params["other_filter"]).to eq("another_arg")
             scope

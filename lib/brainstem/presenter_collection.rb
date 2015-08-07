@@ -228,7 +228,7 @@ module Brainstem
       extracted_filters = extract_filters(options)
 
       params = extracted_filters.each.with_object({}) do |(key, val), hash|
-        hash[key] = val[:arg]
+        hash[key] = val[:arg] unless val[:arg].nil?
       end
 
       extracted_filters.each do |filter_name, filter_opts|
