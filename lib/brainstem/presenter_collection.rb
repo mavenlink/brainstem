@@ -99,7 +99,13 @@ module Brainstem
 
       models = perform_preloading records, includes_hash
       primary_models, associated_models = gather_associations(models, includes_hash)
-      struct = { :count => count, options[:as] => [], :results => [] }
+
+
+      if present_count?(options)
+        struct = { :count => count, options[:as] => [], :results => [] }
+      else
+        struct = { options[:as] => [], :results => [] }
+      end
 
       associated_models.each do |json_name, models|
         models.flatten!
@@ -160,7 +166,16 @@ module Brainstem
         offset = limit * (calculate_page(options) - 1)
       end
 
-      [scope.limit(limit).offset(offset).uniq, scope.select("distinct #{scope.connection.quote_table_name options[:table_name]}.id").count] # as of Rails 3.2.5, uniq.count generates the wrong SQL.
+      paginate_results = []
+      paginate_results << scope.limit(limit).offset(offset).uniq
+      if present_count?(options)
+        paginate_results << scope.select("distinct #{scope.connection.quote_table_name options[:table_name]}.id").count
+      else
+        paginate_results << :no_count_retrieved
+      end
+
+      paginate_results
+
     end
 
     def calculate_per_page(options)
@@ -406,6 +421,16 @@ module Brainstem
       options[:apply_default_filters] = [true, "true", "TRUE", 1, "1"].include? options[:params].delete(:apply_default_filters)
     end
 
+
+    # Return boolean indicating whether or not the count should be presented
+    def present_count?(options)
+      p = options[:presenter]
+      count_true = [true, "true", "TRUE", 1, "1"].include? options[:params][:count]
+      count_false = [false, "false", "FALSE", 0, "0"].include? options[:params][:count]
+      ( !p.exclude_count? && !count_false ) || ( p.allow_count? && count_true )
+    end
+    
+    
     # Class Methods
 
     # In Rails 4.2, ActiveRecord::Base#reflections started being keyed by strings instead of symbols.

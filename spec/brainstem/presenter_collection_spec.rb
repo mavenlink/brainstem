@@ -149,6 +149,33 @@ describe Brainstem::PresenterCollection do
           result = @presenter_collection.presenting("workspaces", :params => { :per_page => 2, :page => 1 }) { Workspace.order('id desc') }
           expect(result[:count]).to eq(Workspace.count)
         end
+
+        it "are excluded when exclude_count method defined" do
+          WorkspacePresenter.exclude_count
+          result = @presenter_collection.presenting("workspaces", :params => { :per_page => 2, :page => 1 }) { Workspace.unscoped }
+          WorkspacePresenter.exclude_count(exclude: false)
+          expect(result[:count]).to be_nil
+        end
+
+        it "are included when exclude_count method defined with 'allow = true' and 'count=true' passed in url query string" do
+          WorkspacePresenter.exclude_count(allow: true)
+          result = @presenter_collection.presenting("workspaces", :params => { :per_page => 2, :page => 1, :count => "true" }) { Workspace.unscoped }
+          WorkspacePresenter.exclude_count(exclude: false)
+          expect(result[:count]).to eq(Workspace.count)
+        end
+
+        it "are excluded when exclude_count method defined without 'allow = true' and 'count=true' passed in url query string" do
+          WorkspacePresenter.exclude_count
+          result = @presenter_collection.presenting("workspaces", :params => { :per_page => 2, :page => 1, :count => "true" }) { Workspace.unscoped }
+          WorkspacePresenter.exclude_count(exclude: false)
+          expect(result[:count]).to be_nil
+        end
+
+        it "are excluded when count=false appears in the url query string" do
+          result = @presenter_collection.presenting("workspaces", :params => { :per_page => 2, :page => 1, :count => "false" }) { Workspace.unscoped }
+          expect(result[:count]).to be_nil
+        end
+
       end
     end
 
