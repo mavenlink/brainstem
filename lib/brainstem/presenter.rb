@@ -147,13 +147,17 @@ module Brainstem
     def apply_filters_to_scope(scope, user_params, options)
       helper_instance = fresh_helper_instance
 
-      extract_filters(user_params, options).each do |filter_name, filter_arg|
+      requested_filters = extract_filters(user_params, options)
+      requested_filters.each do |filter_name, filter_arg|
         filter_lambda = configuration[:filters][filter_name][1]
 
+        args_for_filter_lambda = [filter_arg]
+        args_for_filter_lambda << requested_filters if configuration[:filters][filter_name][0][:include_params]
+
         if filter_lambda
-          scope = helper_instance.instance_exec(scope, filter_arg, &filter_lambda)
+          scope = helper_instance.instance_exec(scope, *args_for_filter_lambda, &filter_lambda)
         else
-          scope = scope.send(filter_name, filter_arg)
+          scope = scope.send(filter_name, *args_for_filter_lambda)
         end
       end
 
