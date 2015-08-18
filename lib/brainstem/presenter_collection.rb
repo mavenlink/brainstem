@@ -1,5 +1,5 @@
-require 'brainstem/association_field'
 require 'brainstem/search_unavailable_error'
+require 'brainstem/presenter_validator'
 
 module Brainstem
   class PresenterCollection
@@ -20,19 +20,20 @@ module Brainstem
 
     # The main presentation method, converting a model name and an optional scope into a hash structure, ready to be converted into JSON.
     # If searching, Brainstem filtering, only, pagination, and ordering are skipped and should be implemented with your search solution.
-    # All request options are passed to the +search_block+ for your convenience.
+    # All request options are passed to the +search block+ for your convenience.
     # @param [Class, String] name The class of the objects to be presented.
     # @param [Hash] options The options that will be applied as the objects are converted.
     # @option options [Hash] :params The +params+ hash included in a request for the presented object.
     # @option options [ActiveRecord::Base] :model The model that is being presented (if different from +name+).
-    # @option options [String] :as The top-level key the presented objects will be assigned to (if different from +name.tableize+)
     # @option options [Integer] :max_per_page The maximum number of items that can be requested by <code>params[:per_page]</code>.
     # @option options [Integer] :per_page The number of items that will be returned if <code>params[:per_page]</code> is not set.
     # @option options [Boolean] :apply_default_filters Determine if Presenter's filter defaults should be applied.  On by default.
+    # @option options [Brainstem::Presenter] :primary_presenter The Presenter to use for filters and sorts. If unspecified, the +:model+ or +name+ will be used to find an appropriate Presenter.
     # @yield Must return a scope on the model +name+, which will then be presented.
     # @return [Hash] A hash of arrays of hashes. Top-level hash keys are pluralized model names, with values of arrays containing one hash per object that was found by the given given options.
     def presenting(name, options = {}, &block)
       options[:params] = HashWithIndifferentAccess.new(options[:params] || {})
+      check_for_old_options!(options)
       set_default_filters_option!(options)
       presented_class = (options[:model] || name)
       presented_class = presented_class.classify.constantize if presented_class.is_a?(String)
@@ -40,27 +41,27 @@ module Brainstem
       count = 0
 
       # grab the presenter that knows about filters and sorting etc.
-      options[:presenter] = for!(presented_class)
+      options[:primary_presenter] ||= for!(presented_class)
 
       # table name will be used to query the database for the filtered data
       options[:table_name] = presented_class.table_name
 
       # key these models will use in the struct that is output
-      options[:as] = (options[:as] || name.to_s.tableize).to_sym
+      brainstem_key = brainstem_key_for!(presented_class)
 
-      allowed_includes = calculate_allowed_includes options[:presenter], presented_class, options[:params][:only].present?
-      includes_hash = filter_includes options[:params][:include], allowed_includes
+      # filter the incoming :includes list by those available from this Presenter in the current context
+      selected_associations = filter_includes(options)
 
       if searching? options
         # Search
-        sort_name, direction = calculate_sort_name_and_direction options
-        scope, count, ordered_search_ids = run_search(scope, includes_hash.keys.map(&:to_s), sort_name, direction, options)
+        sort_name, direction = options[:primary_presenter].calculate_sort_name_and_direction options[:params]
+        scope, count, ordered_search_ids = run_search(scope, selected_associations.map(&:name), sort_name, direction, options)
 
-        # Load Includes
-        records = scope.to_a
+        # Load models!
+        primary_models = scope.to_a
       else
         # Filter
-        scope = run_filters scope, options
+        scope = options[:primary_presenter].apply_filters_to_scope(scope, options[:params], options)
 
         if options[:params][:only].present?
           # Handle Only
@@ -73,51 +74,50 @@ module Brainstem
         count = count.keys.length if count.is_a?(Hash)
 
         # Ordering
-        scope = handle_ordering scope, options
+        scope = options[:primary_presenter].apply_ordering_to_scope(scope, options[:params])
 
-        # Load Includes
-
+        # Load models!
         # On complex queries, MySQL can sometimes handle 'SELECT id FROM ... ORDER BY ...' much faster than
         # 'SELECT * FROM ...', so we pluck the ids, then find those specific ids in a separate query.
-        if(ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql/)
+        if(ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql|sqlite/i)
           ids = scope.pluck("#{scope.table_name}.id")
           id_lookup = {}
           ids.each.with_index { |id, index| id_lookup[id] = index }
-          records = scope.klass.where(id: id_lookup.keys).sort_by { |model| id_lookup[model.id] }
+          primary_models = scope.klass.where(id: id_lookup.keys).sort_by { |model| id_lookup[model.id] }
         else
-          records = scope.to_a
+          primary_models = scope.to_a
         end
       end
 
       # Determine if an exception should be raised on an empty result set.
-      if options[:raise_on_empty] && records.empty?
+      if options[:raise_on_empty] && primary_models.empty?
         raise options[:empty_error_class] || ActiveRecord::RecordNotFound
       end
 
-      records = order_for_search(records, ordered_search_ids) if searching? options
-      model = records.first
+      primary_models = order_for_search(primary_models, ordered_search_ids) if searching?(options)
 
-      models = perform_preloading records, includes_hash
-      primary_models, associated_models = gather_associations(models, includes_hash)
-      struct = { :count => count, options[:as] => [], :results => [] }
+      struct = { 'count' => count, brainstem_key => [], 'results' => [] }
 
-      associated_models.each do |json_name, models|
-        models.flatten!
-        models.uniq!
-
-        if models.length > 0
-          presenter = for!(models.first.class)
-          assoc = includes_hash.to_a.find { |k, v| v.json_name == json_name }
-          struct[json_name] = presenter.group_present(models, [])
-        else
-          struct[json_name] = []
-        end
+      # Build top-level keys for all requested associations.
+      selected_associations.each do |association|
+        struct[brainstem_key_for!(association.target_class)] ||= [] unless association.polymorphic?
       end
 
       if primary_models.length > 0
-        presented_primary_models = options[:presenter].group_present(models, includes_hash.keys)
-        struct[options[:as]] += presented_primary_models
-        struct[:results] = presented_primary_models.map { |model| { :key => options[:as].to_s, :id => model[:id] } }
+        # TODO: handle polymorphism here
+        associated_models = {}
+        presented_primary_models = options[:primary_presenter].group_present(primary_models,
+                                                                             selected_associations.map(&:name),
+                                                                             load_associations_into: associated_models)
+
+        struct[brainstem_key] += presented_primary_models
+        struct['results'] = presented_primary_models.map { |model| { 'key' => brainstem_key, 'id' => model['id'] } }
+
+        associated_models.each do |association_brainstem_key, associated_models_hash|
+          presenter = for!(associated_models_hash.values.first.class)
+          struct[association_brainstem_key] ||= []
+          struct[association_brainstem_key] += presenter.group_present(associated_models_hash.values)
+        end
       end
 
       rewrite_keys_as_objects!(struct)
@@ -134,19 +134,37 @@ module Brainstem
     # @param [*Class] klasses One or more classes that can be presented by +presenter_class+.
     def add_presenter_class(presenter_class, *klasses)
       klasses.each do |klass|
-        presenters[klass.to_s] = presenter_class.new
+        presenters[klass.to_s] = presenter_class
       end
     end
 
-    # @return [Brainstem::Presenter, nil] The presenter that knows how to present the class +klass+, or +nil+ if there isn't one.
+    # @return [Brainstem::Presenter, nil] A new instance of the Presenter that knows how to present the class +klass+, or +nil+ if there isn't one.
     def for(klass)
-      presenters[klass.to_s]
+      presenters[klass.to_s].try(:new)
     end
 
-    # @return [Brainstem::Presenter] The presenter that knows how to present the class +klass+.
-    # @raise [ArgumentError] if there is no known presenter for +klass+.
+    # @return [Brainstem::Presenter] A new instance of the Presenter that knows how to present the class +klass+.
+    # @raise [ArgumentError] if there is no known Presenter for +klass+.
     def for!(klass)
       self.for(klass) || raise(ArgumentError, "Unable to find a presenter for class #{klass}")
+    end
+
+    def brainstem_key_for!(klass)
+      presenter = presenters[klass.to_s]
+      raise(ArgumentError, "Unable to find a presenter for class #{klass}") unless presenter
+      presenter.configuration[:brainstem_key] || klass.table_name
+    end
+
+    # @raise [StandardError] if any presenter in this collection is invalid.
+    def validate!
+      errors = []
+      presenters.each do |name, klass|
+        validator = Brainstem::PresenterValidator.new(klass)
+        unless validator.valid?
+          errors += validator.errors.full_messages.map { |error| "#{name}: #{error}" }
+        end
+      end
+      raise "PresenterCollection invalid:\n - #{errors.join("\n - ")}" if errors.length > 0
     end
 
     private
@@ -181,91 +199,26 @@ module Brainstem
       [options[:params][:offset].to_i, 0].max
     end
 
-    # Gather allowed includes by inspecting the presented hash.  For now, this requires that a new instance of the
-    # presented class always be presentable.
-    def calculate_allowed_includes(presenter, presented_class, is_only_query)
-      allowed_includes = {}
-      model = presented_class.new
-      reflections = Brainstem::PresenterCollection.reflections(model.class)
-      presenter.present(model).each do |k, v|
-        next unless v.is_a?(AssociationField)
-        next if v.restrict_to_only && !is_only_query
+    def filter_includes(options)
+      allowed_associations = options[:primary_presenter].allowed_associations(options[:params][:only].present?)
 
-        if v.json_name
-          v.json_name = v.json_name.tableize.to_sym
-        else
-          association = reflections[v.method_name.to_s]
-          if association && !association.options[:polymorphic]
-            v.json_name = association && association.table_name.to_sym
-            if v.json_name.nil?
-              raise ":json_name is a required option for method-based associations (#{presented_class}##{v.method_name})"
-            end
+      [].tap do |selected_associations|
+        (options[:params][:include] || '').split(',').each do |k|
+          # TODO: make sure a spec breaks if this line is changed (it should)
+          if association = allowed_associations[k]
+            selected_associations << association
           end
         end
-        allowed_includes[k.to_s] = v
       end
-      allowed_includes
-    end
-
-    def filter_includes(user_includes, allowed_includes)
-      filtered_includes = {}
-
-      (user_includes || '').split(',').each do |k|
-        allowed = allowed_includes[k]
-        if allowed
-          filtered_includes[k] = allowed
-        end
-      end
-      filtered_includes
     end
 
     def handle_only(scope, only)
-      ids = (only || "").split(",").select {|id| id =~ /\A\d+\Z/}.uniq
+      ids = (only || "").split(",").select {|id| id =~ /\A\d+\z/}.uniq
       [scope.where(:id => ids), scope.where(:id => ids).count]
     end
 
-    def run_filters(scope, options)
-      extracted_filters = extract_filters(options)
-
-      params = extracted_filters.each.with_object({}) do |(key, val), hash|
-        hash[key] = val[:arg] unless val[:arg].nil?
-      end
-
-      extracted_filters.each do |filter_name, filter_opts|
-        arg = filter_opts[:arg]
-        include_params = filter_opts[:include_params]
-        next if arg.nil?
-        filter_lambda = options[:presenter].filters[filter_name][1]
-
-        if filter_lambda
-          scope = include_params ? filter_lambda.call(scope, arg, params) : filter_lambda.call(scope, arg)
-        else
-          scope = include_params ? scope.send(filter_name, arg, params) : scope.send(filter_name, arg)
-        end
-      end
-
-      scope
-    end
-
-    def extract_filters(options)
-      filters_hash = {}
-      run_defaults = options.fetch(:apply_default_filters) { true }
-
-      (options[:presenter].filters || {}).each do |filter_name, filter|
-        requested = options[:params][filter_name]
-        requested = requested.is_a?(Array) ? requested : (requested.present? ? requested.to_s : nil)
-        requested = requested == "true" ? true : (requested == "false" ? false : requested)
-
-        filter_options = filter[0]
-        arg = run_defaults && requested.nil? ? filter_options[:default] : requested
-        filters_hash[filter_name] = { arg: arg, include_params: filter_options[:include_params] }
-      end
-
-      filters_hash
-    end
-
-    # Runs the current search_block and returns an array of [scope of the resulting ids, result count, result ids]
-    # If the search_block returns a falsy value a SearchUnavailableError is raised.
+    # Runs the current search block and returns an array of [scope of the resulting ids, result count, result ids]
+    # If the search block returns a falsy value a SearchUnavailableError is raised.
     # Your search block should return a list of ids and the count of ids found, or false if search is unavailable.
     def run_search(scope, includes, sort_name, direction, options)
       return scope unless searching? options
@@ -283,14 +236,9 @@ module Brainstem
         search_options[:page] = calculate_page(options)
       end
 
-      extracted_filters = extract_filters(options)
-      extracted_filters_for_search = extracted_filters.each.with_object({}) do |(key, val), hash|
-        hash[key] = val[:arg] unless val[:arg].nil?
-      end
+      search_options.reverse_merge!(options[:primary_presenter].extract_filters(options[:params], options))
 
-      search_options.reverse_merge!(extracted_filters_for_search)
-
-      result_ids, count = options[:presenter].search_block.call(options[:params][:search], search_options)
+      result_ids, count = options[:primary_presenter].run_search(options[:params][:search], search_options)
       if result_ids
         [scope.where(:id => result_ids ), count, result_ids]
       else
@@ -299,7 +247,7 @@ module Brainstem
     end
 
     def searching?(options)
-      options[:params][:search] && options[:presenter].search_block.present?
+      options[:params][:search] && options[:primary_presenter].configuration[:search].present?
     end
 
     def order_for_search(records, ordered_search_ids)
@@ -317,86 +265,9 @@ module Brainstem
       ordered_records.compact
     end
 
-    def handle_ordering(scope, options)
-      order, direction = calculate_order_and_direction(options)
-
-      case order
-        when Proc
-          order.call(scope, direction)
-        when nil
-          scope
-        else
-          scope.reorder(order.to_s + " " + direction)
-      end
-    end
-
-    def calculate_order_and_direction(options)
-      sort_name, direction = calculate_sort_name_and_direction(options)
-      sort_orders = (options[:presenter].sort_orders || {})
-      order = sort_orders[sort_name]
-
-      [order, direction]
-    end
-
-    def calculate_sort_name_and_direction(options)
-      default_column, default_direction = (options[:presenter].default_sort_order || "updated_at:desc").split(":")
-      sort_name, direction = (options[:params][:order] || "").split(":")
-      sort_orders = options[:presenter].sort_orders || {}
-      unless sort_name.present? && sort_orders[sort_name]
-        sort_name = default_column
-        direction = default_direction
-      end
-
-      [sort_name, direction == 'desc' ? 'desc' : 'asc']
-    end
-
-    def perform_preloading(records, includes_hash)
-      records.tap do |models|
-        association_names_to_preload = includes_hash.values.map {|i| i.method_name }
-        if models.first
-          reflections = Brainstem::PresenterCollection.reflections(models.first.class)
-          association_names_to_preload.reject! { |association| !reflections.has_key?(association.to_s) }
-        end
-        if association_names_to_preload.any?
-          Brainstem::PresenterCollection.preload(models, association_names_to_preload)
-          Brainstem.logger.info "Eager loaded #{association_names_to_preload.join(", ")}."
-        end
-      end
-    end
-
-    def gather_associations(models, includes_hash)
-      record_hash = {}
-      primary_models = []
-
-      includes_hash.each do |include, include_data|
-        record_hash[include_data.json_name] ||= [] if include_data.json_name
-      end
-
-      models.each do |model|
-        primary_models << model
-
-        includes_hash.each do |include, include_data|
-          models = Array(include_data.call(model))
-
-          if include_data.json_name
-            record_hash[include_data.json_name] += models
-          else
-            # polymorphic associations' tables must be figured out now
-            models.each do |record|
-              json_name = record.class.table_name.to_sym
-              record_hash[json_name] ||= []
-              record_hash[json_name] << record
-            end
-          end
-        end
-      end
-
-      [primary_models, record_hash]
-    end
-
     def rewrite_keys_as_objects!(struct)
-      (struct.keys - [:count, :results]).each do |key|
-        struct[key] = struct[key].inject({}) {|memo, obj| memo[obj[:id] || obj["id"] || "unknown_id"] = obj; memo }
+      (struct.keys - ['count', 'results']).each do |key|
+        struct[key] = struct[key].inject({}) {|memo, obj| memo[obj[:id] || obj['id'] || 'unknown_id'] = obj; memo }
       end
     end
 
@@ -406,18 +277,9 @@ module Brainstem
       options[:apply_default_filters] = [true, "true", "TRUE", 1, "1"].include? options[:params].delete(:apply_default_filters)
     end
 
-    # Class Methods
-
-    # In Rails 4.2, ActiveRecord::Base#reflections started being keyed by strings instead of symbols.
-    def self.reflections(klass)
-      klass.reflections.each_with_object({}) { |(key, value), memo| memo[key.to_s] = value }
-    end
-
-    def self.preload(models, association_names)
-      if Gem.loaded_specs['activerecord'].version >= Gem::Version.create('4.1')
-        ActiveRecord::Associations::Preloader.new.preload(models, association_names)
-      else
-        ActiveRecord::Associations::Preloader.new(models, association_names).run
+    def check_for_old_options!(options)
+      if options[:as].present?
+        raise "PresenterCollection#presenting no longer accepts the :as option.  Use the brainstem_key annotation in your presenters instead."
       end
     end
   end
