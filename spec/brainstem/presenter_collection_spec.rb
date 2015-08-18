@@ -509,6 +509,25 @@ describe Brainstem::PresenterCollection do
           expect(result['workspaces'].keys).to eq(%w[2 4])
         end
       end
+
+      context "with include_params" do
+        it "passes the params into the filter block" do
+          WorkspacePresenter.filter(:other_filter) { |scope, opt| scope }
+          WorkspacePresenter.filter(:other_filter_with_default, default: true) { |scope, opt| scope }
+
+          provided_params = nil
+          WorkspacePresenter.filter :filter_with_param, :include_params => true do |scope, option, params|
+            provided_params = params
+            scope
+          end
+
+          @presenter_collection.presenting("workspaces", :params => { :filter_with_param => "arg", :other_filter => 'another_arg' }) { Workspace.where(nil) }
+
+          expect(provided_params["filter_with_param"]).to eq("arg")
+          expect(provided_params["other_filter"]).to eq("another_arg")
+          expect(provided_params["other_filter_with_default"]).to eq(true)
+        end
+      end
     end
 
     describe "search" do
