@@ -96,11 +96,11 @@ module Brainstem
 
       primary_models = order_for_search(primary_models, ordered_search_ids) if searching?(options)
 
-      struct = { 'count' => count, brainstem_key => [], 'results' => [] }
+      struct = { 'count' => count, brainstem_key => {}, 'results' => [] }
 
       # Build top-level keys for all requested associations.
       selected_associations.each do |association|
-        struct[brainstem_key_for!(association.target_class)] ||= [] unless association.polymorphic?
+        struct[brainstem_key_for!(association.target_class)] ||= {} unless association.polymorphic?
       end
 
       if primary_models.length > 0
@@ -110,17 +110,17 @@ module Brainstem
                                                                              selected_associations.map(&:name),
                                                                              load_associations_into: associated_models)
 
-        struct[brainstem_key] += presented_primary_models
+        struct[brainstem_key] = presented_primary_models.each.with_object({}) { |model, obj| obj[model['id']] = model }
         struct['results'] = presented_primary_models.map { |model| { 'key' => brainstem_key, 'id' => model['id'] } }
 
         associated_models.each do |association_brainstem_key, associated_models_hash|
           presenter = for!(associated_models_hash.values.first.class)
-          struct[association_brainstem_key] ||= []
-          struct[association_brainstem_key] += presenter.group_present(associated_models_hash.values)
+          struct[association_brainstem_key] ||= {}
+          presenter.group_present(associated_models_hash.values).each do |model|
+            struct[association_brainstem_key][model['id']] ||= model
+          end
         end
       end
-
-      rewrite_keys_as_objects!(struct)
 
       struct
     end
@@ -263,12 +263,6 @@ module Brainstem
       end
 
       ordered_records.compact
-    end
-
-    def rewrite_keys_as_objects!(struct)
-      (struct.keys - ['count', 'results']).each do |key|
-        struct[key] = struct[key].inject({}) {|memo, obj| memo[obj[:id] || obj['id'] || 'unknown_id'] = obj; memo }
-      end
     end
 
     def set_default_filters_option!(options)

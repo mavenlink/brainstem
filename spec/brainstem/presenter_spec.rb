@@ -83,6 +83,7 @@ describe Brainstem::Presenter do
         associations do
           association :tasks, Task
           association :user, User
+          association :missing_user, User
           association :something, User, via: :user
           association :lead_user, User
           association :lead_user_with_lambda, User, dynamic: lambda { |model| model.user }
@@ -302,6 +303,11 @@ describe Brainstem::Presenter do
 
       it "should convert requested belongs_to and has_one associations into the <association>_id format when requested" do
         expect(presenter.group_present([workspace], ['user']).first['user_id']).to eq(workspace.user.id.to_s)
+      end
+
+      it "should convert requested belongs_to and has_one associations into the <association>_id format when requested, even if they're not found" do
+        expect(presenter.group_present([workspace], ['missing_user']).first).to have_key('missing_user_id')
+        expect(presenter.group_present([workspace], ['missing_user']).first['missing_user_id']).to eq(nil)
       end
 
       it "converts non-association models into <model>_id format when they are requested" do

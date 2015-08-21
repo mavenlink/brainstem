@@ -218,12 +218,22 @@ describe Brainstem::PresenterCollection do
         expect(result.keys).to match_array %w[tasks workspaces count results]
       end
 
-      it "returns sensible data when including something of the same type as the primary model" do
-        result = @presenter_collection.presenting("tasks", :params => { :include => "sub_tasks" }) { Task.where(:id => 2) }
-        sub_task_ids = Task.find(2).sub_tasks.map(&:id).map(&:to_s)
-        expect(result['tasks'].keys).to match_array(sub_task_ids + ["2"])
-        expect(result['tasks']['2']['sub_task_ids']).to eq(sub_task_ids)               # The primary should have a sub_story_ids array.
-        expect(result['tasks'][sub_task_ids.first]['sub_task_ids']).not_to be_present  # Sub stories should not have a sub_story_ids array.
+      context 'when including something of the same type as the primary model' do
+        it "returns sensible data" do
+          result = @presenter_collection.presenting("tasks", :params => { :include => "sub_tasks" }) { Task.where(:id => 2) }
+          sub_task_ids = Task.find(2).sub_tasks.map(&:id).map(&:to_s)
+          expect(result['tasks'].keys).to match_array(sub_task_ids + ["2"])
+          expect(result['tasks']['2']['sub_task_ids']).to eq(sub_task_ids)               # The primary should have a sub_story_ids array.
+          expect(result['tasks'][sub_task_ids.first]).not_to have_key('sub_task_ids')    # Sub stories should not have a sub_story_ids array.
+        end
+
+        it 'uses the loaded data for the primary request when a model is found both in the primary set and in an inclusion' do
+          result = @presenter_collection.presenting("tasks", :params => { :include => "sub_tasks" }) { Task.all }
+          sub_task_ids = Task.find(2).sub_tasks.map(&:id).map(&:to_s)
+          expect(result['tasks']['2']['sub_task_ids']).to eq(sub_task_ids)               # Sub stories were all loaded in the primary request this time,
+          expect(result['tasks'][sub_task_ids.first]).to have_key('sub_task_ids')        # and should have associations loaded.
+          expect(result['tasks'][sub_task_ids.first]['sub_task_ids']).to eq []
+        end
       end
 
       it "includes requested includes even when all records are filtered" do

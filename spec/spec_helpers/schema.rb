@@ -68,6 +68,10 @@ class Workspace < ActiveRecord::Base
   def lead_user
     user
   end
+
+  def missing_user
+    nil
+  end
 end
 
 class Group < Workspace
