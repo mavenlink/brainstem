@@ -1,3 +1,5 @@
+# Provide `brainstem_model_name` and `brainstem_plural_model_name` in controllers for use when accessing the `params` hash.
+
 module Brainstem
   module Concerns
     module ControllerParamManagement

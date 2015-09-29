@@ -21,7 +21,7 @@ module Brainstem
     # The main presentation method, converting a model name and an optional scope into a hash structure, ready to be converted into JSON.
     # If searching, Brainstem filtering, only, pagination, and ordering are skipped and should be implemented with your search solution.
     # All request options are passed to the +search block+ for your convenience.
-    # @param [Class, String] name The class of the objects to be presented.
+    # @param [Class, String] name Either the ActiveRecord Class itself, or its pluralized table name as a string.
     # @param [Hash] options The options that will be applied as the objects are converted.
     # @option options [Hash] :params The +params+ hash included in a request for the presented object.
     # @option options [ActiveRecord::Base] :model The model that is being presented (if different from +name+).
@@ -204,7 +204,6 @@ module Brainstem
 
       [].tap do |selected_associations|
         (options[:params][:include] || '').split(',').each do |k|
-          # TODO: make sure a spec breaks if this line is changed (it should)
           if association = allowed_associations[k]
             selected_associations << association
           end
@@ -240,7 +239,7 @@ module Brainstem
 
       result_ids, count = options[:primary_presenter].run_search(options[:params][:search], search_options)
       if result_ids
-        [scope.where(:id => result_ids ), count, result_ids]
+        [scope.where(:id => result_ids), count, result_ids]
       else
         raise(SearchUnavailableError, 'Search is currently unavailable')
       end

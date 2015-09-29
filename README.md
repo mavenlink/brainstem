@@ -4,7 +4,9 @@
 
 [![Build Status](https://travis-ci.org/mavenlink/brainstem.png)](https://travis-ci.org/mavenlink/brainstem)
 
-Brainstem is designed to power rich APIs in Rails. The Brainstem gem provides a presenter library that handles converting ActiveRecord objects into structured JSON and a set of API abstractions that allow users to request sorts, filters, and association loads, allowing for simpler implementations, fewer requests, and smaller responses.
+Brainstem is designed to power rich APIs in Rails. The Brainstem gem provides a presenter library that handles
+converting ActiveRecord objects into structured JSON and a set of API abstractions that allow users to request sorts,
+filters, and association loads, allowing for simpler implementations, fewer requests, and smaller responses.
 
 ## Why Brainstem?
 
@@ -12,7 +14,8 @@ Brainstem is designed to power rich APIs in Rails. The Brainstem gem provides a 
 * Version your Presenters for consistency as your API evolves.
 * Expose end-user selectable filters and sorts.
 * Whitelist your existing scopes to act as API filters for your users.
-* Allow users to side-load multiple objects, with their associations, in a single request, reducing the number of requests needed to get the job done.  This is especially helpful for building speedy mobile applications.
+* Allow users to side-load multiple objects, with their associations, in a single request, reducing the number of
+  requests needed to get the job done.  This is especially helpful for building speedy mobile applications.
 * Prevent data duplication by pulling associations into top-level hashes, easily indexable by ID.
 * Easy integration with Backbone.js.  "It's like Ember Data for Backbone.js!"
 
@@ -26,13 +29,14 @@ Add this line to your application's Gemfile:
 
 ## Usage
 
-Create a class that inherits from Brainstem::Presenter, named after the model that you want to present, and preferrably versioned in a module. For example:
+Create a class that inherits from Brainstem::Presenter, named after the model that you want to present, and preferrably
+versioned in a module. For example:
 
 ```ruby
 module Api
   module V1
     class WidgetPresenter < Brainstem::Presenter
-      presents "Widget"
+      presents Widget
 
       # Available sort orders to expose through the API
       sort_order :updated_at, "widgets.updated_at"
@@ -41,31 +45,33 @@ module Api
       # Default sort order to apply
       default_sort_order "updated_at:desc"
 
-      # Optional filter that delegates to the Widget model :popular scope,
-      # which should take one argument of true or false.
-      filter :popular
-
       # Optional filter that applies a lambda.
       filter :location_name do |scope, location_name|
         scope.joins(:locations).where("locations.name = ?", location_name)
       end
 
       # Filter with an overridable default that runs on all requests.
-      filter :include_legacy_widgets, :default => false do |scope, bool|
+      filter :include_legacy_widgets, default: false do |scope, bool|
         bool ? scope : scope.without_legacy_widgets
       end
 
+      # The top-level JSON key in which these presented records will be returned. This is optional and defaults to
+      # the model's table name.
+      brainstem_key :widgets
+
       # Return a ruby hash that can be converted to JSON
-      def present(widget)
-        {
-            :name           => widget.name,
-            :legacy         => widget.legacy?,
-            :updated_at     => widget.updated_at,
-            :created_at     => widget.created_at,
-            # Associations can be included by request
-            :features       => association(:features),
-            :location       => association(:location)
-        }
+      fields do
+        field :name, :string, "the widget's name"
+        field :legacy, :boolean, "true for legacy widgets, false otherwise", via: :legacy?
+        field :updated_at, :datetime, "the time of this widget's last update"
+        field :created_at, :datetime, "the time that this widget was created"
+      end
+
+      # Associations can be included by request. IDs for belongs_to associations will be returned for free if they're
+      # native columns on the model, otherwise the user must request associations to avoid an unnecessary load.
+      associations do
+        association :features, Feature, "features associated with this widget"
+        association :location, Location, "the location of this widget"
       end
     end
   end
@@ -79,12 +85,13 @@ class Api::WidgetsController < ActionController::Base
   include Brainstem::ControllerMethods
 
   def index
-    render :json => brainstem_present("widgets") { Widgets.visible_to(current_user) }
+    render json: brainstem_present("widgets") { Widgets.visible_to(current_user) }
   end
 end
 ```
 
-The scope passed to `brainstem_present` could contain any starting conditions that you'd like.  Requests can have includes, filters, and sort orders.
+The scope passed to `brainstem_present` could contain any starting conditions that you'd like.  Requests can have
+includes, filters, and sort orders.
 
     GET /api/widgets.json?include=features&order=popularity:desc&location_name=san+francisco
 
@@ -131,36 +138,46 @@ Responses will look like the following:
 }
 ```
 
-You may want to setup an initializer in `config/initializers/brainstem.rb` like the following:
+To configure Brainstem for development and production, we do the following:
+
+1) We add `lib` to our Rails autoload_paths in application.rb with `config.autoload_paths += "#{config.root}/lib"`
+
+2) We setup an initializer in `config/initializers/brainstem.rb`, similar to the following:
 
 ```ruby
-Brainstem.default_namespace = :v1
+# In order to support live code reload in the development environment, we register a `to_prepare` callback.  This
+# runs once in production (before the first request) and whenever a file has changed in development.
+Rails.application.config.to_prepare do
+  # Forget all Brainstem configuration.
+  Brainstem.reset!
 
-module Api
-  module V1
-    module Helper
-      def current_user
-        # However you get your current user.
-      end
+  # Set the current default API namespace.
+  Brainstem.default_namespace = :v1
+
+  # (Optional) Load a default base helper into all presenters. You could use this to bring in a concept like `current_user`.
+  # While not necessarily the best approach, something like http://stackoverflow.com/a/11670283 can currently be used to
+  # access the requesting user inside of a Brainstem presenter. We hope to clean this up by allowing a user to be passed in
+  # when presenting in the future.
+  module ApiHelper
+    def current_user
+      Thread.current[:current_user]
     end
   end
+  Brainstem::Presenter.helper(ApiHelper)
+
+  # Load the presenters themselves.
+  Dir[Rails.root.join("lib/api/v1/*_presenter.rb").to_s].each { |presenter_path| require_dependency(presenter_path) }
 end
-Brainstem::Presenter.helper(Api::V1::Helper)
-
-require 'api/v1/widget_presenter'
-require 'api/v1/feature_presenter'
-require 'api/v1/location_presenter'
-# ...
-
-# Or you could do something like this:
-#  Dir[Rails.root.join("lib/api/v1/*_presenter.rb").to_s].each { |p| require p }
 ```
 
 ### A note on Rails 4 Style Scopes
 
-In Rails 3 it was acceptable to write scopes like this: `scope :popular, where(:popular => true)`. This was deprecated in Rails 4 in preference of scopes that include a callable object: `scope :popular, lambda { where(:popular) => true }`.
+In Rails 3 it was acceptable to write scopes like this: `scope :popular, where(:popular => true)`. This was deprecated
+in Rails 4 in preference of scopes that include a callable object: `scope :popular, lambda { where(:popular) => true }`.
 
-If your scope does not take any parameters, this can cause a problem with Brainstem if you use a filter that delegates to that scope in your presenter. (e.g., `filter :popular`). The preferable way to handle this is to write a Brainstem scope that delegates to your model scope:
+If your scope does not take any parameters, this can cause a problem with Brainstem if you use a filter that delegates
+to that scope in your presenter. (e.g., `filter :popular`). The preferable way to handle this is to write a Brainstem
+scope that delegates to your model scope:
 
 ```ruby
 filter :popular { |scope| scope.popular }
@@ -168,13 +185,22 @@ filter :popular { |scope| scope.popular }
 
 --
 
-For more detailed examples, please see the documentation for methods on `Brainstem::Presenter` and our detailed [Rails example application](https://github.com/mavenlink/brainstem-demo-rails).
+For more detailed examples, please see the documentation for methods on `Brainstem::Presenter` and our detailed
+[Rails example application](https://github.com/mavenlink/brainstem-demo-rails).
 
 ## Consuming a Brainstem API
 
-APIs presented with Brainstem are just JSON APIs, so they can be consumed with just about any language.  As Brainstem evolves, we hope that people will contribute consumption libraries in various languages.
+APIs presented with Brainstem are just JSON APIs, so they can be consumed with just about any language.  As Brainstem
+evolves, we hope that people will contribute consumption libraries in various languages.
 
-### The Results Array
+Existing libraries include:
+
+* If you're already using Backbone.js, integrating with a Brainstem API is super simple.  Just use the
+[Brainstem.js](https://github.com/mavenlink/brainstem-js) gem (or its JavaScript contents) to access your relational
+Brainstem API from JavaScript.
+* For consuming Brainstem APIs in Ruby, see the [brainstem-adaptor](https://github.com/mavenlink/brainstem-adaptor) gem.
+
+### The Brainstem Results Array
 
     {
       results: [
@@ -187,11 +213,76 @@ APIs presented with Brainstem are just JSON APIs, so they can be consumed with j
           name: "disco ball",
           …
 
-Brainstem returns objects as top-level hashes and provides a `results` array of `key` and `id` objects for finding the returned data in those hashes.  The reason that we use the `results` array is two-fold: 1st) it provides order outside of the serialized objects so that we can provide objects keyed by ID, and 2nd) it allows for polymorphic responses and for objects that have associations of their own type (like posts and replies or tasks and sub-tasks).
+Brainstem returns objects as top-level hashes and provides a `results` array of `key` and `id` objects for finding the
+returned data in those hashes.  The reason that we use the `results` array is two-fold: 1st) it provides order outside
+of the serialized objects so that we can provide objects keyed by ID, and 2nd) it allows for polymorphic responses and
+for objects that have associations of their own type (like posts and replies or tasks and sub-tasks).
 
-### Test helpers
+### Tests
 
-Brainstem includes some spec helpers for controller specs. In order to use them, you need to include Brainstem in your controller specs by adding the following to `spec/support/brainstem.rb` or in your `spec/spec_helper.rb`:
+We recommend writing specs for your Presenters and validating them with the Brainstem::PresenterValidator. Here is an
+example RSpec shared behavior that you might want to use:
+
+```ruby
+shared_examples_for "a Brainstem api presenter" do |presenter_class|
+  it 'passes Brainstem::PresenterValidator' do
+    validator = Brainstem::PresenterValidator.new(presenter_class)
+    validator.valid?
+    validator.should be_valid, "expected a valid presenter, got: #{validator.errors.full_messages}"
+  end
+end
+```
+
+And then use it in your presenter specs (e.g., in `spec/lib/api/v1/widget_presenter.rb`:
+
+```ruby
+require 'spec_helper'
+
+describe Api::V1::WidgetPresenter do
+  it_should_behave_like "a Brainstem api presenter", described_class
+
+  describe 'presented fields' do
+    let(:loaded_associations) { { } }
+    let(:associations) { %w[features location] }
+    let(:model) { some_widget }
+    let(:presented_data) { described_class.new.present_model(model, associations, load_associations_into: loaded_associations) }
+
+    describe 'attributes' do
+      it 'presents the attributes' do
+        presented_data['name'].should == model.name
+      end
+
+      describe 'something conditional on the presenter' do
+        describe 'for widgets with this behavior' do
+          let(:model) { widget_with_permissions }
+
+          it 'should be true' do
+            presented_data['conditional_thing'].should be_truthy
+          end
+        end
+
+        describe 'for widgets without this behavior' do
+          let(:model) { widget_without_permissions }
+
+          it 'should be true' do
+            presented_data.should_not have_key('conditional_thing')
+          end
+        end
+      end
+    end
+
+    describe 'associations' do
+      it 'should load the associations' do
+        presented_data
+        loaded_associations.keys.should == %w[features location]
+      end
+    end
+  end
+end
+```
+
+Brainstem also includes some spec helpers for controller specs. In order to use them, you need to include Brainstem in
+your controller specs by adding the following to `spec/support/brainstem.rb` or in your `spec/spec_helper.rb`:
 
 ```ruby
 require 'brainstem/test_helpers'
@@ -230,9 +321,189 @@ describe 'brainstem_data' do
 end
 ```
 
-### Brainstem and Backbone.js
+## Upgrading from the pre-1.0 Brainstem
 
-If you're already using Backbone.js, integrating with a Brainstem API is super simple.  Just use the [Brainstem.js](https://github.com/mavenlink/brainstem-js) gem (or its JavaScript contents) to access your relational Brainstem API from JavaScript.
+If you're upgrading from the previous version of Brainstem to 1.0, there are some key changes that you'll want to know about:
+
+* The Presenter DSL has been rebuild.  Filters and sorts are the same, but the `present` method has been completely replaced
+  by a class-level DSL.  Please see the documentation above.
+* You can use `preload` instead of `custom_preload` now, although `custom_preload` still exists for complex cases.
+* `present_objects` and `present` have been renamed to `brainstem_present_objects` and `brainstem_present`.
+* `brainstem_key` is now an annotation on presenters and not needed when declaring associations.  It should always be plural.
+* `key_map` has been supplanted by `brainstem_key` in the presenter and has been removed.
+* `options[:as]` is no longer used with `brainstem_present` / `PresenterCollection#presenting`.  Use the `brainstem_key`
+  annotation in your presenters instead.
+* `helper` can now take a block or module.
+
+## Advanced Topics
+
+### The presenter DSL
+
+Brainstem provides a rich DSL for building presenters.  This section details the methods available to you.
+
+* `presents` - Accepts a list of classes that this specific presenter knows how to present. These are not inherited.
+
+* `brainstem_key` - The name of the top-level JSON key in which these presented models will be returned. Default to the model's
+  table name. This annotation is useful when returning data under a different external name than you use for your internal
+  models, or when presenting data from STI tables that you want to have use the subclass's name.
+
+* `sort_order` - Give `sort_order` a sort name (as a symbol) and either a string of SQL to be used for ordering
+  (like "widgets.updated_at") or a lambda that accepts a scope and an order, like the following:
+
+  ```ruby
+  sort_order :composite do |scope, direction|
+    # Be careful to avoid a SQL injection!
+    sanitized_direction = direction == "desc" ? "desc" : "asc"
+    scope.reorder("widgets.created_at #{sanitized_direction}, widgets.id #{sanitized_direction}")
+  end
+  ```
+
+* `default_sort_order` - The name and direction of the default sort for this presenter. The format is the same as is expected
+  in the URL parameter, for example `"name:desc"` or `"name:asc"`. The default value is `"updated_at:desc"`.
+
+* `helper` - Provide a Module or block of helper methods to make available in filter, sort, conditional, association,
+  and field lambdas.  Any instance variables in defined in the helpers will only be available for a single model.
+
+  ```ruby
+  # Provide a global helper Module for all presenters.
+  Brainstem::Presenter.helper(ApiHelper)
+
+  # Inside of a presenter, provide local helpers.
+  helper do
+    def some_widget_helper(widget)
+      widget.some_widget_helper
+    end
+  end
+  ```
+
+* `filter` - Declare an available filter for this presenter. Filters have a name, some options, and a block to run when
+  they're requested by a user.  Here are some examples:
+
+  ```ruby
+  # Optional filter that applies a lambda.
+  filter :location_name do |scope, location_name|
+    scope.joins(:locations).where("locations.name = ?", location_name)
+  end
+
+  # Filter with an overridable default that runs on all requests.
+  filter :include_legacy_widgets, default: false do |scope, bool|
+    bool ? scope : scope.without_legacy_widgets
+  end
+  ```
+
+* `search` - This annotation allows you to create a block that is run when your users provide the special "search" param.
+  When in "search" mode, Brainstem delegates entirely to this block and applies no filters or sorts beyond the base scope
+  passed into `presenting`.  You're in charge of implementing whatever filters and sorts you'd like to support in search
+  mode inside of your search subsystem.  The block should return an array where the first element is an array of a page of
+  matching model ids and the second option is the total number of matched records.
+
+  ```ruby
+  search do |search_string, options|
+    # options will contain:
+    #   include: an array of the requested association inclusions
+    #   order: { sort_order: sort_name, direction: direction }
+    #   limit and offset or page and per_page, depending on which the user has provided.
+    #   requested filters and any default filters
+
+    # Talk to your search system (solr, elasticsearch, etc.) here.
+    results = do_an_actual_search(search_string, location_name: options[:location_name])
+
+    if results
+      [results.map { |result| result.id.to_i }, results.total]
+    else
+      [false, 0]
+    end
+  end
+  ```
+
+* `preload` - Use this annotation to provide a list of valid associations to preload on this model. For example, if you
+  always end up asking a question of each instance that requires loading an association, `preload` it here to avoid an
+  N+1 query. The syntax is the same as `preload` or `include` in Rails and allows for nesting.
+
+  ```ruby
+  preload :location
+  preload features: :feature_creator
+  ```
+
+* `fields` - The Brainstem `fields` DSL is how you tell Brainstem what JSON fields to provide in each of your presented models.
+  Fields have a name, which is what they will be called in the returned JSON, a type which is used for API documentation,
+  and optional documentation string, and a number of options. By default, `field`s will call a model method with the same
+  name as the field's name and return the result. Use the `via` option to call a different method, or the `dynamic` option
+  to provide a lambda that takes the model and returns the field's value. Fields can be conditionally returned with the
+  `if` option, detailed in the `conditionals` section below.  Here are some example fields:
+
+  ```ruby
+  fields do
+    field :name, :string, "the widget's name"
+    field :legacy, :boolean, "true for legacy widgets, false otherwise",
+          via: :legacy?
+    field :dynamic_name, :string, "a formatted name for this model",
+          dynamic: lambda { |model| "This model's name is #{model.name}" }
+
+    # Fields can be nested
+    fields :permissions do
+      field :access_level, :integer
+    end
+  end
+  ```
+
+* `associations` - Associations are one of the best features of Brainstem. Your users can provide the names of associations
+  to `include` with their response, preventing N+1 API requests.  Declared `association` have a name, an ActiveRecord
+  class name, an optional documentation string, and some options. By default, `association`s will call the association or
+  method on the model with their name. Like `field`s, you can use `:via` to call a different method or association and
+  `dynamic` to provide a lambda that takes the model and returns a model, array of models, or relation of models.
+
+  If you have an association that tends to be large and expensive to return, you can annotate it with the
+  `restrict_to_only: true` option and it will only be returned when the `only` URL param is provided and contains a
+  specific set of requested models.
+
+  Included associations will be present in the returned JSON as either <field>_id, <field>_ids, <field>_ref, or <field>_refs
+  depending on whether they reference a single model, an array (or Relation) of models, or a single polymorphic
+  association (a polymorhic belongs_to or has_one), or a plural polymorphic association (a polymorphic has_many) respectively.
+  When a *_ref is returned, it will look like `{ "id": "2", "key": "widgets" }`, telling the consumer the top-level key in
+  which to find the identified record.
+
+  If your model has a native column named <field>_id, it will be returned for free without being requested. Otherwise,
+  users need to request associations via the `include` url param.
+
+  ```ruby
+  associations do
+    association :features, Feature, "features associated with this widget"
+    association :location, Location, "the location of this widget"
+    association :another_location, Location, "the widget's previous location",
+                dynamic: lambda { |widget| widget.previous_locations.first }
+    association :associated_objects, :polymorphic, "a mixture of objects related to this Widget"
+  end
+  ```
+
+* `conditionals` - Conditionals are named questions that can be used to restrict which `fields` are returned. The
+  `conditionals` block has two available methods, `request` and `model`.  The `request` conditionals run once for the entire
+  set of presented models, while `model` ones run once per model. Use `request` conditionals to check and then cache things
+  like permissions checks that do not change between models, and use `model` conditionals to ask questions of specific
+  models.
+
+  ```ruby
+  conditionals do
+    model   :title_is_hello, lambda { |model| model.title == 'hello' }, 'visible when the title is hello'
+    request :user_is_bob, lambda { current_user == 'bob' }, 'visible only to bob' # Assuming some sort of `helper` that provides `current_user`
+  end
+
+  fields do
+    field :hello_title, :string, 'the title, when it is exactly the word "hello"',
+          dynamic: lambda { |model| model.title },
+          if: :title_is_hello
+
+    field :secret, :string, "a secret, via the secret_info model method, only visible to bob and when the model's title is hello",
+          via: :secret_info,
+          if: [:user_is_bob, :title_is_hello]
+
+    with_options if: :user_is_bob do
+      field :bob_title, :string, 'another name for the title, only visible to Bob',
+            via: :title
+    end
+  end
+  ```
+
 
 ## Contributing
 

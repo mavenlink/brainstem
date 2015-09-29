@@ -65,6 +65,9 @@ module Brainstem
       end
     end
 
+    Brainstem::Presenter.reset!
+    Brainstem::Presenter.reset_configuration!
+
     @presenter_collection = {}
     @default_namespace = nil
   end

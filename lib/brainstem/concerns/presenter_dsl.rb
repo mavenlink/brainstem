@@ -16,13 +16,7 @@ module Brainstem
       include Brainstem::Concerns::InheritableConfiguration
 
       included do
-        configuration.array!(:preloads)
-        configuration.array!(:helpers)
-        configuration.nest!(:conditionals)
-        configuration.nest!(:fields)
-        configuration.nest!(:filters)
-        configuration.nest!(:sort_orders)
-        configuration.nest!(:associations)
+        reset_configuration!
       end
 
       module ClassMethods
@@ -43,7 +37,6 @@ module Brainstem
         end
 
         # Declare a helper module or block whose methods will be available in dynamic fields and associations.
-        # TODO: make available inside sort and filter blocks
         def helper(mod = nil, &block)
           if mod
             configuration[:helpers] << mod
@@ -96,6 +89,17 @@ module Brainstem
 
         def brainstem_key(key)
           configuration[:brainstem_key] = key.to_s
+        end
+
+        # @api private
+        def reset_configuration!
+          configuration.array!(:preloads)
+          configuration.array!(:helpers)
+          configuration.nest!(:conditionals)
+          configuration.nest!(:fields)
+          configuration.nest!(:filters)
+          configuration.nest!(:sort_orders)
+          configuration.nest!(:associations)
         end
       end
     end

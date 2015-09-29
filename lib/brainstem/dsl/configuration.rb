@@ -84,6 +84,8 @@ module Brainstem
         end
       end
 
+      # An Array-like object that provides `push`, `concat`, `each`, `empty?`, and `to_a` methods that act the combination
+      # of its own entries and those of a parent InheritableAppendSet, if present.
       class InheritableAppendSet
         def initialize(parent_array = nil)
           @parent_array = parent_array || []

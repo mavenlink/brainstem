@@ -10,7 +10,7 @@ module Brainstem
 
     # Class methods
 
-    # Accepts a list of classes this specific presenter knows how to present.  These are not inherited.
+    # Accepts a list of classes that this specific presenter knows how to present. These are not inherited.
     # @param [String, [String]] klasses Any number of names of classes this presenter presents.
     def self.presents(*klasses)
       @presents ||= []

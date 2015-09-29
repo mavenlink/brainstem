@@ -1,3 +1,5 @@
+# Brainstem::PresenterValidator is a helper class that performs validity checks on a given presenter class.
+
 module Brainstem
   class PresenterValidator
     include ActiveModel::Validations
