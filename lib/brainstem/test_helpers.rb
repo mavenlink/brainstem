@@ -37,7 +37,7 @@ module Brainstem
       end
 
       def results
-        BrainstemHelperCollection.new(@json['results'].map { |ref| BrainstemHelperItem.new(@json[ref['key']][ref['id']]) })
+        BrainstemHelperCollection.new(@json['results'].map { |ref| @json[ref['key']][ref['id']] })
       end
 
       def method_missing(name)
