@@ -36,6 +36,10 @@ module Brainstem
         @json = JSON.parse(response_body)
       end
 
+      def results
+        BrainstemHelperCollection.new(@json['results'].map { |ref| BrainstemHelperItem.new(@json[ref['key']][ref['id']]) })
+      end
+
       def method_missing(name)
         data = @json[name.to_s].try(:values)
         BrainstemHelperCollection.new(data) unless data.nil?
@@ -51,7 +55,7 @@ module Brainstem
         end
 
         def ids
-          map { |item| item.id.to_i }
+          map { |item| item.id }
         end
 
         def by_id(id)

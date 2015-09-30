@@ -172,6 +172,27 @@ describe Brainstem::PresenterValidator do
     end
   end
 
+  describe 'validating sort_orders' do
+    it 'checks that a default is selected if any sort_orders are defined' do
+      presenter_class.sort_order :alphabetical, "workspaces.title"
+      expect(validator).not_to be_valid
+      expect(validator.errors[:default_sort_order]).to eq ["A default_sort_order is highly recommended if any sort_orders are declared"]
+
+      presenter_class.default_sort_order "alphabetical:desc"
+      expect(validator).to be_valid
+    end
+
+    it 'checks that a default matches an existing sort_order' do
+      presenter_class.default_sort_order "alphabetical:desc"
+
+      expect(validator).not_to be_valid
+      expect(validator.errors[:default_sort_order]).to eq ["The declared default_sort_order ('alphabetical') does not match an existing sort_order"]
+
+      presenter_class.sort_order :alphabetical, "workspaces.title"
+      expect(validator).to be_valid
+    end
+  end
+
   specify 'all spec presenters should be valid' do
     Brainstem.presenter_collection.presenters.each do |name, klass|
       expect(Brainstem::PresenterValidator.new(klass)).to be_valid

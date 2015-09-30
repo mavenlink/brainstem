@@ -15,6 +15,8 @@ module Brainstem
     validate :fields_exist
     validate :associations_exist
     validate :conditionals_exist
+    validate :default_sort_is_used
+    validate :default_sort_matches_sort_order
 
     def preloads_exist
       presenter_class.configuration[:preloads].each do |preload|
@@ -65,6 +67,21 @@ module Brainstem
             end
           when DSL::Configuration
             conditionals_exist(field_or_fields)
+        end
+      end
+    end
+
+    def default_sort_is_used
+      if presenter_class.configuration[:sort_orders].length > 0 && presenter_class.configuration[:default_sort_order].blank?
+        errors.add(:default_sort_order, "A default_sort_order is highly recommended if any sort_orders are declared")
+      end
+    end
+
+    def default_sort_matches_sort_order
+      if presenter_class.configuration[:default_sort_order].present?
+        default_sort_order = presenter_class.configuration[:default_sort_order].split(":").first.to_sym
+        if !presenter_class.configuration[:sort_orders][default_sort_order]
+          errors.add(:default_sort_order, "The declared default_sort_order ('#{default_sort_order}') does not match an existing sort_order")
         end
       end
     end

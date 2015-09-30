@@ -55,6 +55,14 @@ describe Brainstem::PresenterCollection do
             expect(result.length).to eq(1)
             expect(result.first['id']).to eq(Workspace.unscoped[0].id.to_s)
           end
+
+          it "restricts the per_page to options[:max_per_page], if provided, otherwise default_max_per_page" do
+            result = @presenter_collection.presenting("workspaces", :max_per_page => 5, :params => { :per_page => 10000, :page => 1 }) { Workspace.unscoped }['results']
+            expect(result.length).to eq(5)
+
+            result = @presenter_collection.presenting("workspaces", :params => { :per_page => 10000, :page => 1 }) { Workspace.unscoped }['results']
+            expect(result.length).to eq(3)
+          end
         end
 
         context "when only limit and offset are present" do
@@ -74,6 +82,14 @@ describe Brainstem::PresenterCollection do
             result = @presenter_collection.presenting("workspaces", :params => { :limit => -1, :offset => -1 }) { Workspace.unscoped }['results']
             expect(result.length).to eq(1)
             expect(result.first['id']).to eq(Workspace.unscoped[0].id.to_s)
+          end
+
+          it "restricts the limit to options[:max_per_page], if provided, otherwise default_max_per_page" do
+            result = @presenter_collection.presenting("workspaces", :max_per_page => 5, :params => { :limit => 100, :offset => 0 }) { Workspace.unscoped }['results']
+            expect(result.length).to eq(5)
+
+            result = @presenter_collection.presenting("workspaces", :params => { :limit => 100, :offset => 0 }) { Workspace.unscoped }['results']
+            expect(result.length).to eq(3)
           end
         end
 

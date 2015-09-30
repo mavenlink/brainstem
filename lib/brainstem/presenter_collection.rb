@@ -192,7 +192,7 @@ module Brainstem
     end
 
     def calculate_limit(options)
-      [[options[:params][:limit].to_i, 1].max, default_max_per_page].min
+      [[options[:params][:limit].to_i, 1].max, (options[:max_per_page] || default_max_per_page).to_i].min
     end
 
     def calculate_offset(options)
