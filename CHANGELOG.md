@@ -1,5 +1,9 @@
 # Changelog
 
++ **1.0.0.pre** - _10/5/2015_
+
+  + Complete rewrite of the Presenter DSL allowing for introspection and (soon) automatic API documentation.
+
 + **0.2.5** - _07/22/2014_
 
   + `Brainstem::Presenter#load_associations!` now:
