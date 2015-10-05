@@ -1,3 +1,5 @@
+If you're upgrading from an older version of Brainstem, please see [Upgrading From The Pre 1.0 Brainstem](https://github.com/mavenlink/brainstem#upgrading-from-the-pre-10-brainstem) and the rest of this README.
+
 # Brainstem
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/mavenlink/brainstem?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
