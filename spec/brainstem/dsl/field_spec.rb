@@ -99,4 +99,31 @@ describe Brainstem::DSL::Field do
       end
     end
   end
+
+  describe "#optioned?" do
+    context "when is not an optional field" do
+      it 'returns true' do
+        expect(field.optioned?(['expensive_title', 'expensive_title2'])).to eq true
+      end
+    end
+
+    context "when is an optional field" do
+      let(:name) { :expensive_title }
+      let(:type) { :string }
+      let(:options) { { optional: true } }
+      let(:description) { 'the optional expensive title field' }
+
+      context "when not requested" do
+        it 'returns false' do
+          expect(field.optioned?([])).to eq false
+        end
+      end
+
+      context "when requested" do
+        it 'returns true' do
+          expect(field.optioned?(['expensive_title', 'expensive_title2'])).to eq true
+        end
+      end
+    end
+  end
 end

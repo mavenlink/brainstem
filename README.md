@@ -68,6 +68,7 @@ module Api
       fields do
         field :name, :string, "the Widget's name"
         field :legacy, :boolean, "true for legacy Widgets, false otherwise", via: :legacy?
+        field :longform_description, :string, "feature-length description of this Widget", optional: true
         field :updated_at, :datetime, "the time of this Widget's last update"
         field :created_at, :datetime, "the time at which this Widget was created"
       end
@@ -205,6 +206,7 @@ Brainstem parses the request params and supports the following:
 * Filters are standard URL parameters. To pass an option to a filter named `:location_name`, provide a request param like
   `location_name=san+francisco`. Because filters are top-level params, avoid naming them after any of the other Brainstem
   keywords, such as `search`, `page`, `per_page`, `limit`, `offset`, `order`, `only`, or `include`.
+* Brainstem supports optional fields which will only be returned when requested, for example: `optional_fields=field1,field2`
 
 --
 
@@ -452,7 +454,8 @@ Brainstem provides a rich DSL for building presenters.  This section details the
   an optional documentation string, and a number of options. By default, fields will call a model method with the same
   name as the field's name and return the result. Use the `:via` option to call a different method, or the `:dynamic` option
   to provide a lambda that takes the model and returns the field's output value. Fields can be conditionally returned with the
-  `:if` option, detailed in the `conditionals` section below.  Here are some example fields:
+  `:if` option, detailed in the `conditionals` section below.  Expensive fields can be declared as `optional: true` so that they are
+   only returned when `optional_fields=field` is provided in the API request. Here are some example fields:
 
   ```ruby
   fields do
@@ -461,6 +464,8 @@ Brainstem provides a rich DSL for building presenters.  This section details the
           via: :legacy?
     field :dynamic_name, :string, "a formatted name for this Widget",
           dynamic: lambda { |widget| "This Widget's name is #{widget.name}" }
+    field :longform_description, :string, "feature-length description of this Widget",
+          optional: true
 
     # Fields can be nested
     fields :permissions do

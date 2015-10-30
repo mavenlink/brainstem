@@ -224,6 +224,34 @@ describe Brainstem::Presenter do
           expect(fields[1].slice(*%w[memoized_helper_value1 memoized_helper_value2 memoized_helper_value3 memoized_helper_value4]).values).to match_array [1, 2, 3, 4]
         end
       end
+
+      describe 'handling of optional fields' do
+        it 'does not include optional fields by default' do
+          expect(presenter.group_present([model]).first).not_to have_key('expensive_title')
+        end
+
+        it 'includes optional fields when explicitly requested' do
+          presented_workspace = presenter.group_present([model], [], optional_fields: ['expensive_title', 'expensive_title2']).first
+
+          expect(presented_workspace).to have_key('expensive_title')
+          expect(presented_workspace).to have_key('expensive_title2')
+          expect(presented_workspace).not_to have_key('expensive_title3')
+        end
+
+        context 'handling of conditional' do
+          it 'does not include field when condition is not met' do
+            model.title = 'Not hello'
+            presented_workspace = presenter.group_present([model], [], optional_fields: ['conditional_expensive_title']).first
+            expect(presented_workspace).not_to have_key('conditional_expensive_title')
+          end
+
+          it 'includes field when condition is met' do
+            model.title = 'hello'
+            presented_workspace = presenter.group_present([model], [], optional_fields: ['conditional_expensive_title']).first
+            expect(presented_workspace).to have_key('conditional_expensive_title')
+          end
+        end
+      end
     end
 
     describe "adding object ids as strings" do
