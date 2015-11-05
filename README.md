@@ -101,6 +101,65 @@ class Api::WidgetsController < ActionController::Base
     widget = Widget.find(params[:id])
     render json: brainstem_present_object(widget)
   end
+
+  def create
+    # Note: you are in charge of sanitizing params[brainstem_model_name], likely with strong parameters.
+    widget = Widget.new(params[brainstem_model_name])
+    if widget.save
+      render json: brainstem_present_object(widget)
+    else
+      render json: brainstem_model_error(widget), status: :unprocessable_entity
+    end
+  end
+end
+```
+
+The `Brainstem::ControllerMethods` concern provides:
+* `brainstem_model_name` which is inferred from your controller name or settable with `self.brainstem_model_name = :thing`.
+* `brainstem_present` and `brainstem_present_object` for presenting a scope of models or a single model.
+* `brainstem_model_error` and `brainstem_system_error` for presenting model and system error messages.
+
+### Controller Best Practices
+
+We recommend that your base API controller look something like the following.
+
+```ruby
+module Api
+  module V1
+    class ApiController < ApplicationController
+      include Brainstem::ControllerMethods
+
+      before_filter :api_authenticate
+
+      rescue_from StandardError, with: :server_error
+      rescue_from Brainstem::SearchUnavailableError, with: :search_unavailable
+      rescue_from ActiveRecord::RecordNotDestroyed, with: :record_not_destroyed
+      rescue_from ActiveRecord::RecordNotFound,
+                  ActionController::RoutingError, with: :page_not_found
+
+      private
+
+      def api_authenticate
+        # Implement your authentication here.  We recommend Doorkeeper.
+      end
+
+      def server_error(exception)
+        render json: brainstem_system_error("A server error has occurred."), status: 500
+      end
+
+      def search_unavailable
+        render json: brainstem_system_error('Search is currently unavailable'), status: 503
+      end
+
+      def page_not_found
+        render json: brainstem_system_error('Record not found'), status: 404
+      end
+
+      def record_not_destroyed
+        render json: brainstem_model_error("Could not delete the #{brainstem_model_name.humanize.downcase.singularize}"), status: :unprocessable_entity
+      end
+    end
+  end
 end
 ```
 

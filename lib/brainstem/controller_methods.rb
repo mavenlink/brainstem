@@ -1,4 +1,5 @@
 require 'brainstem/concerns/controller_param_management'
+require 'brainstem/concerns/error_presentation'
 
 module Brainstem
 
@@ -8,6 +9,7 @@ module Brainstem
   module ControllerMethods
     extend ActiveSupport::Concern
     include Concerns::ControllerParamManagement
+    include Concerns::ErrorPresentation
 
     # Return a Ruby hash that contains models requested by the user's params and allowed
     # by the +name+ presenter's configuration.
