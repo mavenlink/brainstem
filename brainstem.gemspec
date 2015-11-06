@@ -17,6 +17,8 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
   gem.version       = Brainstem::VERSION
 
+  gem.executables   << 'brainstem'
+
   gem.add_dependency "activerecord", ">= 3.2"
   gem.add_dependency "activesupport"
 
@@ -28,4 +30,5 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency "database_cleaner"
   gem.add_development_dependency "yard"
   gem.add_development_dependency "pry"
+  gem.add_development_dependency "pry-byebug"
 end

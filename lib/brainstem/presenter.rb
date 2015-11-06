@@ -2,6 +2,7 @@ require 'date'
 require 'brainstem/time_classes'
 require 'brainstem/preloader'
 require 'brainstem/concerns/presenter_dsl'
+require 'active_support/core_ext/hash/except'
 
 module Brainstem
   # @abstract Subclass and override {#present} to implement a presenter.
@@ -136,7 +137,7 @@ module Brainstem
         user_value = user_value.is_a?(Array) ? user_value : (user_value.present? ? user_value.to_s : nil)
         user_value = user_value == "true" ? true : (user_value == "false" ? false : user_value)
 
-        filter_options = filter[0]
+        filter_options = filter
         filter_arg = apply_default_filters && user_value.nil? ? filter_options[:default] : user_value
         filters_hash[filter_name] = filter_arg unless filter_arg.nil?
       end
@@ -150,10 +151,11 @@ module Brainstem
 
       requested_filters = extract_filters(user_params, options)
       requested_filters.each do |filter_name, filter_arg|
-        filter_lambda = configuration[:filters][filter_name][1]
+        filter_lambda = configuration[:filters][filter_name][:value]
 
         args_for_filter_lambda = [filter_arg]
-        args_for_filter_lambda << requested_filters if configuration[:filters][filter_name][0][:include_params]
+        args_for_filter_lambda << requested_filters \
+          if configuration[:filters][filter_name][:include_params]
 
         if filter_lambda
           scope = helper_instance.instance_exec(scope, *args_for_filter_lambda, &filter_lambda)
@@ -168,7 +170,7 @@ module Brainstem
     # Given user params, apply a validated sort order to the given scope.
     def apply_ordering_to_scope(scope, user_params)
       sort_name, direction = calculate_sort_name_and_direction(user_params)
-      order = configuration[:sort_orders][sort_name]
+      order = configuration[:sort_orders].fetch(sort_name, {})[:value]
 
       case order
         when Proc

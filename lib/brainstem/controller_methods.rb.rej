@@ -1,0 +1,7 @@
+diff a/lib/brainstem/controller_methods.rb b/lib/brainstem/controller_methods.rb	(rejected hunks)
+@@ -1,4 +1,5 @@
+ require 'brainstem/concerns/controller_param_management'
++require 'brainstem/concerns/controller_dsl'
+ 
+ module Brainstem
+   # ControllerMethods are intended to be included into controllers that will be handling requests for presented objects.

@@ -543,14 +543,22 @@ describe Brainstem::PresenterCollection do
           WorkspacePresenter.filter(:other_filter_with_default, default: true) { |scope, opt| scope }
 
           provided_params = nil
+
           WorkspacePresenter.filter :filter_with_param, :include_params => true do |scope, option, params|
             provided_params = params
             scope
           end
 
-          @presenter_collection.presenting("workspaces", :params => { :filter_with_param => "arg", :other_filter => 'another_arg' }) { Workspace.where(nil) }
+          @presenter_collection.presenting("workspaces", :params => {
+            :filter_with_param => "arg",
+            :other_filter => 'another_arg'
+          }) { Workspace.where(nil) }
 
-          expect(provided_params).to eq({ "filter_with_param" => "arg", "other_filter" => "another_arg", "other_filter_with_default" => true })
+          expect(provided_params).to eq({
+            "filter_with_param"         => "arg",
+            "other_filter"              => "another_arg",
+            "other_filter_with_default" => true
+          })
         end
       end
     end

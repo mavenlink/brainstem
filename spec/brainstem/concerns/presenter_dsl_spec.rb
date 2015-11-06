@@ -5,10 +5,15 @@ require 'brainstem/concerns/presenter_dsl'
 #
 # brainstem_key :projects
 #
+# title "Project"
+# description "It does stuff"
+#
 # conditionals do
 #   model   :title_is_hello, lambda { workspace.title == 'hello' }, 'visible when the title is hello'
 #   request :user_is_bob, lambda { current_user.username == 'bob' }, 'visible only to bob'
 # end
+#
+# sort_order :created_at, ".created_at"
 #
 # fields do
 #   field :title, :string
@@ -61,6 +66,94 @@ describe Brainstem::Concerns::PresenterDSL do
       expect(subclass.configuration[:preloads].to_a).to eq [:tasks, :lead_user]
     end
   end
+
+  describe 'the title method' do
+    it "is stored in the configuration" do
+      presenter_class.title "Project"
+      expect(presenter_class.configuration[:title][:info]).to eq "Project"
+    end
+
+    it "stores options" do
+      presenter_class.title "Project", nodoc: true
+      expect(presenter_class.configuration[:title][:nodoc]).to be true
+    end
+
+    it "is not inherited" do
+      presenter_class.title "Project"
+      subclass = Class.new(presenter_class)
+      expect(subclass.configuration).not_to have_key :title
+    end
+  end
+
+  describe 'the description method' do
+    it "is stored in the configuration" do
+      presenter_class.description "desc 123"
+      expect(presenter_class.configuration[:description][:info]).to eq "desc 123"
+    end
+
+    it "stores options" do
+      presenter_class.description "Project", nodoc: true
+      expect(presenter_class.configuration[:description][:nodoc]).to be true
+    end
+
+    it "is not inherited" do
+      presenter_class.description "desc 123"
+      subclass = Class.new(presenter_class)
+      expect(subclass.configuration).not_to have_key :description
+    end
+  end
+
+  describe 'the nodoc! method' do
+    before do
+      presenter_class.nodoc!
+    end
+
+    it "is stored in the configuration" do
+      expect(presenter_class.configuration[:nodoc]).to be true
+    end
+  end
+
+
+  # sort_order :created_at, ".created_at"
+  describe 'the sort_order block' do
+    let(:value)   { "widgets.created_at" }
+    let(:orders)  { presenter_class.configuration[:sort_orders] }
+
+    context "when passed value is a column" do
+      before do
+        presenter_class.sort_order :created_at, value, info: "sorts by creation time"
+      end
+
+      it "is stored in the configuration by name" do
+        expect(orders).to have_key "created_at"
+      end
+
+      it "stores the value passed" do
+        expect(orders[:created_at][:value]).to eq "widgets.created_at"
+      end
+
+      it "stores the documentation" do
+        expect(orders[:created_at][:info]).to eq "sorts by creation time"
+      end
+    end
+
+    context "when passed value is a block" do
+      let(:value) { Proc.new { nil } }
+
+      before do
+        presenter_class.sort_order :created_at, info: "sorts by creation time", &value
+      end
+
+      it "stores the value passed" do
+        expect(orders[:created_at][:value]).to eq value
+      end
+
+      it "stores the documentation" do
+        expect(orders[:created_at][:info]).to eq "sorts by creation time"
+      end
+    end
+  end
+
 
   describe 'the conditional block' do
     before do
@@ -373,16 +466,25 @@ describe Brainstem::Concerns::PresenterDSL do
   end
 
   describe ".filter" do
+    let(:foo) { presenter_class.configuration[:filters][:foo] }
+
     it "creates an entry in the filters configuration" do
-      presenter_class.filter(:foo, :default => true) { 1 }
-      expect(presenter_class.configuration[:filters][:foo][0]).to eq({"default" => true})
-      expect(presenter_class.configuration[:filters][:foo][1]).to be_a(Proc)
+      my_proc = Proc.new { 1 }
+      presenter_class.filter(:foo, :default => true, &my_proc)
+
+      expect(foo).to eq({ "default" => true, "value" => my_proc })
     end
 
     it "accepts names without blocks" do
       presenter_class.filter(:foo)
-      expect(presenter_class.configuration[:filters][:foo][1]).to be_nil
+      expect(foo[:value]).to be_nil
     end
+
+    it "records the info option" do
+      presenter_class.filter(:foo, :info => "This is documented.")
+      expect(foo[:info]).to eq "This is documented."
+    end
+
   end
 
   describe ".search" do

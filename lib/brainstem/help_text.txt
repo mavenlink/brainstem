@@ -1,0 +1,8 @@
+
+Usage: EXECUTABLE_NAME [command [options]]
+
+Commonly used commands are:
+
+    generate:      generates API documentation.
+
+See EXECUTABLE_NAME COMMAND --help for more information on a specific command.
