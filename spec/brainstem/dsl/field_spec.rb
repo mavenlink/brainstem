@@ -103,7 +103,7 @@ describe Brainstem::DSL::Field do
   describe "#optioned?" do
     context "when is not an optional field" do
       it 'returns true' do
-        expect(field.optioned?(['expensive_title', 'expensive_title2'])).to eq true
+        expect(field.optioned?(['some_optional_field', 'some_other_optional_field'])).to eq true
       end
     end
 
@@ -121,7 +121,7 @@ describe Brainstem::DSL::Field do
 
       context "when requested" do
         it 'returns true' do
-          expect(field.optioned?(['expensive_title', 'expensive_title2'])).to eq true
+          expect(field.optioned?(['expensive_title', 'some_other_optional_field'])).to eq true
         end
       end
     end
