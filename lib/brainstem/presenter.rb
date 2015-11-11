@@ -77,7 +77,8 @@ module Brainstem
         conditionals:                 configuration[:conditionals],
         associations:                 configuration[:associations],
         reflections:                  reflections_for_model(models.first),
-        association_objects_by_name:  association_objects_by_name
+        association_objects_by_name:  association_objects_by_name,
+        optional_fields:              options[:optional_fields] || []
       }
 
       sanitized_association_names = association_objects_by_name.values.map(&:method_name)
@@ -247,7 +248,7 @@ module Brainstem
       fields.each do |name, field|
         case field
           when DSL::Field
-            if field.conditionals_match?(model, context[:conditionals], context[:helper_instance], context[:conditional_cache])
+            if field.conditionals_match?(model, context[:conditionals], context[:helper_instance], context[:conditional_cache]) && field.optioned?(context[:optional_fields])
               result[name] = field.run_on(model, context[:helper_instance])
             end
           when DSL::Configuration

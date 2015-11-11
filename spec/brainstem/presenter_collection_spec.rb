@@ -980,6 +980,29 @@ describe Brainstem::PresenterCollection do
         expect(result['workspaces']['1']['secret_info']).to eq(Workspace.find(1).secret_info)
       end
     end
+
+    describe "when optional fields exist" do
+      it 'does not include optional field by default' do
+        result = @presenter_collection.presenting("workspaces") { Workspace.unscoped }
+        workspaces = result['workspaces'].values
+        expect(workspaces.any? {|w| w.has_key?('expensive_title') }).to be_falsey
+        expect(workspaces.any? {|w| w.has_key?('expensive_title2') }).to be_falsey
+        expect(workspaces.any? {|w| w.has_key?('expensive_title3') }).to be_falsey
+      end
+
+      it 'includes the optional field when explicitly requested' do
+        result = @presenter_collection.presenting("workspaces", :params => { :optional_fields => 'expensive_title,expensive_title2' }) { Workspace.unscoped }
+        workspaces = result['workspaces'].values
+        expect(workspaces.all? {|w| w.has_key?('expensive_title') }).to be_truthy
+        expect(workspaces.all? {|w| w.has_key?('expensive_title2') }).to be_truthy
+        expect(workspaces.any? {|w| w.has_key?('expensive_title3') }).to be_falsey
+      end
+
+      it 'ignores unknown fields' do
+        mock.proxy.any_instance_of(Brainstem::Presenter).group_present(anything, [], { optional_fields: ['expensive_title', 'expensive_title2'], load_associations_into: {} })
+        @presenter_collection.presenting("workspaces", :params => { :optional_fields => 'expensive_title , expensive_title2,foo' }) { Workspace.unscoped }
+      end
+    end
   end
 
   describe "#validate!" do

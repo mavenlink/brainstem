@@ -19,6 +19,10 @@ class WorkspacePresenter < Brainstem::Presenter
     field :description, :string
     field :updated_at, :datetime
     field :dynamic_title, :string, dynamic: lambda { |model| "title: #{model.title}" }
+    field :expensive_title, :string, via: :title, optional: true
+    field :expensive_title2, :string, via: :title, optional: true
+    field :expensive_title3, :string, via: :title, optional: true
+    field :conditional_expensive_title, :string, via: :title, optional: true, if: :title_is_hello
 
     fields :permissions do
       field :access_level, :integer, dynamic: lambda { 2 }

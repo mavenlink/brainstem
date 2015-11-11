@@ -4,7 +4,7 @@ module Brainstem
       attr_reader :name, :type, :description, :conditionals, :options
 
       def initialize(name, type, description, options)
-        @name = name
+        @name = name.to_s
         @type = type
         @description = description
         @conditionals = [options[:if]].flatten.compact
@@ -21,6 +21,14 @@ module Brainstem
         else
           (options[:via].presence || name).to_s
         end
+      end
+
+      def optioned?(requested_optional_fields)
+        !optional? || requested_optional_fields.include?(@name)
+      end
+
+      def optional?
+        options[:optional]
       end
 
       def run_on(model, helper_instance = Object.new)

@@ -52,6 +52,9 @@ module Brainstem
       # filter the incoming :includes list by those available from this Presenter in the current context
       selected_associations = filter_includes(options)
 
+      # filter incoming :optional_fields
+      optional_fields = filter_optional_fields(options)
+
       if searching? options
         # Search
         sort_name, direction = options[:primary_presenter].calculate_sort_name_and_direction options[:params]
@@ -108,6 +111,7 @@ module Brainstem
         associated_models = {}
         presented_primary_models = options[:primary_presenter].group_present(primary_models,
                                                                              selected_associations.map(&:name),
+                                                                             optional_fields: optional_fields,
                                                                              load_associations_into: associated_models)
 
         struct[brainstem_key] = presented_primary_models.each.with_object({}) { |model, obj| obj[model['id']] = model }
@@ -209,6 +213,10 @@ module Brainstem
           end
         end
       end
+    end
+
+    def filter_optional_fields(options)
+      options[:params][:optional_fields].to_s.split(',').map(&:strip) & options[:primary_presenter].configuration[:fields].keys
     end
 
     def handle_only(scope, only)
