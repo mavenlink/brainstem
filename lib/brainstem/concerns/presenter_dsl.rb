@@ -64,7 +64,11 @@ module Brainstem
 
         # @overload default_sort_order(sort_string)
         #   Sets a default sort order.
-        #   @param [String] sort_string The sort order to apply by default while presenting. The string must contain the name of a sort order that has explicitly been declared using {sort_order}. The string may end in +:asc+ or +:desc+ to indicate the default order's direction.
+        #   @param [String] sort_string The sort order to apply by default
+        #     while presenting. The string must contain the name of a sort order
+        #     that has explicitly been declared using {sort_order}. The string
+        #     may end in +:asc+ or +:desc+ to indicate the default order's
+        #     direction.
         #   @return [String] The new default sort order.
         # @overload default_sort_order
         #   @return [String] The default sort order, or nil if one is not set.

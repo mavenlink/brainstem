@@ -269,6 +269,85 @@ Brainstem parses the request params and supports the following:
 
 --
 
+## Documenting an API
+
+### Presenters / Data Models
+
+By and large, Presenters are self-documenting: simply using them as intended
+will yield a panoply of data.
+
+#### Docstrings
+
+All common methods that do not explicitly take a description take an `:info`
+option, which allows for the specification of an explanatory documentation
+string.
+
+As a general rule of thumb, methods that are not used within a block tend to
+accept `:info` strings, and those used within a block tend to have their own
+`description` argument.
+
+For example:
+
+```ruby
+class MyPresenter < Brainstem::Presenter
+  sort_order :cost, info: "Sorts by cost" do |scope, direction|
+    scope.reorder("myobjects.cost #{direction}")
+  end
+end
+```
+
+The methods that take an `:info` option include:
+
+- `sort_order`
+- `filter`
+
+The following have explicit description methods:
+
+- `field` &mdash; the third argument to `field(name, type, description, options)`
+    is used instead; also displays the documentation of any condition set in its
+    `:if` option.
+- `association` &mdash; the third argument to 
+    `association(name, target_class, description, options)` is used instead.
+- `request/model` &mdash; the third argument to both conditional methods 
+    `model(name, action, description)` and `request(name, action, description)`
+    is used.
+
+The following do not accept documentation:
+
+- `default_sort_order`
+- `preload`
+
+#### Nodoc
+
+The following methods accept a `:nodoc` boolean option, which indicates that the
+documentation should be suppressed for this particular entry:
+
+- `association` &mdash; hides the association
+- `field` &mdash; hides the field
+- `sort_order` &mdash; hides the sort order
+- `filter` &mdash; hides the filter
+- `request` / `model`
+
+#### Additional Documentables
+
+In addition to the above, there are three additional methods in the DSL designed
+primarily for documentation:
+
+- `nodoc!` &mdash; skips this presenter entirely and does not document it.
+- `title(str, options)` &mdash; used to specify an alternate title for the
+    Presenter.
+    - `nodoc: true` &mdash; forces fallback to the Presenter's constant
+- `description(str, options)` &mdash; used to specify a description for the
+    Presenter.
+    - `nodoc: true` &mdash; displays no description
+
+
+### Controllers
+
+Fill this in.
+
+--
+
 For more detailed examples, please see the rest of this README and our detailed
 [Rails example application](https://github.com/mavenlink/brainstem-demo-rails).
 
