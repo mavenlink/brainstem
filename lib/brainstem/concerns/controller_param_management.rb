@@ -1,3 +1,5 @@
+require 'active_support/concern'
+
 # Provide `brainstem_model_name` and `brainstem_plural_model_name` in
 # controllers for use when accessing the `params` hash.
 
@@ -16,7 +18,7 @@ module Brainstem
           brainstem_model_name.pluralize
       end
 
-      class_methods do
+      module ClassMethods
         def brainstem_model_name
           @brainstem_model_name ||= controller_name.singularize
         end
