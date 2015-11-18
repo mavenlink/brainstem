@@ -137,70 +137,105 @@ module Brainstem
                   options: { }
                 ) }
 
-                let(:valid_fields) { { sprocket_name: sprocket_name_long } }
 
+                context "branch node" do
+                  context "with single branch" do
+                    let(:valid_fields) { { sprockets: { name: sprocket_name_long } } }
 
-                context "if it is not conditional" do
-                  it "outputs each field as a list item" do
-                    expect(subject.output.scan(/\n-/).count).to eq 1
-                  end
+                    it "outputs the name of the branch as a list item" do
+                      expect(subject.output.scan(/\n-/).count).to eq 1
+                      expect(subject.output.scan(/\n    -/).count).to eq 1
+                      expect(subject.output.scan(/\n        -/).count).to eq 1
+                    end
 
-                  it "outputs each field's name" do
-                    expect(subject.output).to include "sprocket_name"
-                  end
-
-                  it "outputs each field's type" do
-                    expect(subject.output).to include "`sprocket_name` (`String`)"
-                  end
-
-                  context "with description" do
-                    it "outputs the description" do
-                      expect(subject.output).to include "    - #{lorem}"
+                    it "outputs the child nodes as sub-list items" do
+                      expect(subject.output).to \
+                        include("\n- `sprockets`\n    - `sprocket_name`")
                     end
                   end
 
-                  context "with no description" do
-                    let(:valid_fields) { { sprocket_name: sprocket_name_short } }
+                  context "with sub-branch" do
+                    let(:valid_fields) { { sprockets: { sub_sprocket: { name: sprocket_name_long } } } }
 
-                    it "does not include the description" do
-                      expect(subject.output).not_to include "    -"
+                    it "outputs the name of sub-branches as a sub-list item" do
+                      expect(subject.output.scan(/\n-/).count).to eq 1
+                      expect(subject.output.scan(/\n    -/).count).to eq 1
+                      expect(subject.output.scan(/\n        -/).count).to eq 1
+                      expect(subject.output.scan(/\n            -/).count).to eq 1
+                    end
+
+                    it "outputs the child nodes as sub-list items" do
+                      expect(subject.output).to \
+                        include("\n- `sprockets`\n    - `sub_sprocket`\n        - `sprocket_name`")
                     end
                   end
                 end
 
-                context "if it is conditional" do
-                  let(:sprocket_name_long) { OpenStruct.new(
-                    name: :sprocket_name,
-                    description: lorem,
-                    options: { via: :name, if: [:it_is_a_friday] },
-                    type: :string
-                  ) }
+                context "leaf node" do
+                  let(:valid_fields) { { sprocket_name: sprocket_name_long } }
 
-                  context "if the conditional has a description" do
-                    let(:conditionals) { {
-                      :it_is_a_friday => OpenStruct.new(
-                        description: "it is a friday",
-                        name: :it_is_a_friday,
-                        type: :request
-                      )
-                    } }
+                  context "if it is not conditional" do
+                    it "outputs each field as a list item" do
+                      expect(subject.output.scan(/\n-/).count).to eq 1
+                    end
 
-                    it "includes the conditional" do
-                      expect(subject.output).to include "\n    - visible when it is a friday"
+                    it "outputs each field's name" do
+                      expect(subject.output).to include "sprocket_name"
+                    end
+
+                    it "outputs each field's type" do
+                      expect(subject.output).to include "`sprocket_name` (`String`)"
+                    end
+
+                    context "with description" do
+                      it "outputs the description" do
+                        expect(subject.output).to include "    - #{lorem}"
+                      end
+                    end
+
+                    context "with no description" do
+                      let(:valid_fields) { { sprocket_name: sprocket_name_short } }
+
+                      it "does not include the description" do
+                        expect(subject.output).not_to include "    -"
+                      end
                     end
                   end
 
-                  context "if the condition doesn't have a description" do
-                    let(:conditionals) { {
-                      :it_is_a_friday => OpenStruct.new(
-                        description: nil,
-                        name: :it_is_a_friday,
-                        type: :request
-                      )
-                    } }
+                  context "if it is conditional" do
+                    let(:sprocket_name_long) { OpenStruct.new(
+                      name: :sprocket_name,
+                      description: lorem,
+                      options: { via: :name, if: [:it_is_a_friday] },
+                      type: :string
+                    ) }
 
-                    it "does not include the conditional" do
-                      expect(subject.output).not_to include "visible when"
+                    context "if the conditional has a description" do
+                      let(:conditionals) { {
+                        :it_is_a_friday => OpenStruct.new(
+                          description: "it is a friday",
+                          name: :it_is_a_friday,
+                          type: :request
+                        )
+                      } }
+
+                      it "includes the conditional" do
+                        expect(subject.output).to include "\n    - visible when it is a friday"
+                      end
+                    end
+
+                    context "if the condition doesn't have a description" do
+                      let(:conditionals) { {
+                        :it_is_a_friday => OpenStruct.new(
+                          description: nil,
+                          name: :it_is_a_friday,
+                          type: :request
+                        )
+                      } }
+
+                      it "does not include the conditional" do
+                        expect(subject.output).not_to include "visible when"
+                      end
                     end
                   end
                 end

@@ -104,7 +104,66 @@ module Brainstem
 
 
         describe "#valid_fields" do
-          xit "does something"
+          let(:field) { Object.new }
+          before      { stub(field).options { { nodoc: nodoc } } }
+
+          describe "leafs" do
+            let(:config) { { fields: { a_field: field } } }
+
+            context "when nodoc" do
+              let(:nodoc)  { true }
+
+              it "rejects the field" do
+                expect(subject.valid_fields.count).to eq 0
+              end
+            end
+
+            context "when not nodoc" do
+              it "keeps the field" do
+                expect(subject.valid_fields.count).to eq 1
+              end
+            end
+          end
+
+          describe "branches" do
+            describe "single nesting" do
+              let(:config) { { fields: { nesting_one: { a_field: field } } } }
+
+              context "when all nodoc" do
+                let(:nodoc)  { true }
+
+                it "rejects the nested field" do
+                  expect(subject.valid_fields.count).to eq 0
+                end
+              end
+
+              context "when not all nodoc" do
+                it "keeps the nested field" do
+                  expect(subject.valid_fields.count).to eq 1
+                end
+              end
+
+            end
+
+            describe "double nesting" do
+              let(:config) { { fields: { nesting_one: { nesting_two: { a_field: field } } } } }
+
+              context "when all nodoc" do
+                let(:nodoc)  { true }
+
+                it "rejects the nested field" do
+                  expect(subject.valid_fields.count).to eq 0
+                end
+              end
+
+              context "when not all nodoc" do
+                it "keeps the nested field" do
+                  expect(subject.valid_fields.count).to eq 1
+                end
+              end
+
+            end
+          end
         end
 
 

@@ -55,33 +55,57 @@ module Brainstem
           end
 
 
+          def format_field_leaf(field, indent_level)
+            text = md_inline_code(field.name.to_s)
+            text << " (#{md_inline_code(field.type.to_s.capitalize)})"
+
+            if field.description || field.options && field.options[:if]
+              text << "\n"
+              text << md_li(field.description, indent_level + 1) if field.description
+
+              if field.options[:if]
+                conditions = field.options[:if]
+                  .map {|cond| presenter.conditionals[cond].description || "" }
+                  .delete_if(&:empty?)
+                  .join(" and ")
+
+                text << md_li("visible when #{conditions}", indent_level + 1) unless conditions.empty?
+              end
+
+              text.chomp!
+            end
+
+            text
+          end
+
+
+          def format_field_branch(branch, indent_level = 0)
+            branch.inject("") do |buffer, (name, field)|
+              if nested_field?(field)
+                sub_fields = md_inline_code(name.to_s) + "\n"
+                sub_fields << format_field_branch(field.to_h, indent_level + 1)
+                buffer     += md_li(sub_fields, indent_level)
+              else
+                buffer += md_li(format_field_leaf(field, indent_level), indent_level)
+              end
+            end
+          rescue
+            require 'pry'; binding.pry
+          end
+
+
+          def nested_field?(field)
+            !field.respond_to?(:options)
+          end
+
+
           def format_fields!
             output << md_h5("Fields")
 
             if presenter.valid_fields.any?
+
               output << md_ul do
-                presenter.valid_fields.values.inject("") do |buffer, field|
-                  text = md_inline_code(field.name.to_s)
-                  text << " (#{md_inline_code(field.type.to_s.capitalize)})"
-
-                  if field.description || field.options && field.options[:if]
-                    text << "\n"
-                    text << md_li(field.description, 1) if field.description
-
-                    if field.options[:if]
-                      conditions = field.options[:if]
-                        .map {|cond| presenter.conditionals[cond].description || "" }
-                        .delete_if(&:empty?)
-                        .join(" and ")
-
-                      text << md_li("visible when #{conditions}", 1) unless conditions.empty?
-                    end
-
-                    text.chomp!
-                  end
-
-                  buffer += md_li text
-                end
+                format_field_branch(presenter.valid_fields)
               end
             else
               output << md_p("No fields were listed.")

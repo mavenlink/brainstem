@@ -73,8 +73,26 @@ module Brainstem
       end
 
 
-      def valid_fields
-        configuration[:fields].to_h.reject {|k, v| v.options[:nodoc] }
+      def valid_fields(fields = configuration[:fields])
+        fields.to_h.reject do |k, v|
+          if nested_field?(v)
+            valid_fields_in(v).none?
+          else
+            invalid_field?(v)
+          end
+        end
+      end
+      alias_method :valid_fields_in, :valid_fields
+
+
+      # TODO: Would be nice to move these down into fields.
+      def invalid_field?(field)
+        field.options[:nodoc]
+      end
+
+
+      def nested_field?(field)
+        !field.respond_to?(:options)
       end
 
 
