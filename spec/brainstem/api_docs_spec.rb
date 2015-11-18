@@ -19,6 +19,8 @@ module Brainstem
         presenter_filename_pattern
         base_path
         output_extension
+        base_presenter_class
+        base_controller_class
       ).each do |meth|
         describe meth do
           it "can be set and read" do

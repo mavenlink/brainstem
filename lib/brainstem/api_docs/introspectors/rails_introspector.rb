@@ -32,7 +32,7 @@ module Brainstem
         # @return [Array<Class>] an array of descendant classes
         #
         def presenters
-          base_presenter_class.descendants
+          base_presenter_class.constantize.descendants
         end
 
 
@@ -43,7 +43,7 @@ module Brainstem
         # @return [Array<Class>] an array of descendant classes
         #
         def controllers
-          base_controller_class.descendants
+          base_controller_class.constantize.descendants
         end
 
 
@@ -97,34 +97,52 @@ module Brainstem
 
         #
         # Returns the name of the base presenter class.
-        # @return [Class] the base presenter class
+        #
+        # Because the initializer that contains configuration data is unlikely
+        # to have been loaded, this may also return a Proc, which will be called
+        # after the environment is loaded.
+        #
+        # @return [String,Proc] the base presenter class or a proc that returns
+        #   the same
         #
         def base_presenter_class
-          (@base_presenter_class ||= "::Brainstem::Presenter").constantize
+          proc_or_string = (@base_presenter_class ||= "::Brainstem::Presenter")
+          proc_or_string.respond_to?(:call) ? proc_or_string.call : proc_or_string
         end
 
 
         #
         # Allows for the specification for an alternate base presenter class
-        # if - for example - only documentation of children of MyBasePresenter
-        # is desired. Best used through passing an argument to
-        # +with_loaded_environment+.
+        # if - for example - only documentation of children of +MyBasePresenter+
+        # is desired.
         #
         # This argument accepts a string because most classes will not be
         # defined at the time of passing, and will only be defined after
         # environment load.
         #
-        # @param [String] base_presenter_class the class name to use as the base presenter.
+        # Because the initializer that contains configuration data is unlikely
+        # to have been loaded, this may also return a Proc, which will be called
+        # after the environment is loaded.
+        #
+        # @param [String,Proc] base_presenter_class the class name to use as the
+        #   base presenter, or a proc which returns the same.
         #
         attr_writer :base_presenter_class
 
 
         #
         # Returns the name of the base controller class.
-        # @return [Class] the base controller class
+        #
+        # Because the initializer that contains configuration data is unlikely
+        # to have been loaded, this may also return a Proc, which will be called
+        # after the environment is loaded.
+        #
+        # @return [String,Proc] the base controller class or a proc that returns
+        #   the same
         #
         def base_controller_class
-          (@base_controller_class ||= "::ApplicationController").constantize
+          proc_or_string = (@base_controller_class ||= "::ApplicationController")
+          proc_or_string.respond_to?(:call) ? proc_or_string.call : proc_or_string
         end
 
 
@@ -138,8 +156,12 @@ module Brainstem
         # defined at the time of passing, and will only be defined after
         # environment load.
         #
+        # Because the initializer that contains configuration data is unlikely
+        # to have been loaded, this may also return a Proc, which will be called
+        # after the environment is loaded.
         #
-        # @param [String] klass the class to use as the base controller.
+        # @param [String,Proc] klass the class to use as the base controller, or
+        #   a a method which returns the same.
         #
         attr_writer :base_controller_class
 

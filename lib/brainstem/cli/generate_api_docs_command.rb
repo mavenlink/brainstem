@@ -11,12 +11,31 @@ Dir.glob(formatters_path).each { |f| require f }
 module Brainstem
   module CLI
     class GenerateApiDocsCommand < AbstractCommand
-      def call(opts = {})
-        self.options = opts.merge(self.options)
 
+      def call
         ensure_sink_specified!
         construct_builder!
         present_atlas!
+      end
+
+
+      def default_options
+        {
+          sink: {
+            options: {},
+          },
+
+          builder: {
+            args_for_introspector: {
+              base_presenter_class: ::Brainstem::ApiDocs.method(:base_presenter_class),
+              base_controller_class: ::Brainstem::ApiDocs.method(:base_controller_class),
+            },
+
+            args_for_atlas: {
+              controller_matches: [],
+            },
+          },
+        }
       end
 
 
@@ -40,17 +59,17 @@ module Brainstem
 
 
       def sink_method
-        @sink_method ||= options.fetch(:sink, {})[:method]
+        @sink_method ||= options[:sink][:method]
       end
 
 
       def builder_options
-        @builder_options ||= options.fetch(:builder, {})
+        @builder_options ||= options[:builder]
       end
 
 
       def sink_options
-        @sink_options ||= options.fetch(:sink, {})[:options] || {}
+        @sink_options ||= options[:sink][:options]
       end
 
 
@@ -58,39 +77,25 @@ module Brainstem
         OptionParser.new do |opts|
           opts.banner = "Usage: generate [options]"
 
-          opts.on('--stdout', "print to stdout") do |o|
-            # TODO: Clean up all this junk
-            options[:sink] ||= {}
-            options[:sink][:method] = Brainstem::ApiDocs::Sinks::StdoutSink.method(:new)
-          end
-
-
           opts.on('-m', '--multifile-presenters-and-controllers',
                   'dumps presenters and controllers to separate files a la '\
                   'Mavenlink API docs.') do |o|
-            options[:sink] ||= {}
             options[:sink][:method] = \
               Brainstem::ApiDocs::Sinks::ControllerPresenterMultifileSink.method(:new)
           end
 
 
           opts.on('--host-env-file=PATH', "path to host app's entry file") do |o|
-            options[:builder] ||= {}
-            options[:builder][:args_for_introspector] ||= {}
             options[:builder][:args_for_introspector][:rails_environment_file] = o
           end
 
 
           opts.on('--base-presenter-class=CLASS', "which class to look up presenters on") do |o|
-            options[:builder] ||= {}
-            options[:builder][:args_for_introspector] ||= {}
             options[:builder][:args_for_introspector][:base_presenter_class] = o
           end
 
 
           opts.on('--base-controller-class=CLASS', "which class to look up controllers on") do |o|
-            options[:builder] ||= {}
-            options[:builder][:args_for_introspector] ||= {}
             options[:builder][:args_for_introspector][:base_controller_class] = o
           end
 
@@ -102,16 +107,12 @@ module Brainstem
                   'performs a logical AND between Regexen.') do |o|
             # Trim slashes on passed MATCH.
             matcher = Regexp.new(o.gsub(/(\A\/)|(\/\z)/, ''), 'i')
-            options[:builder] ||= {}
-            options[:builder][:args_for_atlas] ||= {}
-            options[:builder][:args_for_atlas][:controller_matches] ||= []
             options[:builder][:args_for_atlas][:controller_matches].push(matcher)
           end
 
 
           opts.on('--markdown', 'use markdown format') do |o|
-            options[:sink] ||= {}
-            options[:sink][:options] = { format: :markdown }
+            options[:sink][:options][:format] = :markdown
           end
         end
       end

@@ -9,9 +9,6 @@ module Brainstem
       subject { GenerateApiDocsCommand.new(args) }
 
       describe "options" do
-        before do
-        end
-
         xcontext "when --markdown" do
           let(:args) { %w(--markdown) }
 
@@ -23,15 +20,6 @@ module Brainstem
             # the formatter:
             # expect(subject.options[:builder][:formatter_method].owner).to \
             #   eq Brainstem::ApiDocs::Formatters::AbstractFormatter
-          end
-        end
-
-        context "when --stdout" do
-          let(:args) { %w(--stdout) }
-
-          it "sets sink to a StdoutSink" do
-            expect(subject.options).to have_key :sink
-            expect(subject.options[:sink][:method].call).to be_a Brainstem::ApiDocs::Sinks::StdoutSink
           end
         end
 
@@ -89,12 +77,12 @@ module Brainstem
 
             before do
               stub(subject).present_atlas!
+              stub(subject).builder_options { builder_options }
             end
 
             it "creates a new builder with builder options passed" do
-              mock(Brainstem::ApiDocs::Builder).new({ test: 123 })
-
-              subject.call(builder_options)
+              mock(Brainstem::ApiDocs::Builder).new(builder_options)
+              subject.call
             end
           end
 

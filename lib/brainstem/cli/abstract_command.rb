@@ -27,8 +27,17 @@ module Brainstem
       def initialize(args = [])
         # TODO: These args are going to get gobbled up.
         self.args     = args
-        self.options  = {}
+        self.options  = default_options
         extract_options!
+      end
+
+
+      #
+      # Returns the hash of default options used as a base into which cli args
+      # are merged.
+      #
+      def default_options
+        {}
       end
 
 

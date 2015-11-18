@@ -86,7 +86,7 @@ module Brainstem
 
             it "allows the specification of a custom base_presenter_class" do
               expect(subject.send(:base_presenter_class).to_s)
-                .to eq "FakeBasePresenter"
+                .to eq "::FakeBasePresenter"
             end
 
             it "returns the descendants of the base presenter class" do
@@ -108,7 +108,7 @@ module Brainstem
 
             it "allows the specification of a custom base_controller_class" do
               expect(subject.send(:base_controller_class).to_s)
-                .to eq "FakeBaseController"
+                .to eq "::FakeBaseController"
             end
 
             it "returns the descendants of the base controller class" do
