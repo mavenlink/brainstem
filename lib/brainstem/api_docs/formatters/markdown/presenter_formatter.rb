@@ -59,23 +59,20 @@ module Brainstem
             text = md_inline_code(field.name.to_s)
             text << " (#{md_inline_code(field.type.to_s.capitalize)})"
 
-            if field.description || field.options && field.options[:if]
-              text << "\n"
-              text << md_li(field.description, indent_level + 1) if field.description
+            text << "\n"
+            text << md_li(field.description, indent_level + 1) if field.description
 
-              if field.options[:if]
-                conditions = field.options[:if]
-                  .map {|cond| presenter.conditionals[cond].description || "" }
-                  .delete_if(&:empty?)
-                  .join(" and ")
+            if field.options[:if]
+              conditions = field.options[:if]
+                .map {|cond| presenter.conditionals[cond].description || "" }
+                .delete_if(&:empty?)
+                .join(" and ")
 
-                text << md_li("visible when #{conditions}", indent_level + 1) unless conditions.empty?
-              end
-
-              text.chomp!
+              text << md_li("visible when #{conditions}", indent_level + 1) unless conditions.empty?
             end
 
-            text
+            text << md_li("only returned when requested through the #{md_inline_code("optional_fields")} param") if field.optional?
+            text.chomp!
           end
 
 

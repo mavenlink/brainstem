@@ -112,10 +112,26 @@ module Brainstem
             describe "#format_fields!" do
               let(:valid_fields) { {} }
               let(:conditionals) { {} }
+              let(:optional)     { false }
+
+              let(:sprocket_name_long) { OpenStruct.new(
+                name:        :sprocket_name,
+                description: lorem,
+                options:     { via: :name },
+                type:        :string
+              ) }
+
+              let(:sprocket_name_short) { OpenStruct.new(
+                name:    :sprocket_name,
+                type:    :string,
+                options: { }
+              ) }
 
               before do
-                stub(presenter).conditionals { conditionals }
-                stub(presenter).valid_fields { valid_fields }
+                stub(sprocket_name_long).optional?  { optional }
+                stub(sprocket_name_short).optional? { optional }
+                stub(presenter).conditionals        { conditionals }
+                stub(presenter).valid_fields        { valid_fields }
                 subject.send(:format_fields!)
               end
 
@@ -124,20 +140,6 @@ module Brainstem
               end
 
               context "with fields present" do
-                let(:sprocket_name_long) { OpenStruct.new(
-                  name:        :sprocket_name,
-                  description: lorem,
-                  options:     { via: :name },
-                  type:        :string
-                ) }
-
-                let(:sprocket_name_short) { OpenStruct.new(
-                  name:    :sprocket_name,
-                  type:    :string,
-                  options: { }
-                ) }
-
-
                 context "branch node" do
                   context "with single branch" do
                     let(:valid_fields) { { sprockets: { name: sprocket_name_long } } }
@@ -187,20 +189,40 @@ module Brainstem
                       expect(subject.output).to include "`sprocket_name` (`String`)"
                     end
 
-                    context "with description" do
-                      it "outputs the description" do
-                        expect(subject.output).to include "    - #{lorem}"
+                    describe "optional" do
+                      context "when true" do
+                        let(:optional) { true }
+
+                        it "says so" do
+                          expect(subject.output).to include "only returned when requested"
+                        end
+
+                      end
+
+                      context "when false" do
+                        it "says nothing" do
+                          expect(subject.output).not_to include "Only returned when requested"
+                        end
                       end
                     end
 
-                    context "with no description" do
-                      let(:valid_fields) { { sprocket_name: sprocket_name_short } }
+                    describe "description" do
+                      context "when present" do
+                        it "outputs the description" do
+                          expect(subject.output).to include "    - #{lorem}"
+                        end
+                      end
 
-                      it "does not include the description" do
-                        expect(subject.output).not_to include "    -"
+                      context "when absent" do
+                        let(:valid_fields) { { sprocket_name: sprocket_name_short } }
+
+                        it "does not include the description" do
+                          expect(subject.output).not_to include "    -"
+                        end
                       end
                     end
                   end
+
 
                   context "if it is conditional" do
                     let(:sprocket_name_long) { OpenStruct.new(
