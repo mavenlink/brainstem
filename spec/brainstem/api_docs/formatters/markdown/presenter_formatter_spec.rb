@@ -369,24 +369,59 @@ module Brainstem
                   expect(subject.output).to include "`widgets`"
                 end
 
-                context "when has description" do
-                  it "lists the description" do
-                    expect(subject.output).to include "`widgets`\n    - these are some widgets"
+                describe "description" do
+                  context "when present" do
+                    it "lists it" do
+                      expect(subject.output).to include "`widgets`\n    - these are some widgets"
+                    end
+                  end
+
+                  context "when absent" do
+                    let(:associations) {
+                      {
+                        "widgets" => OpenStruct.new(
+                          name: "widgets",
+                          description: ""
+                        )
+                      }
+                    }
+
+                    it "doesn't list it" do
+                      expect(subject.output).not_to include "\n    -"
+                    end
                   end
                 end
 
-                context "when has no description" do
-                  let(:associations) {
-                    {
-                      "widgets" => OpenStruct.new(
-                        name: "widgets",
-                        description: ""
-                      )
+                describe "restrict_to_only" do
+                  context "when present and true" do
+                    let(:associations) {
+                      {
+                        "widgets" => OpenStruct.new(
+                          name: "widgets",
+                          options: { restrict_to_only: true }
+                        )
+                      }
                     }
-                  }
 
-                  it "doesn't list it" do
-                    expect(subject.output).not_to include "\n    -"
+                    it "lists it" do
+                      expect(subject.output).to include "\n    - Restricted to queries"
+
+                    end
+                  end
+
+                  context "when absent or false" do
+                    let(:associations) {
+                      {
+                        "widgets" => OpenStruct.new(
+                          name: "widgets",
+                          options: { restrict_to_only: false }
+                        )
+                      }
+                    }
+
+                    it "doesn't show it" do
+                      expect(subject.output).not_to include "\n    - Restricted to queries"
+                    end
                   end
                 end
               end

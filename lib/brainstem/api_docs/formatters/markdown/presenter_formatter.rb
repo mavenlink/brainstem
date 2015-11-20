@@ -89,8 +89,6 @@ module Brainstem
                 buffer += md_li(format_field_leaf(field, indent_level), indent_level)
               end
             end
-          rescue
-            require 'pry'; binding.pry
           end
 
 
@@ -171,11 +169,12 @@ module Brainstem
                 presenter.valid_associations.inject("") do |buffer, (_, association)|
                   text  = md_inline_code(association.name)
 
-                  if association.description && !association.description.empty?
-                    text << "\n"
-                    text << md_li(association.description, 1)
-                    text.chomp!
-                  end
+                  text << "\n"
+                  text << md_li(association.description, 1) \
+                    if association.description && !association.description.empty?
+                  text << md_li("Restricted to queries with #{md_inline_code(":only")} parameter", 1) \
+                    if association.options && association.options[:restrict_to_only]
+                  text.chomp!
 
                   buffer << md_li(text)
                 end
