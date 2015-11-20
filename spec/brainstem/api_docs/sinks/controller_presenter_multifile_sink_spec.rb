@@ -11,7 +11,7 @@ module Brainstem
           {
             format: :markdown,
             write_method: write_method,
-            base_path: './'
+            write_path: './'
           }
         }
 

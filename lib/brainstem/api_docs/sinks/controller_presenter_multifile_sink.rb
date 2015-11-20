@@ -20,12 +20,12 @@ module Brainstem
 
 
         def valid_options
-          super | [ :write_method, :format, :base_path ]
+          super | [ :write_method, :format, :write_path ]
         end
 
 
         attr_writer     :write_method,
-                        :base_path
+                        :write_path
 
         attr_accessor   :atlas,
                         :format
@@ -59,7 +59,7 @@ module Brainstem
         # Writes a given bufer to a filename within the base path.
         #
         def write_buffer_to_file(buffer, filename)
-          abs_path = File.join(base_path, filename)
+          abs_path = File.join(write_path, filename)
           assert_directory_exists!(abs_path)
           write_method.call(abs_path, buffer)
         end
@@ -84,8 +84,8 @@ module Brainstem
         end
 
 
-        def base_path
-          @base_path ||= ::Brainstem::ApiDocs.base_path
+        def write_path
+          @write_path ||= ::Brainstem::ApiDocs.write_path
         end
       end
     end

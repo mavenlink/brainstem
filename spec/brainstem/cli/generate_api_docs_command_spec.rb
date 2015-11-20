@@ -33,6 +33,14 @@ module Brainstem
           end
         end
 
+        context "when --output-dir" do
+          let(:args) { %w(--output-dir=./blah) }
+
+          it "sets the write_path option of the sink" do
+            expect(subject.options[:sink][:options][:write_path]).to eq "./blah"
+          end
+        end
+
         context "when --controller-matches" do
           let(:matches) { subject.options[:builder][:args_for_atlas][:controller_matches] }
 

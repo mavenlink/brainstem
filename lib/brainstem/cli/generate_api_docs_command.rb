@@ -90,6 +90,12 @@ module Brainstem
           end
 
 
+          opts.on('-o RELATIVE_DIR', '--output-dir=RELATIVE_DIR',
+                  'specifies directory which to output if relevant') do |o|
+            options[:sink][:options][:write_path] = o
+          end
+
+
           opts.on('--base-presenter-class=CLASS', "which class to look up presenters on") do |o|
             options[:builder][:args_for_introspector][:base_presenter_class] = o
           end

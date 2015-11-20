@@ -17,7 +17,7 @@ module Brainstem
       %w(
         controller_filename_pattern
         presenter_filename_pattern
-        base_path
+        write_path
         output_extension
         base_presenter_class
         base_controller_class

@@ -4,7 +4,7 @@ module Brainstem
   module ApiDocs
     include ActiveSupport::Configurable
 
-    config_accessor(:base_path) do
+    config_accessor(:write_path) do
       File.expand_path("./brainstem_docs")
     end
 
