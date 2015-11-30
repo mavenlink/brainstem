@@ -31,6 +31,23 @@ module Brainstem
         end
 
 
+        describe "#filenames" do
+          it "maps all its members" do
+            mock(member).suggested_filename(:markdown) { "member.markdown" }
+            expect(subject.filenames(:markdown)).to eq [ "member.markdown" ]
+          end
+        end
+
+
+        describe "#each_filename" do
+          it "maps all its controllers and yields each in turn" do
+            mock(member).suggested_filename(:markdown) { "member.markdown" }
+            expect { |block| subject.each_filename(:markdown, &block) }.to \
+              yield_with_args("member.markdown")
+          end
+        end
+
+
         describe "#formatted" do
           it "maps all its members" do
             mock(member).formatted_as(:markdown, {}) { "blah" }

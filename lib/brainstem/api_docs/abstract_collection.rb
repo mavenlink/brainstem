@@ -57,10 +57,21 @@ module Brainstem
 
 
       #
+      # Returns a list of each member's filename.
+      #
+      def filenames(format)
+        map { |member| member.suggested_filename(format) }
+      end
+
+
+      #
       # Returns a map of each formatted member and its suggested filename.
       #
       def formatted_with_filename(format, options = {})
-        map {|member| [ member.formatted_as(format, options), member.suggested_filename(format) ] }
+        map { |member| [
+          member.formatted_as(format, options),
+          member.suggested_filename(format)
+        ] }
       end
 
 
@@ -73,6 +84,11 @@ module Brainstem
       def each_formatted(format, options = {}, &block)
         formatted(format, options)
           .each { |args| block.call(*args) }
+      end
+
+
+      def each_filename(format, &block)
+        filenames(format).each { |args| block.call(*args) }
       end
 
 
