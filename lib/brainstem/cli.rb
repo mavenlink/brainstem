@@ -25,6 +25,9 @@ module Brainstem
     #
     # Creates a new instance of the Cli to respond to user input.
     #
+    # Input is expected to be the name of the subcommand, followed by any
+    # additional arguments.
+    #
     def initialize(args, options = {})
       super options
 

@@ -5,6 +5,11 @@ require 'optparse'
 # application logic. It is responsible for translating given options into
 # specific enquiries.
 #
+# Internally, it wraps an OptionParser instance returned through its
+# +option_parser` method. The evaluation of this parser mutates the +options+
+# hash. This is available to the +call+ method on the instance, which is the
+# primary point of application logic execution.
+#
 module Brainstem
   module CLI
     class AbstractCommand
