@@ -269,7 +269,12 @@ Brainstem parses the request params and supports the following:
 
 --
 
-## Documenting an API
+## Automatically Generating API Documentation
+
+### The `brainstem` executable
+
+TODO
+
 
 ### Presenters / Data Models
 
@@ -326,7 +331,8 @@ documentation should be suppressed for this particular entry:
 - `field` &mdash; hides the field
 - `sort_order` &mdash; hides the sort order
 - `filter` &mdash; hides the filter
-- `request` / `model`
+- `request` / `model` &mdash; causes the conditional not to be
+     listed on any field which specifies it
 
 #### Additional Documentables
 
@@ -341,10 +347,116 @@ primarily for documentation:
     Presenter.
     - `nodoc: true` &mdash; displays no description
 
+#### Example
+
+```ruby
+class PostsPresenter < Brainstem::Presenter
+  presents Post
+
+  # Hide the entire presenter
+  #
+  # nodoc!
+
+  # If we temporarily want to disable the custom title, and just display
+  # 'Posts', we can add a 'nodoc' option set to true.
+  #
+  # title "Blog Posts", nodoc: true
+
+  title "Blog Posts"
+
+  description <<-MARKDOWN.strip_heredoc
+    The blog post is the primary entity in the blog, which represents a single
+    post by one of our authors.
+  MARKDOWN
+
+  associations do
+    association :author, User, "the author of the post"
+
+    # Temporarily disable documenting this relationship as we revamp the
+    # editorial system:
+    association :editor, User, "the editor of the post", nodoc: true
+  end
+end
+```
 
 ### Controllers
 
-Fill this in.
+It's necessary to include the `Brainstem::Concerns::ControllerDSL` module in
+any controller that you wish to document. (It's probably easiest to add this to
+`ApplicationController` or your `ApiController`.)
+
+The configuration for a controller takes place inside the `brainstem_params` block, e.g.:
+
+```ruby
+class PostsController < ApiController
+  include Brainstem::Concerns::ControllerDSL
+
+  brainstem_params do
+    title "Posts"
+  end
+end
+```
+
+#### Action Contexts
+
+Configuration that is specified within the root level of the `brainstem_params`
+block is applied to the entire controller, and every action within the
+controller. This is referred to as the 'default' context, because it is used as
+the default for all actions. This lets you specify common defaults for all
+actions, as well as a title and description for the controller, which, along
+with an annotation of `nodoc!`, are not inherited by the actions.
+
+Each action has its own action context, and the documentation is smart enough
+to know that what you want to document for the `index` action is likely not
+what you'd like to document for the `show` action, but you are also likely to
+have your `create` and `update` methods be very similar.
+
+You can thusly define an action context and place any configuration inside this
+context, and it will keep the documentation isolated to that specific action:
+
+```ruby
+brainstem_params do
+  valid :global_controller_param,
+    info: "A trivial example of a param that applies to all actions."
+
+  actions :index do
+    # This adds a `blog_id` param to just the `index` action.
+    valid :blog_id, info: "The id of the blog to which this post belongs"
+  end
+
+  actions :create, :update do
+    # This will add an `id` param to both `create` and `update` actions.
+    valid :id, info: "The id of the blog post"
+  end
+end
+```
+
+Action contexts, like the default context, are inherited from the parent
+controller. So it is often possible to express common setup in the more
+abstract controllers, like so:
+
+```
+class ApiController
+  brainstem_params do
+    actions :destroy do
+      presents nil
+    end
+  end
+end
+
+class PostsController << ApiController; end
+```
+
+In this example, `PostsController` will list no presenter for its `destroy`
+method as it inherits this from `ApiController`.
+
+#### `title` / `description` / `nodoc!`
+
+#### `valid` / `model_params`
+
+#### `presents`
+
+#### `transforms`
 
 --
 
