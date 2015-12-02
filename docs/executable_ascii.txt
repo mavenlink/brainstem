@@ -1,0 +1,10 @@
+Load the following rows into asciiflow.com to edit:
+
+
++------------------------+       +----------------+          +---------------------------------+
+| brainstem (executable) +-------> Brainstem::Cli +----------> Brainstem::CLI::AbstractCommand |
++------------------------+       +----------------+          ++--------------------------------+
+                                                              |
+                                                              |  +----------------------------------------+
+                                                              +--> Brainstem::CLI::GenerateApiDocsCommand |
+                                                                 +----------------------------------------+
