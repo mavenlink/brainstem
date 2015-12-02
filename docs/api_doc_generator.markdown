@@ -24,7 +24,7 @@ Usage:
    interface for objects to return data from the host application. Provided
    with Brainstem is an implementation of
    `Brainstem::ApiDocs::Introspectors::RailsIntrospector`, which can be used to
-   extract the required information from a Rail 4 application.
+   extract the required information from a Rails 4 application.
 4. `Brainstem::ApiDocs::Atlas` is an object which receives the data from an
 introspector and transforms it into a series of collections useful for
 producing documentation. It does so by wrapping domain entities and providing
