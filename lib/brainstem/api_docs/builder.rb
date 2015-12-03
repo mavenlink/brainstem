@@ -15,9 +15,10 @@ require 'active_support/core_ext/hash/slice'
 module Brainstem
   module ApiDocs
     class Builder
+      include Brainstem::Concerns::Optional
 
 
-      def valid_args
+      def valid_options
         [
           :introspector_method,
           :atlas_method,
@@ -42,7 +43,7 @@ module Brainstem
       # @see Brainstem::ApiDocs::Introspectors::RailsIntrospector
       #
       def initialize(options = {})
-        options.slice(*valid_args).each { |k, v| self.send("#{k}=", v) }
+        super
 
         build_introspector!
         build_atlas!
