@@ -435,7 +435,7 @@ Action contexts, like the default context, are inherited from the parent
 controller. So it is often possible to express common setup in the more
 abstract controllers, like so:
 
-```
+```ruby
 class ApiController
   brainstem_params do
     actions :destroy do
