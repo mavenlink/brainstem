@@ -261,7 +261,7 @@ Brainstem parses the request params and supports the following:
   `per_page` is 20 and the default `:max_per_page` is 200.
 * Brainstem supports a concept called "only queries" which allow you to request a specific set of records by ID, kind of like
   a batch show request. These queries are triggered by the presence of the URL param `"only"` with a comma-seperated set
-  of one or more IDs, for example `"only=1,5,7"`. Please note that default filters are still applied to only queries, so you will receive
+  of one or more IDs, for example `"only=1,5,7"`. Please note that default filters are still applied to `only` queries, so you will receive
   only the subset of the requested objects that pass any default filters.  To prevent this, you can provide `apply_default_filters=false`
   as a query param.
 * Filters are standard URL parameters. To pass an option to a filter named `:location_name`, provide a request param like
