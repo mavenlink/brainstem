@@ -134,15 +134,12 @@ module Brainstem
 
 
       #
-      # A proc of arity 1 which returns a new atlas, which takes info from
-      # the introspector and turns it into a collection of API information for
-      # each individual route.
+      # A proc of arity 1..2 which takes an introspector and optional options,
+      # and which returns a new Atlas.
       #
       # Passed an introspector.
       #
       # @return [Proc] a method to return an atlas
-      #
-      # TODO: Maybe pick a different name?
       #
       def atlas_method
         @atlas_method ||= Atlas.method(:new)

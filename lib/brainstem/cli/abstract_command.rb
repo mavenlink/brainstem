@@ -30,7 +30,6 @@ module Brainstem
       # Returns a new instance of the command with options set.
       #
       def initialize(args = [])
-        # TODO: These args are going to get gobbled up.
         self.args     = args
         self.options  = default_options
         extract_options!
