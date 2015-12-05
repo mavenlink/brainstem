@@ -63,8 +63,8 @@ module Brainstem
       end
 
 
-      def brainstem_key
-        configuration[:brainstem_key]
+      def brainstem_keys
+        const.possible_brainstem_keys.to_a.sort
       end
 
 

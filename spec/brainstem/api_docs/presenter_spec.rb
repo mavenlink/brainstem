@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'set'
 require 'brainstem/api_docs/presenter'
 
 module Brainstem
@@ -25,6 +26,7 @@ module Brainstem
           stub(const) do |constant|
             constant.configuration { config }
             constant.to_s { "Namespaced::ClassName" }
+            constant.possible_brainstem_keys { Set.new(%w(lorem ipsum)) }
           end
         end
 
@@ -67,11 +69,9 @@ module Brainstem
         end
 
 
-        describe "#brainstem_key" do
-          let(:config) { { brainstem_key: lorem } }
-
-          it "retrieves from configuration" do
-            expect(subject.brainstem_key).to eq lorem
+        describe "#brainstem_keys" do
+          it "retrieves from the constant, array-izes, and sorts" do
+            expect(subject.brainstem_keys).to eq [ "ipsum", "lorem" ]
           end
         end
 

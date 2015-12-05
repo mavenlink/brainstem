@@ -63,6 +63,38 @@ describe Brainstem::Presenter do
         }).to raise_error(/Brainstem Presenter#presents now expects a Class instead of a class name/)
       end
     end
+
+
+    describe ".possible_brainstem_keys" do
+      let(:presented_class)       { Class.new }
+      let(:other_presented_class) { Class.new }
+      let(:presenter_class)       { Class.new(Brainstem::Presenter) }
+
+      before do
+        presenter_class.presents      presented_class, other_presented_class
+      end
+
+      context "when has brainstem key" do
+        before do
+          presenter_class.brainstem_key "presented_class"
+        end
+
+        it "returns the set of only its brainstem key" do
+          expect(presenter_class.possible_brainstem_keys.to_a).to eq ["presented_class"]
+        end
+      end
+
+      context "when has no brainstem key" do
+        before do
+          stub(presented_class).table_name       { "t1" }
+          stub(other_presented_class).table_name { "t2" }
+        end
+
+        it "returns the set of keys of its presented classes" do
+          expect(presenter_class.possible_brainstem_keys.to_a.sort).to eq ["t1", "t2"]
+        end
+      end
+    end
   end
 
   describe "#group_present" do
