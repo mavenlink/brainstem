@@ -112,8 +112,7 @@ module Brainstem
           opts.banner = "Usage: generate [options]"
 
           opts.on('-m', '--multifile-presenters-and-controllers',
-                  'dumps presenters and controllers to separate files a la '\
-                  'Mavenlink API docs.') do |o|
+                  'dumps presenters and controllers to separate files') do |o|
             options[:sink][:method] = \
               Brainstem::ApiDocs::Sinks::ControllerPresenterMultifileSink.method(:new)
           end
