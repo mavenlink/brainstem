@@ -40,6 +40,36 @@ module Brainstem
 
 
     #
+    # Defines the naming pattern for the relative link to each controller documentation file.
+    #
+    # The following tokens will be substituted:
+    #
+    # - {{name}} : the underscored name of the controller without 'controller'
+    # - {{extension} : the specified file extension
+    #
+    # @see #output_extension
+    #
+    config_accessor(:controller_filename_link_pattern) do
+      controller_filename_pattern
+    end
+
+
+    #
+    # Defines the naming pattern for the relative link to each presenter documentation file.
+    #
+    # The following tokens will be substituted:
+    #
+    # - {{name}} : the demodulized underscored name of the presenter
+    # - {{extension} : the specified file extension
+    #
+    # @see #output_extension
+    #
+    config_accessor(:presenter_filename_link_pattern) do
+      presenter_filename_pattern
+    end
+
+
+    #
     # Defines the extension that should be used for output files.
     #
     # Excludes the '.'.

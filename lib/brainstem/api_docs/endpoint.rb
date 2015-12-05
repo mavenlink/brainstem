@@ -238,8 +238,8 @@ module Brainstem
 
       def relative_presenter_path_from_controller(format)
         if presenter && controller
-          controller_path = Pathname.new(File.dirname(controller.suggested_filename(format)))
-          presenter_path  = Pathname.new(presenter.suggested_filename(format))
+          controller_path = Pathname.new(File.dirname(controller.suggested_filename_link(format)))
+          presenter_path  = Pathname.new(presenter.suggested_filename_link(format))
 
           presenter_path.relative_path_from(controller_path).to_s
         end
