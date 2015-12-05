@@ -32,9 +32,18 @@ module Brainstem
       end
 
 
+      def default_sink_method
+        Brainstem::ApiDocs::Sinks::ControllerPresenterMultifileSink.method(:new)
+      end
+
+
       def default_options
         {
-          sink: { options: {} },
+          sink: {
+            method: default_sink_method,
+            options: {}
+          },
+
           builder: {
             args_for_atlas: { controller_matches: [] },
             args_for_introspector: {
@@ -112,7 +121,7 @@ module Brainstem
           opts.banner = "Usage: generate [options]"
 
           opts.on('-m', '--multifile-presenters-and-controllers',
-                  'dumps presenters and controllers to separate files') do |o|
+                  'dumps presenters and controllers to separate files (default)') do |o|
             options[:sink][:method] = \
               Brainstem::ApiDocs::Sinks::ControllerPresenterMultifileSink.method(:new)
           end

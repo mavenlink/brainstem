@@ -69,6 +69,12 @@ module Brainstem
 
       describe "execution" do
         context "when no sink provided" do
+          before do
+            any_instance_of(described_class) do |instance|
+              stub(instance).default_sink_method { nil }
+            end
+          end
+
           it "raises an error" do
             expect { subject.call }.to raise_error \
               Brainstem::ApiDocs::NoSinkSpecifiedException
