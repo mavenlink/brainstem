@@ -168,8 +168,7 @@ module Brainstem
         filter_lambda = configuration[:filters][filter_name][:value]
 
         args_for_filter_lambda = [filter_arg]
-        args_for_filter_lambda << requested_filters \
-          if configuration[:filters][filter_name][:include_params]
+        args_for_filter_lambda << requested_filters if configuration[:filters][filter_name][:include_params]
 
         if filter_lambda
           scope = helper_instance.instance_exec(scope, *args_for_filter_lambda, &filter_lambda)
