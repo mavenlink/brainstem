@@ -291,7 +291,6 @@ module Brainstem
       #
       # @params [Symbol] context the context in which to first look for the key
       # @params [Symbol] key the key name to look for
-      # TODO: what about situation where parent doesn't have key either?
       #
       def contextual_key(context, key)
         if configuration.has_key?(context.to_sym)

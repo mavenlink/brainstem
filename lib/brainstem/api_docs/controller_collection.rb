@@ -31,9 +31,6 @@ module Brainstem
       # Returns a list of unique declared presenters / data models across all
       # controllers.
       #
-      # TODO: We can clean this up by pushing some of this down to the
-      # Controller.
-      #
       def unique_presents
         map do |c|
           c.configuration.keys # For all action contexts + default

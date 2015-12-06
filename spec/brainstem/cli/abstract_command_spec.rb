@@ -67,7 +67,6 @@ module Brainstem
 
       describe "#initialize" do
         it "extracts options from args" do
-          # TODO: make sure piped variable of AIO is instance, not klass
           any_instance_of(AbstractCommand) do |instance|
             mock(instance).extract_options!
           end
