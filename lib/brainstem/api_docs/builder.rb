@@ -1,4 +1,5 @@
 require 'brainstem/api_docs/introspectors/rails_introspector'
+require 'brainstem/concerns/optional'
 require 'brainstem/api_docs/atlas'
 require 'active_support/core_ext/hash/slice'
 
