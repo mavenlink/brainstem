@@ -9,7 +9,7 @@ module Brainstem
 
         describe ".with_loaded_environment" do
           it "passes along all options" do
-            any_instance_of(AbstractIntrospector) { |klass| stub(klass).one=(1) }
+            any_instance_of(AbstractIntrospector) { |instance| stub(instance).one=(1) }
             mock.proxy(AbstractIntrospector).new(one: 1) do |obj|
               stub(obj) do |stub|
                 stub.load_environment!

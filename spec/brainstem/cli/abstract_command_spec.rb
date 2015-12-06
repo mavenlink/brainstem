@@ -10,8 +10,8 @@ module Brainstem
 
       describe ".call" do
         before do
-          any_instance_of(AbstractCommand) do |klass|
-            stub(klass) do |obj|
+          any_instance_of(AbstractCommand) do |instance|
+            stub(instance) do |obj|
               obj.call
               obj.extract_options!
             end
@@ -29,8 +29,8 @@ module Brainstem
         end
 
         it "calls the new instance" do
-          any_instance_of(AbstractCommand) do |klass|
-            mock(klass).call
+          any_instance_of(AbstractCommand) do |instance|
+            mock(instance).call
           end
 
           AbstractCommand.call([])
@@ -49,8 +49,8 @@ module Brainstem
         it "feeds the args to the class's option parser" do
           mock(option_parser).order!(args)
 
-          any_instance_of(AbstractCommand) do |klass|
-            mock(klass).option_parser { option_parser }
+          any_instance_of(AbstractCommand) do |instance|
+            mock(instance).option_parser { option_parser }
           end
 
           AbstractCommand.new(args)

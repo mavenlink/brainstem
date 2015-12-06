@@ -22,8 +22,8 @@ module Brainstem
         let(:options)             { { introspector_method: introspector_method } }
 
         before do
-          any_instance_of(Builder) do |klass|
-            stub(klass) do |k|
+          any_instance_of(Builder) do |instance|
+            stub(instance) do |k|
               k.build_introspector!
               k.build_atlas!
             end
@@ -48,8 +48,8 @@ module Brainstem
         end
 
         before do
-          any_instance_of(Builder) do |klass|
-            stub(klass) do |k|
+          any_instance_of(Builder) do |instance|
+            stub(instance) do |k|
               k.build_atlas!
             end
           end
