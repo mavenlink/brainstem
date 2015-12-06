@@ -2,8 +2,6 @@ require 'brainstem/api_docs/introspectors/rails_introspector'
 require 'brainstem/api_docs/atlas'
 require 'active_support/core_ext/hash/slice'
 
-# TODO: Clean up public/private in this class.
-
 #
 # This class describes the main API surface for generating API documentation.
 # The command-line utility provided with Brainstem is basically just a thin
@@ -37,7 +35,12 @@ module Brainstem
       #   presenters).
       # @option options [Hash] :args_for_introspector Additional arguments to
       #   be passed to the introspector on creation.
-      # # TODO: Document other args
+      # @option options [Hash] :args_for_atlas Additional arguments to be passed
+      #   to the atlas on creation.
+      # @option options [Proc,Object] :introspector_method A method that
+      #   returns an introspector when called.
+      # @option options [Proc,Object] :atlas_method A method that returns an Atlas-like
+      #   object when called.
       #
       # @see Brainstem::ApiDocs::Introspectors::AbstractIntrospector
       # @see Brainstem::ApiDocs::Introspectors::RailsIntrospector

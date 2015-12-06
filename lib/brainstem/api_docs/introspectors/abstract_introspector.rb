@@ -90,8 +90,6 @@ module Brainstem
           routes.is_a?(Array) &&
             routes.count > 0 &&
             routes.all? do |r|
-              # TODO: This is probably a pretty good sign we should extract
-              # here.
               r.is_a?(Hash) &&
                 ([:path, :controller, :action, :http_methods] - r.keys).empty?
             end

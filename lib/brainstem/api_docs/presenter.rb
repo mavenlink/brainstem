@@ -85,7 +85,6 @@ module Brainstem
       alias_method :valid_fields_in, :valid_fields
 
 
-      # TODO: Would be nice to move these down into fields.
       def invalid_field?(field)
         field.options[:nodoc]
       end

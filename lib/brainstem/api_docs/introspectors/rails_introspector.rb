@@ -9,16 +9,6 @@ module Brainstem
     module Introspectors
       class RailsIntrospector < AbstractIntrospector
 
-        def valid_options
-          super | [
-            :routes_method,
-            :rails_environment_file,
-            :base_presenter_class,
-            :base_controller_class,
-          ]
-        end
-
-
         #
         # Loads ./config/environment.rb (by default) and eager loads all
         # classes (otherwise +#descendants+ returns an empty set).
@@ -73,6 +63,17 @@ module Brainstem
         private
         #######################################################################
 
+
+        def valid_options
+          super | [
+            :routes_method,
+            :rails_environment_file,
+            :base_presenter_class,
+            :base_controller_class,
+          ]
+        end
+
+
         #
         # Used to short-circuit loading if Rails is already loaded, which
         # reduces start-up time substantially.
@@ -87,8 +88,6 @@ module Brainstem
         # default, +#{Dir.pwd}/config/environment.rb+.
         #
         # @return [String] the absolute path of the config/environment.rb file.
-        #
-        # # TODO: Also allow configurable app directory.
         #
         def rails_environment_file
           @rails_environment_file ||= File.expand_path(
