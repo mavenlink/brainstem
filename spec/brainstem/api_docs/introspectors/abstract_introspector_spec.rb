@@ -41,18 +41,6 @@ module Brainstem
             expect { AbstractIntrospector.new }.to raise_error NoMethodError
             expect { AbstractIntrospector.send(:new) }.not_to raise_error
           end
-
-          it "sets any given option with its given writer" do
-            any_instance_of(AbstractIntrospector) do |klass|
-              mock(klass).a_simple_writer=("not a file")
-            end
-
-            AbstractIntrospector.send(:new, a_simple_writer: "not a file")
-          end
-
-          it "raises an error if the writer doesn't exist" do
-            expect { AbstractIntrospector.send(:new, a_nonexistant_writer: "fails") }.to raise_error NoMethodError
-          end
         end
 
 

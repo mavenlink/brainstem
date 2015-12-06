@@ -9,6 +9,16 @@ module Brainstem
     module Introspectors
       class RailsIntrospector < AbstractIntrospector
 
+        def valid_options
+          super | [
+            :routes_method,
+            :rails_environment_file,
+            :base_presenter_class,
+            :base_controller_class,
+          ]
+        end
+
+
         #
         # Loads ./config/environment.rb (by default) and eager loads all
         # classes (otherwise +#descendants+ returns an empty set).
