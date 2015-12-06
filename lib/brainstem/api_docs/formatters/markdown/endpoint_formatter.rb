@@ -83,11 +83,9 @@ module Brainstem
           # Formats each parameter.
           #
           def format_params!
+            return unless endpoint.root_param_keys.any?
+
             output << md_h5("Valid Parameters")
-            output << md_p("No parameters were listed.") and return \
-              unless endpoint.root_param_keys.any?
-
-
             output << md_ul do
               endpoint.root_param_keys.inject("") do |buff, (root_param_name, child_keys)|
                 if child_keys.nil?
