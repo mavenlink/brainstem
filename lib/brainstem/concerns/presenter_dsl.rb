@@ -160,6 +160,7 @@ module Brainstem
           configuration.nest!(:associations)
           configuration.nonheritable!(:title)
           configuration.nonheritable!(:description)
+          configuration.nonheritable!(:nodoc)
         end
       end
     end
