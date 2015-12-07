@@ -78,6 +78,20 @@ module Brainstem
     end
 
 
+    #
+    # If associations on a presenter have no `:info` key, i.e. no dcumentation,
+    # should they be documented anyway?
+    #
+    config_accessor(:document_empty_presenter_associations) { true }
+
+
+    #
+    # If filters on a presenter have no `:info` key, i.e. no documentation,
+    # should they be documented anyway?
+    #
+    config_accessor(:document_empty_presenter_filters) { true }
+
+
 
     FORMATTERS = {
 

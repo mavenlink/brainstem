@@ -132,7 +132,7 @@ module Brainstem
               end
 
             else
-              output << "No filters were listed."
+              output << md_p("No filters were listed.")
             end
           end
 
