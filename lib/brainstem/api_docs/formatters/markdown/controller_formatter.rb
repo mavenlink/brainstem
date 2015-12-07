@@ -61,8 +61,7 @@ module Brainstem
 
             output << md_h3("Endpoints")
 
-            output << controller.endpoints
-              .sorted
+            output << controller.valid_sorted_endpoints
               .formatted_as(:markdown, zero_text: "No endpoints were found.")
           end
 

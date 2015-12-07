@@ -107,6 +107,34 @@ module Brainstem
       end
 
 
+      describe "#with_actions_in_controller" do
+        let(:endpoint_2) { Object.new }
+        let(:const) do
+          Class.new do
+            def show
+            end
+          end
+        end
+
+        before do
+          stub(endpoint).action { :show }
+          stub(endpoint_2).action { :index }
+          subject << endpoint
+          subject << endpoint_2
+        end
+
+        it "returns a new collection with members that the const responds to" do
+          new_clxn = subject.with_actions_in_controller(const)
+
+          expect(new_clxn).to be_a described_class
+          expect(new_clxn).to include endpoint
+          expect(new_clxn).not_to include endpoint_2
+        end
+      end
+
+
+
+
       it_behaves_like "formattable"
     end
   end
