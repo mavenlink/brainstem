@@ -14,13 +14,16 @@ module Brainstem
     #
     # The following tokens will be substituted:
     #
-    # - {{name}} : the underscored name of the controller without 'controller'
-    # - {{extension} : the specified file extension
+    # - {{namespace}} : the namespace of the controller underscored,
+    #                   i.e. 'api/v1'
+    # - {{name}}      : the underscored name of the controller without
+    #                   'controller'
+    # - {{extension}  : the specified file extension
     #
     # @see #output_extension
     #
     config_accessor(:controller_filename_pattern) do
-      File.join("controllers", "{{name}}_controller.{{extension}}")
+      File.join("endpoints", "{{name}}.{{extension}}")
     end
 
 
@@ -35,7 +38,7 @@ module Brainstem
     # @see #output_extension
     #
     config_accessor(:presenter_filename_pattern) do
-      File.join("models", "{{name}}.{{extension}}")
+      File.join("objects", "{{name}}.{{extension}}")
     end
 
 
@@ -103,6 +106,20 @@ module Brainstem
     config_accessor(:base_controller_class) do
       "::ApplicationController"
     end
+
+
+    #
+    # If associations on a presenter have no `:info` key, i.e. no dcumentation,
+    # should they be documented anyway?
+    #
+    config_accessor(:document_empty_presenter_associations) { true }
+
+
+    #
+    # If filters on a presenter have no `:info` key, i.e. no documentation,
+    # should they be documented anyway?
+    #
+    config_accessor(:document_empty_presenter_filters) { true }
 
 
 

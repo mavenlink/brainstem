@@ -1,4 +1,5 @@
 require 'spec_helper'
+require 'set'
 require 'brainstem/api_docs/presenter'
 
 module Brainstem
@@ -18,13 +19,15 @@ module Brainstem
         let(:const) { Object.new }
         let(:config) { {} }
         let(:nodoc) { false }
+        let(:args) { { const: const } }
 
-        subject { described_class.new(const: const) }
+        subject { described_class.new(args) }
 
         before do
           stub(const) do |constant|
             constant.configuration { config }
             constant.to_s { "Namespaced::ClassName" }
+            constant.possible_brainstem_keys { Set.new(%w(lorem ipsum)) }
           end
         end
 
@@ -67,11 +70,9 @@ module Brainstem
         end
 
 
-        describe "#brainstem_key" do
-          let(:config) { { brainstem_key: lorem } }
-
-          it "retrieves from configuration" do
-            expect(subject.brainstem_key).to eq lorem
+        describe "#brainstem_keys" do
+          it "retrieves from the constant, array-izes, and sorts" do
+            expect(subject.brainstem_keys).to eq [ "ipsum", "lorem" ]
           end
         end
 
@@ -168,7 +169,71 @@ module Brainstem
 
 
         describe "#valid_filters" do
-          xit "does something"
+          let(:info)        { lorem }
+          let(:filter)      { { info: info } }
+          let(:config)      { { filters: { an_example: filter } } }
+
+          context "when valid" do
+            before do
+              stub(subject).documentable_filter?(:an_example, filter) { true }
+            end
+
+            it "retrieves from configuration" do
+              expect(subject.valid_filters).to eq({ an_example: filter })
+            end
+          end
+
+          context "when invalid" do
+            before do
+              stub(subject).documentable_filter?(:an_example, filter) { false }
+            end
+
+            it "returns an empty hash" do
+              expect(subject.valid_filters).to be_empty
+            end
+          end
+        end
+
+
+        describe "#documentable_filter?" do
+          let(:info)   { lorem }
+          let(:filter) { { nodoc: nodoc, info: info } }
+
+          context "when nodoc" do
+            let(:nodoc) { true }
+
+            it "is false" do
+              expect(subject.documentable_filter?(:filter, filter)).to eq false
+            end
+          end
+
+          context "when doc" do
+            context "when description present" do
+              it "is true" do
+                expect(subject.documentable_filter?(:filter, filter)).to eq true
+              end
+            end
+
+            context "when description absent" do
+              let(:info) { nil }
+
+              context "when documenting empty filters" do
+                let(:args) { { const: const, document_empty_filters: true } }
+
+                it "is true" do
+                  expect(subject.documentable_filter?(:filter, filter)).to eq true
+                end
+              end
+
+              context "when not documenting empty filters" do
+                let(:args) { { const: const, document_empty_filters: false } }
+
+                it "is false" do
+                  expect(subject.documentable_filter?(:filter, filter)).to eq false
+                end
+              end
+            end
+          end
         end
 
 
@@ -178,7 +243,71 @@ module Brainstem
 
 
         describe "#valid_associations" do
-          xit "does something"
+          let(:info)        { lorem }
+          let(:association) { Object.new }
+          let(:config)      { { associations: { an_example: association } } }
+
+          context "when valid" do
+            before do
+              stub(subject).documentable_association?(:an_example, association) { true }
+            end
+
+            it "retrieves from configuration" do
+              expect(subject.valid_associations).to eq({ an_example: association })
+            end
+          end
+
+          context "when invalid" do
+            before do
+              stub(subject).documentable_association?(:an_example, association) { false }
+            end
+
+            it "returns an empty hash" do
+              expect(subject.valid_associations).to be_empty
+            end
+          end
+        end
+
+
+        describe "#documentable_association?" do
+          let(:desc)        { lorem }
+          let(:association) { OpenStruct.new(options: { nodoc: nodoc }, description: desc ) }
+
+          context "when nodoc" do
+            let(:nodoc) { true }
+
+            it "is false" do
+              expect(subject.documentable_association?(:assoc, association)).to eq false
+            end
+          end
+
+          context "when doc" do
+            context "when description present" do
+              it "is true" do
+                expect(subject.documentable_association?(:assoc, association)).to eq true
+              end
+            end
+
+            context "when description absent" do
+              let(:desc) { nil }
+
+              context "when documenting empty filters" do
+                let(:args) { { const: const, document_empty_associations: true } }
+
+                it "is true" do
+                  expect(subject.documentable_association?(:assoc, association)).to eq true
+                end
+              end
+
+              context "when not documenting empty filters" do
+                let(:args) { { const: const, document_empty_associations: false } }
+
+                it "is false" do
+                  expect(subject.documentable_association?(:assoc, association)).to eq false
+                end
+              end
+            end
+          end
         end
 
 

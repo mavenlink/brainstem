@@ -121,7 +121,6 @@ module Brainstem
       #
       # Returns whether a route's controller passes the limiting regexp passed to the
       # generation command.
-      # TODO: Move to introspector.
       #
       def allow_route?(route)
         introspector.controllers.include?(route[:controller]) &&

@@ -132,9 +132,6 @@ module Brainstem
                 subject.send(:format_params!)
               end
 
-              it "outputs a header" do
-                expect(subject.output).to include "Valid Parameters"
-              end
 
               context "with valid params" do
                 let(:show_config) { {
@@ -157,6 +154,10 @@ module Brainstem
                 end
 
                 context "when not nodoc" do
+                  it "outputs a header" do
+                    expect(subject.output).to include "Valid Parameters"
+                  end
+
                   it "spits each root item out as a list item" do
                     expect(subject.output.scan(/\n-/).count).to eq 2
                   end
@@ -200,7 +201,7 @@ module Brainstem
                   let(:nodoc) { true }
 
                   it "shows no parameters" do
-                    expect(subject.output).to include "No parameters were listed"
+                    expect(subject.output).to eq ""
                   end
                 end
 
@@ -212,8 +213,8 @@ module Brainstem
               end
 
               context "with no valid params" do
-                it "says no parameters listed" do
-                  expect(subject.output).to include "No parameters were listed"
+                it "outputs nothing" do
+                  expect(subject.output).to eq ""
                 end
               end
 

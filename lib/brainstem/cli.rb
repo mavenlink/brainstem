@@ -104,8 +104,6 @@ module Brainstem
 
     #
     # Stores the method we should call to run the user command.
-    # TODO: We don't need a '_method' here: this is a callable object
-    # by default. Rewrite to make this 'command'.
     #
     attr_writer :command_method
 
@@ -119,6 +117,7 @@ module Brainstem
     #
     def command_method
       @command_method ||= Proc.new do
+        # By default, serve help.
         log_method.call(help_text)
       end
     end

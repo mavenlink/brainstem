@@ -9,13 +9,11 @@ module Brainstem
       extend ActiveSupport::Concern
 
       def brainstem_model_name
-        self.class.brainstem_model_name.to_s.presence ||
-          controller_name.singularize
+        self.class.brainstem_model_name.to_s
       end
 
       def brainstem_plural_model_name
-        self.class.brainstem_plural_model_name.to_s.presence ||
-          brainstem_model_name.pluralize
+        self.class.brainstem_plural_model_name.to_s
       end
 
       module ClassMethods

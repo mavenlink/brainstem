@@ -61,10 +61,7 @@ module Brainstem
 
             output << md_h3("Endpoints")
 
-            # TODO: Stop this egregious abuse of Demeter and create a
-            # +controller.sorted_endpoints+ method.
-            output << controller.endpoints
-              .sorted
+            output << controller.valid_sorted_endpoints
               .formatted_as(:markdown, zero_text: "No endpoints were found.")
           end
 

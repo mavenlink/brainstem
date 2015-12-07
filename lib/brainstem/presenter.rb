@@ -1,4 +1,5 @@
 require 'date'
+require 'set' # For possible brainstem keys
 require 'brainstem/time_classes'
 require 'brainstem/preloader'
 require 'brainstem/concerns/presenter_dsl'
@@ -24,6 +25,20 @@ module Brainstem
       end
       @presents
     end
+
+
+    #
+    # Returns the set of possible brainstem keys for the classes presented.
+    #
+    # If the presenter specifies a key, that will be returned as the only
+    # member of the set.
+    #
+    def self.possible_brainstem_keys
+      @possible_brainstem_keys || begin
+        Set.new(presents.map(&presenter_collection.method(:brainstem_key_for!)))
+      end
+    end
+
 
     # Return the second-to-last module in the name of this presenter, which Brainstem considers to be the 'namespace'.
     # E.g., Api::V1::FooPresenter has a namespace of "V1".
@@ -132,12 +147,11 @@ module Brainstem
 
       apply_default_filters = options.fetch(:apply_default_filters) { true }
 
-      configuration[:filters].each do |filter_name, filter|
+      configuration[:filters].each do |filter_name, filter_options|
         user_value = user_params[filter_name]
         user_value = user_value.is_a?(Array) ? user_value : (user_value.present? ? user_value.to_s : nil)
         user_value = user_value == "true" ? true : (user_value == "false" ? false : user_value)
 
-        filter_options = filter
         filter_arg = apply_default_filters && user_value.nil? ? filter_options[:default] : user_value
         filters_hash[filter_name] = filter_arg unless filter_arg.nil?
       end
@@ -154,8 +168,7 @@ module Brainstem
         filter_lambda = configuration[:filters][filter_name][:value]
 
         args_for_filter_lambda = [filter_arg]
-        args_for_filter_lambda << requested_filters \
-          if configuration[:filters][filter_name][:include_params]
+        args_for_filter_lambda << requested_filters if configuration[:filters][filter_name][:include_params]
 
         if filter_lambda
           scope = helper_instance.instance_exec(scope, *args_for_filter_lambda, &filter_lambda)
@@ -347,10 +360,16 @@ module Brainstem
       end
     end
 
+
+    def self.presenter_collection
+      Brainstem.presenter_collection(namespace)
+    end
+
+
     # @api protected
     # Find the global presenter collection for our namespace.
     def presenter_collection
-      Brainstem.presenter_collection(self.class.namespace)
+      self.class.presenter_collection
     end
   end
 end

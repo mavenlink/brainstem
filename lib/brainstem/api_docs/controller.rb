@@ -1,5 +1,6 @@
 require 'brainstem/concerns/optional'
 require 'brainstem/concerns/formattable'
+require 'active_support/inflector'
 require 'brainstem/api_docs/endpoint_collection'
 
 module Brainstem
@@ -18,7 +19,8 @@ module Brainstem
 
       attr_accessor :const,
                     :name,
-                    :endpoints
+                    :endpoints,
+                    :filename_pattern
 
 
       attr_writer   :filename_pattern,
@@ -46,7 +48,8 @@ module Brainstem
 
       def suggested_filename(format)
         filename_pattern
-          .gsub('{{name}}', name.to_s)
+          .gsub('{{namespace}}', const.to_s.deconstantize.underscore)
+          .gsub('{{name}}', name.to_s.split("/").last)
           .gsub('{{extension}}', extension)
       end
 
@@ -89,7 +92,7 @@ module Brainstem
 
 
       def title
-        contextual_documentation(:title) || const.to_s
+        contextual_documentation(:title) || const.to_s.demodulize
       end
 
 
@@ -105,6 +108,11 @@ module Brainstem
         default_configuration.has_key?(key) &&
           !default_configuration[key][:nodoc] &&
           default_configuration[key][:info]
+      end
+
+
+      def valid_sorted_endpoints
+        endpoints.sorted_with_actions_in_controller(const)
       end
 
     end

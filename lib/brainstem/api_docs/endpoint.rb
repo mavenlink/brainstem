@@ -16,7 +16,6 @@ module Brainstem
 
       ACTION_ORDER = %w(index show create update delete)
 
-      # TODO: Some of these should be required.
       def valid_options
         super | [
           :path,

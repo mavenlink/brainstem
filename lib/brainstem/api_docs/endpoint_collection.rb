@@ -45,7 +45,14 @@ module Brainstem
       end
 
 
+      def with_actions_in_controller(const)
+        self.class.with_members(reject { |m| !const.method_defined?(m.action) })
+      end
 
+
+      def sorted_with_actions_in_controller(const)
+        with_actions_in_controller(const).sorted
+      end
     end
   end
 end

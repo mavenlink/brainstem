@@ -1,8 +1,7 @@
 require 'brainstem/api_docs/introspectors/rails_introspector'
+require 'brainstem/concerns/optional'
 require 'brainstem/api_docs/atlas'
 require 'active_support/core_ext/hash/slice'
-
-# TODO: Clean up public/private in this class.
 
 #
 # This class describes the main API surface for generating API documentation.
@@ -15,9 +14,10 @@ require 'active_support/core_ext/hash/slice'
 module Brainstem
   module ApiDocs
     class Builder
+      include Brainstem::Concerns::Optional
 
 
-      def valid_args
+      def valid_options
         [
           :introspector_method,
           :atlas_method,
@@ -36,13 +36,18 @@ module Brainstem
       #   presenters).
       # @option options [Hash] :args_for_introspector Additional arguments to
       #   be passed to the introspector on creation.
-      # # TODO: Document other args
+      # @option options [Hash] :args_for_atlas Additional arguments to be passed
+      #   to the atlas on creation.
+      # @option options [Proc,Object] :introspector_method A method that
+      #   returns an introspector when called.
+      # @option options [Proc,Object] :atlas_method A method that returns an Atlas-like
+      #   object when called.
       #
       # @see Brainstem::ApiDocs::Introspectors::AbstractIntrospector
       # @see Brainstem::ApiDocs::Introspectors::RailsIntrospector
       #
       def initialize(options = {})
-        options.slice(*valid_args).each { |k, v| self.send("#{k}=", v) }
+        super
 
         build_introspector!
         build_atlas!
@@ -133,15 +138,12 @@ module Brainstem
 
 
       #
-      # A proc of arity 1 which returns a new atlas, which takes info from
-      # the introspector and turns it into a collection of API information for
-      # each individual route.
+      # A proc of arity 1..2 which takes an introspector and optional options,
+      # and which returns a new Atlas.
       #
       # Passed an introspector.
       #
       # @return [Proc] a method to return an atlas
-      #
-      # TODO: Maybe pick a different name?
       #
       def atlas_method
         @atlas_method ||= Atlas.method(:new)

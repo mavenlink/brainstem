@@ -84,10 +84,11 @@ module Brainstem
         end
 
 
-        # Specifies that the scope should should not be documented.
-        # Setting this on the default context will force the controller to
-        # be undocumented, whereas setting it within an action context will
-        # force that action to be undocumented.
+        #
+        # Specifies that the scope should not be documented. Setting this on
+        # the default context will force the controller to be undocumented,
+        # whereas setting it within an action context will force that action to
+        # be undocumented.
         #
         def nodoc!
           configuration[brainstem_params_context][:nodoc] = true
@@ -290,7 +291,6 @@ module Brainstem
       #
       # @params [Symbol] context the context in which to first look for the key
       # @params [Symbol] key the key name to look for
-      # TODO: what about situation where parent doesn't have key either?
       #
       def contextual_key(context, key)
         if configuration.has_key?(context.to_sym)

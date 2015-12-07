@@ -39,7 +39,7 @@ module Brainstem
               :show => show_config
             } }
 
-            constant.to_s { "ClassName" }
+            constant.to_s { "Api::V1::ClassName" }
           end
         end
 
@@ -90,7 +90,7 @@ module Brainstem
         end
 
 
-        describe "#title" do
+        describe "#description" do
           context "when present" do
             let(:default_config) { { description: { info: lorem, nodoc: nodoc } } }
 
@@ -132,16 +132,26 @@ module Brainstem
 
 
       describe "#suggested_filename" do
-        it "gsubs filename and extension" do
+        let(:const)          { Object.new }
 
+        before do
+          stub(const) do |constant|
+            constant.to_s { "Api::V1::ClassName" }
+          end
+        end
+
+
+        it "gsubs namespace, filename and extension" do
           instance = described_class.new(
-            filename_pattern: "controllers/{{name}}_controller.{{extension}}",
-            name: 'abc'
+            filename_pattern: "controllers/{{namespace}}/{{name}}_controller.{{extension}}",
+            name: 'api/v1/abc',
+            const: const,
           )
 
           stub(instance).extension { "xyz" }
 
-          expect(instance.suggested_filename(:xyz)).to eq "controllers/abc_controller.xyz"
+          expect(instance.suggested_filename(:xyz)).to \
+            eq "controllers/api/v1/abc_controller.xyz"
         end
       end
 

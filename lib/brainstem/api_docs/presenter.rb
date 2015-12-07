@@ -1,3 +1,4 @@
+require 'brainstem/api_docs'
 require 'brainstem/concerns/optional'
 require 'brainstem/concerns/formattable'
 require 'forwardable'
@@ -18,18 +19,28 @@ module Brainstem
           :const,
           :presents,
           :filename_pattern,
-          :filename_link_pattern
+          :filename_link_pattern,
+          :document_empty_associations,
+          :document_empty_filters
         ]
       end
 
       attr_accessor :const,
-                    :presents
+                    :presents,
+                    :document_empty_associations,
+                    :document_empty_filters
 
       attr_writer   :filename_pattern,
                     :filename_link_pattern
 
+      alias_method :document_empty_associations?, :document_empty_associations
+      alias_method :document_empty_filters?,      :document_empty_filters
+
 
       def initialize(options = {})
+        self.document_empty_associations = Brainstem::ApiDocs.document_empty_presenter_associations
+        self.document_empty_filters      = Brainstem::ApiDocs.document_empty_presenter_filters
+
         super options
         yield self if block_given?
       end
@@ -77,8 +88,8 @@ module Brainstem
       end
 
 
-      def brainstem_key
-        configuration[:brainstem_key]
+      def brainstem_keys
+        const.possible_brainstem_keys.to_a.sort
       end
 
 
@@ -99,7 +110,6 @@ module Brainstem
       alias_method :valid_fields_in, :valid_fields
 
 
-      # TODO: Would be nice to move these down into fields.
       def invalid_field?(field)
         field.options[:nodoc]
       end
@@ -111,7 +121,18 @@ module Brainstem
 
 
       def valid_filters
-        configuration[:filters].to_h.reject {|k, v| v[:nodoc] }
+        configuration[:filters]
+          .to_h
+          .keep_if(&method(:documentable_filter?))
+      end
+
+
+      def documentable_filter?(_, filter)
+        !filter[:nodoc] &&
+          (
+            document_empty_filters? || # document empty filters or
+            !(filter[:info] || "").empty? # has info string
+          )
       end
 
 
@@ -121,7 +142,24 @@ module Brainstem
 
 
       def valid_associations
-        configuration[:associations].to_h.reject {|_, v| v.options[:nodoc] }
+        configuration[:associations]
+          .to_h
+          .keep_if(&method(:documentable_association?))
+      end
+
+
+      #
+      # Returns whether this association should be documented based on nodoc
+      # and empty description.
+      #
+      # @return [Bool] document this association?
+      #
+      def documentable_association?(_, association)
+        !association.options[:nodoc] && # not marked nodoc and
+          (
+            document_empty_associations? || # document empty associations or
+            !(association.description.nil? || association.description.empty?) # has description
+          )
       end
 
 
@@ -153,8 +191,6 @@ module Brainstem
           !configuration[key][:nodoc] &&
           configuration[key][:info]
       end
-
-
     end
   end
 end

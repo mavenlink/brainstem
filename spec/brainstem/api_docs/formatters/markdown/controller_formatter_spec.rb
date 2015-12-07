@@ -97,13 +97,13 @@ module Brainstem
                 let(:options) { { include_actions: true } }
 
                 it "creates a subheading" do
-                  stub(controller).endpoints.stub!.sorted.stub!.formatted_as(:markdown, anything) { "" }
+                  stub(controller).valid_sorted_endpoints.stub!.formatted_as(:markdown, anything) { "" }
                   subject.send(:format_actions!)
                   expect(subject.output).to include "### Endpoints"
                 end
 
                 it "appends the formatted output of the endpoints" do
-                  stub(controller).endpoints.stub!.sorted.stub!.formatted_as(:markdown, anything) { "collection" }
+                  stub(controller).valid_sorted_endpoints.stub!.formatted_as(:markdown, anything) { "collection" }
                   subject.send(:format_actions!)
                   expect(subject.output).to include "collection"
                 end

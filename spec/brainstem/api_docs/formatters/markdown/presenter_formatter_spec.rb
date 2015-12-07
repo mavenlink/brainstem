@@ -25,7 +25,7 @@ module Brainstem
               it "returns an empty output" do
                 any_instance_of(described_class) do |instance|
                   dont_allow(instance).format_title!
-                  dont_allow(instance).format_brainstem_key!
+                  dont_allow(instance).format_brainstem_keys!
                   dont_allow(instance).format_description!
                   dont_allow(instance).format_fields!
                   dont_allow(instance).format_filters!
@@ -38,10 +38,10 @@ module Brainstem
             end
 
             context "when not nodoc" do
-              it "formats title, brainstem_key, description, conditionals, fields, filters, sort_orders, and associations" do
+              it "formats title, brainstem_keys, description, conditionals, fields, filters, sort_orders, and associations" do
                 any_instance_of(described_class) do |instance|
                   mock(instance).format_title!
-                  mock(instance).format_brainstem_key!
+                  mock(instance).format_brainstem_keys!
                   mock(instance).format_description!
                   mock(instance).format_fields!
                   mock(instance).format_filters!
@@ -70,14 +70,14 @@ module Brainstem
             end
 
 
-            describe "#format_brainstem_key!" do
+            describe "#format_brainstem_keys!" do
               before do
-                stub(presenter).brainstem_key { "widgets" }
+                stub(presenter).brainstem_keys { [ "sprockets", "widgets" ] }
               end
 
               it "outputs it" do
-                subject.send(:format_brainstem_key!)
-                expect(subject.output).to include "Top-level key: `widgets`"
+                subject.send(:format_brainstem_keys!)
+                expect(subject.output).to include "Top-level key: `sprockets` / `widgets`"
               end
             end
 

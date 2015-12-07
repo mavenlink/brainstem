@@ -1,7 +1,14 @@
+require 'brainstem/concerns/optional'
+
 module Brainstem
   module ApiDocs
     module Introspectors
       class AbstractIntrospector
+        include Brainstem::Concerns::Optional
+
+        def valid_options
+          [ ]
+        end
 
         # Returns a new instance of the introspector with the environment
         # loaded, ready for introspection.
@@ -60,11 +67,6 @@ module Brainstem
         # instantiation happens through +with_loaded_environment.
         private_class_method :new
 
-        # @api private
-        def initialize(options = {})
-          options.each { |k, v| self.send("#{k}=", v) }
-        end
-
 
         # Loads the host application environment.
         # @api private
@@ -88,8 +90,6 @@ module Brainstem
           routes.is_a?(Array) &&
             routes.count > 0 &&
             routes.all? do |r|
-              # TODO: This is probably a pretty good sign we should extract
-              # here.
               r.is_a?(Hash) &&
                 ([:path, :controller, :action, :http_methods] - r.keys).empty?
             end

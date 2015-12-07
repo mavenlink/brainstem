@@ -25,7 +25,7 @@ module Brainstem
             return output if presenter.nodoc?
 
             format_title!
-            format_brainstem_key!
+            format_brainstem_keys!
             format_description!
             format_fields!
             format_filters!
@@ -45,8 +45,13 @@ module Brainstem
           end
 
 
-          def format_brainstem_key!
-            output << md_p("Top-level key: #{md_inline_code(presenter.brainstem_key)}")
+          def format_brainstem_keys!
+            text = "Top-level key: "
+            text << presenter.brainstem_keys
+              .map(&method(:md_inline_code))
+              .join(" / ")
+
+            output << md_p(text)
           end
 
 
@@ -127,7 +132,7 @@ module Brainstem
               end
 
             else
-              output << "No filters were listed."
+              output << md_p("No filters were listed.")
             end
           end
 
