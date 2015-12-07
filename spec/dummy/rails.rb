@@ -1,9 +1,11 @@
 # This is a dummy file which is used in the Introspector specs to simulate a
 # loaded rails app.
-FakeRailsApplication      = Struct.new(:eager_load!, :routes)
-FakeRailsRoutesObject     = Struct.new(:routes)
-FakeRailsRoutePathObject  = Struct.new(:spec)
-FakeRailsRoute            = Struct.new(:name, :path, :defaults, :constraints)
+silence_warnings do
+  FakeRailsApplication      = Struct.new(:eager_load!, :routes)
+  FakeRailsRoutesObject     = Struct.new(:routes)
+  FakeRailsRoutePathObject  = Struct.new(:spec)
+  FakeRailsRoute            = Struct.new(:name, :path, :defaults, :constraints)
+end
 
 
 class Rails
