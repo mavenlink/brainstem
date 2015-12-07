@@ -79,7 +79,7 @@ module Brainstem
 
 
     #
-    # If associations on a presenter have no `:info` key, i.e. no dcumentation,
+    # If associations on a presenter have no description, i.e. no documentation,
     # should they be documented anyway?
     #
     config_accessor(:document_empty_presenter_associations) { true }
