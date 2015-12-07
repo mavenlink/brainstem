@@ -22,12 +22,18 @@ module Brainstem
                     :endpoints,
                     :filename_pattern
 
+
+      attr_writer   :filename_pattern,
+                    :filename_link_pattern
+
+
       def valid_options
         super | [
           :const,
           :name,
           :formatters,
           :filename_pattern,
+          :filename_link_pattern
         ]
       end
 
@@ -48,6 +54,13 @@ module Brainstem
       end
 
 
+      def suggested_filename_link(format)
+        filename_link_pattern
+          .gsub('{{name}}', name.to_s)
+          .gsub('{{extension}}', extension)
+      end
+
+
       def extension
         @extension ||= Brainstem::ApiDocs.output_extension
       end
@@ -55,6 +68,11 @@ module Brainstem
 
       def filename_pattern
         @filename_pattern ||= Brainstem::ApiDocs.controller_filename_pattern
+      end
+
+
+      def filename_link_pattern
+        @filename_link_pattern ||= Brainstem::ApiDocs.controller_filename_link_pattern
       end
 
 

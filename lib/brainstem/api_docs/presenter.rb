@@ -19,8 +19,9 @@ module Brainstem
           :const,
           :presents,
           :filename_pattern,
+          :filename_link_pattern,
           :document_empty_associations,
-          :document_empty_filters,
+          :document_empty_filters
         ]
       end
 
@@ -29,7 +30,8 @@ module Brainstem
                     :document_empty_associations,
                     :document_empty_filters
 
-      attr_writer   :filename_pattern
+      attr_writer   :filename_pattern,
+                    :filename_link_pattern
 
       alias_method :document_empty_associations?, :document_empty_associations
       alias_method :document_empty_filters?,      :document_empty_filters
@@ -51,6 +53,13 @@ module Brainstem
       end
 
 
+      def suggested_filename_link(format)
+        filename_link_pattern
+          .gsub('{{name}}', presents.to_s)
+          .gsub('{{extension}}', extension)
+      end
+
+
       def extension
         @extension ||= Brainstem::ApiDocs.output_extension
       end
@@ -58,6 +67,11 @@ module Brainstem
 
       def filename_pattern
         @filename_pattern ||= Brainstem::ApiDocs.presenter_filename_pattern
+      end
+
+
+      def filename_link_pattern
+        @filename_link_pattern ||= Brainstem::ApiDocs.presenter_filename_link_pattern
       end
 
 

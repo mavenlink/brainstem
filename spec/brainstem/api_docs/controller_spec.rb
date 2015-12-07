@@ -155,6 +155,22 @@ module Brainstem
         end
       end
 
+
+      describe "#suggested_filename_link" do
+        it "gsubs filename and extension" do
+
+          instance = described_class.new(
+            filename_link_pattern: "controllers/{{name}}_controller.{{extension}}.foo",
+            name: 'abc'
+          )
+
+          stub(instance).extension { "xyz" }
+
+          expect(instance.suggested_filename_link(:xyz)).to eq "controllers/abc_controller.xyz.foo"
+        end
+      end
+
+
       it_behaves_like "formattable"
     end
   end

@@ -208,24 +208,23 @@ module Brainstem
       describe "#relative_presenter_path_from_controller" do
         let(:presenter) {
           mock!
-            .suggested_filename(:markdown)
-            .returns("models/sprocket_widget.markdown")
+            .suggested_filename_link(:markdown)
+            .returns("objects/sprocket_widget")
             .subject
         }
 
         let(:controller) {
           mock!
-            .suggested_filename(:markdown)
-            .returns("controllers/api/v1/sprocket_widgets_controller.markdown")
+            .suggested_filename_link(:markdown)
+            .returns("controllers/api/v1/sprocket_widgets_controller")
             .subject
         }
 
         let(:options) { { presenter: presenter, controller: controller } }
 
-
         it "returns a relative path" do
           expect(subject.relative_presenter_path_from_controller(:markdown)).to \
-            eq "../../../models/sprocket_widget.markdown"
+            eq "../../../objects/sprocket_widget"
         end
       end
 
