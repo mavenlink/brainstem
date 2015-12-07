@@ -12,7 +12,7 @@ module Brainstem
       def create_from_route(route)
         Controller.new(
           const:  route[:controller],
-          name:   route[:controller_name]
+          name:   route[:controller_name].split("/").last
         ).tap { |controller| self.<< controller }
       end
 

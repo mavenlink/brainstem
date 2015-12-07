@@ -14,13 +14,16 @@ module Brainstem
     #
     # The following tokens will be substituted:
     #
-    # - {{name}} : the underscored name of the controller without 'controller'
-    # - {{extension} : the specified file extension
+    # - {{namespace}} : the namespace of the controller underscored,
+    #                   i.e. 'api/v1'
+    # - {{name}}      : the underscored name of the controller without
+    #                   'controller'
+    # - {{extension}  : the specified file extension
     #
     # @see #output_extension
     #
     config_accessor(:controller_filename_pattern) do
-      File.join("controllers", "{{name}}_controller.{{extension}}")
+      File.join("endpoints", "{{name}}.{{extension}}")
     end
 
 
@@ -35,7 +38,7 @@ module Brainstem
     # @see #output_extension
     #
     config_accessor(:presenter_filename_pattern) do
-      File.join("models", "{{name}}.{{extension}}")
+      File.join("objects", "{{name}}.{{extension}}")
     end
 
 

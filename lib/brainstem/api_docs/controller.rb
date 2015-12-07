@@ -1,5 +1,6 @@
 require 'brainstem/concerns/optional'
 require 'brainstem/concerns/formattable'
+require 'active_support/inflector'
 require 'brainstem/api_docs/endpoint_collection'
 
 module Brainstem
@@ -18,13 +19,15 @@ module Brainstem
 
       attr_accessor :const,
                     :name,
-                    :endpoints
+                    :endpoints,
+                    :filename_pattern
 
       def valid_options
         super | [
           :const,
           :name,
-          :formatters
+          :formatters,
+          :filename_pattern,
         ]
       end
 
@@ -39,7 +42,8 @@ module Brainstem
 
       def suggested_filename(format)
         filename_pattern
-          .gsub('{{name}}', name.to_s)
+          .gsub('{{namespace}}', const.to_s.deconstantize.underscore)
+          .gsub('{{name}}', name.to_s.split("/").last)
           .gsub('{{extension}}', extension)
       end
 
@@ -70,7 +74,7 @@ module Brainstem
 
 
       def title
-        contextual_documentation(:title) || const.to_s
+        contextual_documentation(:title) || const.to_s.demodulize
       end
 
 
