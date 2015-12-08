@@ -4,11 +4,15 @@ require 'brainstem/api_docs/abstract_collection'
 module Brainstem
   module ApiDocs
     describe AbstractCollection do
-      let(:member) { Object.new }
-
+      let(:member)   { Object.new }
+      let(:member_2) { Object.new }
+      let(:members)  { [ member, member_2 ] }
 
       describe "#last" do
-        it "retrieves the last member"
+        it "retrieves the last member" do
+          subject << members
+          expect(subject.last).to eq member_2
+        end
       end
 
 
@@ -17,11 +21,19 @@ module Brainstem
           subject << member
           expect(subject.count).to eq 1
         end
+
+        it "adds multiple members to the collection" do
+          subject << members
+          expect(subject.count).to eq 2
+        end
       end
 
 
       describe "#each" do
-        it "iterates over each member"
+        it "iterates over each member" do
+          subject << members
+          expect { |block| subject.each(&block) }.to yield_successive_args(*members)
+        end
       end
 
 

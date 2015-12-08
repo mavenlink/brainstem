@@ -35,8 +35,8 @@ module Brainstem
       #
       # Appends a pre-existing object to the collection.
       #
-      def <<(object)
-        members << object
+      def <<(*objects)
+        members.push(*objects.flatten)
       end
 
 
