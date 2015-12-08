@@ -2,10 +2,12 @@ require 'brainstem/concerns/optional'
 require 'brainstem/concerns/formattable'
 require 'active_support/inflector'
 require 'brainstem/api_docs/endpoint_collection'
+require 'forwardable'
 
 module Brainstem
   module ApiDocs
     class Controller
+      extend Forwardable
       include Concerns::Optional
       include Concerns::Formattable
 
@@ -76,9 +78,7 @@ module Brainstem
       end
 
 
-      def configuration
-        const.configuration
-      end
+      delegate :configuration => :const
 
 
       def default_configuration

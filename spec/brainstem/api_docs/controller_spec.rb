@@ -44,6 +44,63 @@ module Brainstem
         end
 
 
+        describe "configuration helpers" do
+          describe "#contextual_documentation" do
+            let(:default_config) { { title: { info: info, nodoc: nodoc } } }
+            let(:info)           { lorem }
+
+            context "when has the key" do
+              let(:key) { :title }
+
+              context "when not nodoc" do
+                context "when has info" do
+                  it "is truthy" do
+                    expect(subject.contextual_documentation(key)).to be_truthy
+                  end
+
+                  it "is the info" do
+                    expect(subject.contextual_documentation(key)).to eq lorem
+                  end
+                end
+
+                context "when has no info" do
+                  let(:info) { nil }
+
+                  it "is falsey" do
+                    expect(subject.contextual_documentation(key)).to be_falsey
+                  end
+                end
+              end
+
+              context "when nodoc" do
+                let(:nodoc) { true }
+
+                it "is falsey" do
+                  expect(subject.contextual_documentation(key)).to be_falsey
+                end
+              end
+            end
+
+            context "when doesn't have the key" do
+              let(:key) { :herp }
+
+              it "is falsey" do
+                expect(subject.contextual_documentation(key)).to be_falsey
+              end
+            end
+          end
+
+
+          describe "#default_configuration" do
+            let(:default_config) { { title: nil } }
+
+            it "returns the default key of the configuration" do
+              expect(subject.default_configuration).to eq default_config
+            end
+          end
+        end
+
+
         describe "#nodoc?" do
           let(:default_config) { { nodoc: nodoc } }
 
@@ -114,18 +171,6 @@ module Brainstem
               expect(subject.description).to eq ""
             end
           end
-        end
-      end
-
-
-      describe "configuration helpers" do
-        describe "default_configuration" do
-          xit "does something"
-        end
-
-
-        describe "#contextual_documentation" do
-          xit "does something"
         end
       end
 
