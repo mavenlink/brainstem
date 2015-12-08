@@ -28,22 +28,6 @@ module Brainstem
 
 
       #
-      # Returns a list of unique declared presenters / data models across all
-      # controllers.
-      #
-      def unique_presents
-        map do |c|
-          c.configuration.keys # For all action contexts + default
-            .map { |key| c.configuration[key][:presents].to_s } # Get presents name
-        end
-          .flatten
-          .reject { |presents| presents.nil? || presents.empty? }
-          .uniq
-          .sort
-      end
-
-
-      #
       # Finds a controller from a route object or creates one if it does not
       # exist.
       #

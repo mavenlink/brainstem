@@ -114,7 +114,6 @@ module Brainstem
       def valid_sorted_endpoints
         endpoints.sorted_with_actions_in_controller(const)
       end
-
     end
   end
 end

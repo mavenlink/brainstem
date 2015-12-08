@@ -81,12 +81,6 @@ module Brainstem
         end
       end
 
-
-      describe "#unique_presents" do
-        xit "does something"
-      end
-
-
       it_behaves_like "formattable"
     end
   end
