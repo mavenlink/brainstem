@@ -1,41 +1,6 @@
 require 'brainstem/concerns/inheritable_configuration'
 require 'active_support/core_ext/object/with_options'
 
-# brainstem_params do
-#   actions :index, :show do
-#     presents :project
-#   end
-#
-#   actions :edit do
-#     model_params do |param|
-#       # doc for params[:project][:sprocket_name]
-#       param.valid :sprocket_name,
-#         info: "error message"
-#
-#       # doc for params[:project][:sub_stories]
-#       param.valid :sub_stories,
-#         info: "is recursive and an array",
-#         recursive: true
-#     end
-#
-#     # doc for params[:only_one]
-#     valid :only_one,
-#       info: "only one"
-#   end
-#
-#   transform :human_readable_sprocket_attr => :some_bizarre_database_field
-#
-#   actions :create do
-#     valid :sprocket_project_id,
-#       info: "error message"
-#   end
-#
-#   actions :show do
-#     presents # by default, :sprocket for SprocketsController
-#   end
-# end
-
-
 module Brainstem
   module Concerns
     module ControllerDSL
@@ -45,17 +10,21 @@ module Brainstem
       DEFAULT_BRAINSTEM_PARAMS_CONTEXT = :_default
 
       included do
-        configuration.nest! :_default
-        configuration[:_default].tap do |default|
-          default.nest! :valid_params
-          default.nest! :transforms
-          default.nonheritable! :title
-          default.nonheritable! :description
-        end
+        reset_configuration!
       end
 
 
       module ClassMethods
+        def reset_configuration!
+          configuration.nest! :_default
+          configuration[:_default].tap do |default|
+            default.nest! :valid_params
+            default.nest! :transforms
+            default.nonheritable! :title
+            default.nonheritable! :description
+          end
+        end
+
 
         #
         # In order to correctly scope the DSL, we must have a context under
