@@ -158,7 +158,7 @@ describe Brainstem::Concerns::PresenterDSL do
   describe 'the conditional block' do
     before do
       presenter_class.conditionals do
-        model      :title_is_hello, lambda { |workspace| workspace.title == 'hello' }, 'visible when the title is hello'
+        model      :title_is_hello, lambda { |workspace| workspace.title == 'hello' }, 'visible when the title is hello', nodoc: true
         request    :user_is_bob, lambda { current_user == 'bob' }, 'visible only to bob'
       end
     end
@@ -168,6 +168,7 @@ describe Brainstem::Concerns::PresenterDSL do
       expect(presenter_class.configuration[:conditionals][:title_is_hello].action).to be_present
       expect(presenter_class.configuration[:conditionals][:title_is_hello].type).to eq :model
       expect(presenter_class.configuration[:conditionals][:title_is_hello].description).to eq 'visible when the title is hello'
+      expect(presenter_class.configuration[:conditionals][:title_is_hello].options).to eq({ nodoc: true })
       expect(presenter_class.configuration[:conditionals][:user_is_bob].action).to be_present
       expect(presenter_class.configuration[:conditionals][:user_is_bob].type).to eq :request
       expect(presenter_class.configuration[:conditionals][:user_is_bob].description).to eq 'visible only to bob'
@@ -182,7 +183,9 @@ describe Brainstem::Concerns::PresenterDSL do
       expect(presenter_class.configuration[:conditionals].keys).to eq %w[title_is_hello user_is_bob]
       expect(subclass.configuration[:conditionals].keys).to eq %w[title_is_hello user_is_bob silly_conditional]
       expect(presenter_class.configuration[:conditionals][:title_is_hello].description).to eq "visible when the title is hello"
+      expect(presenter_class.configuration[:conditionals][:title_is_hello].options).to eq({nodoc: true})
       expect(subclass.configuration[:conditionals][:title_is_hello].description).to eq "visible when the title is hello (in all caps)"
+      expect(subclass.configuration[:conditionals][:title_is_hello].options).to eq({})
     end
   end
 

@@ -1,13 +1,14 @@
 module Brainstem
   module DSL
     class Conditional
-      attr_reader :name, :type, :action, :description
+      attr_reader :name, :type, :action, :description, :options
 
-      def initialize(name, type, action, description)
-        @name = name
-        @type = type
-        @action = action
+      def initialize(name, type, action, description, options)
+        @name        = name
+        @type        = type
+        @action      = action
         @description = description
+        @options     = options
       end
 
       def matches?(model, helper_instance = Object.new, conditional_cache = { model: {}, request: {} })

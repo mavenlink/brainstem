@@ -2,8 +2,9 @@ require 'spec_helper'
 require 'brainstem/dsl/conditional'
 
 describe Brainstem::DSL::Conditional do
-  let(:conditional) { Brainstem::DSL::Conditional.new(name, type, action, description) }
+  let(:conditional) { Brainstem::DSL::Conditional.new(name, type, action, description, options) }
   let(:model) { Workspace.first }
+  let(:options) { {} }
 
   describe '.matches?' do
     context 'as a :model conditional' do
