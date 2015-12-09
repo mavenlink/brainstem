@@ -69,6 +69,7 @@ module Brainstem
 
             if field.options[:if]
               conditions = field.options[:if]
+                .reject { |cond| presenter.conditionals[cond].options[:nodoc] }
                 .map {|cond| presenter.conditionals[cond].description || "" }
                 .delete_if(&:empty?)
                 .join(" and ")

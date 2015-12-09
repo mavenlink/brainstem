@@ -232,31 +232,50 @@ module Brainstem
                       type: :string
                     ) }
 
-                    context "if the conditional has a description" do
-                      let(:conditionals) { {
-                        :it_is_a_friday => OpenStruct.new(
-                          description: "it is a friday",
-                          name: :it_is_a_friday,
-                          type: :request
-                        )
-                      } }
-
-                      it "includes the conditional" do
-                        expect(subject.output).to include "\n    - visible when it is a friday"
-                      end
-                    end
-
-                    context "if the condition doesn't have a description" do
+                    context "if nodoc" do
                       let(:conditionals) { {
                         :it_is_a_friday => OpenStruct.new(
                           description: nil,
                           name: :it_is_a_friday,
-                          type: :request
+                          type: :request,
+                          options: { nodoc: true }
                         )
                       } }
 
                       it "does not include the conditional" do
                         expect(subject.output).not_to include "visible when"
+                      end
+                    end
+
+                    context "if not nodoc" do
+                      context "if the conditional has a description" do
+                        let(:conditionals) { {
+                          :it_is_a_friday => OpenStruct.new(
+                            description: "it is a friday",
+                            name: :it_is_a_friday,
+                            type: :request,
+                            options: {},
+                          )
+                        } }
+
+                        it "includes the conditional" do
+                          expect(subject.output).to include "\n    - visible when it is a friday"
+                        end
+                      end
+
+                      context "if the condition doesn't have a description" do
+                        let(:conditionals) { {
+                          :it_is_a_friday => OpenStruct.new(
+                            description: nil,
+                            name: :it_is_a_friday,
+                            type: :request,
+                            options: {},
+                          )
+                        } }
+
+                        it "does not include the conditional" do
+                          expect(subject.output).not_to include "visible when"
+                        end
                       end
                     end
                   end
