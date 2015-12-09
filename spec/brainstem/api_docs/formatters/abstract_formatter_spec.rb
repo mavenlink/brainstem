@@ -8,14 +8,11 @@ module Brainstem
         subject { AbstractFormatter.new }
 
         describe ".call" do
-          before do
-            any_instance_of(described_class) do |instance|
-              mock.proxy(instance).initialize(1, 2, {})
-              mock(instance).call
-            end
-          end
-
           it "instantiates a new instance and calls it, passing the instance all args" do
+            mock(described_class).new(1, 2, {}) do |instance|
+              mock(Object.new).call
+            end
+
             described_class.call(1, 2, {})
           end
         end
