@@ -238,7 +238,12 @@ module Brainstem
 
 
         describe "#valid_sort_orders" do
-          xit "does something"
+          let(:config) { { sort_orders: { title: { nodoc: true }, date: {} } } }
+
+          it "returns all pairs not marked nodoc" do
+            expect(subject.valid_sort_orders).to have_key(:date)
+            expect(subject.valid_sort_orders).not_to have_key(:title)
+          end
         end
 
 
@@ -361,19 +366,49 @@ module Brainstem
           end
         end
 
-
-
-      end
-
-
-      describe "configuration helpers" do
-        describe "default_configuration" do
-          xit "does something"
-        end
-
-
         describe "#contextual_documentation" do
-          xit "does something"
+          let(:config) { { title: { info: info, nodoc: nodoc } } }
+          let(:info)   { lorem }
+
+          context "when has the key" do
+            let(:key) { :title }
+
+            context "when not nodoc" do
+              context "when has info" do
+                it "is truthy" do
+                  expect(subject.contextual_documentation(key)).to be_truthy
+                end
+
+                it "is the info" do
+                  expect(subject.contextual_documentation(key)).to eq lorem
+                end
+              end
+
+              context "when has no info" do
+                let(:info) { nil }
+
+                it "is falsey" do
+                  expect(subject.contextual_documentation(key)).to be_falsey
+                end
+              end
+            end
+
+            context "when nodoc" do
+              let(:nodoc) { true }
+
+              it "is falsey" do
+                expect(subject.contextual_documentation(key)).to be_falsey
+              end
+            end
+          end
+
+          context "when doesn't have the key" do
+            let(:key) { :herp }
+
+            it "is falsey" do
+              expect(subject.contextual_documentation(key)).to be_falsey
+            end
+          end
         end
       end
 

@@ -143,31 +143,127 @@ module Brainstem
 
 
         describe "#valid_params" do
-          xit "does something"
+          it "returns the valid_params key from action or default" do
+            mock(subject).key_with_default_fallback(:valid_params)
+            subject.valid_params
+          end
         end
 
 
         describe "#root_param_keys" do
-          xit "does something"
+          let(:nested_param)   { { title: { nodoc: nodoc, root: :sprocket } } }
+          let(:root_param)     { { title: { nodoc: nodoc } } }
+          let(:default_config) { { valid_params: which_param } }
+
+          context "non-nested params" do
+            let(:which_param) { root_param }
+
+            context "when nodoc" do
+              let(:nodoc) { true }
+
+              it "rejects the key" do
+                expect(subject.root_param_keys).to be_empty
+              end
+            end
+
+            context "when not nodoc" do
+              it "lists it as a root param" do
+                expect(subject.root_param_keys).to have_key(:title)
+              end
+            end
+          end
+
+
+          context "nested params" do
+            let(:which_param) { nested_param }
+
+            context "when nodoc" do
+              let(:nodoc) { true }
+
+              it "rejects the key" do
+                expect(subject.root_param_keys).to be_empty
+              end
+            end
+
+            context "when not nodoc" do
+              it "lists it as a nested param" do
+                expect(subject.root_param_keys).to eq({ sprocket: [ :title ] })
+              end
+            end
+          end
         end
 
 
         describe "#valid_presents" do
-          xit "does something"
-        end
-
-
-        describe "#presenter" do
+          it "returns the presents key from action or default" do
+            mock(subject).key_with_default_fallback(:presents)
+            subject.valid_presents
+          end
         end
 
 
         describe "#contextual_documentation" do
-          xit "does something"
+          let(:show_config) { { title: { info: info, nodoc: nodoc } } }
+          let(:info)           { lorem }
+
+          context "when has the key" do
+            let(:key) { :title }
+
+            context "when not nodoc" do
+              context "when has info" do
+                it "is truthy" do
+                  expect(subject.contextual_documentation(key)).to be_truthy
+                end
+
+                it "is the info" do
+                  expect(subject.contextual_documentation(key)).to eq lorem
+                end
+              end
+
+              context "when has no info" do
+                let(:info) { nil }
+
+                it "is falsey" do
+                  expect(subject.contextual_documentation(key)).to be_falsey
+                end
+              end
+            end
+
+            context "when nodoc" do
+              let(:nodoc) { true }
+
+              it "is falsey" do
+                expect(subject.contextual_documentation(key)).to be_falsey
+              end
+            end
+          end
+
+          context "when doesn't have the key" do
+            let(:key) { :herp }
+
+            it "is falsey" do
+              expect(subject.contextual_documentation(key)).to be_falsey
+            end
+          end
         end
 
 
         describe "#key_with_default_fallback" do
-          xit "does something"
+          let(:default_config) { { info: "default" } }
+
+          context "when it has the key in the action config" do
+            let(:show_config)    { { info: "show" } }
+
+            it "returns that" do
+              expect(subject.key_with_default_fallback(:info)).to eq "show"
+            end
+          end
+
+          context "when it has the key only in the default config" do
+            it "returns that" do
+              expect(subject.key_with_default_fallback(:info)).to eq "default"
+            end
+          end
         end
       end
 

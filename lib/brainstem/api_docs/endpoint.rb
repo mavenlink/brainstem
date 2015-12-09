@@ -144,17 +144,17 @@ module Brainstem
       def root_param_keys
         @root_param_keys ||= begin
           valid_params.to_h
-            .reject {|_, data| data[:nodoc] }
             .inject({}) do |hsh, (field_name, data)|
+              next hsh if data[:nodoc]
 
-            if data.has_key?(:root)
-              (hsh[data.delete(:root)] ||= []) << field_name
-            else
-              hsh[field_name] = nil
+              if data.has_key?(:root)
+                (hsh[data.delete(:root)] ||= []) << field_name
+              else
+                hsh[field_name] = nil
+              end
+
+              hsh
             end
-
-            hsh
-          end
         end
       end
 
@@ -176,12 +176,6 @@ module Brainstem
           valid_presents[:presenter]
       end
 
-
-      # def presenter
-      #   @presenter ||= valid_presents.has_key?(:presenter) &&
-      #     !valid_presents[:nodoc] &&
-      #     valid_presents[:presenter].to_s.titleize
-      # end
 
       #
       # Stores the +ApiDocs::Presenter+ object associated with this endpoint.
