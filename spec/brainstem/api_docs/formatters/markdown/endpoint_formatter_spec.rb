@@ -229,23 +229,26 @@ module Brainstem
                 stub(endpoint).relative_presenter_path_from_controller(:markdown) { "../../sprocket_widget.markdown" }
               end
 
-              it "outputs a header" do
-                subject.send(:format_presents!)
-                expect(subject.output).to include "Data Model"
-              end
-
               context "when present" do
-                it "displays a link" do
+                before do
                   stub(endpoint).presenter { presenter }
+                end
+
+                it "outputs a header" do
+                  subject.send(:format_presents!)
+                  expect(subject.output).to include "Data Model"
+                end
+
+                it "displays a link" do
                   subject.send(:format_presents!)
                   expect(subject.output).to include "[Sprocket Widget](../../sprocket_widget.markdown)"
                 end
               end
 
               context "when not present" do
-                it "indicates there is no presenter" do
+                it "does not output anything" do
                   subject.send(:format_presents!)
-                  expect(subject.output).to include "No data model was indicated"
+                  expect(subject.output).not_to include "Data Model"
                 end
               end
             end
