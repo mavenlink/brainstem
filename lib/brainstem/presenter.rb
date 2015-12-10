@@ -18,7 +18,7 @@ module Brainstem
         if klasses.any? { |klass| klass.is_a?(String) || klass.is_a?(Symbol) }
           raise "Brainstem Presenter#presents now expects a Class instead of a class name"
         end
-        @presents += klasses
+        @presents.concat(klasses).uniq!
         Brainstem.add_presenter_class(self, namespace, *klasses)
       end
       @presents

@@ -193,6 +193,14 @@ describe Brainstem::PresenterValidator do
     end
   end
 
+  describe 'validating presence of brainstem_key' do
+    it 'requires a brainstem_key to be defined when more than one object is being presented' do
+      presenter_class.presents Task
+      expect(validator).not_to be_valid
+      expect(validator.errors[:brainstem_key]).to eq ["a brainstem_key must be provided when multiple classes are presented."]
+    end
+  end
+
   specify 'all spec presenters should be valid' do
     Brainstem.presenter_collection.presenters.each do |name, klass|
       expect(Brainstem::PresenterValidator.new(klass)).to be_valid
