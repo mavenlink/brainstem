@@ -149,15 +149,13 @@ module Brainstem
           # Formats the data model for the action.
           #
           def format_presents!
-            output << md_h5("Data Model")
-
             if endpoint.presenter
+              output << md_h5("Data Model")
+
               link = md_a(endpoint.presenter_title, endpoint.relative_presenter_path_from_controller(:markdown))
               output << md_ul do
                 md_li(link)
               end
-            else
-              output << md_p("No data model was indicated.")
             end
           end
         end
