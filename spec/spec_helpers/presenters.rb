@@ -110,6 +110,8 @@ end
 class AttachmentPresenter < Brainstem::Presenter
   presents Attachments::TaskAttachment, Attachments::PostAttachment
 
+  brainstem_key :attachments
+
   fields do
     field :filename, :string
   end
@@ -118,5 +120,3 @@ class AttachmentPresenter < Brainstem::Presenter
     association :subject, :polymorphic
   end
 end
-
-# TODO: inheritance of presenters

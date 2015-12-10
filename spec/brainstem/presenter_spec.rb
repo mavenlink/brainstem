@@ -47,6 +47,11 @@ describe Brainstem::Presenter do
         expect(presenter_class.presents).to eq([String, Array])
       end
 
+      it 'removes duplicates when called more then once' do
+        expect(presenter_class.presents(Array)).to eq([Array])
+        expect(presenter_class.presents(Array, Array)).to eq([Array])
+      end
+
       it 'should not be inherited' do
         presenter_class.presents(String)
         expect(presenter_class.presents).to eq [String]
