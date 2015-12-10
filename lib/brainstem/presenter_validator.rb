@@ -17,6 +17,7 @@ module Brainstem
     validate :conditionals_exist
     validate :default_sort_is_used
     validate :default_sort_matches_sort_order
+    validate :brainstem_key_is_provided
 
     def preloads_exist
       presenter_class.configuration[:preloads].each do |preload|
@@ -83,6 +84,12 @@ module Brainstem
         if !presenter_class.configuration[:sort_orders][default_sort_order]
           errors.add(:default_sort_order, "The declared default_sort_order ('#{default_sort_order}') does not match an existing sort_order")
         end
+      end
+    end
+
+    def brainstem_key_is_provided
+      if !presenter_class.configuration[:brainstem_key] && presenter_class.presents.length > 1
+        errors.add(:brainstem_key, "a brainstem_key must be provided when multiple classes are presented.")
       end
     end
   end
