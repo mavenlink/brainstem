@@ -132,7 +132,8 @@ module Brainstem
               next hsh if data[:nodoc]
 
               if data.has_key?(:root)
-                (hsh[data.delete(:root)] ||= []) << field_name
+                key  = data[:root].respond_to?(:call) ? data[:root].call(controller.const) : data[:root]
+                (hsh[key] ||= []) << field_name
               else
                 hsh[field_name] = nil
               end

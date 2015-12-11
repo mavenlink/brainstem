@@ -30,6 +30,14 @@ module Brainstem
 
 
       describe "configured fields" do
+        let(:const) do
+          Class.new do
+            def self.brainstem_model_name
+              :widget
+            end
+          end
+        end
+
         let(:controller)     { Object.new }
         let(:action)         { :show }
 
@@ -49,6 +57,7 @@ module Brainstem
 
         before do
           stub(controller).configuration { configuration }
+          stub(controller).const { const }
         end
 
 
@@ -134,9 +143,10 @@ module Brainstem
 
 
         describe "#root_param_keys" do
-          let(:nested_param)   { { title: { nodoc: nodoc, root: :sprocket } } }
-          let(:root_param)     { { title: { nodoc: nodoc } } }
-          let(:default_config) { { valid_params: which_param } }
+          let(:nested_param)      { { title: { nodoc: nodoc, root: :sprocket } } }
+          let(:proc_nested_param) { { title: { nodoc: nodoc, root: Proc.new { |klass| klass.brainstem_model_name } } } }
+          let(:root_param)        { { title: { nodoc: nodoc } } }
+          let(:default_config)    { { valid_params: which_param } }
 
           context "non-nested params" do
             let(:which_param) { root_param }
@@ -171,6 +181,26 @@ module Brainstem
             context "when not nodoc" do
               it "lists it as a nested param" do
                 expect(subject.root_param_keys).to eq({ sprocket: [ :title ] })
+              end
+            end
+          end
+
+
+          context "proc nested params" do
+            let(:which_param) { proc_nested_param }
+
+            context "when nodoc" do
+              let(:nodoc) { true }
+
+              it "rejects the key" do
+                expect(subject.root_param_keys).to be_empty
+              end
+            end
+
+            context "when not nodoc" do
+              it "evaluates the proc in the controller's context and lists it as a nested param" do
+                mock.proxy(const).brainstem_model_name
+                expect(subject.root_param_keys).to eq({ widget: [ :title ] })
               end
             end
           end

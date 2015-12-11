@@ -111,8 +111,23 @@ module Brainstem
         # Allows the bulk specification of +:root+ options. Useful for
         # denoting parameters which are nested under a resource.
         #
-        def model_params(root = brainstem_model_name, &block)
-          with_options({ root: root }, &block)
+        # +root+ may be specified as a string or symbol, which will represent
+        # the final root key.
+        #
+        # However, +root+ can also be specified as a Proc / callable object, in
+        # which case it is evaluated at format time, passed the controller
+        # constant. By default, if no argument is passed, it will return the
+        # controller's +brainstem_model_name+ dynamically. 
+        #
+        # We provide this functionality as a way to handle parameter inheritance
+        # in subclasses where the brainstem_model_name may not be the same as
+        # the parent class.
+        #
+        # @params root [Symbol,String,Proc] the brainstem model name or a
+        #   method accepting the controller constant and returning one
+        #
+        def model_params(root = Proc.new { |klass| klass.brainstem_model_name }, &block)
+          with_options({ root: root.is_a?(Symbol) ? root.to_s : root }, &block)
         end
 
 
@@ -226,7 +241,10 @@ module Brainstem
       def valid_params(requested_context = action_name.to_sym, root_param_name = brainstem_model_name)
         contextual_key(requested_context, :valid_params)
           .to_h
-          .select {|k, v| v[:root].to_s == root_param_name.to_s }
+          .select do |k, v|
+            root = v[:root].respond_to?(:call) ? v[:root].call(self.class) : v[:root]
+            root.to_s == root_param_name.to_s
+          end
       end
       alias_method :valid_params_for, :valid_params
 

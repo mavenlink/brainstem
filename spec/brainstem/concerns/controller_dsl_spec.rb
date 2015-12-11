@@ -112,7 +112,7 @@ module Brainstem
         it "evaluates the block given to it" do
           mock(subject).valid(:thing, root: "widgets")
 
-          subject.model_params do |param|
+          subject.model_params :widgets do |param|
             param.valid :thing
           end
         end
@@ -120,7 +120,7 @@ module Brainstem
         it "merges options" do
           mock(subject).valid(:thing, root: "widgets", nodoc: true)
 
-          subject.model_params do |param|
+          subject.model_params :widgets do |param|
             param.valid :thing, nodoc: true
           end
         end
@@ -341,6 +341,19 @@ module Brainstem
               end
             end
           end
+        end
+
+        it "evaluates any param root key with the controller constant if it is callable" do
+          stub.any_instance_of(subject).action_name { "show" }
+
+          subject.brainstem_params do
+            model_params Proc.new { |k| k.arbitrary_method } do |params|
+              params.valid :nested_key, info: "it's nested!"
+            end
+          end
+
+          mock(subject).arbitrary_method { :widget }
+          expect(subject.new.valid_params).to have_key("nested_key")
         end
 
         it "returns the brainstem_model_name children as a hash" do
