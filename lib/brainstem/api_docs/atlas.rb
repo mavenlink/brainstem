@@ -1,3 +1,5 @@
+require 'forwardable'
+require 'brainstem/api_docs/resolver'
 require 'brainstem/api_docs/exceptions'
 require 'brainstem/api_docs/endpoint_collection'
 require 'brainstem/api_docs/controller_collection'
@@ -12,13 +14,15 @@ require 'brainstem/concerns/optional'
 module Brainstem
   module ApiDocs
     class Atlas
+      extend Forwardable
       include Concerns::Optional
 
 
       def initialize(introspector, options = {})
-        self.endpoints          = EndpointCollection.new
-        self.controllers        = ControllerCollection.new
-        self.presenters         = ::Brainstem::ApiDocs::PresenterCollection.new
+        self.endpoints          = EndpointCollection.new(self)
+        self.controllers        = ControllerCollection.new(self)
+        self.presenters         = ::Brainstem::ApiDocs::PresenterCollection.new(self)
+        self.resolver           = Resolver.new(self)
 
         self.controller_matches = []
         self.introspector       = introspector
@@ -33,7 +37,11 @@ module Brainstem
 
       attr_accessor :endpoints,
                     :controllers,
-                    :presenters
+                    :presenters,
+                    :resolver
+
+
+      delegate :find_by_class => :resolver
 
 
       #########################################################################

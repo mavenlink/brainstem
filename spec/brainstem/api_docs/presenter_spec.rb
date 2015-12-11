@@ -1,27 +1,32 @@
 require 'spec_helper'
 require 'set'
+require 'ostruct'
 require 'brainstem/api_docs/presenter'
 
 module Brainstem
   module ApiDocs
     describe Presenter do
+      subject { described_class.new(atlas, options) }
+
+      let(:atlas) { Object.new }
+      let(:options)   { { } }
 
       describe "#initialize" do
         it "yields self if given a block" do
           block = Proc.new { |s| s.presents = "bork bork" }
-          expect(described_class.new(&block).presents).to eq "bork bork"
+          expect(described_class.new(atlas, &block).presents).to eq "bork bork"
         end
       end
 
 
       describe "configured fields" do
-        let(:lorem) { "lorem ipsum dolor sit amet" }
-        let(:const) { Object.new }
+        let(:lorem)  { "lorem ipsum dolor sit amet" }
+        let(:const)  { Object.new }
         let(:config) { {} }
-        let(:nodoc) { false }
-        let(:args) { { const: const } }
+        let(:nodoc)  { false }
+        let(:options)   { { const: const } }
 
-        subject { described_class.new(args) }
+        subject { described_class.new(atlas, options) }
 
         before do
           stub(const) do |constant|
@@ -218,7 +223,7 @@ module Brainstem
               let(:info) { nil }
 
               context "when documenting empty filters" do
-                let(:args) { { const: const, document_empty_filters: true } }
+                let(:options) { { const: const, document_empty_filters: true } }
 
                 it "is true" do
                   expect(subject.documentable_filter?(:filter, filter)).to eq true
@@ -226,7 +231,7 @@ module Brainstem
               end
 
               context "when not documenting empty filters" do
-                let(:args) { { const: const, document_empty_filters: false } }
+                let(:options) { { const: const, document_empty_filters: false } }
 
                 it "is false" do
                   expect(subject.documentable_filter?(:filter, filter)).to eq false
@@ -297,7 +302,7 @@ module Brainstem
               let(:desc) { nil }
 
               context "when documenting empty filters" do
-                let(:args) { { const: const, document_empty_associations: true } }
+                let(:options) { { const: const, document_empty_associations: true } }
 
                 it "is true" do
                   expect(subject.documentable_association?(:assoc, association)).to eq true
@@ -305,7 +310,7 @@ module Brainstem
               end
 
               context "when not documenting empty filters" do
-                let(:args) { { const: const, document_empty_associations: false } }
+                let(:options) { { const: const, document_empty_associations: false } }
 
                 it "is false" do
                   expect(subject.documentable_association?(:assoc, association)).to eq false
@@ -416,7 +421,7 @@ module Brainstem
       describe "#suggested_filename" do
         it "gsubs name and extension" do
 
-          instance = described_class.new(
+          instance = described_class.new(atlas,
             filename_pattern: "presenters/{{name}}.{{extension}}",
             presents: 'abc'
           )
@@ -431,7 +436,7 @@ module Brainstem
       describe "#suggested_filename_link" do
         it "gsubs name and extension" do
 
-          instance = described_class.new(
+          instance = described_class.new(atlas,
             filename_link_pattern: "presenters/{{name}}.{{extension}}.foo",
             presents: 'abc'
           )
@@ -443,7 +448,52 @@ module Brainstem
       end
 
 
+      describe "#relative_path_to_presenter" do
+        let(:presenter) {
+          mock!
+            .suggested_filename_link(:markdown)
+            .returns("objects/sprocket_widget")
+            .subject
+        }
+
+        it "returns a relative path" do
+          expect(subject.relative_path_to_presenter(presenter, :markdown)).to \
+            eq "sprocket_widget"
+        end
+      end
+
+
+      describe "#link_for_association" do
+        let(:presenter)    { Object.new }
+        let(:target_class) { Class.new }
+        let(:association)  { OpenStruct.new(target_class: target_class) }
+
+        context "when can find presenter" do
+          before do
+            mock(subject).find_by_class(target_class) { presenter }
+            mock(subject).relative_path_to_presenter(presenter, :markdown) { "./path" }
+          end
+
+          it "is the path" do
+            expect(subject.link_for_association(association)).to eq "./path"
+          end
+
+        end
+
+        context "when cannot find presenter" do
+          before do
+            mock(subject).find_by_class(target_class) { nil }
+          end
+
+          it "is nil" do
+            expect(subject.link_for_association(association)).to be_nil
+          end
+        end
+      end
+
+
       it_behaves_like "formattable"
+      it_behaves_like "atlas taker"
     end
   end
 end

@@ -7,10 +7,11 @@ module Brainstem
     module Formatters
       module Markdown
         describe EndpointFormatter do
-          let(:controller) { Object.new }
-          let(:endpoint) { Endpoint.new({controller: controller }.merge(endpoint_args)) }
+          let(:controller)    { Object.new }
+          let(:atlas)         { Object.new }
+          let(:endpoint)      { Endpoint.new(atlas, {controller: controller }.merge(endpoint_args)) }
           let(:endpoint_args) { {} }
-          let(:nodoc) { false }
+          let(:nodoc)         { false }
 
           subject { described_class.new(endpoint) }
 

@@ -5,14 +5,15 @@ module Brainstem
   module ApiDocs
     describe Endpoint do
       let(:lorem)   { "lorem ipsum dolor sit amet" }
+      let(:atlas)   { Object.new }
       let(:options) { {} }
-      subject       { described_class.new(options) }
+      subject       { described_class.new(atlas, options) }
 
 
       describe "#initialize" do
         it "yields self if given a block" do
           block = Proc.new { |s| s.path = "bork bork" }
-          expect(described_class.new(&block).path).to eq "bork bork"
+          expect(described_class.new(atlas, &block).path).to eq "bork bork"
         end
       end
 
@@ -285,7 +286,7 @@ module Brainstem
         actions = %w(index show create update delete articuno zapdos moltres)
 
         actions.each do |axn|
-          let(axn.to_sym) { described_class.new(action: axn.to_sym) }
+          let(axn.to_sym) { described_class.new(atlas, action: axn.to_sym) }
         end
 
         let(:axns) { actions.map {|axn| send(axn.to_sym) } }
@@ -339,6 +340,7 @@ module Brainstem
 
 
       it_behaves_like "formattable"
+      it_behaves_like "atlas taker"
     end
   end
 end

@@ -12,8 +12,9 @@ module Brainstem
       include Concerns::Formattable
 
 
-      def initialize(options = {})
-        self.endpoints = EndpointCollection.new
+      def initialize(atlas, options = {})
+        self.atlas     = atlas
+        self.endpoints = EndpointCollection.new(atlas)
         super options
         yield self if block_given?
       end
@@ -22,7 +23,8 @@ module Brainstem
       attr_accessor :const,
                     :name,
                     :endpoints,
-                    :filename_pattern
+                    :filename_pattern,
+                    :atlas
 
 
       attr_writer   :filename_pattern,
@@ -79,6 +81,7 @@ module Brainstem
 
 
       delegate :configuration => :const
+      delegate :find_by_class => :atlas
 
 
       def default_configuration

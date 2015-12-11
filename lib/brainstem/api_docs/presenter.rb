@@ -37,7 +37,8 @@ module Brainstem
       alias_method :document_empty_filters?,      :document_empty_filters
 
 
-      def initialize(options = {})
+      def initialize(atlas, options = {})
+        self.atlas = atlas
         self.document_empty_associations = Brainstem::ApiDocs.document_empty_presenter_associations
         self.document_empty_filters      = Brainstem::ApiDocs.document_empty_presenter_filters
 
@@ -60,6 +61,9 @@ module Brainstem
       end
 
 
+      attr_accessor :atlas
+
+
       def extension
         @extension ||= Brainstem::ApiDocs.output_extension
       end
@@ -76,6 +80,7 @@ module Brainstem
 
 
       delegate :configuration => :const
+      delegate :find_by_class => :atlas
 
 
       def nodoc?
@@ -148,6 +153,17 @@ module Brainstem
       end
 
 
+
+      def link_for_association(association)
+        if (associated_presenter = find_by_class(association.target_class))
+          relative_path_to_presenter(associated_presenter, :markdown)
+        else
+          nil
+        end
+      end
+
+
+
       #
       # Returns whether this association should be documented based on nodoc
       # and empty description.
@@ -190,6 +206,18 @@ module Brainstem
         configuration.has_key?(key) &&
           !configuration[key][:nodoc] &&
           configuration[key][:info]
+      end
+
+
+      #
+      # Returns the relative path between this presenter and another given
+      # presenter.
+      #
+      def relative_path_to_presenter(presenter, format)
+        my_path        = Pathname.new(File.dirname(suggested_filename_link(format)))
+        presenter_path = Pathname.new(presenter.suggested_filename_link(format))
+
+        presenter_path.relative_path_from(my_path).to_s
       end
     end
   end

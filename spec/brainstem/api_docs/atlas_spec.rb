@@ -320,6 +320,24 @@ module Brainstem
           end
         end
       end
+
+
+      describe "#find_by_class" do
+        before do
+          any_instance_of(Atlas) do |instance|
+            stub(instance) do |i|
+              i.parse_routes!
+              i.extract_presenters!
+              i.validate!
+            end
+          end
+        end
+
+        it "delegates to the resolver" do
+          mock(subject.resolver).find_by_class(nil)
+          subject.find_by_class(nil)
+        end
+      end
     end
   end
 end

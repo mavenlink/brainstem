@@ -2,8 +2,7 @@ shared_examples "formattable" do
   describe "formatting" do
     let(:formatter) { Object.new }
     let(:formatters) { { markdown: formatter } }
-
-    subject { described_class.new(formatters: formatters) }
+    let(:options) { { formatters: formatters } }
 
     describe "#formatted_as" do
       it "looks up the formatter and calls that" do

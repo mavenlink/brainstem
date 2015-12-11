@@ -10,7 +10,7 @@ module Brainstem
       # Creates a new controller from a route object and appends it to the
       # collection.
       def create_from_route(route)
-        Controller.new(
+        Controller.new(atlas,
           const:  route[:controller],
           name:   route[:controller_name].split("/").last
         ).tap { |controller| self.<< controller }

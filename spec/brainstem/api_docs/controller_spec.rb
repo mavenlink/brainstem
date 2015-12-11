@@ -4,10 +4,14 @@ require 'brainstem/api_docs/controller'
 module Brainstem
   module ApiDocs
     describe Controller do
+      subject       { described_class.new(atlas, options) }
+      let(:atlas)   { Object.new }
+      let(:options) { {} }
+
       describe "#initialize" do
         it "yields self if given a block" do
           block = Proc.new { |s| s.name = "bork bork" }
-          expect(described_class.new(&block).name).to eq "bork bork"
+          expect(described_class.new(atlas, &block).name).to eq "bork bork"
         end
       end
 
@@ -29,8 +33,7 @@ module Brainstem
         let(:default_config) { {} }
         let(:show_config)    { {} }
         let(:nodoc)          { false }
-
-        subject              { described_class.new(const: const) }
+        let(:options)        { { const: const } }
 
         before do
           stub(const) do |constant|
@@ -186,7 +189,7 @@ module Brainstem
 
 
         it "gsubs namespace, filename and extension" do
-          instance = described_class.new(
+          instance = described_class.new(atlas,
             filename_pattern: "controllers/{{namespace}}/{{name}}_controller.{{extension}}",
             name: 'api/v1/abc',
             const: const,
@@ -203,7 +206,7 @@ module Brainstem
       describe "#suggested_filename_link" do
         it "gsubs filename and extension" do
 
-          instance = described_class.new(
+          instance = described_class.new(atlas,
             filename_link_pattern: "controllers/{{name}}_controller.{{extension}}.foo",
             name: 'abc'
           )
@@ -216,6 +219,7 @@ module Brainstem
 
 
       it_behaves_like "formattable"
+      it_behaves_like "atlas taker"
     end
   end
 end
