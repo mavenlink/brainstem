@@ -17,23 +17,6 @@ module Brainstem
       end
 
 
-      describe "#to_h" do
-        it "dumps the object to a hash" do
-          instance = described_class.new do |b|
-            b.path = "bork bork"
-          end
-
-          expect(instance.to_h).to eq({
-            path: "bork bork",
-            http_methods: nil,
-            controller: nil,
-            controller_name: nil,
-            action: nil
-          })
-        end
-      end
-
-
       describe "#merge_http_methods!" do
         let(:options) { { http_methods: %w(GET) } }
 
