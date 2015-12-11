@@ -50,22 +50,6 @@ module Brainstem
 
 
       #
-      # Serializes the endpoint to a hash for dumping purposes.
-      #
-      def to_h
-        {
-          path:            path,
-          http_methods:    http_methods,
-          controller:      controller,
-          controller_name: controller_name,
-          action:          action
-        }
-      end
-
-      alias_method :to_hash, :to_h
-
-
-      #
       # Merges http methods (for de-duping Rails' routes).
       #
       def merge_http_methods!(methods)
