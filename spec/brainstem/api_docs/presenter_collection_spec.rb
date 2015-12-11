@@ -5,9 +5,10 @@ module Brainstem
   module ApiDocs
     describe PresenterCollection do
       let(:presenter) { Object.new }
+      let(:atlas)     { Object.new }
+      let(:options)   { {} }
 
-      subject { ::Brainstem::ApiDocs::PresenterCollection.new }
-
+      subject { described_class.new(atlas, options) }
 
       describe "#find_by_presents" do
         before do
@@ -34,8 +35,7 @@ module Brainstem
 
       describe "#create_from_presents" do
         let(:pclm) { Object.new }
-        subject { ::Brainstem::ApiDocs::PresenterCollection.new(presenter_constant_lookup_method: pclm) }
-
+        let(:options) { { presenter_constant_lookup_method: pclm } }
 
         context "when can find constant" do
           before do
@@ -63,7 +63,7 @@ module Brainstem
         end
       end
 
-
+      it_behaves_like "atlas taker"
     end
   end
 end

@@ -20,7 +20,7 @@ module Brainstem
 
 
       def create_from_route(route, controller)
-        Endpoint.new do |ep|
+        Endpoint.new(atlas) do |ep|
           ep.path             = route[:path]
           ep.http_methods     = route[:http_methods]
           ep.controller       = controller
@@ -31,22 +31,22 @@ module Brainstem
 
 
       def only_documentable
-        self.class.with_members(reject(&:nodoc?))
+        self.class.with_members(atlas, reject(&:nodoc?))
       end
 
 
       def with_declared_presents
-        self.class.with_members(reject { |m| m.declared_presents.nil? })
+        self.class.with_members(atlas, reject { |m| m.declared_presents.nil? })
       end
 
 
       def sorted
-        self.class.with_members(sort)
+        self.class.with_members(atlas, sort)
       end
 
 
       def with_actions_in_controller(const)
-        self.class.with_members(reject { |m| !const.method_defined?(m.action) })
+        self.class.with_members(atlas, reject { |m| !const.method_defined?(m.action) })
       end
 
 

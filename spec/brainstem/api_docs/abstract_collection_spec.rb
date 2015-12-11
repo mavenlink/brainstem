@@ -4,9 +4,12 @@ require 'brainstem/api_docs/abstract_collection'
 module Brainstem
   module ApiDocs
     describe AbstractCollection do
+      let(:atlas)    { Object.new }
       let(:member)   { Object.new }
       let(:member_2) { Object.new }
       let(:members)  { [ member, member_2 ] }
+
+      subject { described_class.new(atlas) }
 
       describe "#last" do
         it "retrieves the last member" do
@@ -125,7 +128,7 @@ module Brainstem
 
 
       describe ".with_members" do
-        subject { described_class.with_members(member) }
+        subject { described_class.with_members(atlas, member) }
 
         it "creates a new instance with passed members" do
           expect(subject).to be_a described_class
@@ -134,7 +137,7 @@ module Brainstem
 
       end
 
-
+      it_behaves_like "atlas taker"
     end
   end
 end

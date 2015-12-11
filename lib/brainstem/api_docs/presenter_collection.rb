@@ -39,7 +39,7 @@ module Brainstem
       # the constant lookup for the actual presenter class fails, returns nil.
       #
       def create_from_presents(presents)
-        ::Brainstem::ApiDocs::Presenter.new(
+        ::Brainstem::ApiDocs::Presenter.new(atlas,
           presents: presents,
           const:    presenter_name_to_const(presents)
         ).tap { |p| self.<< p }

@@ -7,8 +7,9 @@ module Brainstem
     module Formatters
       module Markdown
         describe EndpointCollectionFormatter do
-          let(:endpoint_collection) { EndpointCollection.new }
-          let(:nodoc) { false }
+          let(:atlas)               { Object.new }
+          let(:endpoint_collection) { EndpointCollection.new(atlas) }
+          let(:nodoc)               { false }
 
           subject { described_class.new(endpoint_collection) }
 

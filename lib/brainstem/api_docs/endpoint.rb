@@ -28,7 +28,8 @@ module Brainstem
       end
 
 
-      def initialize(options = {})
+      def initialize(atlas, options = {})
+        self.atlas = atlas
         super options
         yield self if block_given?
       end
@@ -38,7 +39,8 @@ module Brainstem
                     :http_methods,
                     :controller,
                     :controller_name,
-                    :action
+                    :action,
+                    :atlas
 
 
       #
@@ -47,22 +49,6 @@ module Brainstem
       def to_s
         "#{http_methods.join(" / ")} #{path}"
       end
-
-
-      #
-      # Serializes the endpoint to a hash for dumping purposes.
-      #
-      def to_h
-        {
-          path:            path,
-          http_methods:    http_methods,
-          controller:      controller,
-          controller_name: controller_name,
-          action:          action
-        }
-      end
-
-      alias_method :to_hash, :to_h
 
 
       #
@@ -148,7 +134,8 @@ module Brainstem
               next hsh if data[:nodoc]
 
               if data.has_key?(:root)
-                (hsh[data.delete(:root)] ||= []) << field_name
+                key  = data[:root].respond_to?(:call) ? data[:root].call(controller.const) : data[:root]
+                (hsh[key] ||= []) << field_name
               else
                 hsh[field_name] = nil
               end
@@ -191,6 +178,7 @@ module Brainstem
       # Helper for retrieving configuration from its controller.
       #
       delegate :configuration => :controller
+      delegate :find_by_class => :atlas
 
 
       #
@@ -229,6 +217,10 @@ module Brainstem
       end
 
 
+      #
+      # Returns the relative path from this endpoint's controller to this
+      # endpoint's declared presenter.
+      #
       def relative_presenter_path_from_controller(format)
         if presenter && controller
           controller_path = Pathname.new(File.dirname(controller.suggested_filename_link(format)))

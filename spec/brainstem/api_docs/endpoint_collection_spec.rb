@@ -4,7 +4,11 @@ require 'brainstem/api_docs/endpoint_collection'
 module Brainstem
   module ApiDocs
     describe EndpointCollection do
+      let(:atlas)    { Object.new }
+      let(:options)  { {} }
       let(:endpoint) { Object.new }
+
+      subject { described_class.new(atlas, options) }
 
 
       describe "#find_from_route" do
@@ -133,9 +137,8 @@ module Brainstem
       end
 
 
-
-
       it_behaves_like "formattable"
+      it_behaves_like "atlas taker"
     end
   end
 end

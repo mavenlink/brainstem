@@ -8,8 +8,9 @@ module Brainstem
       module Markdown
         describe ControllerFormatter do
           let(:const)      { Object.new }
-          let(:controller) { Controller.new(const: const) }
-          let(:configuration) { }
+          let(:atlas)      { Object.new }
+          let(:controller) { Controller.new(atlas, const: const) }
+          let(:configuration) { {} }
 
           let(:endpoint_1) { Object.new }
           let(:endpoints)  { [ endpoint_1 ] }

@@ -1,3 +1,4 @@
+require 'forwardable'
 require 'brainstem/concerns/optional'
 require 'brainstem/concerns/formattable'
 
@@ -5,6 +6,7 @@ module Brainstem
   module ApiDocs
     class AbstractCollection
       include Enumerable
+      extend Forwardable
       include Concerns::Optional
       include Concerns::Formattable
 
@@ -13,15 +15,21 @@ module Brainstem
       # reduce operations which should return a subset of members but retain
       # the same utility.
       #
-      def self.with_members(*members)
-        new.tap {|n| members.flatten.each { |m| n << m } }
+      def self.with_members(atlas, *members)
+        new(atlas).tap {|n| members.flatten.each { |m| n << m } }
       end
 
 
-      def initialize(options = {})
+      def initialize(atlas, options = {})
+        self.atlas   = atlas
         self.members = []
         super options
       end
+
+
+      attr_accessor :atlas
+
+      delegate :find_by_class => :atlas
 
 
       #

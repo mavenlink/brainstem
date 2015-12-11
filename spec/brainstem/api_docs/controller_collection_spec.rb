@@ -5,6 +5,10 @@ module Brainstem
   module ApiDocs
     describe ControllerCollection do
       let(:controller) { Object.new }
+      let(:atlas)      { Object.new }
+      let(:options)    { {} }
+
+      subject { described_class.new(atlas, options) }
 
       describe "#find_by_route" do
         before do
@@ -82,6 +86,7 @@ module Brainstem
       end
 
       it_behaves_like "formattable"
+      it_behaves_like "atlas taker"
     end
   end
 end

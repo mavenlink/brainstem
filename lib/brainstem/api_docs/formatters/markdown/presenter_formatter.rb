@@ -170,7 +170,9 @@ module Brainstem
             if presenter.valid_associations.any?
               output << md_ul do
                 presenter.valid_associations.inject("") do |buffer, (_, association)|
-                  text  = md_inline_code(association.name)
+                  link = presenter.link_for_association(association)
+                  text = md_inline_code(association.name)
+                  text = md_a(text, link) if link
 
                   text << "\n"
                   text << md_li(association.description, 1) \

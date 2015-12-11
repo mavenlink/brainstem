@@ -385,9 +385,11 @@ module Brainstem
 
             describe "format_associations!" do
               let(:associations) { {} }
+              let(:link) { nil }
 
               before do
                 stub(presenter).valid_associations { associations }
+                stub(presenter).link_for_association(anything) { link }
                 subject.send(:format_associations!)
               end
 
@@ -405,9 +407,22 @@ module Brainstem
                   }
                 }
 
-                it "lists them" do
-                  expect(subject.output.scan(/\n-/).count).to eq 1
-                  expect(subject.output).to include "`widgets`"
+                context "when has static target class" do
+                  let(:link) { "./path" }
+
+                  it "links them" do
+                    expect(subject.output.scan(/\n-/).count).to eq 1
+                    expect(subject.output).to include "[`widgets`](./path)"
+                  end
+                end
+
+                context "when has polymorphic target class or presenter was not found" do
+                  let(:link) { nil }
+
+                  it "lists them" do
+                    expect(subject.output.scan(/\n-/).count).to eq 1
+                    expect(subject.output).to include "`widgets`"
+                  end
                 end
 
                 describe "description" do
