@@ -457,6 +457,66 @@ module Brainstem
           expect(subject.new.send(:contextual_key, :show, :description)[:info]).to eq "blah"
         end
       end
+
+
+      describe "inheritance" do
+        let(:subclass) { Class.new(subject) { def inspect; "#{self.__inspect__} (Subclass)"; end } }
+
+        context "when the brainstem model name is the same" do
+          before do
+            stub.any_instance_of(subject).brainstem_model_name { :widget }
+            subject.brainstem_params do
+              model_params(:widget) do |p|
+                p.valid :title, info: "title field"
+                p.valid :description, info: "description field"
+              end
+
+              actions :show do
+                model_params(:widget) do |p|
+                  p.valid :id, info: "id field"
+                end
+              end
+            end
+
+            stub.any_instance_of(subclass).brainstem_model_name { :widget }
+            subclass.brainstem_params do
+              model_params(:widget) do |p|
+                p.valid :title, info: "alt title field"
+              end
+
+              actions :show do
+              end
+            end
+
+          end
+
+          it "inherits parameters" do
+            expect(subject.new.valid_params_for(:show)).to eq({
+              "title"       => { "info" => "title field",       "root" => "widget" },
+              "description" => { "info" => "description field", "root" => "widget" },
+              "id"          => { "info" => "id field",          "root" => "widget" },
+            })
+
+            expect(subclass.new.valid_params_for(:show)).to eq({
+              "title"       => { "info" => "alt title field",   "root" => "widget" },
+              "description" => { "info" => "description field", "root" => "widget" },
+              "id"          => { "info" => "id field",          "root" => "widget" },
+            })
+          end
+        end
+
+        context "when the brainstem model name is different" do
+          context "when specified" do
+            it "does not inherit parameters" do
+            end
+          end
+
+          context "when unspecified" do
+            it "inherits parameters" do
+            end
+          end
+        end
+      end
     end
   end
 end
