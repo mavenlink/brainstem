@@ -132,7 +132,7 @@ module Brainstem
         #     scope that was yielded.
         #
         def filter(name, options = {}, &block)
-          valid_options = %w(default info include_params)
+          valid_options = %w(default info include_params nodoc)
           options.select! { |k, v| valid_options.include?(k.to_s) }
 
           configuration[:filters][name] = options.merge({
