@@ -18,10 +18,10 @@ module Brainstem
           ::Rails.application.eager_load!
 
           validate!
-        rescue LoadError
+        rescue LoadError => e
           raise IncorrectIntrospectorForAppException,
             "Hosting app does not appear to be a Rails app." +
-            "You may have to manually specify an Introspector."
+            "You may have to manually specify an Introspector (#{e.message})."
         end
 
 
