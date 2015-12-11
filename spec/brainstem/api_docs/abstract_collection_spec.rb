@@ -48,6 +48,7 @@ module Brainstem
 
         describe "#filenames" do
           it "maps all its members" do
+            stub(member).formatted_as(:markdown, {}) { "blah" }
             mock(member).suggested_filename(:markdown) { "member.markdown" }
             expect(subject.filenames(:markdown)).to eq [ "member.markdown" ]
           end
@@ -56,6 +57,7 @@ module Brainstem
 
         describe "#each_filename" do
           it "maps all its controllers and yields each in turn" do
+            stub(member).formatted_as(:markdown, {}) { "blah" }
             mock(member).suggested_filename(:markdown) { "member.markdown" }
             expect { |block| subject.each_filename(:markdown, &block) }.to \
               yield_with_args("member.markdown")
@@ -73,6 +75,11 @@ module Brainstem
             mock(member).formatted_as(:markdown, blah: true) { "blah" }
             subject.formatted(:markdown, blah: true)
           end
+
+          it "rejects empty" do
+            mock(member).formatted_as(:markdown, {}) { "" }
+            expect(subject.formatted(:markdown)).to eq []
+          end
         end
 
 
@@ -89,6 +96,12 @@ module Brainstem
             stub(member).suggested_filename(:markdown) { "member.markdown" }
 
             subject.formatted_with_filename(:markdown, blah: true)
+          end
+
+          it "rejects empty" do
+            mock(member).formatted_as(:markdown, {}) { "" }
+            stub(member).suggested_filename(:markdown) { "member.markdown" }
+            expect(subject.formatted_with_filename(:markdown)).to eq []
           end
         end
 

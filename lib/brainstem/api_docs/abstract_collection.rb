@@ -61,14 +61,18 @@ module Brainstem
       #
       def formatted(format, options = {})
         map { |member| member.formatted_as(format, options) }
+          .reject(&:empty?)
       end
 
 
       #
       # Returns a list of each member's filename.
       #
+      # We internally refer to `formatted_with_filename` here because we don't
+      # want to include any filenames of empty files (i.e. nodoc).
+      #
       def filenames(format)
-        map { |member| member.suggested_filename(format) }
+        formatted_with_filename(format).map { |arr| arr[1] }
       end
 
 
@@ -80,6 +84,7 @@ module Brainstem
           member.formatted_as(format, options),
           member.suggested_filename(format)
         ] }
+          .reject { |(buffer, _)| buffer.empty? }
       end
 
 
