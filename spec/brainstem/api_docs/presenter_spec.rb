@@ -10,6 +10,7 @@ module Brainstem
 
       let(:atlas) { Object.new }
       let(:options)   { { } }
+      let(:nodoc)  { false }
 
       describe "#initialize" do
         it "yields self if given a block" do
@@ -23,7 +24,6 @@ module Brainstem
         let(:lorem)  { "lorem ipsum dolor sit amet" }
         let(:const)  { Object.new }
         let(:config) { {} }
-        let(:nodoc)  { false }
         let(:options)   { { const: const } }
 
         subject { described_class.new(atlas, options) }
@@ -471,11 +471,22 @@ module Brainstem
         context "when can find presenter" do
           before do
             mock(subject).find_by_class(target_class) { presenter }
-            mock(subject).relative_path_to_presenter(presenter, :markdown) { "./path" }
+            stub(subject).relative_path_to_presenter(presenter, :markdown) { "./path" }
+            stub(presenter).nodoc? { nodoc }
           end
 
-          it "is the path" do
-            expect(subject.link_for_association(association)).to eq "./path"
+          context "when nodoc" do
+            let(:nodoc) { true }
+
+            it "is nil" do
+              expect(subject.link_for_association(association)).to be_nil
+            end
+          end
+
+          context "when not nodoc" do
+            it "is the path" do
+              expect(subject.link_for_association(association)).to eq "./path"
+            end
           end
 
         end

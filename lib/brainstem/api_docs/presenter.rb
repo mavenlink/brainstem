@@ -155,13 +155,13 @@ module Brainstem
 
 
       def link_for_association(association)
-        if (associated_presenter = find_by_class(association.target_class))
+        if (associated_presenter = find_by_class(association.target_class)) &&
+            !associated_presenter.nodoc?
           relative_path_to_presenter(associated_presenter, :markdown)
         else
           nil
         end
       end
-
 
 
       #
