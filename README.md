@@ -119,6 +119,7 @@ The `Brainstem::ControllerMethods` concern provides:
 * `brainstem_model_name` which is inferred from your controller name or settable with `self.brainstem_model_name = :thing`.
 * `brainstem_present` and `brainstem_present_object` for presenting a scope of models or a single model.
 * `brainstem_model_error` and `brainstem_system_error` for presenting model and system error messages.
+* Various methods for auto-documentation of your API.
 
 ### Controller Best Practices
 
@@ -164,7 +165,7 @@ module Api
 end
 ```
 
-### Setup Rails to load Brainstem
+### Setup Rails to Load Brainstem
 
 To configure Brainstem for development and production, we do the following:
 
@@ -173,8 +174,9 @@ To configure Brainstem for development and production, we do the following:
 2) We setup an initializer in `config/initializers/brainstem.rb`, similar to the following:
 
 ```ruby
-# In order to support live code reload in the development environment, we register a `to_prepare` callback.  This
-# runs once in production (before the first request) and whenever a file has changed in development.
+# In order to support live code reload in the development environment, we
+# register a `to_prepare` callback. This # runs once in production (before the
+# first request) and whenever a file has changed in development.
 Rails.application.config.to_prepare do
   # Forget all Brainstem configuration.
   Brainstem.reset!
@@ -182,9 +184,11 @@ Rails.application.config.to_prepare do
   # Set the current default API namespace.
   Brainstem.default_namespace = :v1
 
-  # (Optional) Load a default base helper into all presenters. You could use this to bring in a concept like `current_user`.
-  # While not necessarily the best approach, something like http://stackoverflow.com/a/11670283 can currently be used to
-  # access the requesting user inside of a Brainstem presenter. We hope to clean this up by allowing a user to be passed in
+  # (Optional) Load a default base helper into all presenters. You could use
+  # this to bring in a concept like `current_user`.  # While not necessarily the
+  # best approach, something like http://stackoverflow.com/a/11670283 can
+  # currently be used to # access the requesting user inside of a Brainstem
+  # presenter. We hope to clean this up by allowing a user to be passed in #
   # when presenting in the future.
   module ApiHelper
     def current_user
@@ -271,19 +275,77 @@ Brainstem parses the request params and supports the following:
 
 --
 
-## Automatically Generating API Documentation
 
-### The `brainstem` executable
+## The `brainstem` executable
 
-TODO
+The `brainstem` executable provided with the gem is at the moment used only to
+generate API docs from the command line, but you can verify which commands are
+available simply by running:
+
+```sh
+bundle exec brainstem
+```
+
+This will give you a list of all available commands. Additional help is
+available for each command, and can be found by passing the command
+the `help` flag, i.e.:
+
+```sh
+bundle exec brainstem generate --help
+```
+
+--
 
 
-### Presenters / Data Models
+## API Documentation
+
+### The `generate` command`
+
+Running `bundle exec brainstem generate [ARGS]` will generate the documentation
+extracted from your properly annotated presenters and controllers.
+
+Note that this does not, at present, *remove* existing docs that may be present
+from a previous generation, so it is recommended that you use this executable as
+part of a large shell script that empties your directory and regenerates over
+top of it if you expect much churn.
+
+### Customizing behaviour
+
+While options can be passed on the command line, this can complicate the
+invocation, especially when the desired settings are often specific to the
+project and do not often change.
+
+As a result, it is possible to specify options through an initializer in your
+application that will be used in the absence of command-line flags. Thus,
+configuration precedence is in the following order:
+
+1. Command-line flags;
+2. Initializer settings;
+3. Built-in defaults.
+
+To see a list of the available command-line options, run `bundle exec brainstem
+generate --help`.
+
+To see a list of the available initializer settings, view
+[lib/brainstem/api_docs.rb](./lib/brainstem/api_docs.rb). You can configure
+these in your initializers just by setting them:
+
+```ruby
+# config/initializers/brainstem.rb
+
+Brainstem::ApiDocs.tap do |config|
+  config.write_path = "/path/to/output"
+end
+```
+
+### Annotating an API
+
+#### Presenters / Data Models
 
 By and large, Presenters are self-documenting: simply using them as intended
 will yield a panoply of data.
 
-#### Docstrings
+##### Docstrings
 
 All common methods that do not explicitly take a description take an `:info`
 option, which allows for the specification of an explanatory documentation
@@ -324,7 +386,7 @@ The following do not accept documentation:
 - `default_sort_order`
 - `preload`
 
-#### Nodoc
+##### Nodoc
 
 The following methods accept a `:nodoc` boolean option, which indicates that the
 documentation should be suppressed for this particular entry:
@@ -336,7 +398,7 @@ documentation should be suppressed for this particular entry:
 - `request` / `model` &mdash; causes the conditional not to be
      listed on any field which specifies it
 
-#### Additional Documentables
+##### Additional Documentables
 
 In addition to the above, there are three additional methods in the DSL designed
 primarily for documentation:
@@ -349,7 +411,7 @@ primarily for documentation:
     Presenter.
     - `nodoc: true` &mdash; displays no description
 
-#### Example
+##### Example
 
 ```ruby
 class PostsPresenter < Brainstem::Presenter
@@ -381,11 +443,7 @@ class PostsPresenter < Brainstem::Presenter
 end
 ```
 
-### Controllers
-
-It's necessary to include the `Brainstem::Concerns::ControllerDSL` module in
-any controller that you wish to document. (It's probably easiest to add this to
-`ApplicationController` or your `ApiController`.)
+#### Controllers
 
 The configuration for a controller takes place inside the `brainstem_params` block, e.g.:
 
@@ -399,7 +457,7 @@ class PostsController < ApiController
 end
 ```
 
-#### Action Contexts
+##### Action Contexts
 
 Configuration that is specified within the root level of the `brainstem_params`
 block is applied to the entire controller, and every action within the
@@ -452,13 +510,111 @@ class PostsController << ApiController; end
 In this example, `PostsController` will list no presenter for its `destroy`
 method as it inherits this from `ApiController`.
 
-#### `title` / `description` / `nodoc!`
+**It is important to specify everything at the most specific level possible.**
+Action contexts have a higher priority than defaults, and will fall back to the
+action context of the parent controller before they check the default of the
+child controller. It's therefore recommended that your documentation be kept
+in action contexts as much as possible.
 
-#### `valid` / `model_params`
+##### `title` / `description` / `nodoc!`
 
-#### `presents`
+Any of these can be used inside an action context as well.
 
-#### `transforms`
+```ruby
+class BlogPostsController < ApiController
+  brainstem_params do
+
+    # Make the displayed title of this controller "Posts"
+    title "Posts" 
+
+    # Fall back to 'BlogPostsController' for a title
+    title, "Posts", nodoc: true
+
+    # Show description
+    description "Access blog posts through these endpoints."
+
+    # Hide description
+    description "...", nodoc: true
+
+    # Do not document this controller or any of its endpoints!
+    nodoc!
+
+    actions :index do
+      # Set the title of this action
+      title "Listing blog posts"
+      description "..."
+    end
+
+    actions :show do
+      # Do not display this action.
+      nodoc!
+    end
+
+  end
+end
+
+
+##### `valid` / `model_params`
+
+```
+class BlogPostsController < ApiController
+  brainstem_params do
+
+    # Add an `:category_id` param to all actions in this controller / children:
+    valid :category_id, info: "(required) the category's ID"
+
+    # Do not document this additional field.
+    valid :lang,
+      info: (optional) the language of the requested post",
+      nodoc: true
+
+    actions :show do
+      # Declare a nested param under the `brainstem_model_name` root key,
+      # i.e. `params[:blog_post][:id]`):
+      model_params do |post|
+        post.valid :id, info: "(required) the id of the post"
+      end
+    end
+
+    actions :share do
+      # Declare a nested param with an explicit root key:, i.e. `params[:share][...]`
+      model_param :share do
+        # ...
+      end
+    end
+
+
+    def self.param_root
+      :widgets
+    end
+
+
+    actions :update do
+      # Declare a dynamic root key, i.e. `params[:widgets][:id]`
+      model_params(-> (controller_klass) { controller_class.param_root } do |p|
+        p.valid :id #, ...
+      end
+    end
+  end
+end
+
+
+##### `presents`
+
+```
+class BlogPostsController < ApiController
+  brainstem_params do
+    # Includes a link to the presenter for `BlogPost` in each action.
+    presents BlogPost
+  end
+```
+
+### Extending and Customizing the API Documentation
+
+For more information on extending and customizing the API documentation, please
+see the
+[API Doc Generator developer documentation](./docs/api_doc_generator.markdown).
+
 
 --
 
