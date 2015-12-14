@@ -566,7 +566,7 @@ class BlogPostsController < ApiController
 
     # Do not document this additional field.
     valid :lang,
-      info: (optional) the language of the requested post",
+      info: "(optional) the language of the requested post",
       nodoc: true
 
     actions :show do
