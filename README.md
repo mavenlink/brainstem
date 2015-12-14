@@ -557,7 +557,7 @@ end
 
 ##### `valid` / `model_params`
 
-```
+```ruby
 class BlogPostsController < ApiController
   brainstem_params do
 
@@ -598,11 +598,11 @@ class BlogPostsController < ApiController
     end
   end
 end
-
+```
 
 ##### `presents`
 
-```
+```ruby
 class BlogPostsController < ApiController
   brainstem_params do
     # Includes a link to the presenter for `BlogPost` in each action.
