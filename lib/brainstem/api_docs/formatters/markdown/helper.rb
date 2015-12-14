@@ -42,7 +42,7 @@ module Brainstem
 
 
           def md_p(text)
-            md_chunks_of_width(text, 80).join("\n") + "\n\n"
+            text + "\n\n"
           end
 
 
@@ -68,17 +68,6 @@ module Brainstem
 
           def md_a(text, link)
             "[#{text}](#{link})"
-          end
-
-
-          private
-
-          def md_chunks_of_width(text, width = 80)
-            text.scan(%r{
-              \S.{0,#{width}} # Look for words of length 0-80
-              \S(?=\s|$)      # Positive lookahead to end of string or whitespace
-              |\S+            # Or the whole string.
-            }x)
           end
         end
       end

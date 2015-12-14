@@ -34,8 +34,8 @@ module Brainstem
 
 
           describe "#md_p" do
-            it "chunks and joins with newlines and terminates with two newlines" do
-              expect(subject.md_p(lipsum)).to eq(lipsum_split_80.join("\n") + "\n\n")
+            it "appends two newlines" do
+              expect(subject.md_p(lipsum)).to eq(lipsum + "\n\n")
             end
           end
 
@@ -91,13 +91,6 @@ module Brainstem
           describe "#md_a" do
             it "renders the text in a bracket and includes a link in parens" do
               expect(subject.md_a("text", "link.md")).to eq "[text](link.md)"
-            end
-          end
-
-
-          describe "#md_chunks_of_width" do
-            it "wraps text at/before 80 chars" do
-              expect(subject.send(:md_chunks_of_width, lipsum)).to eq lipsum_split_80
             end
           end
         end
