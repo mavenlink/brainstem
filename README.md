@@ -299,7 +299,7 @@ bundle exec brainstem generate --help
 
 ## API Documentation
 
-### The `generate` command`
+### The `generate` command
 
 Running `bundle exec brainstem generate [ARGS]` will generate the documentation
 extracted from your properly annotated presenters and controllers.
@@ -552,6 +552,7 @@ class BlogPostsController < ApiController
 
   end
 end
+```
 
 
 ##### `valid` / `model_params`
