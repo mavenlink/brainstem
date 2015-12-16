@@ -338,7 +338,7 @@ module Brainstem
       end
 
 
-      describe "#valid_params" do
+      describe "#brainstem_valid_params" do
         let(:brainstem_model_name) { "widget" }
 
         before do
@@ -373,13 +373,13 @@ module Brainstem
           end
 
           mock(subject).arbitrary_method { :widget }
-          expect(subject.new.valid_params).to have_key("nested_key")
+          expect(subject.new.brainstem_valid_params).to have_key("nested_key")
         end
 
         it "returns the brainstem_model_name children as a hash" do
           stub.any_instance_of(subject).action_name { "show" }
 
-          expect(subject.new.valid_params).to eq({
+          expect(subject.new.brainstem_valid_params).to eq({
             "sprocket_name" => { "info" => "sprockets[sprocket_name] is required", "root" => "widget" },
             "sprocket_parent_id" => { "info" => "sprockets[sprocket_parent_id] is required", "root" => "widget" }
           })
@@ -391,7 +391,7 @@ module Brainstem
           end
 
           it "returns the valid params for the current action merged with default" do
-            expect(subject.new.valid_params.keys.sort).to eq ["sprocket_name", "sprocket_parent_id"]
+            expect(subject.new.brainstem_valid_params.keys.sort).to eq ["sprocket_name", "sprocket_parent_id"]
           end
         end
 
@@ -403,7 +403,7 @@ module Brainstem
           end
 
           it "falls back to the valid params for the default context" do
-            expect(subject.new.valid_params.keys.sort).to eq ["sprocket_parent_id"]
+            expect(subject.new.brainstem_valid_params.keys.sort).to eq ["sprocket_parent_id"]
           end
         end
       end

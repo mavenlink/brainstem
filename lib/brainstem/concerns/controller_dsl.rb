@@ -245,7 +245,7 @@ module Brainstem
       # @return [Hash{String => String, Hash] a hash of pairs of param names and
       # descriptions or sub-hashes.
       #
-      def valid_params(requested_context = action_name.to_sym, root_param_name = brainstem_model_name)
+      def brainstem_valid_params(requested_context = action_name.to_sym, root_param_name = brainstem_model_name)
         contextual_key(requested_context, :valid_params)
           .to_h
           .select do |k, v|
@@ -253,7 +253,7 @@ module Brainstem
             root.to_s == root_param_name.to_s
           end
       end
-      alias_method :valid_params_for, :valid_params
+      alias_method :brainstem_valid_params_for, :brainstem_valid_params
 
 
       #
