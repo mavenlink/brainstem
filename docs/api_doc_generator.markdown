@@ -1,10 +1,128 @@
-# API Doc Generator
+# API Doc Generator: Developer's Guide
 
-Usage:
+This documentation explains the intricacies of Brainstem's built-in API
+documentation generation capabilities. For brevity, we refer to this
+particular application as 'docgen'.
 
-`brainstem generate OPTIONS`
+## Execution
 
-## Developer Overview
+`bundle exec brainstem generate [ARGS]`
+
+## Customizing Output
+
+#### Making Small Customizations to the Existing Formatters
+
+It is easy to make small customizations to the formatters simply by subclassing
+them, customizing behaviour as you'd like, and then registering over top of an
+existing formatter.
+
+For instance, if you wanted to add a horizontal rule after an endpoint's title:
+
+```ruby
+# config/initializers/brainstem.rb
+require 'brainstem/api_docs/formatters/markdown/endpoint_formatter'
+
+class MyEndpointFormatter < Brainstem::ApiDocs::Formatters::Markdown::EndpointFormatter
+  def format_title!
+    super
+    output << md_hr
+  end
+end
+
+Brainstem::ApiDocs::FORMATTERS[:endpoint][:markdown] = MyFormatter.method(:call)
+```
+
+You can refer to [all the formatters](../lib/brainstem/api_docs/formatters) to
+see what is possible.
+
+#### Adding Custom Formats
+
+Do exactly as above, but instead of declaring it as an existing formatter,
+declare the formatter as one of your own choosing:
+
+```ruby
+Brainstem::ApiDocs::FORMATTERS[:endpoint][:my_format] = MyFormatter.method(:call)
+```
+
+Instead of choosing to inherit from an existing format, you can choose also to
+inherit from `Brainstem::ApiDocs::Formatters::AbstractFormatter` as well.
+
+Note that formatters at this time make concrete references to their own format,
+so if you decide to inherit from existing formatters, you will have to make
+sure these references are changed appropriately.
+
+##### Accessing sibling data from formatters
+
+A formatter formats a wrapping object which serves as a viewmodel to an actual
+entity in your application, such as an `ActionController::Base` or a
+`Brainstem::Presenter`. There are also additional wrapping objects which hold
+collections of these singular wrappers.
+
+These wrappers include the following:
+
+- `Brainstem::ApiDocs::Presenter`
+- `Brainstem::ApiDocs::Endpoint`
+- `Brainstem::ApiDocs::Controller`
+- `Brainstem::ApiDocs::PresenterCollection`
+- `Brainstem::ApiDocs::EndpointCollection`
+- `Brainstem::ApiDocs::Controller`
+
+In some situations, you may want to include documentation for adjacent or or
+similar but unrelated wrapper object. Each of these wrapping objects has a
+method called `find_by_class`, which can return these adjacent objects.
+
+At the moment, finding the following is supported:
+
+- `Presenter`:
+    - find by `target_class`, e.g.
+        - `presenter = find_by_class(association.target_class)`
+        - `presenter = find_by_class(User)`
+
+The object responsible for the lookup functionality is the
+`Brainstem::ApiDocs::Resolver`, which can be reopened if necessary to provide
+further lookups.
+
+#### Adding Additional Configurable Options
+
+The `Brainstem::ApiDocs` module serves double-duty as the receptacle for
+configuration information, and is used throughout the docgen application in
+order to provide alternatives to defaults.
+
+This can be very handy in any of your customizations, and it is relatively easy
+to add, so long as your configuration is used after the host application is
+booted up (see [Phases](#phases)).  Simply re-open the module in your
+initializer, add your desired `config_accessor`, and refer to the constant in
+your formatters:
+
+```ruby
+# config/initializers/brainstem.rb
+
+module Brainstem
+  module ApiDocs
+    config_accessor(:my_config_option) { false }
+  end
+end
+```
+
+```ruby
+# my_formatter.rb
+
+Brainstem::ApiDocs.my_config_option
+```
+
+## Architectural Overview
+
+### Primary Phases
+
+1. ApiDocs namespace and required classes are loaded.
+2. Host application is loaded and required information is extracted
+   (introspection).
+3. Information is repackaged into wrapping objects (atlas creation).
+4. Sink interrogates atlas for specific formatted wrappers (serialization) and
+   persists serialized data to disk (persistence).
+
+
+### Detailed Overview
 
 ![DocGen overview](./docgen.png)
 
