@@ -51,7 +51,7 @@ Note that formatters at this time make concrete references to their own format,
 so if you decide to inherit from existing formatters, you will have to make
 sure these references are changed appropriately.
 
-##### Accessing sibling data from formatters
+#### Accessing sibling data from formatters
 
 A formatter formats a wrapping object which serves as a viewmodel to an actual
 entity in your application, such as an `ActionController::Base` or a
