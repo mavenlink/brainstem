@@ -91,18 +91,18 @@ module Brainstem
       end
 
 
-      describe "#with_declared_presents" do
+      describe "#with_declared_presented_class" do
         let(:endpoint_2) { Object.new }
 
         before do
-          stub(endpoint).declared_presents { :thing }
-          stub(endpoint_2).declared_presents { nil }
+          stub(endpoint).declared_presented_class { Class.new }
+          stub(endpoint_2).declared_presented_class { nil }
           subject << endpoint
           subject << endpoint_2
         end
 
         it "returns a new collection with members that have declared presents" do
-          new_clxn = subject.with_declared_presents
+          new_clxn = subject.with_declared_presented_class
 
           expect(new_clxn).to be_a described_class
           expect(new_clxn).to include endpoint

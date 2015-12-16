@@ -2,6 +2,7 @@ require 'brainstem/api_docs'
 require 'brainstem/concerns/optional'
 require 'brainstem/concerns/formattable'
 require 'forwardable'
+require 'active_support/inflector'
 
 #
 # Wrapper for common presenter information lookups.
@@ -17,7 +18,7 @@ module Brainstem
       def valid_options
         super | [
           :const,
-          :presents,
+          :target_class,
           :filename_pattern,
           :filename_link_pattern,
           :document_empty_associations,
@@ -26,7 +27,7 @@ module Brainstem
       end
 
       attr_accessor :const,
-                    :presents,
+                    :target_class,
                     :document_empty_associations,
                     :document_empty_filters
 
@@ -49,14 +50,14 @@ module Brainstem
 
       def suggested_filename(format)
         filename_pattern
-          .gsub('{{name}}', presents.to_s)
+          .gsub('{{name}}', target_class.to_s.underscore)
           .gsub('{{extension}}', extension)
       end
 
 
       def suggested_filename_link(format)
         filename_link_pattern
-          .gsub('{{name}}', presents.to_s)
+          .gsub('{{name}}', target_class.to_s.underscore)
           .gsub('{{extension}}', extension)
       end
 

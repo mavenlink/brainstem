@@ -172,19 +172,21 @@ module Brainstem
 
 
       describe ".presents" do
-        context "when name given" do
+        context "when class given" do
           it "sets the presenter" do
+            klass = Class.new
             subject.brainstem_params do
-              presents "sprockets"
+              presents klass
             end
 
-            expect(subject.configuration[:_default][:presents][:presenter]).to \
-              eq "sprockets"
+            expect(subject.configuration[:_default][:presents][:target_class]).to \
+              eq klass
           end
 
           it "allows options" do
+            klass = Class.new
             subject.brainstem_params do
-              presents "sprockets", nodoc: true
+              presents klass, nodoc: true
             end
 
             expect(subject.configuration[:_default][:presents][:nodoc]).to be true
@@ -192,15 +194,33 @@ module Brainstem
         end
 
         context "when no name given" do
-          it "falls back to the brainstem_plural_model_name" do
-            mock(subject).brainstem_plural_model_name { "sprockets" }
+          it "falls back to the brainstem_model_class" do
+            klass = Class.new
+            mock(subject).brainstem_model_class { klass }
 
             subject.brainstem_params do
               presents
             end
 
-            expect(subject.configuration[:_default][:presents][:presenter]).to \
-              eq "sprockets"
+            expect(subject.configuration[:_default][:presents][:target_class]).to \
+              eq klass
+          end
+        end
+
+        context "when symbol given" do
+          it "raises an error" do
+            expect { subject.brainstem_params { presents :thing } }.to raise_error RuntimeError
+          end
+        end
+
+        context "when nil given" do
+          it "is explicitly nil" do
+            subject.brainstem_params do
+              presents nil
+            end
+
+            expect(subject.configuration[:_default][:presents][:target_class]).to \
+              eq nil
           end
         end
       end

@@ -204,36 +204,46 @@ module Brainstem
 
 
       describe "#extract_presenters!" do
-        let(:endpoint)  { Object.new }
-        let(:presenter) { Object.new }
+        let(:endpoint_1)           { Object.new }
+        let(:endpoint_2)           { Object.new }
+        let(:presenter)            { Object.new }
+        let(:target_class)         { Class.new }
+        let(:presenter_collection) { Object.new }
 
         before do
-          stub(endpoint).declared_presents { :thing }
+          # This set-up is a bit of a smell.
+          stub(endpoint_1).declared_presented_class { target_class }
+          stub(endpoint_2).declared_presented_class { Class.new }
 
-          any_instance_of(Atlas) do |instance|
+          stub(target_class).to_s { "TargetClass" }
+
+          any_instance_of(described_class) do |instance|
             stub(instance).parse_routes!
             stub(instance).validate!
 
-            stub(instance).endpoints.stub!.with_declared_presents { [ endpoint ] }
+            stub(instance).valid_presenter_pairs { {
+              "TargetClass" => target_class
+            } }
+
+            stub(instance).presenters { presenter_collection }
+            stub(instance).endpoints { [ endpoint_1, endpoint_2 ] }
           end
         end
 
-        it "finds or creates a presenter for each endpoint" do
-          stub(endpoint).presenter=(nil)
-
-          any_instance_of(Atlas) do |instance|
-            stub(instance).presenters.stub!.find_or_create_from_presents(:thing) { nil }
-          end
+        it "creates a presenter for each valid presenter pair" do
+          stub(endpoint_1).presenter=(presenter)
+          mock(presenter_collection)
+            .find_or_create_from_presenter_collection("TargetClass", target_class) { presenter }
 
           subject
         end
 
-        it "sets the presenter on the endpoint" do
-          mock(endpoint).presenter=(presenter)
+        it "sets the presenter on each endpoint that presents the same" do
+          mock(endpoint_1).presenter=(presenter)
+          dont_allow(endpoint_2).presenter=(presenter)
 
-          any_instance_of(Atlas) do |instance|
-            stub(instance).presenters.stub!.find_or_create_from_presents(:thing) { presenter }
-          end
+          stub(presenter_collection)
+            .find_or_create_from_presenter_collection("TargetClass", target_class) { presenter }
 
           subject
         end

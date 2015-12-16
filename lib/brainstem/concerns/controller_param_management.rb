@@ -1,4 +1,5 @@
 require 'active_support/concern'
+require 'active_support/inflector'
 
 # Provide `brainstem_model_name` and `brainstem_plural_model_name` in
 # controllers for use when accessing the `params` hash.
@@ -31,6 +32,10 @@ module Brainstem
 
         def brainstem_plural_model_name=(name)
           @brainstem_plural_model_name = name
+        end
+
+        def brainstem_model_class
+          @brainstem_model_class ||= self.brainstem_model_name.classify.constantize
         end
       end
     end

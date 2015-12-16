@@ -8,14 +8,15 @@ module Brainstem
     describe Presenter do
       subject { described_class.new(atlas, options) }
 
-      let(:atlas) { Object.new }
-      let(:options)   { { } }
-      let(:nodoc)  { false }
+      let(:atlas)        { Object.new }
+      let(:target_class) { Class.new }
+      let(:options)      { { } }
+      let(:nodoc)        { false }
 
       describe "#initialize" do
         it "yields self if given a block" do
-          block = Proc.new { |s| s.presents = "bork bork" }
-          expect(described_class.new(atlas, &block).presents).to eq "bork bork"
+          block = Proc.new { |s| s.target_class = target_class}
+          expect(described_class.new(atlas, &block).target_class).to eq target_class
         end
       end
 
@@ -419,11 +420,15 @@ module Brainstem
 
 
       describe "#suggested_filename" do
+        before do
+          stub(target_class).to_s { "Abc" }
+        end
+
         it "gsubs name and extension" do
 
           instance = described_class.new(atlas,
             filename_pattern: "presenters/{{name}}.{{extension}}",
-            presents: 'abc'
+            target_class: target_class
           )
 
           stub(instance).extension { "xyz" }
@@ -434,11 +439,15 @@ module Brainstem
 
 
       describe "#suggested_filename_link" do
+        before do
+          stub(target_class).to_s { "Abc" }
+        end
+
         it "gsubs name and extension" do
 
           instance = described_class.new(atlas,
             filename_link_pattern: "presenters/{{name}}.{{extension}}.foo",
-            presents: 'abc'
+            target_class: target_class
           )
 
           stub(instance).extension { "xyz" }

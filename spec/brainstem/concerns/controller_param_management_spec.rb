@@ -52,4 +52,11 @@ describe Brainstem::Concerns::ControllerParamManagement do
       expect(subject.new.brainstem_plural_model_name).to eq 'thingzees'
     end
   end
+
+  describe '.brainstem_model_class' do
+    it "classifies and constantizes the brainstem_model_name" do
+      subject.brainstem_model_name = "object"
+      expect(subject.brainstem_model_class).to eq Object
+    end
+  end
 end

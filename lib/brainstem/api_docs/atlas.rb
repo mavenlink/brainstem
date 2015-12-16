@@ -109,9 +109,28 @@ module Brainstem
       # Presenter wrapper object.
       #
       def extract_presenters!
-        endpoints.with_declared_presents.each do |endpoint|
-          presenter = presenters.find_or_create_from_presents(endpoint.declared_presents)
-          endpoint.presenter = presenter
+        valid_presenter_pairs.each do |target_class, const|
+          presenter = presenters.find_or_create_from_presenter_collection(target_class, const)
+
+          endpoints
+            .select do |ep|
+              declared_presented_class = ep.declared_presented_class
+              !declared_presented_class.nil? && declared_presented_class.to_s == target_class
+            end
+              .each {|ep| ep.presenter = presenter }
+        end
+      end
+
+
+      #
+      # Returns a list of valid +target_class_to_s => PresenterConst+ pairs,
+      # determining validity by whether they descend from the base presenter.
+      #
+      # @return [Hash{String => Class}] valid pairs
+      #
+      def valid_presenter_pairs
+        Brainstem.presenter_collection.presenters.select do |target_class, const|
+          introspector.presenters.include? const
         end
       end
 

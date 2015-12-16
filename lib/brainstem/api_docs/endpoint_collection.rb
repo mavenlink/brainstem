@@ -35,8 +35,8 @@ module Brainstem
       end
 
 
-      def with_declared_presents
-        self.class.with_members(atlas, reject { |m| m.declared_presents.nil? })
+      def with_declared_presented_class
+        self.class.with_members(atlas, reject { |m| m.declared_presented_class.nil? })
       end
 
 

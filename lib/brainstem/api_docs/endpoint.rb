@@ -157,10 +157,10 @@ module Brainstem
       #
       # Used to retrieve this endpoint's presenter constant.
       #
-      def declared_presents
-        valid_presents.has_key?(:presenter) &&
+      def declared_presented_class
+        valid_presents.has_key?(:target_class) &&
           !valid_presents[:nodoc] &&
-          valid_presents[:presenter]
+          valid_presents[:target_class]
       end
 
 

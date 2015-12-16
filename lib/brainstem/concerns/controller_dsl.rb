@@ -173,19 +173,26 @@ module Brainstem
         #
         # Specifies which presenter is used for the controller / action.
         # By default, expects presentation on all methods, and falls back to the
-        # +brainstem_plural_model_name+ if a name is not given.
+        # class derived from +brainstem_model_name+ if a name is not
+        # given.
         #
         # Setting the +:nodoc+ option marks this presenter as 'internal use only',
         # and causes formatters to display this as not indicated.
         #
+        # @param [Class] target_class the target class of the presenter (i.e
+        #   the model it presents)
         # @param [Hash] options options to record with the presenter
         # @option [Boolean] options :nodoc whether this presenter should not
         #   be output in the documentation.
         #
         #
-        def presents(presenter_name = nil, options = { nodoc: false })
+        def presents(target_class = :default, options = { nodoc: false })
+          raise "`presents` must be a class (in #{self.to_s})" \
+            unless target_class.is_a?(Class) || target_class == :default || target_class.nil?
+
+          target_class = brainstem_model_class if target_class == :default
           configuration[brainstem_params_context][:presents] = \
-            options.merge(presenter: presenter_name || brainstem_plural_model_name)
+            options.merge(target_class: target_class)
         end
 
 
