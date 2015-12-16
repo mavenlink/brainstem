@@ -299,10 +299,6 @@ module Brainstem
                 subject.send(:format_filters!)
               end
 
-              it "outputs a header" do
-                expect(subject.output).to include "Filters"
-              end
-
               context "when has filters" do
                 let(:valid_filters) {
                   {
@@ -313,6 +309,10 @@ module Brainstem
                   }
                 }
 
+                it "outputs a header" do
+                  expect(subject.output).to include "Filters"
+                end
+
                 it "lists them" do
                   expect(subject.output.scan(/\n-/).count).to eq 1
                   expect(subject.output).to include "`published`"
@@ -321,8 +321,8 @@ module Brainstem
               end
 
               context "when no filters" do
-                it "says there are none" do
-                  expect(subject.output).to include "No filters were listed"
+                it "says nothing" do
+                  expect(subject.output).to_not include "Filters"
                 end
               end
             end
@@ -350,11 +350,11 @@ module Brainstem
                 subject.send(:format_sort_orders!)
               end
 
-              it "outputs a header" do
-                expect(subject.output).to include "Sort Orders"
-              end
-
               context "when has sort orders defined" do
+                it "outputs a header" do
+                  expect(subject.output).to include "Sort Orders"
+                end
+
                 it "lists the sort orders" do
                   expect(subject.output.scan(/\n-/).count).to eq 2
                   expect(subject.output).to include "`alphabetical`"
@@ -372,12 +372,11 @@ module Brainstem
                 end
               end
 
-
               context "when has no sort orders defined" do
                 let(:sort_orders) { {} }
 
-                it "says it has none" do
-                  expect(subject.output).to include "No sort orders were listed"
+                it "says nothing" do
+                  expect(subject.output).to_not include "Sort Orders"
                 end
               end
             end
@@ -393,10 +392,6 @@ module Brainstem
                 subject.send(:format_associations!)
               end
 
-              it "outputs a header" do
-                expect(subject.output).to include "Associations"
-              end
-
               context "when has associations" do
                 let(:associations) {
                   {
@@ -406,6 +401,10 @@ module Brainstem
                     )
                   }
                 }
+
+                it "outputs a header" do
+                  expect(subject.output).to include "Associations"
+                end
 
                 context "when has static target class" do
                   let(:link) { "./path" }
@@ -483,8 +482,8 @@ module Brainstem
               end
 
               context "when no associations" do
-                it "says it has no associations" do
-                  expect(subject.output).to include "No associations were listed"
+                it "says nothing" do
+                  expect(subject.output).to_not include "Associations"
                 end
               end
             end

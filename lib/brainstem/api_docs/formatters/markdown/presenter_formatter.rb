@@ -115,9 +115,8 @@ module Brainstem
 
 
           def format_filters!
-            output << md_h5("Filters")
-
             if presenter.valid_filters.any?
+              output << md_h5("Filters")
               output << md_ul do
                 presenter.valid_filters.inject("") do |buffer, (name, opts)|
                   text = md_inline_code(name)
@@ -131,17 +130,13 @@ module Brainstem
                   buffer += md_li(text)
                 end
               end
-
-            else
-              output << md_p("No filters were listed.")
             end
           end
 
 
           def format_sort_orders!
-            output << md_h5("Sort Orders")
-
             if presenter.valid_sort_orders.any?
+              output << md_h5("Sort Orders")
               output << md_ul do
                 presenter.valid_sort_orders.inject("") do |buffer, (name, opts)|
                   text = "#{md_inline_code(name.to_s)}"
@@ -158,16 +153,13 @@ module Brainstem
                   buffer += md_li(text)
                 end
               end
-            else
-              output << md_p("No sort orders were listed.")
             end
           end
 
 
           def format_associations!
-            output << md_h5("Associations")
-
             if presenter.valid_associations.any?
+              output << md_h5("Associations")
               output << md_ul do
                 presenter.valid_associations.inject("") do |buffer, (_, association)|
                   link = presenter.link_for_association(association)
@@ -184,8 +176,6 @@ module Brainstem
                   buffer << md_li(text)
                 end
               end
-            else
-              output << md_p("No associations were listed.")
             end
           end
         end
