@@ -1,10 +1,12 @@
 require 'active_support/hash_with_indifferent_access'
+require 'forwardable'
 
 # A hash-like object that accepts a parent configuration object that defers to
 # the parent in the absence of one of its own keys (thus simulating inheritance).
 module Brainstem
   module DSL
     class Configuration
+      extend Forwardable
 
       # Returns a new configuration object.
       #
@@ -212,7 +214,7 @@ module Brainstem
         end
       end
 
-      delegate :empty?, to: :keys
+      delegate :empty? => :keys
 
       private
 
@@ -246,6 +248,8 @@ module Brainstem
       # An Array-like object that provides `push`, `concat`, `each`, `empty?`, and `to_a` methods that act the combination
       # of its own entries and those of a parent InheritableAppendSet, if present.
       class InheritableAppendSet
+        extend Forwardable
+
         def initialize(parent_array = nil)
           @parent_array = parent_array || []
           @storage = []
@@ -264,7 +268,7 @@ module Brainstem
           @parent_array.to_a + @storage
         end
 
-        delegate :each, :empty?, to: :to_a
+        delegate [:each, :empty?] => :to_a
       end
     end
   end
