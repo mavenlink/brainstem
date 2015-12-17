@@ -336,13 +336,12 @@ module Brainstem
               end
 
               let(:sort_orders) { {
+                "created_at" => {
+                  value: "sprockets.created_at"
+                },
                 "alphabetical" => {
                   value: "sprockets.name",
                   info: "it sorts by name"
-                },
-
-                "created_at" => {
-                  value: "sprockets.created_at"
                 },
               } }
 
@@ -355,10 +354,9 @@ module Brainstem
                   expect(subject.output).to include "Sort Orders"
                 end
 
-                it "lists the sort orders" do
+                it "lists the sort orders with the default first" do
                   expect(subject.output.scan(/\n-/).count).to eq 2
-                  expect(subject.output).to include "`alphabetical`"
-                  expect(subject.output).to include "`created_at`"
+                  expect(subject.output).to match /alphabetical.*created_at/m
                 end
 
                 it "outputs the doc string" do
