@@ -93,7 +93,7 @@ describe Brainstem::Concerns::InheritableConfiguration do
       end
 
       it "does not return nonheritable keys in the parent" do
-        parent_class.configuration.nonheritable! 'nonheritable'
+        parent_class.configuration.nonheritable! :nonheritable
         parent_class.configuration['nonheritable'] = "why yes, I am nonheritable"
         expect(subclass.configuration.keys).not_to include 'nonheritable'
 
@@ -290,13 +290,13 @@ describe Brainstem::Concerns::InheritableConfiguration do
     describe "#nonheritable!" do
       it "adds the key to the nonheritable attributes list" do
         parent_class.configuration.nonheritable! :nonheritable
-        expect(parent_class.configuration.nonheritable_keys).to eq ["nonheritable"]
+        expect(parent_class.configuration.nonheritable_keys.to_a).to eq ["nonheritable"]
       end
 
       it "dedupes" do
         parent_class.configuration.nonheritable! :nonheritable
         parent_class.configuration.nonheritable! :nonheritable
-        expect(parent_class.configuration.nonheritable_keys).to eq ["nonheritable"]
+        expect(parent_class.configuration.nonheritable_keys.to_a).to eq ["nonheritable"]
       end
     end
   end

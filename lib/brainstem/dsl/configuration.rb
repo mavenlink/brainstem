@@ -16,10 +16,23 @@ module Brainstem
         @parent_configuration  = parent_configuration || ActiveSupport::HashWithIndifferentAccess.new
         @storage               = ActiveSupport::HashWithIndifferentAccess.new
 
-        self.nonheritable_keys =
-          parent_configuration.respond_to?(:nonheritable_keys) &&
-          parent_configuration.nonheritable_keys ||
-          []
+        #
+        # Nonheritable keys are a bit peculiar: they make the lookup for a key
+        # specified as nonheritable to return no result when it falls back to
+        # the parent configuration.
+        #
+        # These keys themselves are inheritable; in this way, a class that
+        # descends from another will keep the same behaviour as its superclass
+        # without necessarily having the same data. Or to put it another way,
+        # if you have specified that 'title' is not inheritable in a
+        # superclass's configuration, that is a property of that class, and
+        # descendent classes should behave the same way.
+        #
+        # It is also unlikely that subclasses will modify the list of
+        # nonheritable keys.
+        parent_nh_keys = parent_configuration &&
+          parent_configuration.nonheritable_keys
+        @nonheritable_keys = InheritableAppendSet.new(parent_nh_keys)
       end
 
       def [](key)
@@ -49,16 +62,16 @@ module Brainstem
 
 
       #
-      # Marks a key in the configuration as nonheritable, which means that it:
+      # Marks a key in the configuration as nonheritable, which means that the key:
       #
       # - will appear in the list of keys for this object;
-      # - will return as set when fetched from this object;
-      # - will return in the +to_h+ output from this object;
+      # - will return its value when fetched from this object;
+      # - will be included in the +to_h+ output from this object;
       # - will be included when iterating with +#each+ from this object;
       #
       # - will not appear in the list of keys for any child object;
       # - will return +nil+ when fetched from any child object;
-      # - will not return in the +#to_h+ output from any child object;
+      # - will not be included in the +#to_h+ output from any child object;
       # - will not be included when iterating with +#each+ from any child object.
       #
       # @param [Symbol,String] key the key to append to the list of nonheritable
@@ -80,7 +93,7 @@ module Brainstem
       # @return [Array] keys
       #
       def keys_visible_to_children
-        keys - nonheritable_keys
+        keys - nonheritable_keys.to_a
       end
 
 
@@ -91,7 +104,7 @@ module Brainstem
       # @return [Hash] the hash, less nonheritable pairs.
       #
       def pairs_visible_to_children
-        to_h.reject {|k, v| !keys_visible_to_children.include?(k.to_s) }
+        to_h.select {|k, v| keys_visible_to_children.include?(k.to_s) }
       end
 
 
@@ -268,7 +281,7 @@ module Brainstem
           @parent_array.to_a + @storage
         end
 
-        delegate [:each, :empty?] => :to_a
+        delegate [:each, :empty?, :include?] => :to_a
       end
     end
   end
