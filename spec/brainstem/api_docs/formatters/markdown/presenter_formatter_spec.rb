@@ -56,7 +56,7 @@ module Brainstem
 
 
           describe "formatting" do
-            let(:lorem)               { "lorem ipsum dolor sit amet" }
+            let(:lorem) { "lorem ipsum dolor sit amet" }
 
             describe "#format_title!" do
               context "with title" do
@@ -396,6 +396,7 @@ module Brainstem
                     "widgets" => OpenStruct.new(
                       name: "widgets",
                       description: "these are some widgets you might find relevant",
+                      target_class: "Widget"
                     )
                   }
                 }
@@ -408,8 +409,7 @@ module Brainstem
                   let(:link) { "./path" }
 
                   it "links them" do
-                    expect(subject.output.scan(/\n-/).count).to eq 1
-                    expect(subject.output).to include "[`widgets`](./path)"
+                    expect(subject.output).to include "[Widget](./path)"
                   end
                 end
 
@@ -417,30 +417,18 @@ module Brainstem
                   let(:link) { nil }
 
                   it "lists them" do
-                    expect(subject.output.scan(/\n-/).count).to eq 1
                     expect(subject.output).to include "`widgets`"
+                  end
+
+                  it "does not render a link" do
+                    expect(subject.output).to_not include "[Widget]"
                   end
                 end
 
                 describe "description" do
                   context "when present" do
                     it "lists it" do
-                      expect(subject.output).to include "`widgets`\n    - these are some widgets"
-                    end
-                  end
-
-                  context "when absent" do
-                    let(:associations) {
-                      {
-                        "widgets" => OpenStruct.new(
-                          name: "widgets",
-                          description: ""
-                        )
-                      }
-                    }
-
-                    it "doesn't list it" do
-                      expect(subject.output).not_to include "\n    -"
+                      expect(subject.output).to include "these are some widgets"
                     end
                   end
                 end
@@ -451,14 +439,18 @@ module Brainstem
                       {
                         "widgets" => OpenStruct.new(
                           name: "widgets",
+                          description: "these are some widgets you might find relevant",
                           options: { restrict_to_only: true }
                         )
                       }
                     }
 
                     it "lists it" do
-                      expect(subject.output).to include "\n    - Restricted to queries"
+                      expect(subject.output).to include "Restricted to queries using"
+                    end
 
+                    it "adds a period at the end of the description if there is none" do
+                      expect(subject.output).to include "you might find relevant.  Restricted to queries using"
                     end
                   end
 
@@ -473,7 +465,7 @@ module Brainstem
                     }
 
                     it "doesn't show it" do
-                      expect(subject.output).not_to include "\n    - Restricted to queries"
+                      expect(subject.output).not_to include "Restricted to queries using"
                     end
                   end
                 end
