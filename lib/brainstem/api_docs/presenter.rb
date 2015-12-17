@@ -196,7 +196,7 @@ module Brainstem
 
 
       def default_sort_direction
-        @default_sort_field ||= (default_sort_order.split(":")[1] || nil)
+        @default_sort_direction ||= (default_sort_order.split(":")[1] || nil)
       end
 
 
