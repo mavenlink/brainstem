@@ -138,7 +138,12 @@ module Brainstem
             if presenter.valid_sort_orders.any?
               output << md_h5("Sort Orders")
               output << md_ul do
-                presenter.valid_sort_orders.inject("") do |buffer, (name, opts)|
+                sorted_orders = presenter.valid_sort_orders.sort_by { |name, _| name.to_s }
+
+                # Shift the default sort_order to the top
+                sorted_orders.unshift sorted_orders.delete_at(sorted_orders.index { |name, _| name.to_s == presenter.default_sort_field })
+
+                sorted_orders.inject("") do |buffer, (name, opts)|
                   text = "#{md_inline_code(name.to_s)}"
 
                   if presenter.default_sort_field == name.to_s
