@@ -34,7 +34,7 @@ module Brainstem
     # member of the set.
     #
     def self.possible_brainstem_keys
-      @possible_brainstem_keys || begin
+      @possible_brainstem_keys ||= begin
         Set.new(presents.map(&presenter_collection.method(:brainstem_key_for!)))
       end
     end
