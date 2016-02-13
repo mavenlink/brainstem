@@ -46,19 +46,10 @@ module Brainstem
       # table name will be used to query the database for the filtered data
       options[:table_name] = presented_class.table_name
 
-      # key these models will use in the struct that is output
-      brainstem_key = brainstem_key_for!(presented_class)
-
-      # filter the incoming :includes list by those available from this Presenter in the current context
-      selected_associations = filter_includes(options)
-
-      # filter incoming :optional_fields
-      optional_fields = filter_optional_fields(options)
-
       if searching? options
         # Search
         sort_name, direction = options[:primary_presenter].calculate_sort_name_and_direction options[:params]
-        scope, count, ordered_search_ids = run_search(scope, selected_associations.map(&:name), sort_name, direction, options)
+        scope, count, ordered_search_ids = run_search(scope, filter_includes(options).map(&:name), sort_name, direction, options)
 
         # Load models!
         primary_models = scope.to_a
@@ -99,6 +90,18 @@ module Brainstem
 
       primary_models = order_for_search(primary_models, ordered_search_ids) if searching?(options)
 
+      structure_response(presented_class, primary_models, count, options)
+    end
+
+    def structure_response(presented_class, primary_models, count, options)
+      # key these models will use in the struct that is output
+      brainstem_key = brainstem_key_for!(presented_class)
+
+      # filter the incoming :includes list by those available from this Presenter in the current context
+      selected_associations = filter_includes(options)
+
+      optional_fields = filter_optional_fields(options)
+
       struct = { 'count' => count, brainstem_key => {}, 'results' => [] }
 
       # Build top-level keys for all requested associations.
@@ -107,7 +110,6 @@ module Brainstem
       end
 
       if primary_models.length > 0
-        # TODO: handle polymorphism here
         associated_models = {}
         presented_primary_models = options[:primary_presenter].group_present(primary_models,
                                                                              selected_associations.map(&:name),

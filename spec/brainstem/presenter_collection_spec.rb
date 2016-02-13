@@ -1004,6 +1004,30 @@ describe Brainstem::PresenterCollection do
     end
   end
 
+  describe '#structure_response' do
+    let(:options) { {params: {}, primary_presenter: @presenter_collection.for!(Workspace) } }
+    let(:response_body) { @presenter_collection.structure_response(Workspace, Workspace.all, 17, options) }
+
+    it 'has a count' do
+      expect(response_body['count']).to eq(17)
+    end
+
+    it 'has a list of results' do
+      expect(response_body['results'].length).to eq(Workspace.count)
+
+      response_body['results'].each do |result|
+        expect(result['key']).to eq('workspaces')
+        expect(result['id'].to_i).not_to eq(0)
+      end
+    end
+
+    it 'has id-attributes maps for all objects' do
+      response_body['results'].each do |result|
+        expect(response_body[result['key']][result['id']]).not_to be_empty
+      end
+    end
+  end
+
   describe "#validate!" do
     it 'should raise an error when a presenter is invalid' do
       WorkspacePresenter.fields do
