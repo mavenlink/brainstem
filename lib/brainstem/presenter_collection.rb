@@ -55,41 +55,46 @@ module Brainstem
       # filter incoming :optional_fields
       optional_fields = filter_optional_fields(options)
 
-      if searching? options
-        # Search
-        sort_name, direction = options[:primary_presenter].calculate_sort_name_and_direction options[:params]
-        scope, count, ordered_search_ids = run_search(scope, selected_associations.map(&:name), sort_name, direction, options)
+      scope, ordered_search_ids = search(options, selected_associations, scope) if searching? options
+      primary_models = scope.to_a
 
-        # Load models!
-        primary_models = scope.to_a
+      # Filter
+      scope = options[:primary_presenter].apply_filters_to_scope(scope, options[:params], options)
+
+      if options[:params][:only].present?
+        # Handle Only
+        scope, count = handle_only(scope, options[:params][:only])
       else
-        # Filter
-        scope = options[:primary_presenter].apply_filters_to_scope(scope, options[:params], options)
+        # Paginate
+        scope, count = paginate scope, options
 
-        if options[:params][:only].present?
-          # Handle Only
-          scope, count = handle_only(scope, options[:params][:only])
-        else
-          # Paginate
-          scope, count = paginate scope, options
-        end
+        # Possible idea for pagination problems with search + filter:
+        # loop do
+        # scope, count = paginate scope, options
+        #   break if !searching?(options) || options[:primary_presenter].check_search_done(count, calculate_offset(options) / calculate_page(options), calculate_per_page(options), scope)
+        #   options[:params][:page] = 0 unless options[:params][:page].present?
+        #   options[:params][:page] += 1
+        #   primary_models, next_ordered_ids = search(options, selected_associations, scope) if searching? options
+        #   ordered_search_ids.concat(next_ordered_ids)
+        #   scope = options[:primary_presenter].apply_filters_to_scope(scope, options[:params], options)
+        # end
+      end
 
-        count = count.keys.length if count.is_a?(Hash)
+      count = count.keys.length if count.is_a?(Hash)
 
-        # Ordering
-        scope = options[:primary_presenter].apply_ordering_to_scope(scope, options[:params])
+      # Ordering
+      scope = options[:primary_presenter].apply_ordering_to_scope(scope, options[:params])
 
-        # Load models!
-        # On complex queries, MySQL can sometimes handle 'SELECT id FROM ... ORDER BY ...' much faster than
-        # 'SELECT * FROM ...', so we pluck the ids, then find those specific ids in a separate query.
-        if(ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql|sqlite/i)
-          ids = scope.pluck("#{scope.table_name}.id")
-          id_lookup = {}
-          ids.each.with_index { |id, index| id_lookup[id] = index }
-          primary_models = scope.klass.where(id: id_lookup.keys).sort_by { |model| id_lookup[model.id] }
-        else
-          primary_models = scope.to_a
-        end
+      # Load models!
+      # On complex queries, MySQL can sometimes handle 'SELECT id FROM ... ORDER BY ...' much faster than
+      # 'SELECT * FROM ...', so we pluck the ids, then find those specific ids in a separate query.
+      if(ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql|sqlite/i)
+        ids = scope.pluck("#{scope.table_name}.id")
+        id_lookup = {}
+        ids.each.with_index { |id, index| id_lookup[id] = index }
+        primary_models = scope.klass.where(id: id_lookup.keys).sort_by { |model| id_lookup[model.id] }
+      else
+        primary_models = scope.to_a
       end
 
       # Determine if an exception should be raised on an empty result set.
@@ -97,7 +102,8 @@ module Brainstem
         raise options[:empty_error_class] || ActiveRecord::RecordNotFound
       end
 
-      primary_models = order_for_search(primary_models, ordered_search_ids) if searching?(options)
+      # Ordering is currently broken when searching and filtering
+      # primary_models = order_for_search(primary_models, ordered_search_ids) if searching?(options)
 
       struct = { 'count' => count, brainstem_key => {}, 'results' => [] }
 
@@ -222,6 +228,15 @@ module Brainstem
     def handle_only(scope, only)
       ids = (only || "").split(",").select {|id| id =~ /\A\d+\z/}.uniq
       [scope.where(:id => ids), scope.where(:id => ids).count]
+    end
+
+    def search(options, selected_associations, scope)
+      # Search
+      sort_name, direction = options[:primary_presenter].calculate_sort_name_and_direction options[:params]
+      scope, count, ordered_search_ids = run_search(scope, selected_associations.map(&:name), sort_name, direction, options)
+
+      # Load models!
+      [scope, ordered_search_ids]
     end
 
     # Runs the current search block and returns an array of [scope of the resulting ids, result count, result ids]

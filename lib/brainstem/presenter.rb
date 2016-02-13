@@ -185,6 +185,14 @@ module Brainstem
       fresh_helper_instance.instance_exec(query, search_options, &configuration[:search])
     end
 
+    def check_search_done(number_of_results, page_number, per_page, scope)
+      if configuration[:search_finished]
+        fresh_helper_instance.instance_exec(number_of_results, page_number, per_page, scope, &configuration[:search_finished])
+      else
+        true
+      end
+    end
+
     # Clean and validate a sort order and direction from user params.
     def calculate_sort_name_and_direction(user_params = {})
       default_column, default_direction = (configuration[:default_sort_order] || "updated_at:desc").split(":")

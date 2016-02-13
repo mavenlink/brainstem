@@ -91,6 +91,10 @@ module Brainstem
           configuration[:brainstem_key] = key.to_s
         end
 
+        def search_finished(&block)
+          configuration[:search_finished] = block
+        end
+
         # @api private
         def reset_configuration!
           configuration.array!(:preloads)
