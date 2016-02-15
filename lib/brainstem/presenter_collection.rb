@@ -56,7 +56,6 @@ module Brainstem
       optional_fields = filter_optional_fields(options)
 
       scope, ordered_search_ids = search(options, selected_associations, scope) if searching? options
-      primary_models = scope.to_a
 
       # Filter
       scope = options[:primary_presenter].apply_filters_to_scope(scope, options[:params], options)
