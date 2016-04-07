@@ -564,9 +564,9 @@ describe Brainstem::PresenterCollection do
         end
 
         context "and a search request is made" do
-          it "calls the search method and maintains the resulting order" do
+          it "calls the search method and maintains the order from the original scoping" do
             result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.unscoped }
-            expect(result['workspaces'].keys).to eq(%w[5 3])
+            expect(result['workspaces'].keys).to eq(%w[3 5])
             expect(result['count']).to eq(2)
           end
 
@@ -582,13 +582,13 @@ describe Brainstem::PresenterCollection do
             expect(called).to eq true
           end
 
-          it "does not apply filters" do
-            mock(@presenter_collection).apply_filters_to_scope(anything, anything).times(0)
+          it "does apply filters" do
+            mock.any_instance_of(WorkspacePresenter).apply_filters_to_scope(anything, anything, anything).times(1) { Workspace.unscoped }
             result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.unscoped }
           end
 
-          it "does not apply ordering" do
-            mock.any_instance_of(Brainstem::Presenter).apply_ordering_to_scope(anything, anything).times(0)
+          it "does apply ordering" do
+            mock.any_instance_of(Brainstem::Presenter).apply_ordering_to_scope(anything, anything).times(1) { Workspace.unscoped }
             result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.unscoped }
           end
 
@@ -597,8 +597,8 @@ describe Brainstem::PresenterCollection do
             result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.unscoped }
           end
 
-          it "does not apply pagination" do
-            mock(@presenter_collection).paginate(anything, anything).times(0)
+          it "does apply pagination" do
+            mock(@presenter_collection).paginate(anything, anything).times(1) { [Workspace.unscoped, Workspace.unscoped.count] }
             result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.unscoped }
           end
 
@@ -621,8 +621,8 @@ describe Brainstem::PresenterCollection do
 
             it "will generate a compacted list, without nil or 0 values" do
               result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
-              expect(result['workspaces'].keys).to eq(%w[5 3])
-              expect(result['count']).to eq(3)
+              expect(result['workspaces'].keys).to eq(%w[3 5])
+              expect(result['count']).to eq(2)
             end
           end
 
