@@ -46,24 +46,42 @@ module Brainstem
       # table name will be used to query the database for the filtered data
       options[:table_name] = presented_class.table_name
 
+      original_size = scope.count
+      scope_before_search = scope
+
       # Filter
       scope = options[:primary_presenter].apply_filters_to_scope(scope, options[:params], options)
 
-      if searching? options
-        # Search
-        sort_name, direction = options[:primary_presenter].calculate_sort_name_and_direction options[:params]
-        scope, count, ordered_search_ids = run_search(scope, filter_includes(options).map(&:name), sort_name, direction, options)
-
-        # Load models!
-        primary_models = scope.to_a
-      end
+      scope, ordered_search_ids = search(options, scope) if searching? options
 
       if options[:params][:only].present?
         # Handle Only
         scope, count = handle_only(scope, options[:params][:only])
       else
         # Paginate
-        scope, count = paginate scope, options
+
+        recursive_paginate_options = options.deep_dup
+
+        loop do
+          scope, count = paginate scope, options
+
+          break unless searching?(options)
+
+          page_number = recursive_paginate_options[:params][:page].try(:to_i) || 1
+          page_size = calculate_per_page(options)
+
+          break if is_search_done?(count, page_number, page_size, original_size)
+
+          next_page = recursive_paginate_options[:params][:page].to_i + 1
+          recursive_paginate_options[:params][:page] = next_page.to_s
+
+          scope = options[:primary_presenter].apply_filters_to_scope(scope_before_search, recursive_paginate_options[:params], recursive_paginate_options)
+
+          _, next_ordered_ids = search(recursive_paginate_options, scope)
+          ordered_search_ids.concat(next_ordered_ids)
+
+          scope = scope_before_search.where(id: ordered_search_ids)
+        end
       end
 
       count = count.keys.length if count.is_a?(Hash)
@@ -89,6 +107,24 @@ module Brainstem
       end
 
       structure_response(presented_class, primary_models, count, options)
+    end
+
+    def search(options, scope)
+      # Search
+      sort_name, direction = options[:primary_presenter].calculate_sort_name_and_direction options[:params]
+      scope, count, ordered_search_ids = run_search(scope, filter_includes(options).map(&:name), sort_name, direction, options)
+
+      # Load models!
+      [scope, ordered_search_ids]
+    end
+
+    def is_search_done?(number_of_results, page_number, page_size, total_size)
+      if number_of_results == page_size
+        true
+      else
+        remaining_possiblities = total_size - (page_size * page_number)
+        remaining_possiblities < page_size
+      end
     end
 
     def structure_response(presented_class, primary_models, count, options)

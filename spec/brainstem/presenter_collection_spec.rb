@@ -736,6 +736,63 @@ describe Brainstem::PresenterCollection do
               end
             end
 
+            describe 'recursive pagination when filtering and searching' do
+              let(:params) { {
+                    owned_by: bob.id.to_s,
+                    per_page: 2,
+                    page: 1,
+                    search: "blah",
+                    order: "description:desc"
+                } }
+
+              context 'the first result of searching and filtering is the requested page size' do
+                before do
+                  WorkspacePresenter.search do |string, options|
+                    search_options = options
+                    [[1,2], 2]
+                  end
+
+                  WorkspacePresenter.filter(:owned_by) { |scope, user_id| scope.owned_by(user_id.to_i) }
+                end
+
+                it "returns the right values" do
+                  result = @presenter_collection.presenting("workspaces", params: params) { Workspace.unscoped }
+                  expect(result['count']).to eq(2)
+                  expect(result['workspaces'].keys.count).to eq(2)
+                  expect(result['workspaces'].keys).to eq(['1', '2'])
+                end
+              end
+
+              context 'the result of searching and filtering is not the requested page size' do
+                context 'and we are on the last page' do
+                  it 'does not search and filter again' do
+                    mock.any_instance_of(WorkspacePresenter).apply_filters_to_scope(anything, anything, anything).times(1) { Workspace.unscoped.limit(1) }
+                    mock(@presenter_collection).run_search(anything, anything, anything, anything, anything).times(1) { [Workspace.unscoped.limit(1), 1] }
+                    result = @presenter_collection.presenting("workspaces", params: params) { Workspace.unscoped.limit(1) }
+                  end
+                end
+
+                context 'and we are not on the last page' do
+                  before do
+                    WorkspacePresenter.search do |string, options|
+                      if options[:page] == 1
+                        [[1], 1]
+                      else
+                        [[3], 1]
+                      end
+                    end
+                  end
+
+                  it 'calls search and filter until we gain the requested page size' do
+                    results = @presenter_collection.presenting("workspaces", params: params) { Workspace.unscoped.limit(4) }
+                    # expect(results['count']).to eq(4) # TODO: re-evaluate this when we figure out the counting problem when searching and filtering
+                    expect(results['workspaces'].keys.count).to eq(2)
+                    expect(results['workspaces'].keys).to eq(['3', '1'])
+                  end
+                end
+              end
+            end
+
             describe "pagination" do
               it "passes through limit and offset if they are requested" do
                 search_options = nil
