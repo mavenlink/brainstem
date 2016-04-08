@@ -67,7 +67,7 @@ module Brainstem
 
           break unless searching?(options)
 
-          page_number = recursive_paginate_options[:params][:page].try(:to_i) || 1
+          page_number = (recursive_paginate_options[:params][:page].try(:to_i) || 1) - 1
           page_size = calculate_per_page(options)
 
           break if is_search_done?(count, page_number, page_size, original_size)
@@ -77,10 +77,11 @@ module Brainstem
 
           scope = options[:primary_presenter].apply_filters_to_scope(scope_before_search, recursive_paginate_options[:params], recursive_paginate_options)
 
-          _, next_ordered_ids = search(recursive_paginate_options, scope)
-          ordered_search_ids.concat(next_ordered_ids)
+          _, next_ordered_ids = search(recursive_paginate_options, scope_before_search)
 
-          scope = scope_before_search.where(id: ordered_search_ids)
+          scope_ids = scope.pluck(:id)
+
+          scope = scope_before_search.where(id: (scope_ids + next_ordered_ids).uniq)
         end
       end
 
