@@ -51,6 +51,18 @@ class WorkspacePresenter < Brainstem::Presenter
   end
 end
 
+class CheesePresenter < Brainstem::Presenter
+  presents Cheese
+
+  fields do
+    field :flavor, :string
+  end
+
+  associations do
+    association :user, User, 'The owner of the cheese'
+  end
+end
+
 class GroupPresenter < Brainstem::Presenter
   presents Group
 

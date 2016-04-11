@@ -53,6 +53,7 @@ module Brainstem
       scope = options[:primary_presenter].apply_filters_to_scope(scope, options[:params], options)
 
       scope, ordered_search_ids = search(options, scope) if searching? options
+      scope_ids = []
 
       if options[:params][:only].present?
         # Handle Only
@@ -79,9 +80,10 @@ module Brainstem
 
           _, next_ordered_ids = search(recursive_paginate_options, scope_before_search)
 
-          scope_ids = scope.pluck(:id)
+          scope_ids = scope_ids + scope.pluck(:id)
+          ordered_search_ids = ordered_search_ids + next_ordered_ids
 
-          scope = scope_before_search.where(id: (scope_ids + next_ordered_ids).uniq)
+          scope = scope_before_search.where(id: ordered_search_ids & scope_ids)
         end
       end
 

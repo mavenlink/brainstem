@@ -764,6 +764,11 @@ describe Brainstem::PresenterCollection do
               end
 
               context 'the result of searching and filtering is not the requested page size' do
+                # The following tests are handling the recursive pagination that happens when you are both
+                # searching and filtering. If both things occur but your final result is not big enough,
+                # more filters and searches take place until the page size is big enough.
+                # Note: The CheesePresenter in the before do blocks simulates what our search should return before being filtered
+
                 context 'and we are on the last page' do
                   it 'does not search and filter again' do
                     mock.any_instance_of(WorkspacePresenter).apply_filters_to_scope(anything, anything, anything).times(1) { Workspace.unscoped.limit(1) }
@@ -773,21 +778,63 @@ describe Brainstem::PresenterCollection do
                 end
 
                 context 'and we are not on the last page' do
-                  before do
-                    WorkspacePresenter.search do |string, options|
-                      if options[:page] == 1
-                        [[1], 1]
-                      else
-                        [[3], 1]
+                  # Setup:
+                  # Page 1: [1,2,3,4], Page 2: [4,5,6,7], Page 3: [8,9,10,11]
+                  # The filtering filters out id 6 and the search filters out ids 1 and 2.
+                  # So the final result should be [3,4,5,7]
+
+                   let(:params) { {
+                    owned_by: bob.id.to_s,
+                    per_page: 4,
+                    page: 1,
+                    search: "blah",
+                    order: "id:asc"
+                  } }
+
+                  context 'and there is one page remaining' do
+                    before do
+                      CheesePresenter.search do |string, options|
+                        if options[:page] == 1
+                          [[3,4], 2]
+                        else
+                          [[5,6,7,8], 4]
+                        end
                       end
+
+                      CheesePresenter.filter(:owned_by) { |scope, user_id| scope.owned_by(user_id.to_i) }
+                    end
+
+                    it 'calls search and filter until we gain the requested page size' do
+                      results = @presenter_collection.presenting("cheeses", params: params) { Cheese.unscoped }
+                      expect(results['cheeses'].keys.count).to eq(4)
+                      expect(results['cheeses'].keys).to eq(['3','4','5','7'])
                     end
                   end
 
-                  it 'calls search and filter until we gain the requested page size' do
-                    results = @presenter_collection.presenting("workspaces", params: params) { Workspace.unscoped.limit(4) }
-                    # expect(results['count']).to eq(4) # TODO: re-evaluate this when we figure out the counting problem when searching and filtering
-                    expect(results['workspaces'].keys.count).to eq(2)
-                    expect(results['workspaces'].keys).to eq(['3', '1'])
+                  context 'and there is more than one page remaining' do
+                    # Setup:
+                    # Page 1: [1,2,3,4], Page 2: [4,5,6,7], Page 3: [8,9,10,11]
+                    # The filtering filters out ids 6 and 9 and the search filters out ids 1, 2, 8, 9.
+                    # So the final result should be [3,4,5,10]
+                    before do
+                      CheesePresenter.search do |string, options|
+                        if options[:page] == 1
+                          [[3,4], 2]
+                        elsif options[:page] == 2
+                          [[5,6], 4]
+                        else
+                          [[10,11,12]]
+                        end
+                      end
+
+                      CheesePresenter.filter(:owned_by) { |scope, user_id| scope.owned_by(user_id.to_i) }
+                    end
+
+                    it 'calls search and filter until we gain the requested page size' do
+                      results = @presenter_collection.presenting("cheeses", params: params) { Cheese.unscoped }
+                      expect(results['cheeses'].keys.count).to eq(4)
+                      expect(results['cheeses'].keys).to eq(['3','4','5','10'])
+                    end
                   end
                 end
               end
