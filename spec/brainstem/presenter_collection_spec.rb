@@ -77,8 +77,6 @@ describe Brainstem::PresenterCollection do
           end
 
           it "defaults to offset 0 if the passed offset is less than 0 and limit to 1 if the passed limit is less than 1" do
-            stub.proxy(@presenter_collection).calculate_offset(anything).times(1)
-            stub.proxy(@presenter_collection).calculate_limit(anything).times(1)
             result = @presenter_collection.presenting("workspaces", :params => { :limit => -1, :offset => -1 }) { Workspace.unscoped }['results']
             expect(result.length).to eq(1)
             expect(result.first['id']).to eq(Workspace.unscoped[0].id.to_s)
@@ -564,9 +562,9 @@ describe Brainstem::PresenterCollection do
         end
 
         context "and a search request is made" do
-          it "calls the search method and maintains the order from the original scoping" do
+          it "calls the search method and maintains the resulting order" do
             result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.unscoped }
-            expect(result['workspaces'].keys).to eq(%w[3 5])
+            expect(result['workspaces'].keys).to eq(%w[5 3])
             expect(result['count']).to eq(2)
           end
 
@@ -582,13 +580,13 @@ describe Brainstem::PresenterCollection do
             expect(called).to eq true
           end
 
-          it "does apply filters" do
-            mock.any_instance_of(WorkspacePresenter).apply_filters_to_scope(anything, anything, anything).times(1) { Workspace.unscoped }
+          it "does not apply filters" do
+            mock(@presenter_collection).apply_filters_to_scope(anything, anything).times(0)
             result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.unscoped }
           end
 
-          it "does apply ordering" do
-            mock.any_instance_of(Brainstem::Presenter).apply_ordering_to_scope(anything, anything).times(1) { Workspace.unscoped }
+          it "does not apply ordering" do
+            mock.any_instance_of(Brainstem::Presenter).apply_ordering_to_scope(anything, anything).times(0)
             result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.unscoped }
           end
 
@@ -597,8 +595,8 @@ describe Brainstem::PresenterCollection do
             result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.unscoped }
           end
 
-          it "does apply pagination" do
-            mock(@presenter_collection).paginate(anything, anything).times(1) { [Workspace.unscoped, Workspace.unscoped.count] }
+          it "does not apply pagination" do
+            mock(@presenter_collection).paginate(anything, anything).times(0)
             result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.unscoped }
           end
 
@@ -621,8 +619,8 @@ describe Brainstem::PresenterCollection do
 
             it "will generate a compacted list, without nil or 0 values" do
               result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.order("id asc") }
-              expect(result['workspaces'].keys).to eq(%w[3 5])
-              expect(result['count']).to eq(2)
+              expect(result['workspaces'].keys).to eq(%w[5 3])
+              expect(result['count']).to eq(3)
             end
           end
 
@@ -733,110 +731,6 @@ describe Brainstem::PresenterCollection do
                 @presenter_collection.presenting("workspaces", :params => { :search => "blah", :order => "description:owned"}) { Workspace.unscoped }
                 expect(search_options[:order][:sort_order]).to eq("description")
                 expect(search_options[:order][:direction]).to eq("asc")
-              end
-            end
-
-            describe 'recursive pagination when filtering and searching' do
-              let(:params) { {
-                    owned_by: bob.id.to_s,
-                    per_page: 2,
-                    page: 1,
-                    search: "blah",
-                    order: "description:desc"
-                } }
-
-              context 'the first result of searching and filtering is the requested page size' do
-                before do
-                  WorkspacePresenter.search do |string, options|
-                    search_options = options
-                    [[1,2], 2]
-                  end
-
-                  WorkspacePresenter.filter(:owned_by) { |scope, user_id| scope.owned_by(user_id.to_i) }
-                end
-
-                it "returns the right values" do
-                  result = @presenter_collection.presenting("workspaces", params: params) { Workspace.unscoped }
-                  expect(result['count']).to eq(2)
-                  expect(result['workspaces'].keys.count).to eq(2)
-                  expect(result['workspaces'].keys).to eq(['1', '2'])
-                end
-              end
-
-              context 'the result of searching and filtering is not the requested page size' do
-                # The following tests are handling the recursive pagination that happens when you are both
-                # searching and filtering. If both things occur but your final result is not big enough,
-                # more filters and searches take place until the page size is big enough.
-                # Note: The CheesePresenter in the before do blocks simulates what our search should return before being filtered
-
-                context 'and we are on the last page' do
-                  it 'does not search and filter again' do
-                    mock.any_instance_of(WorkspacePresenter).apply_filters_to_scope(anything, anything, anything).times(1) { Workspace.unscoped.limit(1) }
-                    mock(@presenter_collection).run_search(anything, anything, anything, anything, anything).times(1) { [Workspace.unscoped.limit(1), 1] }
-                    result = @presenter_collection.presenting("workspaces", params: params) { Workspace.unscoped.limit(1) }
-                  end
-                end
-
-                context 'and we are not on the last page' do
-                  # Setup:
-                  # Page 1: [1,2,3,4], Page 2: [4,5,6,7], Page 3: [8,9,10,11]
-                  # The filtering filters out id 6 and the search filters out ids 1 and 2.
-                  # So the final result should be [3,4,5,7]
-
-                   let(:params) { {
-                    owned_by: bob.id.to_s,
-                    per_page: 4,
-                    page: 1,
-                    search: "blah",
-                    order: "id:asc"
-                  } }
-
-                  context 'and there is one page remaining' do
-                    before do
-                      CheesePresenter.search do |string, options|
-                        if options[:page] == 1
-                          [[3,4], 2]
-                        else
-                          [[5,6,7,8], 4]
-                        end
-                      end
-
-                      CheesePresenter.filter(:owned_by) { |scope, user_id| scope.owned_by(user_id.to_i) }
-                    end
-
-                    it 'calls search and filter until we gain the requested page size' do
-                      results = @presenter_collection.presenting("cheeses", params: params) { Cheese.unscoped }
-                      expect(results['cheeses'].keys.count).to eq(4)
-                      expect(results['cheeses'].keys).to eq(['3','4','5','7'])
-                    end
-                  end
-
-                  context 'and there is more than one page remaining' do
-                    # Setup:
-                    # Page 1: [1,2,3,4], Page 2: [4,5,6,7], Page 3: [8,9,10,11]
-                    # The filtering filters out ids 6 and 9 and the search filters out ids 1, 2, 8, 9.
-                    # So the final result should be [3,4,5,10]
-                    before do
-                      CheesePresenter.search do |string, options|
-                        if options[:page] == 1
-                          [[3,4], 2]
-                        elsif options[:page] == 2
-                          [[5,6], 4]
-                        else
-                          [[10,11,12]]
-                        end
-                      end
-
-                      CheesePresenter.filter(:owned_by) { |scope, user_id| scope.owned_by(user_id.to_i) }
-                    end
-
-                    it 'calls search and filter until we gain the requested page size' do
-                      results = @presenter_collection.presenting("cheeses", params: params) { Cheese.unscoped }
-                      expect(results['cheeses'].keys.count).to eq(4)
-                      expect(results['cheeses'].keys).to eq(['3','4','5','10'])
-                    end
-                  end
-                end
               end
             end
 
