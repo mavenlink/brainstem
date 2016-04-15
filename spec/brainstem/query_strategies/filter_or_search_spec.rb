@@ -2,7 +2,7 @@ require 'spec_helper'
 
 # The functionality of this is mainly tested in more integration-y tests in presenter_collection_spec.rb
 
-describe Brainstem::PaginationStrategies::FilterOrSearch do
+describe Brainstem::QueryStrategies::FilterOrSearch do
   describe '#execute' do
     context 'we are searching' do
       let(:subject) { described_class.new(@options) }

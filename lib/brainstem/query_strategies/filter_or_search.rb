@@ -1,5 +1,5 @@
 module Brainstem
-  module PaginationStrategies
+  module QueryStrategies
     class FilterOrSearch
       def initialize(options)
         @options = options

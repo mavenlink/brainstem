@@ -1,6 +1,6 @@
 require 'brainstem/search_unavailable_error'
 require 'brainstem/presenter_validator'
-require_relative './pagination_strategies/filter_or_search'
+require_relative './query_strategies/filter_or_search'
 
 module Brainstem
   class PresenterCollection
@@ -50,7 +50,7 @@ module Brainstem
       options[:default_per_page] = default_per_page
       options[:default_max_per_page] = default_max_per_page
 
-      strategy = Brainstem::PaginationStrategies::FilterOrSearch.new(options)
+      strategy = Brainstem::QueryStrategies::FilterOrSearch.new(options)
       primary_models, count = strategy.execute(scope)
 
       # Determine if an exception should be raised on an empty result set.
