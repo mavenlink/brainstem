@@ -1,7 +1,5 @@
 require 'brainstem/search_unavailable_error'
 require 'brainstem/presenter_validator'
-require_relative './query_strategies/filter_or_search'
-require_relative './query_strategies/filter_and_search'
 
 module Brainstem
   class PresenterCollection
