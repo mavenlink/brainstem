@@ -50,8 +50,7 @@ module Brainstem
       options[:default_per_page] = default_per_page
       options[:default_max_per_page] = default_max_per_page
 
-      strategy = Brainstem::QueryStrategies::FilterOrSearch.new(options)
-      primary_models, count = strategy.execute(scope)
+      primary_models, count = strategy(options).execute(scope)
 
       # Determine if an exception should be raised on an empty result set.
       if options[:raise_on_empty] && primary_models.empty?
@@ -142,6 +141,18 @@ module Brainstem
     end
 
     private
+
+    def strategy(options)
+      strat = if options[:primary_presenter].configuration.has_key? :strategy
+                options[:primary_presenter].configuration[:strategy]
+              else
+                :legacy
+              end
+
+      return Brainstem::QueryStrategies::FilterOrSearch.new(options) if strat == :legacy
+      return Brainstem::QueryStrategies::FilterAndSearch.new(options) if strat == :filter_and_search
+      return Brainstem::QueryStrategies::FilterOrSearch.new(options)
+    end
 
     def filter_includes(options)
       allowed_associations = options[:primary_presenter].allowed_associations(options[:params][:only].present?)
