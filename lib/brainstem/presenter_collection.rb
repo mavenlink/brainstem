@@ -18,7 +18,7 @@ module Brainstem
     def initialize
       @default_per_page = 20
       @default_max_per_page = 200
-      @default_max_filter_and_search_page = 70_000 # TODO: figure out a better default and make it configurable
+      @default_max_filter_and_search_page = 10_000 # TODO: figure out a better default and make it configurable
     end
 
     # The main presentation method, converting a model name and an optional scope into a hash structure, ready to be converted into JSON.
