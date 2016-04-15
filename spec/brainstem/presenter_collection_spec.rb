@@ -161,6 +161,65 @@ describe Brainstem::PresenterCollection do
       end
     end
 
+    describe 'strategies' do
+      context 'the user does not specify a strategy with the presenter DSL' do
+        it 'uses the legacy FilterOrSearch strategy' do
+          mock.proxy(Brainstem::QueryStrategies::FilterOrSearch).new(anything).times(1)
+          result = @presenter_collection.presenting("workspaces") { Workspace.unscoped }
+          expect(result['workspaces'].length).to eq(Workspace.count)
+        end
+      end
+
+      context 'the user specifies the filter_and_search strategy' do
+        before do
+          WorkspacePresenter.query_strategy :filter_and_search
+        end
+
+        context 'the user is searching' do
+          let(:params) { { search: "tomato" } }
+
+          before do
+            WorkspacePresenter.search do |string|
+              [[5, 3], 2]
+            end
+          end
+
+          context 'the scope size is below default_max_filter_and_search_page' do
+            before do
+              @presenter_collection.default_max_filter_and_search_page = 500
+            end
+
+            it 'uses the FilterAndSearch strategy' do
+              mock.proxy(Brainstem::QueryStrategies::FilterAndSearch).new(anything).times(1)
+              result = @presenter_collection.presenting("workspaces", params: params) { Workspace.unscoped }
+              expect(result['workspaces'].length).to eq(2)
+            end
+          end
+
+          context 'the scope size is above default_max_filter_and_search_page' do
+            before do
+              @presenter_collection.default_max_filter_and_search_page = 2
+            end
+
+            # TODO: this will become the third, faster strategy for large pagesizes
+            it 'uses the FilterOrSearch strategy' do
+              mock.proxy(Brainstem::QueryStrategies::FilterOrSearch).new(anything).times(1)
+              result = @presenter_collection.presenting("workspaces") { Workspace.unscoped }
+              expect(result['workspaces'].length).to eq(Workspace.count)
+            end
+          end
+        end
+
+        context 'the user is not searching' do
+          it 'uses the legacy FilterOrSearch strategy' do
+            mock.proxy(Brainstem::QueryStrategies::FilterOrSearch).new(anything).times(1)
+            result = @presenter_collection.presenting("workspaces") { Workspace.unscoped }
+            expect(result['workspaces'].length).to eq(Workspace.count)
+          end
+        end
+      end
+    end
+
     describe "uses presenters" do
       it "finds presenter by table name string" do
         result = @presenter_collection.presenting("workspaces") { Workspace.unscoped }

@@ -22,7 +22,7 @@ describe Brainstem::QueryStrategies::FilterOrSearch do
       end
 
       it 'returns the primary models and count' do
-        expect(subject.execute(Workspace.all)).to eq([@results, 2])
+        expect(subject.execute(Workspace.unscoped)).to eq([@results, 2])
       end
     end
 
@@ -38,7 +38,7 @@ describe Brainstem::QueryStrategies::FilterOrSearch do
       end
 
       it 'returns the primary models and count' do
-        expect(subject.execute(Workspace.all)).to eq([Workspace.all.to_a, Workspace.count])
+        expect(subject.execute(Workspace.unscoped)).to eq([Workspace.unscoped.to_a, Workspace.count])
       end
     end
   end

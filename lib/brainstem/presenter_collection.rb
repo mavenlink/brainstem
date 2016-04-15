@@ -1,6 +1,7 @@
 require 'brainstem/search_unavailable_error'
 require 'brainstem/presenter_validator'
 require_relative './query_strategies/filter_or_search'
+require_relative './query_strategies/filter_and_search'
 
 module Brainstem
   class PresenterCollection
@@ -13,10 +14,13 @@ module Brainstem
     # @return [Integer] The default number of objects that will be returned in the presented hash.
     attr_accessor :default_per_page
 
+    attr_accessor :default_max_filter_and_search_page
+
     # @!visibility private
     def initialize
       @default_per_page = 20
       @default_max_per_page = 200
+      @default_max_filter_and_search_page = 70_000 # TODO: figure out a better default and make it configurable
     end
 
     # The main presentation method, converting a model name and an optional scope into a hash structure, ready to be converted into JSON.
@@ -49,8 +53,9 @@ module Brainstem
 
       options[:default_per_page] = default_per_page
       options[:default_max_per_page] = default_max_per_page
+      options[:default_max_filter_and_search_page] = default_max_filter_and_search_page
 
-      primary_models, count = strategy(options).execute(scope)
+      primary_models, count = strategy(options, scope).execute(scope)
 
       # Determine if an exception should be raised on an empty result set.
       if options[:raise_on_empty] && primary_models.empty?
@@ -142,16 +147,20 @@ module Brainstem
 
     private
 
-    def strategy(options)
-      strat = if options[:primary_presenter].configuration.has_key? :strategy
-                options[:primary_presenter].configuration[:strategy]
+    def strategy(options, scope)
+      strat = if options[:primary_presenter].configuration.has_key? :query_strategy
+                options[:primary_presenter].configuration[:query_strategy]
               else
                 :legacy
               end
 
       return Brainstem::QueryStrategies::FilterOrSearch.new(options) if strat == :legacy
-      return Brainstem::QueryStrategies::FilterAndSearch.new(options) if strat == :filter_and_search
+      return Brainstem::QueryStrategies::FilterAndSearch.new(options) if strat == :filter_and_search && searching?(options) && scope.count <= default_max_filter_and_search_page
       return Brainstem::QueryStrategies::FilterOrSearch.new(options)
+    end
+
+    def searching?(options)
+      options[:params][:search] && options[:primary_presenter].configuration[:search].present?
     end
 
     def filter_includes(options)
