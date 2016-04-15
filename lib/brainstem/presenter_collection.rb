@@ -153,7 +153,7 @@ module Brainstem
               end
 
       return Brainstem::QueryStrategies::FilterOrSearch.new(options) if strat == :legacy
-      return Brainstem::QueryStrategies::FilterAndSearch.new(options) if strat == :filter_and_search && searching?(options) && scope.count <= default_max_filter_and_search_page
+      return Brainstem::QueryStrategies::FilterAndSearch.new(options) if strat == :filter_and_search && searching?(options)
       return Brainstem::QueryStrategies::FilterOrSearch.new(options)
     end
 

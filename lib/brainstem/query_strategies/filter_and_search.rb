@@ -3,9 +3,10 @@ module Brainstem
     class FilterAndSearch < BaseStrategy
       def execute(scope)
         scope = @options[:primary_presenter].apply_filters_to_scope(scope, @options[:params], @options)
+        scope = @options[:primary_presenter].apply_ordering_to_scope(scope, @options[:params])
         original_scope = scope
 
-        scope_ids = scope.select(:id).pluck(:id)
+        scope_ids = scope.select(:id).limit(@options[:default_max_filter_and_search_page]).pluck(:id)
 
         ordered_search_ids = run_search(scope, filter_includes.map(&:name))
 
