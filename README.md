@@ -501,6 +501,9 @@ Brainstem provides a rich DSL for building presenters.  This section details the
   end
   ```
 
+  If you wish to perform both your Brainstem filters in conjunction with your search block you can use the beta `search_and_filter`
+  query strategy. [See this for details](lib/brainstem/query_strategies/readme.md).
+
 * `preload` - Use this annotation to provide a list of valid associations to preload on this model. If you
   always end up asking a question of each instance that requires loading an association, `preload` it here to avoid an
   N+1 query. The syntax is the same as `preload` or `include` in Rails and allows for nesting.
