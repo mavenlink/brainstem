@@ -1,10 +1,10 @@
 # Filtering/Searching Query Strategies
 
-Traditionally Brainstem will ignore all filters if you define a `search` block in your presenter.
-Brainstem relies on your search implementation to do any necessary filtering. A downside of this is that depending on
-your searching integration you may have to implement your filters twice: once inside your presenters and once inside
+Traditionally Brainstem has ignored all filters if you defined a `search` block in your presenter.
+Brainstem relies on your search implementation to do any necessary filtering. A downside of this is that you may have to
+implement your filters twice: once inside your presenters and once inside
 your searching solution. This causes extra work, particularly for complex queries and associations that the Brainstem DSL
-is well equipped to deal with.
+is well equipped to handle.
 
 The current version of Brainstem offers a beta feature for allowing both searching and filtering to take place. To enable it,
 add the following to your presenter:
@@ -37,11 +37,11 @@ implications, which is why we have limited the total number of possible results 
 This is not a perfect solution for all situations, which is why all presenters will default to the old behavior. You
 should only use the `filter_and_search` strategy if you've determined that:
 
-A,) Your API will still be fast enough when there are 10,000 possible results.
+A.) Your API will still be fast enough when there are 10,000 possible results.
 
 B.) It's not critical for the user to be able to retrieve ALL possible results when searching.
 
-C.) It's actually important for your API that it support Brainstem filters and searching.
+C.) It's actually important for your API that it support Brainstem filters and searching at the same time.
 
 # Other strategies
 
