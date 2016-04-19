@@ -2,6 +2,7 @@ require 'spec_helper'
 
 describe Brainstem::QueryStrategies::FilterAndSearch do
   let(:bob) { User.find_by_username('bob') }
+  let(:jane) { User.find_by_username('jane') }
 
   let(:params) { {
     "owned_by" => bob.id.to_s,
@@ -41,6 +42,23 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
       results, count = described_class.new(options).execute(Cheese.unscoped)
       expect(count).to eq(8)
       expect(results.pluck(:id)).to eq([12,11,10,8,5,4,3])
+    end
+
+    context 'passes a by_ids option to the search block' do
+      before do
+        CheesePresenter.search do |string, options|
+          matching_search_ids = [1,2,3,4,5,6,7,8,9,10]
+          matching = matching_search_ids & options[:by_ids]
+          [matching, matching.count]
+        end
+      end
+
+      it 'should search based off those ids' do
+        options[:params]['owned_by'] = jane.id.to_s
+        results, count = described_class.new(options).execute(Cheese.unscoped)
+        expect(count).to eq(2)
+        expect(results.pluck(:id)).to eq([6,9])
+      end
     end
   end
 end
