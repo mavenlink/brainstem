@@ -21,18 +21,15 @@ You must take the following important notes into account when using the `filter_
 
 - Your search block should behave the same as it always has: it should return an array where the first element is an array
   of model ids and the second element is the total number of matched records.
-- This works by retrieving ALL of the possible ids from both searching and filtering and then taking the intersection
-  of those two sets, up to 10,000 possible results. This means Brainstem will send your search block a `limit` of
-  10,000 and an `offset` of 0. As this could have potential performance implications for your API you should make sure
-  you performance test this before deploying to a production environment.
+- This works by retrieving all possible ids from your search block (up to 10,000) and then applying your filters
+  on those returned ids. This has some obvious potential performance considerations as you are potentially returning
+  and querying off of 10,000 results.
 - If you have less than 10,000 possible results you shouldn't have to worry about ordering, because the order will
   be applied in Brainstem on the intersection of filter and search results. However, if there is more than 10,000 your
   searching implementation *must* perform the same ordering as your Brainstem filter. Otherwise the 10,000 results
   from the search might not be the same 10,000 from the filter, and the intersection of the two would be incorrect.
-
-The reason we need to request ALL ids is so we can get the correct count of possible results. Without doing this pagination
-would not work properly (there would be no way of knowing the total number of pages). This has some obvious performance
-implications, which is why we have limited the total number of possible results to 10,000.
+- This will not work if you have more than 10,000 entities and need to be able to return all of them (this will only
+  give you the first 10,000).
 
 This is not a perfect solution for all situations, which is why all presenters will default to the old behavior. You
 should only use the `filter_and_search` strategy if you've determined that:
@@ -42,6 +39,9 @@ A.) Your API will still be fast enough when there are 10,000 possible results.
 B.) It's not critical for the user to be able to retrieve ALL possible results when searching.
 
 C.) It's actually important for your API that it support Brainstem filters and searching at the same time.
+
+D.) You either have less than 10,000 entities to search and filter from or do not need to be be able to return more than
+    10,000.
 
 # Other strategies
 
