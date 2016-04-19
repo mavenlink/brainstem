@@ -2,26 +2,25 @@ module Brainstem
   module QueryStrategies
     class FilterAndSearch < BaseStrategy
       def execute(scope)
-        scope = @options[:primary_presenter].apply_filters_to_scope(scope, @options[:params], @options)
-        scope_ids = scope.select(:id).pluck(:id)
-        ordered_search_ids = run_search(scope, scope_ids, filter_includes.map(&:name))
+        ordered_search_ids = run_search(scope, filter_includes.map(&:name))
         scope = scope.where(id: ordered_search_ids)
+        scope = @options[:primary_presenter].apply_filters_to_scope(scope, @options[:params], @options)
         scope = @options[:primary_presenter].apply_ordering_to_scope(scope, @options[:params])
         count = scope.count
         scope = paginate(scope)
+
         [scope, count]
       end
 
       private
 
-      def run_search(scope, scope_ids, includes)
+      def run_search(scope, includes)
         sort_name, direction = @options[:primary_presenter].calculate_sort_name_and_direction @options[:params]
         search_options = HashWithIndifferentAccess.new(
           include: includes,
           order: { sort_order: sort_name, direction: direction },
           limit: @options[:default_max_filter_and_search_page],
-          offset: 0,
-          by_ids: scope_ids
+          offset: 0
         )
 
         search_options.reverse_merge!(@options[:primary_presenter].extract_filters(@options[:params], @options))
