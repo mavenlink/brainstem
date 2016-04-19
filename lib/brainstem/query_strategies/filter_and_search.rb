@@ -2,19 +2,14 @@ module Brainstem
   module QueryStrategies
     class FilterAndSearch < BaseStrategy
       def execute(scope)
+        ordered_search_ids = run_search(scope, filter_includes.map(&:name))
+        scope = scope.where(id: ordered_search_ids)
         scope = @options[:primary_presenter].apply_filters_to_scope(scope, @options[:params], @options)
         scope = @options[:primary_presenter].apply_ordering_to_scope(scope, @options[:params])
-        original_scope = scope
-
-        scope_ids = scope.select(:id).limit(@options[:default_max_filter_and_search_page]).pluck(:id)
-
-        ordered_search_ids = run_search(scope, filter_includes.map(&:name))
-
-        intersection_of_search_and_filter = scope_ids & ordered_search_ids
-
-        scope = original_scope.where(id: intersection_of_search_and_filter)
+        count = scope.count
         scope = paginate(scope)
-        [scope, intersection_of_search_and_filter.length]
+
+        [scope, count]
       end
 
       private
