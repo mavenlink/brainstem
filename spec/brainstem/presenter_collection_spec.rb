@@ -162,6 +162,8 @@ describe Brainstem::PresenterCollection do
     end
 
     describe 'strategies' do
+      let(:params) { { search: "tomato" } }
+
       context 'the user does not specify a strategy with the presenter DSL' do
         it 'uses the legacy FilterOrSearch strategy' do
           mock.proxy(Brainstem::QueryStrategies::FilterOrSearch).new(anything).times(1)
@@ -170,14 +172,12 @@ describe Brainstem::PresenterCollection do
         end
       end
 
-      context 'the user specifies the filter_and_search strategy' do
+      context 'the user specifies the filter_and_search strategy as a symbol' do
         before do
           WorkspacePresenter.query_strategy :filter_and_search
         end
 
         context 'the user is searching' do
-          let(:params) { { search: "tomato" } }
-
           before do
             WorkspacePresenter.search do |string|
               [[5, 3], 2]
@@ -216,6 +216,22 @@ describe Brainstem::PresenterCollection do
             result = @presenter_collection.presenting("workspaces") { Workspace.unscoped }
             expect(result['workspaces'].length).to eq(Workspace.count)
           end
+        end
+      end
+
+      context 'the user passes a lambda as the query_strategy' do
+        before do
+          WorkspacePresenter.query_strategy lambda { :filter_and_search }
+
+          WorkspacePresenter.search do |string|
+            [[5, 3], 2]
+          end
+        end
+
+        it 'uses the strategy returned by that lambda' do
+          mock.proxy(Brainstem::QueryStrategies::FilterAndSearch).new(anything).times(1)
+          result = @presenter_collection.presenting("workspaces", params: params) { Workspace.unscoped }
+          expect(result['workspaces'].length).to eq(2)
         end
       end
     end

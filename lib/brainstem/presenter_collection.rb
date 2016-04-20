@@ -146,13 +146,8 @@ module Brainstem
     private
 
     def strategy(options, scope)
-      strat = if options[:primary_presenter].configuration.has_key? :query_strategy
-                options[:primary_presenter].configuration[:query_strategy]
-              else
-                :legacy
-              end
+      strat = options[:primary_presenter].get_query_strategy
 
-      return Brainstem::QueryStrategies::FilterOrSearch.new(options) if strat == :legacy
       return Brainstem::QueryStrategies::FilterAndSearch.new(options) if strat == :filter_and_search && searching?(options)
       return Brainstem::QueryStrategies::FilterOrSearch.new(options)
     end
