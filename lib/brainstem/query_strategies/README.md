@@ -13,6 +13,19 @@ add the following to your presenter:
 query_strategy :filter_and_search
 ```
 
+The `query_strategy` DSL method can take a symbol or a lambda. If you pass it a lambda you can programmatically
+determine what strategy to use. Example:
+
+```ruby
+query_strategy lambda {
+  if current_user.filter_and_search?
+    :filter_and_search
+  else
+    :legacy
+  end
+}
+```
+
 Utilizing this strategy will enable Brainstem to take the intersection of your search results and your filter results,
 effectively giving you the best of both worlds: fast, efficient searching using something like ElasticSearch and in depth
 ActiveRecord filtering provided by Brainstem.
