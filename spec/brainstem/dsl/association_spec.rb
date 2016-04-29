@@ -32,8 +32,9 @@ describe Brainstem::DSL::Association do
 
       it 'calls the lambda in the context of the given instance' do
         instance = Object.new
+        lookup = {}
         mock(instance).some_instance_method
-        expect(association.run_on(:anything, instance)).to eq :return_value
+        expect(association.run_on(:anything, lookup, instance)).to eq :return_value
       end
     end
   end

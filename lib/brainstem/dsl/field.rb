@@ -31,10 +31,13 @@ module Brainstem
         options[:optional]
       end
 
-      def run_on(model, helper_instance = Object.new)
+      def run_on(model, lookup = {}, helper_instance = Object.new)
         if options[:dynamic]
           proc = options[:dynamic]
-          if proc.arity > 0
+
+          if proc.arity > 1
+            helper_instance.instance_exec(model, lookup, &proc)
+          elsif proc.arity > 0
             helper_instance.instance_exec(model, &proc)
           else
             helper_instance.instance_exec(&proc)
