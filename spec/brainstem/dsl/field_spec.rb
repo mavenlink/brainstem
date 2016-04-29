@@ -35,28 +35,13 @@ describe Brainstem::DSL::Field do
 
   describe '#run_on' do
     context 'on :dynamic fields' do
-      context 'when the :dynamic lambda takes only the model' do
-        let(:options) { { dynamic: lambda { |model| model.some_instance_method } } }
+      let(:options) { { dynamic: lambda { some_instance_method } } }
 
-        it 'calls the :dynamic lambda in the context of the given instance' do
-          do_not_allow(model).title
-          instance = Object.new
-          lookup = {}
-          mock(instance).some_instance_method
-          field.run_on(model, lookup, instance)
-        end
-      end
-
-      context 'when the :dynamic lambda takes the model and a lookup' do
-        let(:options) { { dynamic: lambda { |model, lookup| model.some_instance_method } } }
-
-        it 'calls the :dynamic lambda in the context of the given instance' do
-          do_not_allow(model).title
-          instance = Object.new
-          lookup = {}
-          mock(instance).some_instance_method
-          field.run_on(model, lookup, instance)
-        end
+      it 'calls the :dynamic lambda in the context of the given instance' do
+        do_not_allow(model).title
+        instance = Object.new
+        mock(instance).some_instance_method
+        field.run_on(model, instance)
       end
     end
 

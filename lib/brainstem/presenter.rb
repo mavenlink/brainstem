@@ -85,8 +85,7 @@ module Brainstem
         associations:                 configuration[:associations],
         reflections:                  reflections_for_model(models.first),
         association_objects_by_name:  association_objects_by_name,
-        optional_fields:              options[:optional_fields] || [],
-        lookup:                       custom_lookup(models, configuration[:fields].keys)
+        optional_fields:              options[:optional_fields] || []
       }
 
       sanitized_association_names = association_objects_by_name.values.map(&:method_name)
@@ -130,11 +129,7 @@ module Brainstem
     end
 
     # Subclasses can define this if they wish. This method will be called by {#group_present}.
-    def custom_preload(models, requested_associations = [], fields = [])
-    end
-
-    # Subclasses can define this if they wish.
-    def custom_lookup(models, field_keys)
+    def custom_preload(models, requested_associations = [])
     end
 
     # Given user params, build a hash of validated filter names to their unsanitized arguments.
@@ -261,7 +256,7 @@ module Brainstem
         case field
           when DSL::Field
             if field.conditionals_match?(model, context[:conditionals], context[:helper_instance], context[:conditional_cache]) && field.optioned?(context[:optional_fields])
-              result[name] = field.run_on(model, context[:lookup], context[:helper_instance])
+              result[name] = field.run_on(model, context[:helper_instance])
             end
           when DSL::Configuration
             result[name] ||= {}
@@ -283,7 +278,7 @@ module Brainstem
         # If this association has been explictly requested, execute the association here.  Additionally, store
         # the loaded models in the :load_associations_into hash for later use.
         if context[:association_objects_by_name][external_name]
-          associated_model_or_models = association.run_on(model, context[:lookup], context[:helper_instance])
+          associated_model_or_models = association.run_on(model, context[:helper_instance])
 
           if options[:load_associations_into]
             Array(associated_model_or_models).flatten.each do |associated_model|
