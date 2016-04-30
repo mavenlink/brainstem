@@ -18,8 +18,18 @@ module Brainstem
         end
       end
 
-      def run_on(model, helper_instance = Object.new)
-        options[:dynamic] ? helper_instance.instance_exec(model, &options[:dynamic]) : model.send(method_name)
+      def run_on(model, lookup = {}, helper_instance = Object.new)
+        proc = options[:dynamic]
+
+        if proc
+          if proc.arity > 1
+            helper_instance.instance_exec(model, lookup, &proc)
+          else
+            helper_instance.instance_exec(model, &proc)
+          end
+        else
+          model.send(method_name)
+        end
       end
 
       def polymorphic?
