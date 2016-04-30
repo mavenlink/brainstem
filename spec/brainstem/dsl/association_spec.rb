@@ -28,13 +28,25 @@ describe Brainstem::DSL::Association do
     end
 
     context 'when given a dynamic lambda' do
-      let(:options) { { dynamic: lambda { |model| some_instance_method; :return_value } } }
+      context 'when the lambda takes one argument' do
+        let(:options) { { dynamic: lambda { |model| some_instance_method; :return_value } } }
 
-      it 'calls the lambda in the context of the given instance' do
-        instance = Object.new
-        lookup = {}
-        mock(instance).some_instance_method
-        expect(association.run_on(:anything, lookup, instance)).to eq :return_value
+        it 'calls the lambda in the context of the given instance' do
+          instance = Object.new
+          mock(instance).some_instance_method
+          expect(association.run_on(:anything, nil, instance)).to eq :return_value
+        end
+      end
+
+      context 'when the lambda takes two arguments' do
+        let(:options) { { dynamic: lambda { |model, lookup| some_instance_method; lookup[:key] } } }
+
+        it 'calls the lambda and returns the value of the lookup' do
+          instance = Object.new
+          lookup = { key: 'value' }
+          mock(instance).some_instance_method
+          expect(association.run_on(:anything, lookup, instance)).to eq 'value'
+        end
       end
     end
   end

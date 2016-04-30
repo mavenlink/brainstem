@@ -79,7 +79,7 @@ module Brainstem
         reflections:                  reflections_for_model(models.first),
         association_objects_by_name:  association_objects_by_name,
         optional_fields:              options[:optional_fields] || [],
-        lookup:                       custom_lookup(models, configuration[:fields].keys)
+        lookup:                       custom_lookup(models, configuration[:fields].keys, association_objects_by_name.keys)
       }
 
       sanitized_association_names = association_objects_by_name.values.map(&:method_name)
@@ -126,8 +126,9 @@ module Brainstem
     def custom_preload(models, requested_associations = [], fields = [])
     end
 
-    # Subclasses can define this if they wish.
-    def custom_lookup(models, field_keys)
+    # Subclasses can define this if they wish. The return result of this method will be made
+    # available as the second argument for the dyanmic lambdas of fields and assocations
+    def custom_lookup(models, requested_fields = [], requested_associations = [])
     end
 
     # Given user params, build a hash of validated filter names to their unsanitized arguments.
