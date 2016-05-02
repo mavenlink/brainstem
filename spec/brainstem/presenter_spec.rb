@@ -602,6 +602,8 @@ describe Brainstem::Presenter do
       presenter_class.filter(:bar) { |scope| scope }
       expect(presenter.extract_filters({ 'foo' => 'hi' })).to eq({})
       expect(presenter.extract_filters({ 'owned_by' => '2' })).to eq({ 'owned_by' => '2' })
+      expect(presenter.extract_filters({ 'owned_by' => [2] })).to eq({ 'owned_by' => [2] })
+      expect(presenter.extract_filters({ 'owned_by' => { :ids => [2], 2 => [1] }})).to eq({ 'owned_by' => { :ids => [2], 2 => [1] }})
     end
 
     it "converts 'true' and 'false' into true and false" do
