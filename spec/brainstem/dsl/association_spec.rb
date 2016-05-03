@@ -7,13 +7,14 @@ describe Brainstem::DSL::Association do
   let(:description) { "This object's user" }
   let(:options) { { } }
   let(:association) { Brainstem::DSL::Association.new(name, target_class, description, options) }
+  let(:context) { { } }
 
   describe "#run_on" do
     context 'with no special options' do
       it 'calls the method by name on the model' do
         object = Object.new
         mock(object).user
-        association.run_on(object)
+        association.run_on(object, context)
       end
     end
 
@@ -23,7 +24,7 @@ describe Brainstem::DSL::Association do
       it 'calls the method named in :via on the model' do
         object = Object.new
         mock(object).user2
-        association.run_on(object)
+        association.run_on(object, context)
       end
     end
 
@@ -33,7 +34,7 @@ describe Brainstem::DSL::Association do
       it 'calls the lambda in the context of the given instance' do
         instance = Object.new
         mock(instance).some_instance_method
-        expect(association.run_on(:anything, instance)).to eq :return_value
+        expect(association.run_on(:anything, context, instance)).to eq :return_value
       end
     end
   end
