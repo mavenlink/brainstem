@@ -8,8 +8,9 @@ module Brainstem
         scope = @options[:primary_presenter].apply_ordering_to_scope(scope, @options[:params])
         count = scope.count
         scope = paginate(scope)
+        primary_models = evaluate_scope(scope)
 
-        [scope, count]
+        [primary_models, count]
       end
 
       private

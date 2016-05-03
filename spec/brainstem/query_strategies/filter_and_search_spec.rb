@@ -32,7 +32,7 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
     it 'takes the intersection of the search and filter results' do
       results, count = described_class.new(options).execute(Cheese.unscoped)
       expect(count).to eq(8)
-      expect(results.pluck(:id)).to eq([2,3,4,5,8,10,11])
+      expect(results.map(&:id)).to eq([2,3,4,5,8,10,11])
     end
 
     it "applies ordering to the scope" do
@@ -40,7 +40,7 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
       proxy.instance_of(Brainstem::Presenter).apply_ordering_to_scope(anything, anything).times(1)
       results, count = described_class.new(options).execute(Cheese.unscoped)
       expect(count).to eq(8)
-      expect(results.pluck(:id)).to eq([12,11,10,8,5,4,3])
+      expect(results.map(&:id)).to eq([12,11,10,8,5,4,3])
     end
   end
 end
