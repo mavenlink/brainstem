@@ -251,7 +251,7 @@ module Brainstem
         case field
           when DSL::Field
             if field.conditionals_match?(model, context[:conditionals], context[:helper_instance], context[:conditional_cache]) && field.optioned?(context[:optional_fields])
-              result[name] = field.run_on(model, context[:helper_instance])
+              result[name] = field.run_on(model, context, context[:helper_instance])
             end
           when DSL::Configuration
             result[name] ||= {}

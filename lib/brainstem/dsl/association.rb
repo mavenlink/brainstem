@@ -19,17 +19,16 @@ module Brainstem
       end
 
       def run_on(model, context, helper_instance = Object.new)
-        dynamic_proc = options[:dynamic]
-        lookup_proc = options[:lookup]
-
-        if dynamic_proc
-          if dynamic_proc.arity > 0
-            helper_instance.instance_exec(model, &dynamic_proc)
+        if options[:dynamic]
+          proc = options[:dynamic]
+          if proc.arity > 0
+            helper_instance.instance_exec(model, &proc)
           else
-            helper_instance.instance_exec(&dynamic_proc)
+            helper_instance.instance_exec(&proc)
           end
-        elsif lookup_proc
-          context[:lookup][:associations][name] ||= helper_instance.instance_exec(context[:models], &lookup_proc)
+        elsif options[:lookup]
+          proc = options[:lookup]
+          context[:lookup][:associations][name] ||= helper_instance.instance_exec(context[:models], &proc)
           context[:lookup][:associations][name][model.id]
         else
           model.send(method_name)

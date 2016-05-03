@@ -34,6 +34,8 @@ describe Brainstem::DSL::Field do
   end
 
   describe '#run_on' do
+    let(:context) { { } }
+
     context 'on :dynamic fields' do
       let(:options) { { dynamic: lambda { some_instance_method } } }
 
@@ -41,7 +43,42 @@ describe Brainstem::DSL::Field do
         do_not_allow(model).title
         instance = Object.new
         mock(instance).some_instance_method
-        field.run_on(model, instance)
+        field.run_on(model, context, instance)
+      end
+    end
+
+    context 'on :lookup fields' do
+      let(:options) { { lookup: lambda { |models| some_instance_method; Hash[models.map { |model| [model.id, model.title] }] } } }
+      let(:first_model) { Workspace.create(title: "Ben's Project") }
+      let(:second_model) { Workspace.create(title: "Nate's Project") }
+      let(:context) {
+        {
+          lookup: Brainstem::Presenter.new.send(:empty_lookup_cache, [name.to_s], []),
+          models: [first_model, second_model]
+        }
+      }
+      # {:lookup=>{:fields=>{"title"=>nil}, :associations=>{}}
+
+      context 'The first model is ran' do
+        it 'builds lookup cache and returns the value for the first model' do
+          expect(context[:lookup][:fields][name.to_s]).to eq(nil)
+          instance = Object.new
+          mock(instance).some_instance_method
+          expect(field.run_on(first_model, context, instance)).to eq("Ben's Project")
+          expect(context[:lookup][:fields][name.to_s]).to eq({ first_model.id => "Ben's Project", second_model.id => "Nate's Project" })
+        end
+      end
+
+      context 'The second model is ran after the first' do
+        it 'returns the value from the lookup cache and does not run the lookup' do
+          instance = Object.new
+          mock(instance).some_instance_method
+          field.run_on(first_model, context, instance)
+          expect(context[:lookup][:fields][name.to_s]).to eq({ first_model.id => "Ben's Project", second_model.id => "Nate's Project" })
+
+          mock(instance).some_instance_method.never
+          expect(field.run_on(second_model, context, instance)).to eq("Nate's Project")
+        end
       end
     end
 
@@ -49,7 +86,7 @@ describe Brainstem::DSL::Field do
       it 'calls method_name on the model' do
         mock(model).foo
         mock(field).method_name { 'foo' }
-        field.run_on(model)
+        field.run_on(model, context)
       end
     end
   end

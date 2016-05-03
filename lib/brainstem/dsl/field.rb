@@ -31,7 +31,7 @@ module Brainstem
         options[:optional]
       end
 
-      def run_on(model, helper_instance = Object.new)
+      def run_on(model, context, helper_instance = Object.new)
         if options[:dynamic]
           proc = options[:dynamic]
           if proc.arity > 0
@@ -39,6 +39,10 @@ module Brainstem
           else
             helper_instance.instance_exec(&proc)
           end
+        elsif options[:lookup]
+          proc = options[:lookup]
+          context[:lookup][:fields][name] ||= helper_instance.instance_exec(context[:models], &proc)
+          context[:lookup][:fields][name][model.id]
         else
           model.send(method_name)
         end
