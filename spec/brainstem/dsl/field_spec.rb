@@ -80,6 +80,23 @@ describe Brainstem::DSL::Field do
           expect(field.run_on(second_model, context, instance)).to eq("Nate's Project")
         end
       end
+
+      context 'on :lookup_fetch' do
+        let(:options) {
+          {
+            lookup: lambda { |models| Hash[models.map { |model| [model.id, model.title] }] },
+            lookup_fetch: lambda { |lookup, model| some_instance_method; lookup[model.id] }
+          }
+        }
+
+        it 'returns the value from the lookup using the lookup_fetch lambda' do
+          context[:lookup][:fields][name.to_s] = {}
+          context[:lookup][:fields][name.to_s][first_model.id] = "Ben's stubbed out Project"
+          instance = Object.new
+          mock(instance).some_instance_method
+          expect(field.run_on(first_model, context, instance)).to eq("Ben's stubbed out Project")
+        end
+      end
     end
 
     context 'on non-:dynamic fields' do
