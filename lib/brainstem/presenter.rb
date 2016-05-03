@@ -152,8 +152,8 @@ module Brainstem
 
       value = value.to_s
       case value
-        when '1', 'true', 'TRUE' then true
-        when '0', 'false', 'FALSE' then false
+        when 'true', 'TRUE' then true
+        when 'false', 'FALSE' then false
         else
           value
       end
