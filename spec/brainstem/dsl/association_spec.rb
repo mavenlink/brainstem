@@ -37,5 +37,41 @@ describe Brainstem::DSL::Association do
         expect(association.run_on(:anything, context, instance)).to eq :return_value
       end
     end
+
+    context 'when given a lookup lambda' do
+      let(:model_id) { 23 }
+      let(:options) { { lookup: lambda { |models| some_instance_method; Hash[models.map { |model| [model.id, model.username] }] } } }
+      let(:first_model) { target_class.create(username: 'Ben') }
+      let(:second_model) { target_class.create(username: 'Nate') }
+      let(:context) {
+        {
+            lookup: Brainstem::Presenter.new.send(:empty_lookup_cache, [], [name.to_s]),
+            models: [first_model, second_model]
+        }
+      }
+      # context => {:lookup=>{:fields=>{}, :associations=>{'user'=>nil}}}
+
+      context 'The first model is ran' do
+        it 'builds lookup cache and returns the value' do
+          expect(context[:lookup][:associations][name]).to eq(nil)
+          instance = Object.new
+          mock(instance).some_instance_method
+          expect(association.run_on(first_model, context, instance)).to eq('Ben')
+          expect(context[:lookup][:associations][name.to_s]).to eq({ first_model.id => 'Ben', second_model.id => 'Nate' })
+        end
+      end
+
+      context 'The second model is ran after the first' do
+        it 'returns the value from the lookup cache and does not run the lookup' do
+          instance = Object.new
+          mock(instance).some_instance_method
+          association.run_on(first_model, context, instance)
+          expect(context[:lookup][:associations][name.to_s]).to eq({ first_model.id => 'Ben', second_model.id => 'Nate' })
+
+          mock(instance).some_instance_method.never
+          expect(association.run_on(second_model, context, instance)).to eq('Nate')
+        end
+      end
+    end
   end
 end
