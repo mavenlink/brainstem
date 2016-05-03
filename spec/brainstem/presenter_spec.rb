@@ -609,7 +609,11 @@ describe Brainstem::Presenter do
     it "converts 'true' and 'false' into true and false" do
       presenter_class.filter :owned_by
       expect(presenter.extract_filters({ 'owned_by' => 'true' })).to eq({ 'owned_by' => true })
+      expect(presenter.extract_filters({ 'owned_by' => 'TRUE' })).to eq({ 'owned_by' => true })
+      expect(presenter.extract_filters({ 'owned_by' => 1 })).to eq({ 'owned_by' => true })
       expect(presenter.extract_filters({ 'owned_by' => 'false' })).to eq({ 'owned_by' => false })
+      expect(presenter.extract_filters({ 'owned_by' => 'FALSE' })).to eq({ 'owned_by' => false })
+      expect(presenter.extract_filters({ 'owned_by' => 0 })).to eq({ 'owned_by' => false })
       expect(presenter.extract_filters({ 'owned_by' => 'hi' })).to eq({ 'owned_by' => 'hi' })
     end
 

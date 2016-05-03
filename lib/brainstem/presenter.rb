@@ -132,7 +132,7 @@ module Brainstem
       apply_default_filters = options.fetch(:apply_default_filters) { true }
 
       configuration[:filters].each do |filter_name, filter|
-        user_value = sanitize_filter_value(user_params[filter_name])
+        user_value = format_filter_value(user_params[filter_name])
 
         filter_options = filter[0]
         filter_arg = apply_default_filters && user_value.nil? ? filter_options[:default] : user_value
@@ -145,18 +145,20 @@ module Brainstem
     # @api private
     # @param [Array, Hash, String, Boolean, nil] value
     #
-    # Sanitizes the given filter value.
     # @return [Array, Hash, String, Boolean, nil]
-    def sanitize_filter_value(value)
+    def format_filter_value(value)
       return value if value.is_a?(Array) || value.is_a?(Hash)
       return nil if value.blank?
 
       value = value.to_s
-      return true if value == 'true'
-
-      value == 'false' ? false : value
+      case value
+        when '1', 'true', 'TRUE' then true
+        when '0', 'false', 'FALSE' then false
+        else
+          value
+      end
     end
-    private :sanitize_filter_value
+    private :format_filter_value
 
     # Given user params, build a hash of validated filter names to their unsanitized arguments.
     def apply_filters_to_scope(scope, user_params, options)
