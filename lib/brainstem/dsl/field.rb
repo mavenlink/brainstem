@@ -40,14 +40,7 @@ module Brainstem
             helper_instance.instance_exec(&proc)
           end
         elsif options[:lookup]
-          proc = options[:lookup]
-          context[:lookup][:fields][name] ||= helper_instance.instance_exec(context[:models], &proc)
-          if options[:lookup_fetch]
-            proc = options[:lookup_fetch]
-            helper_instance.instance_exec(context[:lookup][:fields][name], model, &proc)
-          else
-            context[:lookup][:fields][name][model.id]
-          end
+          run_on_with_lookup(model, context, helper_instance)
         else
           model.send(method_name)
         end
@@ -59,6 +52,27 @@ module Brainstem
         conditionals.all? { |conditional|
           presenter_conditionals[conditional].matches?(model, helper_instance, conditional_cache)
         }
+      end
+
+      private
+
+      def run_on_with_lookup(model, context, helper_instance)
+        context[:lookup][:fields][name] ||= begin
+          proc = options[:lookup]
+          lookup = helper_instance.instance_exec(context[:models], &proc)
+          if !options[:lookup_fetch].present? && !lookup.respond_to?(:[])
+            raise(StandardError, 'The returned result of the lookup lambda must respond to [] since the default `lookup_fetch` relys on the `[] method` in order to access the model\'s value. Default: lookup_fetch: lambda { |lookup, model| lookup[:assoication_name][model.id] }`')
+          end
+
+          lookup
+        end
+
+        if options[:lookup_fetch]
+          proc = options[:lookup_fetch]
+          helper_instance.instance_exec(context[:lookup][:fields][name], model, &proc)
+        else
+          context[:lookup][:fields][name][model.id]
+        end
       end
     end
   end
