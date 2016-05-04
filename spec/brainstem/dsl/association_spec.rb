@@ -72,6 +72,23 @@ describe Brainstem::DSL::Association do
           expect(association.run_on(second_model, context, instance)).to eq('Nate')
         end
       end
+
+      context 'when given a lookup_fetch' do
+        let(:options) {
+          {
+            lookup: lambda { |models| Hash[models.map { |model| [model.id, model.username] }] },
+            lookup_fetch: lambda { |lookup, model| some_instance_method; lookup[model.id] }
+          }
+        }
+
+        it 'returns the value from the lookup using the lookup_fetch lambda' do
+          context[:lookup][:associations][name.to_s] = {}
+          context[:lookup][:associations][name.to_s][first_model.id] = "Ben's stubbed out Name"
+          instance = Object.new
+          mock(instance).some_instance_method
+          expect(association.run_on(first_model, context, instance)).to eq("Ben's stubbed out Name")
+        end
+      end
     end
   end
 end

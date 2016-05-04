@@ -29,7 +29,12 @@ module Brainstem
         elsif options[:lookup]
           proc = options[:lookup]
           context[:lookup][:associations][name] ||= helper_instance.instance_exec(context[:models], &proc)
-          context[:lookup][:associations][name][model.id]
+          if options[:lookup_fetch]
+            proc = options[:lookup_fetch]
+            helper_instance.instance_exec(context[:lookup][:associations][name], model, &proc)
+          else
+            context[:lookup][:associations][name][model.id]
+          end
         else
           model.send(method_name)
         end
