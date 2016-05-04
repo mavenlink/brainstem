@@ -73,6 +73,18 @@ describe Brainstem::DSL::Association do
         end
       end
 
+      context 'with no lookup_fetch' do
+        context 'when the lookup returns on object which does not respond to []' do
+          let(:options) { { lookup: lambda { |models| nil } } }
+
+          it 'should raise error explaining the default lookup fetch relys on [] to access the model\'s value from the lookup' do
+            expect {
+              association.run_on(first_model, context)
+            }.to raise_error(StandardError, 'The returned result of the lookup lambda must respond to [] since the default `lookup_fetch` relys on the `[] method` in order to access the model\'s value from the lookup. Default: lookup_fetch: lambda { |lookup, model| lookup[:assoication_name][model.id] }`')
+          end
+        end
+      end
+
       context 'when given a lookup_fetch' do
         let(:options) {
           {
