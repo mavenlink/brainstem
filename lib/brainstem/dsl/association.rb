@@ -1,6 +1,10 @@
+require 'brainstem/concerns/lookup'
+
 module Brainstem
   module DSL
     class Association
+      include Brainstem::Concerns::Lookup
+
       attr_reader :name, :target_class, :description, :options
 
       def initialize(name, target_class, description, options)
@@ -39,27 +43,6 @@ module Brainstem
 
       def always_return_ref_with_sti_base?
         options[:always_return_ref_with_sti_base]
-      end
-
-      private
-
-      def run_on_with_lookup(model, context, helper_instance)
-        context[:lookup][:associations][name] ||= begin
-          proc = options[:lookup]
-          lookup = helper_instance.instance_exec(context[:models], &proc)
-          if !options[:lookup_fetch].present? && !lookup.respond_to?(:[])
-            raise(StandardError, 'Brainstem expects the return result of the `lookup` to be a Hash since it must respond to [] in order to access the model\'s assocation(s). Default: lookup_fetch: lambda { |lookup, model| lookup[model.id] }`')
-          end
-
-          lookup
-        end
-
-        if options[:lookup_fetch]
-          proc = options[:lookup_fetch]
-          helper_instance.instance_exec(context[:lookup][:associations][name], model, &proc)
-        else
-          context[:lookup][:associations][name][model.id]
-        end
       end
     end
   end
