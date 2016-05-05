@@ -16,7 +16,7 @@ module Brainstem
       end
 
       def method_name
-        if options[:dynamic]
+        if options[:dynamic] || options[:lookup]
           nil
         else
           (options[:via].presence || name).to_s
