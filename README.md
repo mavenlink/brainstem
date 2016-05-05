@@ -571,36 +571,37 @@ presenting and every presented model gets its assocation or value from the cache
 `lookup` lambda takes in the presented models and should generate a cache containing the models' coresponding assocations
 or values. Brainstem expects the return result of the `lookup` to be a Hash where the keys are the presented models' ids
 and the values are those models' associations or values. Use the `lookup` when you would like to preload but cannot
-e.g. if your association references `current_user`. If the `lookup` opition is defined, the `dynamic` option is defined and
+e.g. if your association references `current_user`. If the `lookup` option is defined, the `dynamic` option is defined, and
 one model is being presented, then the `dynamic` will be used. If multiple models are being presented and both options are defined,
 the `lookup` will be used.
 
   ```ruby
   associations do
     association :current_user_groups, Group, "the Groups for the current user",
-                lookup: lambda { |models| 
-                  Group.where(subject_id: models.map(&:id)
-                    .where(user_id: current_user.id)
-                    .group_by { |group| group.subject_id } 
-                }
+      lookup: lambda { |models|
+        Group.where(subject_id: models.map(&:id)
+          .where(user_id: current_user.id)
+          .group_by { |group| group.subject_id }
+      }
   end
-	```
+  ```
+
 * `lookup_fetch` - Use this option for Fields and Associations if you would like to override how a model should retrieve
- its value or assocation from the cache returned by the `lookup` cache. The `lookup_fetch` lambda takes in the return
- result from the `lookup` lambda and the presented `model`. It should return the `model`'s assocation or value. If
+ its value or assocation returned by the `lookup` cache. The `lookup_fetch` lambda takes in the presented model and the result
+ from the `lookup` lambda. It should return the association or value from the `lookup` cache for that `model`. If
  `lookup_fetch` is not defined, Brainstem will run the default. The example `lookup_fetch` below is equivalent to the default.
 
   ```ruby
   fields do
-    field :current_user_post_count, Post, "the number of Posts the current_user has made for this model",
-                lookup: lambda { |models| 
-                  lookup = Post.where(subject_id: models.map(&:id)
-                    .where(user_id: current_user.id)
-                    .group_by { |post| post.subject_id } 
-                  
-                  lookup
-                },
-                lookup_fetch { |lookup, model| lookup[model.id] }
+    field :current_user_post_count, Post, "count of Posts the current_user has for this model",
+      lookup: lambda { |models| 
+        lookup = Post.where(subject_id: models.map(&:id)
+          .where(user_id: current_user.id)
+          .group_by { |post| post.subject_id } 
+		  
+        lookup
+       },
+       lookup_fetch: lambda { |lookup, model| lookup[model.id] }
   end
   ```
 

@@ -48,7 +48,7 @@ module Brainstem
           proc = options[:lookup]
           lookup = helper_instance.instance_exec(context[:models], &proc)
           if !options[:lookup_fetch].present? && !lookup.respond_to?(:[])
-            raise(StandardError, 'The returned result of the lookup lambda must respond to [] since the default `lookup_fetch` relys on the `[] method` in order to access the model\'s assocation(s). Default: lookup_fetch: lambda { |lookup, model| lookup[:assoication_name][model.id] }`')
+            raise(StandardError, 'Brainstem expects the return result of the `lookup` to be a Hash since it must respond to [] in order to access the model\'s assocation(s). Default: lookup_fetch: lambda { |lookup, model| lookup[model.id] }`')
           end
 
           lookup
