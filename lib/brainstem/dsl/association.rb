@@ -19,7 +19,7 @@ module Brainstem
       end
 
       def run_on(model, context, helper_instance = Object.new)
-        if options[:dynamic]
+        if options[:dynamic] && (!options[:lookup] || context[:models].size == 1)
           proc = options[:dynamic]
           if proc.arity > 0
             helper_instance.instance_exec(model, &proc)

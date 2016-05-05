@@ -51,10 +51,11 @@ describe Brainstem::DSL::Field do
       let(:options) { { lookup: lambda { |models| some_instance_method; Hash[models.map { |model| [model.id, model.title] }] } } }
       let(:first_model) { Workspace.create(title: "Ben's Project") }
       let(:second_model) { Workspace.create(title: "Nate's Project") }
+      let(:models) { [first_model, second_model] }
       let(:context) {
         {
           lookup: Brainstem::Presenter.new.send(:empty_lookup_cache, [name.to_s], []),
-          models: [first_model, second_model]
+          models: models
         }
       }
       # {:lookup=>{:fields=>{"title"=>nil}, :associations=>{}}
@@ -89,6 +90,35 @@ describe Brainstem::DSL::Field do
             expect {
               field.run_on(first_model, context)
             }.to raise_error(StandardError, 'The returned result of the lookup lambda must respond to [] since the default `lookup_fetch` relys on the `[] method` in order to access the model\'s value. Default: lookup_fetch: lambda { |lookup, model| lookup[:assoication_name][model.id] }`')
+          end
+        end
+      end
+
+      context 'with a dynamic lambda' do
+        let(:options) {
+          {
+            lookup: lambda { |models| lookup_instance_method; Hash[models.map { |model| [model.id, model.title] }] },
+            dynamic: lambda { |model| dynamic_instance_method; model.title }
+          }
+        }
+
+        context 'when presenting one model' do
+          let(:models) { [first_model] }
+
+          it 'calls the dynamic lambda and not the lookup lambda' do
+            instance = Object.new
+            mock(instance).dynamic_instance_method
+            mock(instance).lookup_instance_method.never
+            expect(field.run_on(first_model, context, instance)).to eq "Ben's Project"
+          end
+        end
+
+        context 'when presenting more than one model' do
+          it 'calls the lookup lambda and not the dynamic lambda' do
+            instance = Object.new
+            mock(instance).lookup_instance_method
+            mock(instance).dynamic_instance_method.never
+            expect(field.run_on(first_model, context, instance)).to eq "Ben's Project"
           end
         end
       end

@@ -515,7 +515,7 @@ Brainstem provides a rich DSL for building presenters.  This section details the
   an optional documentation string, and a number of options. By default, fields will call a model method with the same
   name as the field's name and return the result. Use the `:via` option to call a different method, or the `:dynamic` option
   to provide a lambda that takes the model and returns the field's output value. Fields which result in N + 1 queries can be
-  optimized with a `:lookup` option, detailed in the `lookup` secontion below. Fields can be conditionally returned with the
+  optimized with a `:lookup` option, detailed in the `lookup` section below. Fields can be conditionally returned with the
   `:if` option, detailed in the `conditionals` section below.  Expensive fields can be declared as `optional: true` so that they are
    only returned when `optional_fields=field` is provided in the API request. Here are some example fields:
 
@@ -571,7 +571,9 @@ presenting and every presented model gets its assocation or value from the cache
 `lookup` lambda takes in the presented models and should generate a cache containing the models' coresponding assocations
 or values. Brainstem expects the return result of the `lookup` to be a Hash where the keys are the presented models' ids
 and the values are those models' associations or values. Use the `lookup` when you would like to preload but cannot
-e.g. if your association references `current_user`.
+e.g. if your association references `current_user`. If the `lookup` opition is defined, the `dynamic` option is defined and
+one model is being presented, then the `dynamic` will be used. If multiple models are being presented and both options are defined,
+the `lookup` will be used.
 
   ```ruby
   associations do
