@@ -60,6 +60,13 @@ module Brainstem
       raise "#present is now deprecated"
     end
 
+    def get_query_strategy
+      if configuration.has_key? :query_strategy
+        strat = configuration[:query_strategy]
+        strat.respond_to?(:call) ? fresh_helper_instance.instance_exec(&strat) : strat
+      end
+    end
+
     # Calls {#custom_preload} and then presents all models.
     # @params [ActiveRecord::Relation, Array] models
     # @params [Array] requested_associations An array of permitted lower-case string association names, e.g. 'post'
