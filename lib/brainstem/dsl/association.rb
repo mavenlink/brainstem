@@ -44,6 +44,12 @@ module Brainstem
       def always_return_ref_with_sti_base?
         options[:always_return_ref_with_sti_base]
       end
+
+      private
+
+      def key_for_lookup
+        :associations
+      end
     end
   end
 end

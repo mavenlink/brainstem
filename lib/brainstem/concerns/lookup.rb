@@ -23,11 +23,7 @@ module Brainstem
       end
 
       def key_for_lookup
-        if self.class == Brainstem::DSL::Association
-          :associations
-        elsif self.class == Brainstem::DSL::Field
-          :fields
-        end
+        raise(StandardError 'Implement `key_for_lookup` when including Lookup Module.')
       end
     end
   end

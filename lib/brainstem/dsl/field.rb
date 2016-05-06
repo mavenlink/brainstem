@@ -57,6 +57,12 @@ module Brainstem
           presenter_conditionals[conditional].matches?(model, helper_instance, conditional_cache)
         }
       end
+
+      private
+
+      def key_for_lookup
+        :fields
+      end
     end
   end
 end
