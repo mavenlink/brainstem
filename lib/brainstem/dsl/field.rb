@@ -1,6 +1,10 @@
+require 'brainstem/concerns/lookup'
+
 module Brainstem
   module DSL
     class Field
+      include Brainstem::Concerns::Lookup
+
       attr_reader :name, :type, :description, :conditionals, :options
 
       def initialize(name, type, description, options)
@@ -16,7 +20,7 @@ module Brainstem
       end
 
       def method_name
-        if options[:dynamic]
+        if options[:dynamic] || options[:lookup]
           nil
         else
           (options[:via].presence || name).to_s
@@ -31,14 +35,16 @@ module Brainstem
         options[:optional]
       end
 
-      def run_on(model, helper_instance = Object.new)
-        if options[:dynamic]
+      def run_on(model, context, helper_instance = Object.new)
+        if options[:dynamic] && (!options[:lookup] || context[:models].size == 1)
           proc = options[:dynamic]
-          if proc.arity > 0
+          if proc.arity == 1
             helper_instance.instance_exec(model, &proc)
           else
             helper_instance.instance_exec(&proc)
           end
+        elsif options[:lookup]
+          run_on_with_lookup(model, context, helper_instance)
         else
           model.send(method_name)
         end
@@ -50,6 +56,12 @@ module Brainstem
         conditionals.all? { |conditional|
           presenter_conditionals[conditional].matches?(model, helper_instance, conditional_cache)
         }
+      end
+
+      private
+
+      def key_for_lookup
+        :fields
       end
     end
   end

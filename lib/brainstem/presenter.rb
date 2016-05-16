@@ -60,6 +60,13 @@ module Brainstem
       raise "#present is now deprecated"
     end
 
+    def get_query_strategy
+      if configuration.has_key? :query_strategy
+        strat = configuration[:query_strategy]
+        strat.respond_to?(:call) ? fresh_helper_instance.instance_exec(&strat) : strat
+      end
+    end
+
     # Calls {#custom_preload} and then presents all models.
     # @params [ActiveRecord::Relation, Array] models
     # @params [Array] requested_associations An array of permitted lower-case string association names, e.g. 'post'
@@ -78,7 +85,9 @@ module Brainstem
         associations:                 configuration[:associations],
         reflections:                  reflections_for_model(models.first),
         association_objects_by_name:  association_objects_by_name,
-        optional_fields:              options[:optional_fields] || []
+        optional_fields:              options[:optional_fields] || [],
+        models:                       models,
+        lookup:                       empty_lookup_cache(configuration[:fields].keys, association_objects_by_name.keys)
       }
 
       sanitized_association_names = association_objects_by_name.values.map(&:method_name)
@@ -265,7 +274,7 @@ module Brainstem
         case field
           when DSL::Field
             if field.conditionals_match?(model, context[:conditionals], context[:helper_instance], context[:conditional_cache]) && field.optioned?(context[:optional_fields])
-              result[name] = field.run_on(model, context[:helper_instance])
+              result[name] = field.run_on(model, context, context[:helper_instance])
             end
           when DSL::Configuration
             result[name] ||= {}
@@ -287,7 +296,7 @@ module Brainstem
         # If this association has been explictly requested, execute the association here.  Additionally, store
         # the loaded models in the :load_associations_into hash for later use.
         if context[:association_objects_by_name][external_name]
-          associated_model_or_models = association.run_on(model, context[:helper_instance])
+          associated_model_or_models = association.run_on(model, context, context[:helper_instance])
 
           if options[:load_associations_into]
             Array(associated_model_or_models).flatten.each do |associated_model|
@@ -365,6 +374,16 @@ module Brainstem
     # Find the global presenter collection for our namespace.
     def presenter_collection
       Brainstem.presenter_collection(self.class.namespace)
+    end
+
+    # @api protected
+    # Create an empty lookup cache with the fields and associations as keys and nil for the values
+    # @return [Hash]
+    def empty_lookup_cache(field_keys, association_keys)
+      {
+        fields: Hash[field_keys.map { |key| [key, nil] }],
+        associations: Hash[association_keys.map { |key| [key, nil] }]
+      }
     end
   end
 end

@@ -4,6 +4,8 @@ require 'rr'
 require 'rspec'
 require 'sqlite3'
 require 'database_cleaner'
+require 'pry'
+require 'pry-nav'
 
 require 'brainstem'
 require_relative 'spec_helpers/schema'

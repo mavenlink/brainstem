@@ -37,6 +37,11 @@ ActiveRecord::Schema.define do
     t.string :subject_type
     t.timestamps null: true
   end
+
+  create_table :cheeses, force: true do |t|
+    t.integer :user_id
+    t.string :flavor
+  end
 end
 
 class User < ActiveRecord::Base
@@ -88,6 +93,12 @@ class Post < ActiveRecord::Base
   def things
     [Workspace.first, Post.first, Task.first]
   end
+end
+
+class Cheese < ActiveRecord::Base
+  belongs_to :user
+
+  scope :owned_by, -> id { where(user_id: id) }
 end
 
 module Attachments

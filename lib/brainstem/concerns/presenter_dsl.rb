@@ -91,6 +91,10 @@ module Brainstem
           configuration[:brainstem_key] = key.to_s
         end
 
+        def query_strategy(strategy)
+          configuration[:query_strategy] = strategy
+        end
+
         # @api private
         def reset_configuration!
           configuration.array!(:preloads)

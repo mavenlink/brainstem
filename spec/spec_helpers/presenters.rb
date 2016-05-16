@@ -19,6 +19,10 @@ class WorkspacePresenter < Brainstem::Presenter
     field :description, :string
     field :updated_at, :datetime
     field :dynamic_title, :string, dynamic: lambda { |model| "title: #{model.title}" }
+    field :lookup_title, :string, lookup: lambda { |models| Hash[models.map { |model| [model.id, "lookup_title: #{model.title}"] }] }
+    field :lookup_fetch_title, :string,
+          lookup: lambda { |models| Hash[models.map { |model| [model.id, model.title] }] },
+          lookup_fetch: lambda { |lookup, model| "lookup_fetch_title: #{lookup[model.id]}" }
     field :expensive_title, :string, via: :title, optional: true
     field :expensive_title2, :string, via: :title, optional: true
     field :expensive_title3, :string, via: :title, optional: true
@@ -48,6 +52,18 @@ class WorkspacePresenter < Brainstem::Presenter
     # association :subtasks, Task, 'Only Tasks in this Workspace that are subtasks',
     #             dynamic: lambda { |workspace| workspace.tasks.where('parent_id IS NOT NULL') },
     #             brainstem_key: 'sub_tasks'
+  end
+end
+
+class CheesePresenter < Brainstem::Presenter
+  presents Cheese
+
+  fields do
+    field :flavor, :string
+  end
+
+  associations do
+    association :user, User, 'The owner of the cheese'
   end
 end
 

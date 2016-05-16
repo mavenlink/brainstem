@@ -77,8 +77,6 @@ describe Brainstem::PresenterCollection do
           end
 
           it "defaults to offset 0 if the passed offset is less than 0 and limit to 1 if the passed limit is less than 1" do
-            stub.proxy(@presenter_collection).calculate_offset(anything).times(1)
-            stub.proxy(@presenter_collection).calculate_limit(anything).times(1)
             result = @presenter_collection.presenting("workspaces", :params => { :limit => -1, :offset => -1 }) { Workspace.unscoped }['results']
             expect(result.length).to eq(1)
             expect(result.first['id']).to eq(Workspace.unscoped[0].id.to_s)
@@ -159,6 +157,81 @@ describe Brainstem::PresenterCollection do
         it "returns the unique count by model id" do
           result = @presenter_collection.presenting("workspaces", :params => { :per_page => 2, :page => 1 }) { Workspace.unscoped }
           expect(result['count']).to eq(Workspace.count)
+        end
+      end
+    end
+
+    describe 'strategies' do
+      let(:params) { { search: "tomato" } }
+
+      context 'the user does not specify a strategy with the presenter DSL' do
+        it 'uses the legacy FilterOrSearch strategy' do
+          mock.proxy(Brainstem::QueryStrategies::FilterOrSearch).new(anything).times(1)
+          result = @presenter_collection.presenting("workspaces") { Workspace.unscoped }
+          expect(result['workspaces'].length).to eq(Workspace.count)
+        end
+      end
+
+      context 'the user specifies the filter_and_search strategy as a symbol' do
+        before do
+          WorkspacePresenter.query_strategy :filter_and_search
+        end
+
+        context 'the user is searching' do
+          before do
+            WorkspacePresenter.search do |string|
+              [[5, 3], 2]
+            end
+          end
+
+          context 'the scope size is below default_max_filter_and_search_page' do
+            before do
+              @presenter_collection.default_max_filter_and_search_page = 500
+            end
+
+            it 'uses the FilterAndSearch strategy' do
+              mock.proxy(Brainstem::QueryStrategies::FilterAndSearch).new(anything).times(1)
+              result = @presenter_collection.presenting("workspaces", params: params) { Workspace.unscoped }
+              expect(result['workspaces'].length).to eq(2)
+            end
+          end
+
+          context 'the scope size is above default_max_filter_and_search_page' do
+            before do
+              @presenter_collection.default_max_filter_and_search_page = 2
+            end
+
+            # TODO: this will become the third, faster strategy for large pagesizes
+            it 'uses the FilterOrSearch strategy' do
+              mock.proxy(Brainstem::QueryStrategies::FilterOrSearch).new(anything).times(1)
+              result = @presenter_collection.presenting("workspaces") { Workspace.unscoped }
+              expect(result['workspaces'].length).to eq(Workspace.count)
+            end
+          end
+        end
+
+        context 'the user is not searching' do
+          it 'uses the legacy FilterOrSearch strategy' do
+            mock.proxy(Brainstem::QueryStrategies::FilterOrSearch).new(anything).times(1)
+            result = @presenter_collection.presenting("workspaces") { Workspace.unscoped }
+            expect(result['workspaces'].length).to eq(Workspace.count)
+          end
+        end
+      end
+
+      context 'the user passes a lambda as the query_strategy' do
+        before do
+          WorkspacePresenter.query_strategy lambda { :filter_and_search }
+
+          WorkspacePresenter.search do |string|
+            [[5, 3], 2]
+          end
+        end
+
+        it 'uses the strategy returned by that lambda' do
+          mock.proxy(Brainstem::QueryStrategies::FilterAndSearch).new(anything).times(1)
+          result = @presenter_collection.presenting("workspaces", params: params) { Workspace.unscoped }
+          expect(result['workspaces'].length).to eq(2)
         end
       end
     end
