@@ -49,19 +49,20 @@ module Brainstem
           order: { sort_order: sort_name, direction: direction },
         )
 
-        if @options[:params][:limit].present? && @options[:params][:offset].present?
-          search_options[:limit] = calculate_limit
-          search_options[:offset] = calculate_offset
-        else
-          search_options[:per_page] = calculate_per_page
-          search_options[:page] = calculate_page
-        end
-
         search_options.reverse_merge!(@options[:primary_presenter].extract_filters(@options[:params], @options))
 
-        result_ids, count = @options[:primary_presenter].run_search(@options[:params][:search], search_options)
+        result_ids, _ = @options[:primary_presenter].run_search(@options[:params][:search], search_options)
+
+        if @options[:params][:limit].present? && @options[:params][:offset].present?
+          limit = calculate_limit
+          offset = calculate_offset
+        else
+          limit = calculate_per_page
+          offset = limit * (calculate_page - 1)
+        end
+
         if result_ids
-          [scope.where(id: result_ids), count, result_ids]
+          [scope.where(id: result_ids).limit(limit).offset(offset).uniq, result_ids.length, result_ids]
         else
           raise(SearchUnavailableError, 'Search is currently unavailable')
         end
