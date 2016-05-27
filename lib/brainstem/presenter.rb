@@ -141,9 +141,7 @@ module Brainstem
       apply_default_filters = options.fetch(:apply_default_filters) { true }
 
       configuration[:filters].each do |filter_name, filter|
-        user_value = user_params[filter_name]
-        user_value = user_value.is_a?(Array) ? user_value : (user_value.present? ? user_value.to_s : nil)
-        user_value = user_value == "true" ? true : (user_value == "false" ? false : user_value)
+        user_value = format_filter_value(user_params[filter_name])
 
         filter_options = filter[0]
         filter_arg = apply_default_filters && user_value.nil? ? filter_options[:default] : user_value
@@ -152,6 +150,24 @@ module Brainstem
 
       filters_hash
     end
+
+    # @api private
+    # @param [Array, Hash, String, Boolean, nil] value
+    #
+    # @return [Array, Hash, String, Boolean, nil]
+    def format_filter_value(value)
+      return value if value.is_a?(Array) || value.is_a?(Hash)
+      return nil if value.blank?
+
+      value = value.to_s
+      case value
+        when 'true', 'TRUE' then true
+        when 'false', 'FALSE' then false
+        else
+          value
+      end
+    end
+    private :format_filter_value
 
     # Given user params, build a hash of validated filter names to their unsanitized arguments.
     def apply_filters_to_scope(scope, user_params, options)
