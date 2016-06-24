@@ -126,6 +126,10 @@ describe Brainstem::Presenter do
           association :lead_user_with_lambda, User, dynamic: lambda { |model| model.user }
           association :tasks_with_lambda, Task, dynamic: lambda { |model| Task.where(:workspace_id => model.id) }
           association :tasks_with_helper_lambda, Task, dynamic: lambda { |model| helper_method(model) }
+          association :tasks_with_lookup, Task, lookup: lambda { |models| Task.where(workspace_id: models.map(&:id)).group_by { |task| task.workspace_id } }
+          association :tasks_with_lookup_fetch, Task,
+                      lookup: lambda { |models| Task.where(workspace_id: models.map(&:id)).group_by { |task| task.workspace_id } },
+                      lookup_fetch: lambda { |lookup, model| lookup[model.id] }
           association :synthetic, :polymorphic
         end
       end
@@ -150,6 +154,14 @@ describe Brainstem::Presenter do
 
       it 'can call a dynamic lambda' do
         expect(presenter.group_present([model]).first['dynamic_title']).to eq "title: #{model.title}"
+      end
+
+      it 'can call a lookup lambda' do
+        expect(presenter.group_present([model]).first['lookup_title']).to eq "lookup_title: #{model.title}"
+      end
+
+      it 'can call a lookup_fetch lambda' do
+        expect(presenter.group_present([model]).first['lookup_fetch_title']).to eq "lookup_fetch_title: #{model.title}"
       end
 
       it 'handles nesting' do
@@ -382,6 +394,14 @@ describe Brainstem::Presenter do
       it "handles associations provided with lambdas" do
         expect(presenter.group_present([workspace], ['lead_user_with_lambda']).first['lead_user_with_lambda_id']).to eq(workspace.lead_user.id.to_s)
         expect(presenter.group_present([workspace], ['tasks_with_lambda']).first['tasks_with_lambda_ids']).to eq(workspace.tasks.map(&:id).map(&:to_s))
+      end
+
+      it "handles associations provided with a lookup" do
+        expect(presenter.group_present([workspace], ['tasks_with_lookup']).first['tasks_with_lookup_ids']).to eq(workspace.tasks.map(&:id).map(&:to_s))
+      end
+
+      it "handles associations provided with a lookup_fetch" do
+        expect(presenter.group_present([workspace], ['tasks_with_lookup_fetch']).first['tasks_with_lookup_fetch_ids']).to eq(workspace.tasks.map(&:id).map(&:to_s))
       end
 
       it "handles helpers method calls in association lambdas" do
@@ -634,12 +654,16 @@ describe Brainstem::Presenter do
       presenter_class.filter(:bar) { |scope| scope }
       expect(presenter.extract_filters({ 'foo' => 'hi' })).to eq({})
       expect(presenter.extract_filters({ 'owned_by' => '2' })).to eq({ 'owned_by' => '2' })
+      expect(presenter.extract_filters({ 'owned_by' => [2] })).to eq({ 'owned_by' => [2] })
+      expect(presenter.extract_filters({ 'owned_by' => { :ids => [2], 2 => [1] }})).to eq({ 'owned_by' => { :ids => [2], 2 => [1] }})
     end
 
     it "converts 'true' and 'false' into true and false" do
       presenter_class.filter :owned_by
       expect(presenter.extract_filters({ 'owned_by' => 'true' })).to eq({ 'owned_by' => true })
+      expect(presenter.extract_filters({ 'owned_by' => 'TRUE' })).to eq({ 'owned_by' => true })
       expect(presenter.extract_filters({ 'owned_by' => 'false' })).to eq({ 'owned_by' => false })
+      expect(presenter.extract_filters({ 'owned_by' => 'FALSE' })).to eq({ 'owned_by' => false })
       expect(presenter.extract_filters({ 'owned_by' => 'hi' })).to eq({ 'owned_by' => 'hi' })
     end
 

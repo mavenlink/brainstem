@@ -8,6 +8,19 @@ Workspace.create!(:id => 4, :user_id => 1, :title => "bob workspace 4", :descrip
 Workspace.create!(:id => 5, :user_id => 2, :title => "jane workspace 1", :description => "c")
 Workspace.create!(:id => 6, :user_id => 2, :title => "jane workspace 2", :description => "3")
 
+
+Cheese.create!(id: 1, user_id: 1, flavor: 'colby jack' )
+Cheese.create!(id: 2, user_id: 1, flavor: 'swiss' )
+Cheese.create!(id: 3, user_id: 1, flavor: 'cheese curds' )
+Cheese.create!(id: 4, user_id: 1, flavor: 'bleu' )
+Cheese.create!(id: 5, user_id: 1, flavor: 'cheddar' )
+Cheese.create!(id: 6, user_id: 2, flavor: 'gorgonzola' )
+Cheese.create!(id: 7, user_id: 1, flavor: 'search text' )
+Cheese.create!(id: 8, user_id: 1, flavor: 'search text' )
+Cheese.create!(id: 9, user_id: 2, flavor: 'provologne')
+Cheese.create!(id: 10, user_id: 1, flavor: 'old amsterdam' )
+Cheese.create!(id: 11, user_id: 1, flavor: 'brie' )
+Cheese.create!(id: 12, user_id: 1, flavor: 'wensleydale' )
 # Group.create!(:id => 7, :user_id => 2, :title => "a group", :description => "this is a group")
 
 Task.create!(:id => 1, :workspace_id => 1, :name => "Buy milk")

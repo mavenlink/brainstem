@@ -849,6 +849,9 @@ Brainstem provides a rich DSL for building presenters.  This section details the
   end
   ```
 
+  If you wish to perform your Brainstem filters in conjunction with your search block you can use the beta `search_and_filter`
+  query strategy. [See this for details](lib/brainstem/query_strategies/README.md).
+
 * `preload` - Use this annotation to provide a list of valid associations to preload on this model. If you
   always end up asking a question of each instance that requires loading an association, `preload` it here to avoid an
   N+1 query. The syntax is the same as `preload` or `include` in Rails and allows for nesting.
@@ -862,7 +865,8 @@ Brainstem provides a rich DSL for building presenters.  This section details the
   Fields have a name, which is what they will be called in the returned JSON, a type which is used for API documentation,
   an optional documentation string, and a number of options. By default, fields will call a model method with the same
   name as the field's name and return the result. Use the `:via` option to call a different method, or the `:dynamic` option
-  to provide a lambda that takes the model and returns the field's output value. Fields can be conditionally returned with the
+  to provide a lambda that takes the model and returns the field's output value. Fields which result in N + 1 queries can be
+  optimized with a `:lookup` option, detailed in the `lookup` section below. Fields can be conditionally returned with the
   `:if` option, detailed in the `conditionals` section below.  Expensive fields can be declared as `optional: true` so that they are
    only returned when `optional_fields=field` is provided in the API request. Here are some example fields:
 
@@ -888,6 +892,7 @@ Brainstem provides a rich DSL for building presenters.  This section details the
   class, an optional documentation string, and some options. By default, associations will call the association or
   method on the model with their name. Like fields, you can use `:via` to call a different method or association and
   `:dynamic` to provide a lambda that takes the model and returns a model, array of models, or relation of models.
+  Associations which result in N + 1 queries can be optimized with a `:lookup` option, detailed in the `lookup` secontion below.
 
   If you have an association that tends to be large and expensive to return, you can annotate it with the
   `restrict_to_only: true` option and it will only be returned when the `only` URL param is provided and contains a
@@ -909,6 +914,45 @@ Brainstem provides a rich DSL for building presenters.  This section details the
     association :previous_location, Location, "the Widget's previous location",
                 dynamic: lambda { |widget| widget.previous_locations.first }
     association :associated_objects, :polymorphic, "a mixture of objects related to this Widget"
+  end
+  ```
+  
+* `lookup` - Use this option to avoid N + 1 queries for Fields and Associations. The `lookup` lambda runs once when
+presenting and every presented model gets its assocation or value from the cache the `lookup` lambda generates. The
+`lookup` lambda takes in the presented models and should generate a cache containing the models' coresponding assocations
+or values. Brainstem expects the return result of the `lookup` to be a Hash where the keys are the presented models' ids
+and the values are those models' associations or values. Use the `lookup` when you would like to preload but cannot
+e.g. if your association references `current_user`. If the `lookup` option is defined, the `dynamic` option is defined, and
+one model is being presented, then the `dynamic` will be used. If multiple models are being presented and both options are defined,
+the `lookup` will be used.
+
+  ```ruby
+  associations do
+    association :current_user_groups, Group, "the Groups for the current user",
+      lookup: lambda { |models|
+        Group.where(subject_id: models.map(&:id)
+          .where(user_id: current_user.id)
+          .group_by { |group| group.subject_id }
+      }
+  end
+  ```
+
+* `lookup_fetch` - Use this option for Fields and Associations if you would like to override how a model should retrieve
+ its value or assocation returned by the `lookup` cache. The `lookup_fetch` lambda takes in the presented model and the result
+ from the `lookup` lambda. It should return the association or value from the `lookup` cache for that `model`. If
+ `lookup_fetch` is not defined, Brainstem will run the default. The example `lookup_fetch` below is equivalent to the default.
+
+  ```ruby
+  fields do
+    field :current_user_post_count, Post, "count of Posts the current_user has for this model",
+      lookup: lambda { |models| 
+        lookup = Post.where(subject_id: models.map(&:id)
+          .where(user_id: current_user.id)
+          .group_by { |post| post.subject_id } 
+		  
+        lookup
+       },
+       lookup_fetch: lambda { |lookup, model| lookup[model.id] }
   end
   ```
 
