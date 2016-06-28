@@ -156,10 +156,9 @@ module Brainstem
 
       apply_default_filters = options.fetch(:apply_default_filters) { true }
 
-      configuration[:filters].each do |filter_name, filter|
+      configuration[:filters].each do |filter_name, filter_options|
         user_value = format_filter_value(user_params[filter_name])
 
-        filter_options = filter[0]
         filter_arg = apply_default_filters && user_value.nil? ? filter_options[:default] : user_value
         filters_hash[filter_name] = filter_arg unless filter_arg.nil?
       end
