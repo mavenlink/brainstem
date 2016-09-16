@@ -204,7 +204,7 @@ module Brainstem
           scope.reorder(order.to_s + " " + direction)
       end
 
-      fallback_deterministic_sort = "#{scope.table.name}.#{scope.model.primary_key} desc"
+      fallback_deterministic_sort = "#{scope.table.name}.#{scope.model.primary_key} asc"
       # Chain on a tiebreaker sort to ensure deterministic ordering of multiple pages of data
       ordered_scope.order(fallback_deterministic_sort)
     end

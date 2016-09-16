@@ -724,7 +724,7 @@ describe Brainstem::Presenter do
         end
 
         sql = presenter.apply_ordering_to_scope(scope, 'order' => 'title').to_sql
-        expect(sql).to match(/order by workspaces.title desc, workspaces.id desc/i)
+        expect(sql).to match(/order by workspaces.title desc, workspaces.id asc/i)
       end
     end
 
@@ -744,7 +744,7 @@ describe Brainstem::Presenter do
 
         it 'adds the primary key as a fallback sort' do
           sql = presenter.apply_ordering_to_scope(scope, order).to_sql
-          expect(sql).to match(/order by workspaces.title asc, workspaces.id desc/i)
+          expect(sql).to match(/order by workspaces.title asc, workspaces.id asc/i)
         end
       end
     end
@@ -752,7 +752,7 @@ describe Brainstem::Presenter do
     context 'when the sort is nil' do
       it 'orders by the primary key' do
         sql = presenter.apply_ordering_to_scope(scope, '').to_sql
-        expect(sql).to match(/order by workspaces.id desc/i)
+        expect(sql).to match(/order by workspaces.id asc/i)
       end
     end
   end
