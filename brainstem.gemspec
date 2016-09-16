@@ -18,12 +18,12 @@ Gem::Specification.new do |gem|
   gem.version       = Brainstem::VERSION
 
   gem.add_dependency "activerecord", ">= 3.2"
-  gem.add_dependency "activesupport"
+  gem.add_dependency "activesupport", "4.2.7"
 
   gem.add_development_dependency "rake"
   gem.add_development_dependency "redcarpet" # for markdown in yard
   gem.add_development_dependency "rr"
-  gem.add_development_dependency "rspec"
+  gem.add_development_dependency "rspec", "2.99"
   gem.add_development_dependency "sqlite3"
   gem.add_development_dependency "database_cleaner"
   gem.add_development_dependency "yard"
