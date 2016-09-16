@@ -195,7 +195,7 @@ module Brainstem
       sort_name, direction = calculate_sort_name_and_direction(user_params)
       order = configuration[:sort_orders][sort_name]
 
-      case order
+      ordered_scope = case order
         when Proc
           fresh_helper_instance.instance_exec(scope, direction, &order)
         when nil
@@ -203,6 +203,10 @@ module Brainstem
         else
           scope.reorder(order.to_s + " " + direction)
       end
+
+      fallback_deterministic_sort = "#{scope.table.name}.#{scope.model.primary_key} desc"
+      # Chain on a tiebreaker sort to ensure deterministic ordering of multiple pages of data
+      ordered_scope.order(fallback_deterministic_sort)
     end
 
     # Execute the stored search block
