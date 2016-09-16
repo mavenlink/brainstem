@@ -715,7 +715,8 @@ describe Brainstem::Presenter do
         end
 
         sql = presenter.apply_ordering_to_scope(scope, 'order' => 'title').to_sql
-        expect(sql).to match(/order by workspaces.title desc, workspaces.id desc/i)
+        expect(sql).to match(/order by workspaces.title desc, workspaces.id desc, workspaces.id asc/i)
+        # this should be ok, since the first id sort will never have a tie
       end
 
       it 'chains the primary key onto the end' do
@@ -729,29 +730,24 @@ describe Brainstem::Presenter do
     end
 
     context 'when the sort is not a proc' do
-      it 'applies the named ordering in the given direction' do
+      let(:order) { { 'order' => 'title:asc' } }
+
+      before do
         presenter_class.sort_order :title, 'workspaces.title'
-        expect(presenter.apply_ordering_to_scope(scope, 'order' => 'title:asc').to_sql).to match(/order by workspaces.title asc/i)
+        presenter_class.sort_order :id, 'workspaces.id'
       end
 
-      describe 'deterministic ordering' do
-        let(:order) { { 'order' => 'title:asc' } }
-
-        before do
-          presenter_class.sort_order :title, 'workspaces.title'
-          presenter_class.sort_order :id, 'workspaces.id'
-        end
-
-        it 'adds the primary key as a fallback sort' do
-          sql = presenter.apply_ordering_to_scope(scope, order).to_sql
-          expect(sql).to match(/order by workspaces.title asc, workspaces.id asc/i)
-        end
+      it 'applies the named ordering in the given direction and adds the primary key as a fallback sort' do
+        sql = presenter.apply_ordering_to_scope(scope, order).to_sql
+        expect(sql).to match(/order by workspaces.title asc, workspaces.id asc/i)
       end
     end
 
-    context 'when the sort is nil' do
+    context 'when the sort is not present' do
+      let(:order) { '' }
+
       it 'orders by the primary key' do
-        sql = presenter.apply_ordering_to_scope(scope, '').to_sql
+        sql = presenter.apply_ordering_to_scope(scope, order).to_sql
         expect(sql).to match(/order by workspaces.id asc/i)
       end
     end
