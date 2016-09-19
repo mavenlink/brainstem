@@ -762,6 +762,24 @@ describe Brainstem::Presenter do
         expect(sql).to match(/order by "workspaces"."id" ASC/i)
       end
     end
+
+    context 'when the table has no primary key' do
+      let(:scope) { Cthulhu.where(nil) }
+      let(:order) { { 'order' => 'updated_at:asc' } }
+
+      before do
+        class Cthulhu < Workspace
+          self.primary_key = nil
+        end
+
+        presenter_class.sort_order :updated_at, 'workspaces.updated_at'
+      end
+
+      it 'does not add a fallback deterministic sort, and you deserve whatever fate befalls you' do
+        sql = presenter.apply_ordering_to_scope(scope, order).to_sql
+        expect(sql).to eq("SELECT \"workspaces\".* FROM \"workspaces\" WHERE \"workspaces\".\"type\" IN ('Cthulhu')  ORDER BY workspaces.updated_at asc")
+      end
+    end
   end
 
   describe "#calculate_sort_name_and_direction" do

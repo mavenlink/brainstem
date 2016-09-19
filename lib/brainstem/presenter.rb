@@ -206,14 +206,23 @@ module Brainstem
 
       fallback_deterministic_sort = assemble_primary_key_sort(scope)
       # Chain on a tiebreaker sort to ensure deterministic ordering of multiple pages of data
-      ordered_scope.order(fallback_deterministic_sort)
+
+      if fallback_deterministic_sort
+        ordered_scope.order(fallback_deterministic_sort)
+      else
+        ordered_scope
+      end
     end
 
     def assemble_primary_key_sort(scope)
-      table_name = scope.connection.quote_table_name(scope.table.name)
-      primary_key = scope.connection.quote_column_name(scope.model.primary_key)
+      table_name = scope.table.name
+      primary_key = scope.model.primary_key
 
-      "#{table_name}.#{primary_key} ASC"
+      if table_name && primary_key
+        "#{scope.connection.quote_table_name(table_name)}.#{scope.connection.quote_column_name(primary_key)} ASC"
+      else
+        nil
+      end
     end
     private :assemble_primary_key_sort
 
