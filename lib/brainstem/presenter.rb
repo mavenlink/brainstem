@@ -204,10 +204,18 @@ module Brainstem
           scope.reorder(order.to_s + " " + direction)
       end
 
-      fallback_deterministic_sort = "#{scope.table.name}.#{scope.model.primary_key} asc"
+      fallback_deterministic_sort = assemble_primary_key_sort(scope)
       # Chain on a tiebreaker sort to ensure deterministic ordering of multiple pages of data
       ordered_scope.order(fallback_deterministic_sort)
     end
+
+    def assemble_primary_key_sort(scope)
+      table_name = scope.connection.quote_table_name(scope.table.name)
+      primary_key = scope.connection.quote_column_name(scope.model.primary_key)
+
+      "#{table_name}.#{primary_key} ASC"
+    end
+    private :assemble_primary_key_sort
 
     # Execute the stored search block
     def run_search(query, search_options)
@@ -217,7 +225,7 @@ module Brainstem
     # Clean and validate a sort order and direction from user params.
     def calculate_sort_name_and_direction(user_params = {})
       default_column, default_direction = (configuration[:default_sort_order] || "updated_at:desc").split(":")
-      sort_name, direction = (user_params['order'] || "").split(":")
+      sort_name, direction = user_params['order'].to_s.split(":")
       unless sort_name.present? && configuration[:sort_orders][sort_name]
         sort_name = default_column
         direction = default_direction

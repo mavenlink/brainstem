@@ -715,7 +715,7 @@ describe Brainstem::Presenter do
         end
 
         sql = presenter.apply_ordering_to_scope(scope, 'order' => 'title').to_sql
-        expect(sql).to match(/order by workspaces.title desc, workspaces.id desc, workspaces.id asc/i)
+        expect(sql).to match(/order by workspaces.title desc, workspaces.id desc, "workspaces"."id" ASC/i)
         # this should be ok, since the first id sort will never have a tie
       end
 
@@ -725,21 +725,32 @@ describe Brainstem::Presenter do
         end
 
         sql = presenter.apply_ordering_to_scope(scope, 'order' => 'title').to_sql
-        expect(sql).to match(/order by workspaces.title desc, workspaces.id asc/i)
+        expect(sql).to match(/order by workspaces.title desc, "workspaces"."id" ASC/i)
       end
     end
 
     context 'when the sort is not a proc' do
-      let(:order) { { 'order' => 'title:asc' } }
-
       before do
         presenter_class.sort_order :title, 'workspaces.title'
         presenter_class.sort_order :id, 'workspaces.id'
       end
 
-      it 'applies the named ordering in the given direction and adds the primary key as a fallback sort' do
-        sql = presenter.apply_ordering_to_scope(scope, order).to_sql
-        expect(sql).to match(/order by workspaces.title asc, workspaces.id asc/i)
+      context 'and is a string' do
+        let(:order) { { 'order' => 'title:asc' } }
+
+        it 'applies the named ordering in the given direction and adds the primary key as a fallback sort' do
+          sql = presenter.apply_ordering_to_scope(scope, order).to_sql
+          expect(sql).to match(/ORDER BY workspaces.title asc, "workspaces"."id" ASC/i)
+        end
+      end
+
+      context 'and is a symbol' do
+        let(:order) { { 'order' => :title } }
+
+        it 'applies the named ordering in the given direction and adds the primary key as a fallback sort' do
+          sql = presenter.apply_ordering_to_scope(scope, order).to_sql
+          expect(sql).to match(/order by workspaces.title asc, "workspaces"."id" ASC/i)
+        end
       end
     end
 
@@ -748,7 +759,7 @@ describe Brainstem::Presenter do
 
       it 'orders by the primary key' do
         sql = presenter.apply_ordering_to_scope(scope, order).to_sql
-        expect(sql).to match(/order by workspaces.id asc/i)
+        expect(sql).to match(/order by "workspaces"."id" ASC/i)
       end
     end
   end
