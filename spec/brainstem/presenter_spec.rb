@@ -680,37 +680,105 @@ describe Brainstem::Presenter do
     end
   end
 
-  describe "#apply_ordering_to_scope" do
+  describe '#apply_ordering_to_scope' do
     let(:presenter_class) { WorkspacePresenter }
     let(:presenter) { presenter_class.new }
     let(:scope) { Workspace.where(nil) }
 
     it 'uses #calculate_sort_name_and_direction to extract a sort name and direction from user params' do
-      presenter_class.sort_order :title, "workspaces.title"
+      presenter_class.sort_order :title, 'workspaces.title'
       mock(presenter).calculate_sort_name_and_direction('order' => 'title:desc') { ['title', 'desc'] }
       presenter.apply_ordering_to_scope(scope, 'order' => 'title:desc')
     end
 
-    it 'runs procs in the context of any helpers' do
-      presenter_class.helper do
-        def some_method
+    context 'when the sort is a proc' do
+      it 'runs procs in the context of any helpers' do
+        presenter_class.helper do
+          def some_method
+          end
+        end
+
+        direction = nil
+        presenter_class.sort_order(:title) do |scope, d|
+          some_method
+          direction = d
+          scope
+        end
+
+        presenter.apply_ordering_to_scope(scope, 'order' => 'title:asc')
+        expect(direction).to eq 'asc'
+      end
+
+      it 'can chain multiple sorts together' do
+        presenter_class.sort_order(:title) do |scope|
+          scope.order('workspaces.title desc').order('workspaces.id desc')
+        end
+
+        sql = presenter.apply_ordering_to_scope(scope, 'order' => 'title').to_sql
+        expect(sql).to match(/order by workspaces.title desc, workspaces.id desc, "workspaces"."id" ASC/i)
+        # this should be ok, since the first id sort will never have a tie
+      end
+
+      it 'chains the primary key onto the end' do
+        presenter_class.sort_order(:title) do |scope|
+          scope.order('workspaces.title desc')
+        end
+
+        sql = presenter.apply_ordering_to_scope(scope, 'order' => 'title').to_sql
+        expect(sql).to match(/order by workspaces.title desc, "workspaces"."id" ASC/i)
+      end
+    end
+
+    context 'when the sort is not a proc' do
+      before do
+        presenter_class.sort_order :title, 'workspaces.title'
+        presenter_class.sort_order :id, 'workspaces.id'
+      end
+
+      context 'and is a string' do
+        let(:order) { { 'order' => 'title:asc' } }
+
+        it 'applies the named ordering in the given direction and adds the primary key as a fallback sort' do
+          sql = presenter.apply_ordering_to_scope(scope, order).to_sql
+          expect(sql).to match(/ORDER BY workspaces.title asc, "workspaces"."id" ASC/i)
         end
       end
 
-      direction = nil
-      presenter_class.sort_order(:title) do |scope, d|
-        some_method
-        direction = d
-        scope
+      context 'and is a symbol' do
+        let(:order) { { 'order' => :title } }
+
+        it 'applies the named ordering in the given direction and adds the primary key as a fallback sort' do
+          sql = presenter.apply_ordering_to_scope(scope, order).to_sql
+          expect(sql).to match(/order by workspaces.title asc, "workspaces"."id" ASC/i)
+        end
       end
-      presenter.apply_ordering_to_scope(scope, 'order' => 'title:asc')
-      expect(direction).to eq 'asc'
     end
 
-    it 'applies the named ordering in the given direction' do
-      direction = nil
-      presenter_class.sort_order :title, 'workspaces.title'
-      expect(presenter.apply_ordering_to_scope(scope, 'order' => 'title:asc').to_sql).to match(/order by workspaces.title asc/i)
+    context 'when the sort is not present' do
+      let(:order) { '' }
+
+      it 'orders by the primary key' do
+        sql = presenter.apply_ordering_to_scope(scope, order).to_sql
+        expect(sql).to match(/order by "workspaces"."id" ASC/i)
+      end
+    end
+
+    context 'when the table has no primary key' do
+      let(:scope) { Cthulhu.where(nil) }
+      let(:order) { { 'order' => 'updated_at:asc' } }
+
+      before do
+        class Cthulhu < Workspace
+          self.primary_key = nil
+        end
+
+        presenter_class.sort_order :updated_at, 'workspaces.updated_at'
+      end
+
+      it 'does not add a fallback deterministic sort, and you deserve whatever fate befalls you' do
+        sql = presenter.apply_ordering_to_scope(scope, order).to_sql
+        expect(sql).to eq("SELECT \"workspaces\".* FROM \"workspaces\" WHERE \"workspaces\".\"type\" IN ('Cthulhu') ORDER BY workspaces.updated_at asc")
+      end
     end
   end
 
