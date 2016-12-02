@@ -94,24 +94,11 @@ describe Brainstem::DSL::Association do
           }
         }
 
-        context 'when presenting one model' do
-          let(:models) { [first_model] }
-
-          it 'calls the dynamic lambda and not the lookup lambda' do
-            instance = Object.new
-            mock(instance).dynamic_instance_method
-            mock(instance).lookup_instance_method.never
-            expect(association.run_on(first_model, context, instance)).to eq 'Ben'
-          end
-        end
-
-        context 'when presenting more than one model' do
-          it 'calls the lookup lambda and not the dynamic lambda' do
-            instance = Object.new
-            mock(instance).lookup_instance_method
-            mock(instance).dynamic_instance_method.never
-            expect(association.run_on(first_model, context, instance)).to eq 'Ben'
-          end
+        it 'calls the dynamic lambda and not the lookup lambda' do
+          instance = Object.new
+          mock(instance).dynamic_instance_method.never
+          mock(instance).lookup_instance_method
+          expect(association.run_on(first_model, context, instance)).to eq 'Ben'
         end
       end
 
