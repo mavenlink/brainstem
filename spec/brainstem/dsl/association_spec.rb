@@ -94,7 +94,7 @@ describe Brainstem::DSL::Association do
           }
         }
 
-        it 'calls the dynamic lambda and not the lookup lambda' do
+        it 'calls the lookup lambda and not the dynamic lambda' do
           instance = Object.new
           mock(instance).dynamic_instance_method.never
           mock(instance).lookup_instance_method
