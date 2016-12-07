@@ -574,8 +574,7 @@ presenting and every presented model gets its assocation or value from the cache
 `lookup` lambda takes in the presented models and should generate a cache containing the models' coresponding assocations
 or values. Brainstem expects the return result of the `lookup` to be a Hash where the keys are the presented models' ids
 and the values are those models' associations or values. Use the `lookup` when you would like to preload but cannot
-e.g. if your association references `current_user`. If the `lookup` option is defined, the `dynamic` option is defined, and
-one model is being presented, then the `dynamic` will be used. If multiple models are being presented and both options are defined,
+e.g. if your association references `current_user`. If both a `lookup` and `dynamic` options are defined,
 the `lookup` will be used.
 
   ```ruby
