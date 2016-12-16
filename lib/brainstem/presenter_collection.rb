@@ -70,14 +70,14 @@ module Brainstem
       # filter the incoming :includes list by those available from this Presenter in the current context
       selected_associations = filter_includes(options)
 
-      optional_fields = filter_optional_fields(options)
-
       struct = { 'count' => count, brainstem_key => {}, 'results' => [] }
 
       # Build top-level keys for all requested associations.
       selected_associations.each do |association|
         struct[brainstem_key_for!(association.target_class)] ||= {} unless association.polymorphic?
       end
+
+      optional_fields = filter_optional_fields(options[:primary_presenter], options[:params][:optional_fields])
 
       if primary_models.length > 0
         associated_models = {}
@@ -92,7 +92,12 @@ module Brainstem
         associated_models.each do |association_brainstem_key, associated_models_hash|
           presenter = for!(associated_models_hash.values.first.class)
           struct[association_brainstem_key] ||= {}
-          presenter.group_present(associated_models_hash.values).each do |model|
+
+          if options[:params][:associations_optional_fields]
+            optional_fields_for_association = filter_optional_fields(presenter, options[:params][:associations_optional_fields][association_brainstem_key])
+          end
+
+          presenter.group_present(associated_models_hash.values, [], optional_fields: optional_fields_for_association).each do |model|
             struct[association_brainstem_key][model['id']] ||= model
           end
         end
@@ -168,8 +173,8 @@ module Brainstem
       end
     end
 
-    def filter_optional_fields(options)
-      options[:params][:optional_fields].to_s.split(',').map(&:strip) & options[:primary_presenter].configuration[:fields].keys
+    def filter_optional_fields(presenter, optional_fields)
+      optional_fields.to_s.split(',').map(&:strip) & presenter.configuration[:fields].keys
     end
 
     def set_default_filters_option!(options)
