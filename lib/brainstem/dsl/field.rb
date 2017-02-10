@@ -36,15 +36,15 @@ module Brainstem
       end
 
       def run_on(model, context, helper_instance = Object.new)
-        if options[:dynamic] && (!options[:lookup] || context[:models].size == 1)
+        if options[:lookup]
+          run_on_with_lookup(model, context, helper_instance)
+        elsif options[:dynamic]
           proc = options[:dynamic]
           if proc.arity == 1
             helper_instance.instance_exec(model, &proc)
           else
             helper_instance.instance_exec(&proc)
           end
-        elsif options[:lookup]
-          run_on_with_lookup(model, context, helper_instance)
         else
           model.send(method_name)
         end
