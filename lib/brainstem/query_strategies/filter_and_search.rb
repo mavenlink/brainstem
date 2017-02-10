@@ -43,7 +43,7 @@ module Brainstem
           offset = limit * (calculate_page - 1)
         end
 
-        scope.limit(limit).offset(offset).uniq
+        scope.limit(limit).offset(offset).distinct
       end
     end
   end
