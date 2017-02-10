@@ -10,6 +10,7 @@ require 'pry-nav'
 require 'brainstem'
 require_relative 'spec_helpers/schema'
 require_relative 'spec_helpers/db'
+require_relative 'spec_helpers/rr'
 
 DatabaseCleaner.strategy = :transaction
 
