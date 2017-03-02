@@ -808,7 +808,7 @@ describe Brainstem::Presenter do
       end
 
       it 'does not add a fallback deterministic sort, and you deserve whatever fate befalls you' do
-        sql = presenter.apply_ordering_to_scope(scope, order).to_sql
+        sql = presenter.apply_ordering_to_scope(scope, order).to_sql.squish
         expect(sql).to eq("SELECT \"workspaces\".* FROM \"workspaces\" WHERE \"workspaces\".\"type\" IN ('Cthulhu') ORDER BY workspaces.updated_at asc")
       end
     end

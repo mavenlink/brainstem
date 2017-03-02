@@ -76,7 +76,7 @@ module Brainstem
           offset = limit * (calculate_page - 1)
         end
 
-        [scope.limit(limit).offset(offset).uniq, scope.select("distinct #{scope.connection.quote_table_name @options[:table_name]}.id").count]
+        [scope.limit(limit).offset(offset).distinct, scope.select("distinct #{scope.connection.quote_table_name @options[:table_name]}.id").count]
       end
 
       def handle_only(scope, only)
