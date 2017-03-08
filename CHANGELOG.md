@@ -4,8 +4,8 @@
   - Implemented new presenter DSL.
   - Added controller helpers for presenting errors.
   - Added support for optional fields.
-  - Support filtering in conjunction with your search implementation.
-  - Add support for defining lookup caches for dynamic fields.
+  - Added support filtering in conjunction with your search implementation.
+  - Added support for defining lookup caches for dynamic fields.
   - Fixed: documentation for default filters.
   - Fixed: ambiguity of `brainstem_key` for presenters that present multiple classes.
   - Fixed: non-deterministic order when sorting records with identical sortable fields (`updated_at`, for instance).
