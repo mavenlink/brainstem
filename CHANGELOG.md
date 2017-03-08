@@ -1,5 +1,15 @@
 # Changelog
 
++ **1.0.0.pre.1** - _03/07/2017_
+  - Implemented new presenter DSL.
+  - Added controller helpers for presenting errors.
+  - Added support for optional fields.
+  - Support filtering in conjunction with your search implementation.
+  - Add support for defining lookup caches for dynamic fields.
+  - Fixed: documentation for default filters.
+  - Fixed: ambiguity of `brainstem_key` for presenters that present multiple classes.
+  - Fixed: non-deterministic order when sorting records with identical sortable fields (`updated_at`, for instance).
+
 + **1.0.0.pre** - _10/5/2015_
 
   + Complete rewrite of the Presenter DSL allowing for introspection and (soon) automatic API documentation.
