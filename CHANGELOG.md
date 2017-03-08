@@ -4,7 +4,7 @@
   - Implemented new presenter DSL.
   - Added controller helpers for presenting errors.
   - Added support for optional fields.
-  - Added support filtering in conjunction with your search implementation.
+  - Added support for filtering in conjunction with your search implementation.
   - Added support for defining lookup caches for dynamic fields.
   - Fixed: documentation for default filters.
   - Fixed: ambiguity of `brainstem_key` for presenters that present multiple classes.
