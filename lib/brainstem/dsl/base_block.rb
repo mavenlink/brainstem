@@ -22,8 +22,16 @@ module Brainstem
 
         def parse_args(args)
           options = args.last.is_a?(Hash) ? args.pop : {}
-          description = args.shift
-          [description, options]
+          maybe_description = args.shift
+
+          if maybe_description.is_a?(Hash)
+            options = options.merge(maybe_description)
+          elsif maybe_description.present?            
+            options[:info] = maybe_description
+          end
+
+          options
+        end
         end
       end
     end
