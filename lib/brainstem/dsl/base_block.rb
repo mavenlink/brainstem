@@ -26,7 +26,7 @@ module Brainstem
 
           if maybe_description.is_a?(Hash)
             options = options.merge(maybe_description)
-          elsif maybe_description.present?            
+          elsif maybe_description.present?
             deprecated_description_warning
             options[:info] = maybe_description
           end
@@ -37,7 +37,8 @@ module Brainstem
         def deprecated_description_warning
           ActiveSupport::Deprecation.warn(
            'DEPRECATION_WARNING: Specifying description as the last parameter will be deprecated in the next version.' \
-           'Description can be specified with the `info` key in a hash. e.g. { info: "My description" }'
+           'Description can be specified with the `info` key in a hash. e.g. { info: "My description" }',
+           caller
           )
         end
       end
