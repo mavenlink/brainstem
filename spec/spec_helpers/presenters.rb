@@ -1,4 +1,4 @@
-class WorkspacePresenter < Brainstem::Presenter
+ class WorkspacePresenter < Brainstem::Presenter
   presents Workspace
 
   helper do
@@ -10,8 +10,8 @@ class WorkspacePresenter < Brainstem::Presenter
   preload :lead_user
 
   conditionals do
-    model   :title_is_hello, lambda { |model| model.title == 'hello' }, 'visible when the title is hello'
-    request :user_is_bob, lambda { current_user == 'bob' }, 'visible only to bob'
+    model   :title_is_hello, lambda { |model| model.title == 'hello' }, info: 'visible when the title is hello'
+    request :user_is_bob, lambda { current_user == 'bob' }, info: 'visible only to bob'
   end
 
   fields do
@@ -32,23 +32,26 @@ class WorkspacePresenter < Brainstem::Presenter
       field :access_level, :integer, dynamic: lambda { 2 }
     end
 
-    field :hello_title, :string, 'the title, when hello',
+    field :hello_title, :string,
+          info: 'the title, when hello',
           dynamic: lambda { 'title is hello' },
           if: :title_is_hello
 
-    field :secret, :string, 'a secret, via secret_info',
+    field :secret, :string,
+          info: 'a secret, via secret_info',
           via: :secret_info,
           if: [:user_is_bob, :title_is_hello]
 
     with_options if: :user_is_bob do
-      field :bob_title, :string, 'another name for the title, only for Bob',
+      field :bob_title, :string,
+            info: 'another name for the title, only for Bob',
             via: :title
     end
   end
 
   associations do
-    association :tasks, Task, 'The Tasks in this Workspace'
-    association :lead_user, User, 'The user who runs this Workspace'
+    association :tasks, Task, info: 'The Tasks in this Workspace'
+    association :lead_user, User, info: 'The user who runs this Workspace'
     # association :subtasks, Task, 'Only Tasks in this Workspace that are subtasks',
     #             dynamic: lambda { |workspace| workspace.tasks.where('parent_id IS NOT NULL') },
     #             brainstem_key: 'sub_tasks'
@@ -63,7 +66,7 @@ class CheesePresenter < Brainstem::Presenter
   end
 
   associations do
-    association :user, User, 'The owner of the cheese'
+    association :user, User, info: 'The owner of the cheese'
   end
 end
 
@@ -75,7 +78,7 @@ class GroupPresenter < Brainstem::Presenter
   end
 
   associations do
-    association :tasks, Task, 'The Tasks in this Group'
+    association :tasks, Task, info: 'The Tasks in this Group'
   end
 end
 
@@ -88,10 +91,12 @@ class TaskPresenter < Brainstem::Presenter
 
   associations do
     association :sub_tasks, Task
-    association :other_tasks, Task, 'another copy of the sub_tasks association',
+    association :other_tasks, Task,
+                info: 'another copy of the sub_tasks association',
                 via: :sub_tasks
     association :workspace, Workspace
-    association :restricted, Task, 'only available on only / show requests',
+    association :restricted, Task,
+                info: 'only available on only / show requests',
                 dynamic: lambda { |task| Task.last },
                 restrict_to_only: true
   end
@@ -105,7 +110,8 @@ class UserPresenter < Brainstem::Presenter
   end
 
   associations do
-    association :odd_workspaces, Workspace, 'only the odd numbered workspaces',
+    association :odd_workspaces, Workspace,
+                info: 'only the odd numbered workspaces',
                 dynamic: lambda { |user| user.workspaces.select { |workspace| workspace.id % 2 == 1 } }
   end
 end
