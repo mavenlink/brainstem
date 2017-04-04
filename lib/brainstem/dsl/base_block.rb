@@ -32,7 +32,6 @@ module Brainstem
 
           options
         end
-        end
       end
     end
   end
