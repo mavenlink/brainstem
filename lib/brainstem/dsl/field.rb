@@ -5,14 +5,17 @@ module Brainstem
     class Field
       include Brainstem::Concerns::Lookup
 
-      attr_reader :name, :type, :description, :conditionals, :options
+      attr_reader :name, :type, :conditionals, :options
 
-      def initialize(name, type, description, options)
+      def initialize(name, type, options)
         @name = name.to_s
         @type = type
-        @description = description
         @conditionals = [options[:if]].flatten.compact
         @options = options
+      end
+
+      def description
+        options[:info].presence
       end
 
       def conditional?
