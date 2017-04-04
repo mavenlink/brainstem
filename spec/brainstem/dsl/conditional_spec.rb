@@ -2,8 +2,31 @@ require 'spec_helper'
 require 'brainstem/dsl/conditional'
 
 describe Brainstem::DSL::Conditional do
-  let(:conditional) { Brainstem::DSL::Conditional.new(name, type, action, description) }
+  let(:conditional) { Brainstem::DSL::Conditional.new(name, type, action, options) }
   let(:model) { Workspace.first }
+  let(:options) { { info: description } }
+
+  describe 'description' do
+    let(:name) { :title_is_hello }
+    let(:type) { :model }
+    let(:action) { lambda { |model| model.title == 'hello' } }
+
+    context 'when `info` is specified in the options' do
+      let(:description) { 'visible when the title is hello' }
+
+      it 'returns the value specified with the info key' do
+        expect(conditional.description).to eq(description)
+      end
+    end
+
+    context 'when `info` is not specified in the options' do
+      let(:options) { {} }
+
+      it 'returns nil' do
+        expect(conditional.description).to be_nil
+      end
+    end
+  end
 
   describe '.matches?' do
     context 'as a :model conditional' do
