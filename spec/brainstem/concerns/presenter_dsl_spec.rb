@@ -98,6 +98,8 @@ describe Brainstem::Concerns::PresenterDSL do
 
     context 'when description is specified in the deprecated format' do
       before do
+        stub(ActiveSupport::Deprecation).warn.with(anything, anything)
+
         presenter_class.conditionals do
           model :user_is_jane, lambda { current_user == 'jane' }, 'visible only to Jane'
         end
@@ -108,6 +110,10 @@ describe Brainstem::Concerns::PresenterDSL do
         expect(presenter_class.configuration[:conditionals][:user_is_jane].action).to be_present
         expect(presenter_class.configuration[:conditionals][:user_is_jane].type).to eq :model
         expect(presenter_class.configuration[:conditionals][:user_is_jane].description).to eq 'visible only to Jane'
+      end
+
+      it 'adds a deprecation warning' do
+        expect(ActiveSupport::Deprecation).to have_received.warn.with(anything, anything)
       end
     end
   end
@@ -241,6 +247,8 @@ describe Brainstem::Concerns::PresenterDSL do
 
     context "when description is specified in the deprecated format" do
       before do
+        stub(ActiveSupport::Deprecation).warn.with(anything, anything)
+
         presenter_class.fields do
           field :synced_at, :datetime, "Last time the object was synced"
         end
@@ -250,6 +258,10 @@ describe Brainstem::Concerns::PresenterDSL do
         expect(presenter_class.configuration[:fields].keys).to include('synced_at')
         expect(presenter_class.configuration[:fields][:synced_at].type).to eq :datetime
         expect(presenter_class.configuration[:fields][:synced_at].description).to eq 'Last time the object was synced'
+      end
+
+      it 'adds a deprecation warning' do
+        expect(ActiveSupport::Deprecation).to have_received.warn.with(anything, anything)
       end
     end
   end
@@ -299,6 +311,8 @@ describe Brainstem::Concerns::PresenterDSL do
 
     context "when description is specified in the deprecated format" do
       before do
+        stub(ActiveSupport::Deprecation).warn.with(anything, anything)
+
         presenter_class.associations do
           association :something_else, :polymorphic, 'The other things in this Workspace', restrict_to_only: true
         end
@@ -311,6 +325,10 @@ describe Brainstem::Concerns::PresenterDSL do
           info: 'The other things in this Workspace',
           restrict_to_only: true
         )
+      end
+
+      it 'adds a deprecation warning' do
+        expect(ActiveSupport::Deprecation).to have_received.warn.with(anything, anything)
       end
     end
   end

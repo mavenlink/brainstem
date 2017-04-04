@@ -19,6 +19,7 @@ module Brainstem
         if args.length == 1
           description = args.first
           if description.is_a?(String)
+            deprecated_description_warning
             { info: description }
           else
             description
