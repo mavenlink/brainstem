@@ -37,7 +37,7 @@ module Brainstem
         def deprecated_description_warning
           ActiveSupport::Deprecation.warn(
            'DEPRECATION_WARNING: Specifying description as the last parameter will be deprecated in the next version.' \
-           'Description can be specified with the `info` key in a hash. e.g. { info: "My description" }',
+           'Description can be specified with the `info` key in the options hash. e.g. { info: "My description" }',
            caller
           )
         end
