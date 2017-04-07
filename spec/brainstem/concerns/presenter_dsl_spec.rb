@@ -96,6 +96,21 @@ describe Brainstem::Concerns::PresenterDSL do
       expect(subclass.configuration[:conditionals][:title_is_hello].description).to eq "visible when the title is hello (in all caps)"
     end
 
+    context 'when options hash is a hash with indifferent access' do
+      before do
+        presenter_class.conditionals do
+          request :user_is_jane, lambda { current_user == 'jane' }, { info: 'visible only to Jane' }.with_indifferent_access
+        end
+      end
+
+      it 'is stored in the configuration correctly' do
+        expect(presenter_class.configuration[:conditionals].keys).to include('user_is_jane')
+        expect(presenter_class.configuration[:conditionals][:user_is_jane].action).to be_present
+        expect(presenter_class.configuration[:conditionals][:user_is_jane].type).to eq :request
+        expect(presenter_class.configuration[:conditionals][:user_is_jane].description).to eq 'visible only to Jane'
+      end
+    end
+
     context 'when description is specified in the deprecated format' do
       before do
         stub(ActiveSupport::Deprecation).warn.with(anything, anything)
@@ -245,6 +260,20 @@ describe Brainstem::Concerns::PresenterDSL do
       expect(subclass.configuration[:fields][:new_nested_permissions]).to be_present
     end
 
+    context "when options is a hash with indifferent access" do
+      before do
+        presenter_class.fields do
+          field :synced_at, :datetime, { info: "Last time the object was synced" }.with_indifferent_access
+        end
+      end
+
+      it "is stored in the configuration correctly" do
+        expect(presenter_class.configuration[:fields].keys).to include('synced_at')
+        expect(presenter_class.configuration[:fields][:synced_at].type).to eq :datetime
+        expect(presenter_class.configuration[:fields][:synced_at].description).to eq 'Last time the object was synced'
+      end
+    end
+
     context "when description is specified in the deprecated format" do
       before do
         stub(ActiveSupport::Deprecation).warn.with(anything, anything)
@@ -307,6 +336,23 @@ describe Brainstem::Concerns::PresenterDSL do
       expect(subclass.configuration[:associations][:tasks].options).to eq({ info: 'The Tasks in this Workspace' })
       expect(subclass.configuration[:associations][:lead_user].target_class).to eq User
       expect(subclass.configuration[:associations][:lead_user].description).to eq 'The user who runs this Workspace'
+    end
+
+    context "when options is a hash with indifferent access" do
+      before do
+        presenter_class.associations do
+          association :something_else, :polymorphic, { info: 'The other things in this Workspace', restrict_to_only: true }.with_indifferent_access
+        end
+      end
+
+      it "is stored in the configuration correctly" do
+        expect(presenter_class.configuration[:associations].keys).to include('something_else')
+        expect(presenter_class.configuration[:associations][:something_else].description).to eq 'The other things in this Workspace'
+        expect(presenter_class.configuration[:associations][:something_else].options).to eq(
+          info: 'The other things in this Workspace',
+          restrict_to_only: true
+        )
+      end
     end
 
     context "when description is specified in the deprecated format" do

@@ -21,17 +21,17 @@ module Brainstem
         end
 
         def parse_args(args)
-          options = args.last.is_a?(Hash) ? args.pop : {}
+          options = args.last.kind_of?(Hash) ? args.pop : {}
           maybe_description = args.shift
 
-          if maybe_description.is_a?(Hash)
+          if maybe_description.kind_of?(Hash)
             options = options.merge(maybe_description)
           elsif maybe_description.present?
             deprecated_description_warning
             options[:info] = maybe_description
           end
 
-          options
+          options.symbolize_keys
         end
 
         def deprecated_description_warning
