@@ -9,29 +9,34 @@ describe Brainstem::PresenterValidator do
       preload :lead_user
 
       conditionals do
-        model :title_is_hello, lambda { |model| model.title == 'hello' }, 'visible when the title is hello'
-        request :user_is_bob, lambda { current_user == 'bob' }, 'visible only to bob'
+        model :title_is_hello, lambda { |model| model.title == 'hello' }, info: 'visible when the title is hello'
+        request :user_is_bob, lambda { current_user == 'bob' }, info: 'visible only to bob'
       end
 
       fields do
         field :title, :string
         field :description, :string
         field :updated_at, :datetime
-        field :secret, :string, 'a secret, via secret_info',
+        field :secret, :string,
+              info: 'a secret, via secret_info',
               via: :secret_info,
               if: [:user_is_bob, :title_is_hello]
 
         with_options if: :user_is_bob do
-          field :bob_title, :string, 'another name for the title, only for Bob',
+          field :bob_title, :string,
+                info: 'another name for the title, only for Bob',
                 via: :title
         end
       end
 
       associations do
-        association :tasks, Task, 'The Tasks in this Workspace',
+        association :tasks, Task,
+                    info: 'The Tasks in this Workspace',
                     restrict_to_only: true
-        association :lead_user, User, 'The user who runs this Workspace'
-        association :subtasks, Task, 'Only Tasks in this Workspace that are subtasks',
+        association :lead_user, User,
+                    info: 'The user who runs this Workspace'
+        association :subtasks, Task,
+                    info: 'Only Tasks in this Workspace that are subtasks',
                     dynamic: lambda { |workspace| workspace.tasks.where('parent_id IS NOT NULL') }
       end
     end

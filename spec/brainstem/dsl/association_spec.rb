@@ -5,8 +5,24 @@ describe Brainstem::DSL::Association do
   let(:name) { :user }
   let(:target_class) { User }
   let(:description) { "This object's user" }
-  let(:options) { { } }
-  let(:association) { Brainstem::DSL::Association.new(name, target_class, description, options) }
+  let(:options) { { info: description } }
+  let(:association) { Brainstem::DSL::Association.new(name, target_class, options) }
+
+  describe 'description' do
+    context 'when `info` is specified in the options' do
+      it 'returns the value specified with the info key' do
+        expect(association.description).to eq(description)
+      end
+    end
+
+    context 'when `info` is not specified in the options' do
+      let(:options) { {} }
+
+      it 'returns nil' do
+        expect(association.description).to be_nil
+      end
+    end
+  end
 
   describe "#run_on" do
     let(:context) { { } }
