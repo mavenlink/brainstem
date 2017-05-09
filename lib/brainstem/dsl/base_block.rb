@@ -21,9 +21,25 @@ module Brainstem
         end
 
         def parse_args(args)
-          options = args.last.is_a?(Hash) ? args.pop : {}
-          description = args.shift
-          [description, options]
+          options = args.last.kind_of?(Hash) ? args.pop : {}
+          maybe_description = args.shift
+
+          if maybe_description.kind_of?(Hash)
+            options = options.merge(maybe_description)
+          elsif maybe_description.present?
+            deprecated_description_warning
+            options[:info] = maybe_description
+          end
+
+          options.symbolize_keys
+        end
+
+        def deprecated_description_warning
+          ActiveSupport::Deprecation.warn(
+           'DEPRECATION_WARNING: Specifying description as the last parameter will be deprecated in the next version.' \
+           'Description can be specified with the `info` key in the options hash. e.g. { info: "My description" }',
+           caller
+          )
         end
       end
     end
