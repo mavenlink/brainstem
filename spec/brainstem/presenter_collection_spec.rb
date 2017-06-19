@@ -395,6 +395,15 @@ describe Brainstem::PresenterCollection do
           expect(result).not_to have_key('tasks')
         end
       end
+
+      describe "optional fields for associations one level deep" do
+        it do
+          result = @presenter_collection.presenting("workspaces", :params => { :include => "tasks", :associations_optional_fields => { tasks: 'upcase_name' } }, :max_per_page => 2) { Workspace.where(:id => 1) }
+          expect(result['tasks']['1']['upcase_name']).to eq('BUY MILK')
+          # expect(result['tasks'].keys).to match_array(Workspace.first.tasks.map(&:id).map(&:to_s))
+          # expect(result['workspaces']['1']['task_ids']).to match_array(Workspace.first.tasks.map(&:id).map(&:to_s))
+        end
+      end
     end
 
     describe "handling of only" do

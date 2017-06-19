@@ -87,6 +87,7 @@ class TaskPresenter < Brainstem::Presenter
 
   fields do
     field :name, :string
+    field :upcase_name, :string, dynamic: lambda { |task| task.name.upcase }, optional: true
   end
 
   associations do
