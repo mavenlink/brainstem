@@ -66,11 +66,11 @@ module Api
 
       # Specify the fields to be present in the returned JSON.
       fields do
-        field :name, :string, "the Widget's name"
-        field :legacy, :boolean, "true for legacy Widgets, false otherwise", via: :legacy?
-        field :longform_description, :string, "feature-length description of this Widget", optional: true
-        field :updated_at, :datetime, "the time of this Widget's last update"
-        field :created_at, :datetime, "the time at which this Widget was created"
+        field :name, :string, info: "the Widget's name"
+        field :legacy, :boolean, info: "true for legacy Widgets, false otherwise", via: :legacy?
+        field :longform_description, :string, info: "feature-length description of this Widget", optional: true
+        field :updated_at, :datetime, info: "the time of this Widget's last update"
+        field :created_at, :datetime, info: "the time at which this Widget was created"
       end
 
       # Associations can be included by providing include=association_name in the URL.
@@ -78,8 +78,8 @@ module Api
       # columns on the model, otherwise the user must explicitly request associations
       # to avoid unnecessary loads.
       associations do
-        association :features, Feature, "features associated with this Widget"
-        association :location, Location, "the location of this Widget"
+        association :features, Feature, info: "features associated with this Widget"
+        association :location, Location, info: "the location of this Widget"
       end
     end
   end
@@ -309,7 +309,7 @@ from a previous generation, so it is recommended that you use this executable as
 part of a large shell script that empties your directory and regenerates over
 top of it if you expect much churn.
 
-### Customizing behaviour
+### Customizing behavior
 
 While options can be passed on the command line, this can complicate the
 invocation, especially when the desired settings are often specific to the
@@ -369,18 +369,11 @@ The methods that take an `:info` option include:
 
 - `sort_order`
 - `filter`
-
-The following have explicit description methods:
-
-- `field` &mdash; the third argument to `field(name, type, description, options)`
-    is used instead; also displays the documentation of any condition set in its
+- `association`
+- `request/model`
+- `field` &mdash; also displays the documentation of any condition set in its
     `:if` option.
-- `association` &mdash; the third argument to 
-    `association(name, target_class, description, options)` is used instead.
-- `request/model` &mdash; the third argument to both conditional methods 
-    `model(name, action, description)` and `request(name, action, description)`
-    is used.
-
+    
 The following do not accept documentation:
 
 - `default_sort_order`
@@ -403,7 +396,7 @@ documentation should be suppressed for this particular entry:
 In addition to the above, there are three additional methods in the DSL designed
 primarily for documentation:
 
-- `nodoc!` &mdash; skips this presenter entirely and does not document it.
+- `nodoc!` &mdash; within a presenter or the `brainstem_params` block within a controller, skips generating the documentation entirely. Useful for hidden or non-public endpoints.
 - `title(str, options)` &mdash; used to specify an alternate title for the
     Presenter.
     - `nodoc: true` &mdash; forces fallback to the Presenter's constant
@@ -451,7 +444,7 @@ The configuration for a controller takes place inside the `brainstem_params` blo
 class PostsController < ApiController
   include Brainstem::Concerns::ControllerDSL
 
-  brainstem_params do
+  brainstem_params do   
     title "Posts"
   end
 end
@@ -471,7 +464,7 @@ to know that what you want to document for the `index` action is likely not
 what you'd like to document for the `show` action, but you are also likely to
 have your `create` and `update` methods be very similar.
 
-You can thusly define an action context and place any configuration inside this
+You can define an action context and place any configuration inside this
 context, and it will keep the documentation isolated to that specific action:
 
 ```ruby
@@ -528,7 +521,7 @@ class BlogPostsController < ApiController
     title "Posts" 
 
     # Fall back to 'BlogPostsController' for a title
-    title, "Posts", nodoc: true
+    title "Posts", nodoc: true
 
     # Show description
     description "Access blog posts through these endpoints."
