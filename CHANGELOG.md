@@ -1,5 +1,10 @@
 # Changelog
 
++ **1.0.0.pre.2** - _04/12/2017_
+  - Added support for specifying the description for conditionals, fields and associations with the `info` key in the options hash.
+  - Added a deprecation warning when description param is specified as a string and not with the `info` key in the options hash.
+  - Fixed: support for conditional, field and association options to be a hash with indifferent access.
+
 + **1.0.0.pre.1** - _03/07/2017_
   - Implemented new presenter DSL.
   - Added controller helpers for presenting errors.
