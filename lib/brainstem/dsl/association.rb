@@ -5,13 +5,16 @@ module Brainstem
     class Association
       include Brainstem::Concerns::Lookup
 
-      attr_reader :name, :target_class, :description, :options
+      attr_reader :name, :target_class, :options
 
-      def initialize(name, target_class, description, options)
+      def initialize(name, target_class, options)
         @name = name.to_s
         @target_class = target_class
-        @description = description
         @options = options
+      end
+
+      def description
+        options[:info].presence
       end
 
       def method_name

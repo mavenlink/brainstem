@@ -5,9 +5,25 @@ describe Brainstem::DSL::Field do
   let(:name) { :title }
   let(:type) { :string }
   let(:description) { 'the title of this model' }
-  let(:options) { { } }
-  let(:field) { Brainstem::DSL::Field.new(name, type, description, options) }
+  let(:options) { { info: description } }
+  let(:field) { Brainstem::DSL::Field.new(name, type, options) }
   let(:model) { Workspace.first }
+
+  describe 'description' do
+    context 'when `info` is specified in the options' do
+      it 'returns the value specified with the info key' do
+        expect(field.description).to eq(description)
+      end
+    end
+
+    context 'when `info` is not specified in the options' do
+      let(:options) { {} }
+
+      it 'returns nil' do
+        expect(field.description).to be_nil
+      end
+    end
+  end
 
   describe '#method_name' do
     describe 'by default' do

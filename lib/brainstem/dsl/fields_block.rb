@@ -2,9 +2,8 @@ module Brainstem
   module Concerns
     module PresenterDSL
       class FieldsBlock < BaseBlock
-        def field(name, type, *args)
-          description, options = parse_args(args)
-          configuration[name] = DSL::Field.new(name, type, description, smart_merge(block_options, options))
+        def field(name, type, options = {})
+          configuration[name] = DSL::Field.new(name, type, smart_merge(block_options, format_options(options)))
         end
 
         def fields(name, &block)

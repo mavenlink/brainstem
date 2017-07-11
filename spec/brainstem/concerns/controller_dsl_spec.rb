@@ -48,7 +48,6 @@ module Brainstem
         end
       end
 
-
       describe ".description" do
         it "sets the description for the context" do
           subject.brainstem_params do
@@ -76,7 +75,6 @@ module Brainstem
         end
       end
 
-
       describe ".title" do
         it "sets the title for the context" do
           subject.brainstem_params do
@@ -103,7 +101,6 @@ module Brainstem
         end
       end
 
-
       describe ".model_params" do
         before do
           stub(subject).brainstem_model_name { "widgets" }
@@ -125,7 +122,6 @@ module Brainstem
           end
         end
       end
-
 
       describe ".valid" do
         context "when given a name and an options hash" do
@@ -158,7 +154,6 @@ module Brainstem
         end
       end
 
-
       describe ".transform" do
         it "appends to the list of transforms" do
           subject.brainstem_params do
@@ -169,7 +164,6 @@ module Brainstem
           expect(subject.configuration[:_default][:transforms][:a_key]).to eq(:another_key)
         end
       end
-
 
       describe ".presents" do
         context "when class given" do
@@ -224,7 +218,6 @@ module Brainstem
           end
         end
       end
-
 
       describe ".action_context" do
         it "changes context to a specific action" do
@@ -298,7 +291,6 @@ module Brainstem
         end
       end
 
-
       describe ".actions" do
         it "changes context to multiple actions" do
           mock(subject).action_context(is_a(Symbol)).twice
@@ -336,7 +328,6 @@ module Brainstem
           end
         end
       end
-
 
       describe "#brainstem_valid_params" do
         let(:brainstem_model_name) { "widget" }
@@ -408,7 +399,6 @@ module Brainstem
         end
       end
 
-
       describe "#transforms" do
         before do
           subject.brainstem_params do
@@ -453,7 +443,6 @@ module Brainstem
           end
         end
       end
-
 
       describe "#contextual_key" do
         it "looks up the key for a given context" do

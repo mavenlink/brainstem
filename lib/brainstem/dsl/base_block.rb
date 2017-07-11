@@ -20,10 +20,8 @@ module Brainstem
           klass.new(new_config, block_options.merge(new_options), &block)
         end
 
-        def parse_args(args)
-          options = args.last.is_a?(Hash) ? args.pop : {}
-          description = args.shift
-          [description, options]
+        def format_options(options)
+          options.symbolize_keys
         end
       end
     end
