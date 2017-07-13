@@ -373,7 +373,7 @@ The methods that take an `:info` option include:
 - `request/model`
 - `field` &mdash; also displays the documentation of any condition set in its
     `:if` option.
-    
+
 The following do not accept documentation:
 
 - `default_sort_order`
@@ -427,11 +427,11 @@ class PostsPresenter < Brainstem::Presenter
   MARKDOWN
 
   associations do
-    association :author, User, "the author of the post"
+    association :author, User, info: "the author of the post"
 
     # Temporarily disable documenting this relationship as we revamp the
     # editorial system:
-    association :editor, User, "the editor of the post", nodoc: true
+    association :editor, User, info: "the editor of the post", nodoc: true
   end
 end
 ```
@@ -518,7 +518,7 @@ class BlogPostsController < ApiController
   brainstem_params do
 
     # Make the displayed title of this controller "Posts"
-    title "Posts" 
+    title "Posts"
 
     # Fall back to 'BlogPostsController' for a title
     title "Posts", nodoc: true
@@ -865,12 +865,15 @@ Brainstem provides a rich DSL for building presenters.  This section details the
 
   ```ruby
   fields do
-    field :name, :string, "the Widget's name"
-    field :legacy, :boolean, "true for legacy Widgets, false otherwise",
+    field :name, :string, info: "the Widget's name"
+    field :legacy, :boolean,
+          info: "true for legacy Widgets, false otherwise",
           via: :legacy?
-    field :dynamic_name, :string, "a formatted name for this Widget",
+    field :dynamic_name, :string,
+          info: "a formatted name for this Widget",
           dynamic: lambda { |widget| "This Widget's name is #{widget.name}" }
-    field :longform_description, :string, "feature-length description of this Widget",
+    field :longform_description, :string,
+          info: "feature-length description of this Widget",
           optional: true
 
     # Fields can be nested
@@ -902,14 +905,16 @@ Brainstem provides a rich DSL for building presenters.  This section details the
 
   ```ruby
   associations do
-    association :features, Feature, "features associated with this Widget"
-    association :location, Location, "the location of this Widget"
-    association :previous_location, Location, "the Widget's previous location",
+    association :features, Feature, info: "features associated with this Widget"
+    association :location, Location, info: "the location of this Widget"
+    association :previous_location, Location,
+                info: "the Widget's previous location",
                 dynamic: lambda { |widget| widget.previous_locations.first }
-    association :associated_objects, :polymorphic, "a mixture of objects related to this Widget"
+    association :associated_objects, :polymorphic,
+                info: "a mixture of objects related to this Widget"
   end
   ```
-  
+
 * `lookup` - Use this option to avoid N + 1 queries for Fields and Associations. The `lookup` lambda runs once when
 presenting and every presented model gets its assocation or value from the cache the `lookup` lambda generates. The
 `lookup` lambda takes in the presented models and should generate a cache containing the models' coresponding assocations
@@ -920,7 +925,8 @@ the `lookup` will be used.
 
   ```ruby
   associations do
-    association :current_user_groups, Group, "the Groups for the current user",
+    association :current_user_groups, Group,
+      info: "the Groups for the current user",
       lookup: lambda { |models|
         Group.where(subject_id: models.map(&:id)
           .where(user_id: current_user.id)
@@ -936,12 +942,13 @@ the `lookup` will be used.
 
   ```ruby
   fields do
-    field :current_user_post_count, Post, "count of Posts the current_user has for this model",
-      lookup: lambda { |models| 
+    field :current_user_post_count, Post,
+      info: "count of Posts the current_user has for this model",
+      lookup: lambda { |models|
         lookup = Post.where(subject_id: models.map(&:id)
           .where(user_id: current_user.id)
-          .group_by { |post| post.subject_id } 
-		  
+          .group_by { |post| post.subject_id }
+
         lookup
        },
        lookup_fetch: lambda { |lookup, model| lookup[model.id] }
@@ -958,24 +965,27 @@ the `lookup` will be used.
   conditionals do
     model   :title_is_hello,
             lambda { |model| model.title == 'hello' },
-            'visible when the title is hello'
+            info: 'visible when the title is hello'
 
     request :user_is_bob,
             lambda { current_user == 'bob' }, # Assuming some sort of `helper` that provides `current_user`
-            'visible only to bob'
+            info: 'visible only to bob'
   end
 
   fields do
-    field :hello_title, :string, 'the title, when it is exactly the word "hello"',
+    field :hello_title, :string,
+          info: 'the title, when it is exactly the word "hello"',
           dynamic: lambda { |model| model.title + " is the title" },
           if: :title_is_hello
 
-    field :secret, :string, "a secret, via the secret_info model method, only visible to bob and when the model's title is hello",
+    field :secret, :string,
+          info: "a secret, via the secret_info model method, only visible to bob and when the model's title is hello",
           via: :secret_info,
           if: [:user_is_bob, :title_is_hello]
 
     with_options if: :user_is_bob do
-      field :bob_title, :string, 'another name for the title, only visible to Bob',
+      field :bob_title, :string,
+            info: 'another name for the title, only visible to Bob',
             via: :title
     end
   end
