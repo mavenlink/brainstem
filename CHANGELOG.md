@@ -1,5 +1,9 @@
 # Changelog
 
++ **1.0.0.pre.3** - _04/12/2017_
+  - Bump version of Ruby to 2.3.3.
+  - Drop support for Ruby version 2.1.10.
+
 + **1.0.0.pre.2** - _04/12/2017_
   - Added support for specifying the description for conditionals, fields and associations with the `info` key in the options hash.
   - Added a deprecation warning when description param is specified as a string and not with the `info` key in the options hash.
