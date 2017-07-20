@@ -17,6 +17,8 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
   gem.version       = Brainstem::VERSION
 
+  gem.executables   << 'brainstem'
+
   gem.add_dependency "activerecord", ">= 4.1"
   gem.add_dependency "activesupport", ">= 4.1"
 

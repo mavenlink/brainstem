@@ -1,10 +1,11 @@
+require 'active_support/concern'
 require 'brainstem/dsl/configuration'
 
 module Brainstem
   module Concerns
     module InheritableConfiguration
       extend ActiveSupport::Concern
-  
+
       module ClassMethods
         def configuration
           @configuration ||= begin

@@ -66,11 +66,11 @@ module Api
 
       # Specify the fields to be present in the returned JSON.
       fields do
-        field :name, :string, "the Widget's name"
-        field :legacy, :boolean, "true for legacy Widgets, false otherwise", via: :legacy?
-        field :longform_description, :string, "feature-length description of this Widget", optional: true
-        field :updated_at, :datetime, "the time of this Widget's last update"
-        field :created_at, :datetime, "the time at which this Widget was created"
+        field :name, :string, info: "the Widget's name"
+        field :legacy, :boolean, info: "true for legacy Widgets, false otherwise", via: :legacy?
+        field :longform_description, :string, info: "feature-length description of this Widget", optional: true
+        field :updated_at, :datetime, info: "the time of this Widget's last update"
+        field :created_at, :datetime, info: "the time at which this Widget was created"
       end
 
       # Associations can be included by providing include=association_name in the URL.
@@ -78,8 +78,8 @@ module Api
       # columns on the model, otherwise the user must explicitly request associations
       # to avoid unnecessary loads.
       associations do
-        association :features, Feature, "features associated with this Widget"
-        association :location, Location, "the location of this Widget"
+        association :features, Feature, info: "features associated with this Widget"
+        association :location, Location, info: "the location of this Widget"
       end
     end
   end
@@ -119,6 +119,7 @@ The `Brainstem::ControllerMethods` concern provides:
 * `brainstem_model_name` which is inferred from your controller name or settable with `self.brainstem_model_name = :thing`.
 * `brainstem_present` and `brainstem_present_object` for presenting a scope of models or a single model.
 * `brainstem_model_error` and `brainstem_system_error` for presenting model and system error messages.
+* Various methods for auto-documentation of your API.
 
 ### Controller Best Practices
 
@@ -164,7 +165,7 @@ module Api
 end
 ```
 
-### Setup Rails to load Brainstem
+### Setup Rails to Load Brainstem
 
 To configure Brainstem for development and production, we do the following:
 
@@ -173,8 +174,9 @@ To configure Brainstem for development and production, we do the following:
 2) We setup an initializer in `config/initializers/brainstem.rb`, similar to the following:
 
 ```ruby
-# In order to support live code reload in the development environment, we register a `to_prepare` callback.  This
-# runs once in production (before the first request) and whenever a file has changed in development.
+# In order to support live code reload in the development environment, we
+# register a `to_prepare` callback. This # runs once in production (before the
+# first request) and whenever a file has changed in development.
 Rails.application.config.to_prepare do
   # Forget all Brainstem configuration.
   Brainstem.reset!
@@ -182,9 +184,11 @@ Rails.application.config.to_prepare do
   # Set the current default API namespace.
   Brainstem.default_namespace = :v1
 
-  # (Optional) Load a default base helper into all presenters. You could use this to bring in a concept like `current_user`.
-  # While not necessarily the best approach, something like http://stackoverflow.com/a/11670283 can currently be used to
-  # access the requesting user inside of a Brainstem presenter. We hope to clean this up by allowing a user to be passed in
+  # (Optional) Load a default base helper into all presenters. You could use
+  # this to bring in a concept like `current_user`.  # While not necessarily the
+  # best approach, something like http://stackoverflow.com/a/11670283 can
+  # currently be used to # access the requesting user inside of a Brainstem
+  # presenter. We hope to clean this up by allowing a user to be passed in #
   # when presenting in the future.
   module ApiHelper
     def current_user
@@ -268,6 +272,343 @@ Brainstem parses the request params and supports the following:
   `location_name=san+francisco`. Because filters are top-level params, avoid naming them after any of the other Brainstem
   keywords, such as `search`, `page`, `per_page`, `limit`, `offset`, `order`, `only`, or `include`.
 * Brainstem supports optional fields which will only be returned when requested, for example: `optional_fields=field1,field2`
+
+--
+
+
+## The `brainstem` executable
+
+The `brainstem` executable provided with the gem is at the moment used only to
+generate API docs from the command line, but you can verify which commands are
+available simply by running:
+
+```sh
+bundle exec brainstem
+```
+
+This will give you a list of all available commands. Additional help is
+available for each command, and can be found by passing the command
+the `help` flag, i.e.:
+
+```sh
+bundle exec brainstem generate --help
+```
+
+--
+
+
+## API Documentation
+
+### The `generate` command
+
+Running `bundle exec brainstem generate [ARGS]` will generate the documentation
+extracted from your properly annotated presenters and controllers.
+
+Note that this does not, at present, *remove* existing docs that may be present
+from a previous generation, so it is recommended that you use this executable as
+part of a large shell script that empties your directory and regenerates over
+top of it if you expect much churn.
+
+### Customizing behavior
+
+While options can be passed on the command line, this can complicate the
+invocation, especially when the desired settings are often specific to the
+project and do not often change.
+
+As a result, it is possible to specify options through an initializer in your
+application that will be used in the absence of command-line flags. Thus,
+configuration precedence is in the following order:
+
+1. Command-line flags;
+2. Initializer settings;
+3. Built-in defaults.
+
+To see a list of the available command-line options, run `bundle exec brainstem
+generate --help`.
+
+To see a list of the available initializer settings, view
+[lib/brainstem/api_docs.rb](./lib/brainstem/api_docs.rb). You can configure
+these in your initializers just by setting them:
+
+```ruby
+# config/initializers/brainstem.rb
+
+Brainstem::ApiDocs.tap do |config|
+  config.write_path = "/path/to/output"
+end
+```
+
+### Annotating an API
+
+#### Presenters / Data Models
+
+By and large, Presenters are self-documenting: simply using them as intended
+will yield a panoply of data.
+
+##### Docstrings
+
+All common methods that do not explicitly take a description take an `:info`
+option, which allows for the specification of an explanatory documentation
+string.
+
+As a general rule of thumb, methods that are not used within a block tend to
+accept `:info` strings, and those used within a block tend to have their own
+`description` argument.
+
+For example:
+
+```ruby
+class MyPresenter < Brainstem::Presenter
+  sort_order :cost, info: "Sorts by cost" do |scope, direction|
+    scope.reorder("myobjects.cost #{direction}")
+  end
+end
+```
+
+The methods that take an `:info` option include:
+
+- `sort_order`
+- `filter`
+- `association`
+- `request/model`
+- `field` &mdash; also displays the documentation of any condition set in its
+    `:if` option.
+
+The following do not accept documentation:
+
+- `default_sort_order`
+- `preload`
+
+##### Nodoc
+
+The following methods accept a `:nodoc` boolean option, which indicates that the
+documentation should be suppressed for this particular entry:
+
+- `association` &mdash; hides the association
+- `field` &mdash; hides the field
+- `sort_order` &mdash; hides the sort order
+- `filter` &mdash; hides the filter
+- `request` / `model` &mdash; causes the conditional not to be
+     listed on any field which specifies it
+
+##### Additional Documentables
+
+In addition to the above, there are three additional methods in the DSL designed
+primarily for documentation:
+
+- `nodoc!` &mdash; within a presenter or the `brainstem_params` block within a controller, skips generating the documentation entirely. Useful for hidden or non-public endpoints.
+- `title(str, options)` &mdash; used to specify an alternate title for the
+    Presenter.
+    - `nodoc: true` &mdash; forces fallback to the Presenter's constant
+- `description(str, options)` &mdash; used to specify a description for the
+    Presenter.
+    - `nodoc: true` &mdash; displays no description
+
+##### Example
+
+```ruby
+class PostsPresenter < Brainstem::Presenter
+  presents Post
+
+  # Hide the entire presenter
+  #
+  # nodoc!
+
+  # If we temporarily want to disable the custom title, and just display
+  # 'Posts', we can add a 'nodoc' option set to true.
+  #
+  # title "Blog Posts", nodoc: true
+
+  title "Blog Posts"
+
+  description <<-MARKDOWN.strip_heredoc
+    The blog post is the primary entity in the blog, which represents a single
+    post by one of our authors.
+  MARKDOWN
+
+  associations do
+    association :author, User, info: "the author of the post"
+
+    # Temporarily disable documenting this relationship as we revamp the
+    # editorial system:
+    association :editor, User, info: "the editor of the post", nodoc: true
+  end
+end
+```
+
+#### Controllers
+
+The configuration for a controller takes place inside the `brainstem_params` block, e.g.:
+
+```ruby
+class PostsController < ApiController
+  include Brainstem::Concerns::ControllerDSL
+
+  brainstem_params do   
+    title "Posts"
+  end
+end
+```
+
+##### Action Contexts
+
+Configuration that is specified within the root level of the `brainstem_params`
+block is applied to the entire controller, and every action within the
+controller. This is referred to as the 'default' context, because it is used as
+the default for all actions. This lets you specify common defaults for all
+actions, as well as a title and description for the controller, which, along
+with an annotation of `nodoc!`, are not inherited by the actions.
+
+Each action has its own action context, and the documentation is smart enough
+to know that what you want to document for the `index` action is likely not
+what you'd like to document for the `show` action, but you are also likely to
+have your `create` and `update` methods be very similar.
+
+You can define an action context and place any configuration inside this
+context, and it will keep the documentation isolated to that specific action:
+
+```ruby
+brainstem_params do
+  valid :global_controller_param,
+    info: "A trivial example of a param that applies to all actions."
+
+  actions :index do
+    # This adds a `blog_id` param to just the `index` action.
+    valid :blog_id, info: "The id of the blog to which this post belongs"
+  end
+
+  actions :create, :update do
+    # This will add an `id` param to both `create` and `update` actions.
+    valid :id, info: "The id of the blog post"
+  end
+end
+```
+
+Action contexts, like the default context, are inherited from the parent
+controller. So it is often possible to express common setup in the more
+abstract controllers, like so:
+
+```ruby
+class ApiController
+  brainstem_params do
+    actions :destroy do
+      presents nil
+    end
+  end
+end
+
+class PostsController << ApiController; end
+```
+
+In this example, `PostsController` will list no presenter for its `destroy`
+method as it inherits this from `ApiController`.
+
+**It is important to specify everything at the most specific level possible.**
+Action contexts have a higher priority than defaults, and will fall back to the
+action context of the parent controller before they check the default of the
+child controller. It's therefore recommended that your documentation be kept
+in action contexts as much as possible.
+
+##### `title` / `description` / `nodoc!`
+
+Any of these can be used inside an action context as well.
+
+```ruby
+class BlogPostsController < ApiController
+  brainstem_params do
+
+    # Make the displayed title of this controller "Posts"
+    title "Posts"
+
+    # Fall back to 'BlogPostsController' for a title
+    title "Posts", nodoc: true
+
+    # Show description
+    description "Access blog posts through these endpoints."
+
+    # Hide description
+    description "...", nodoc: true
+
+    # Do not document this controller or any of its endpoints!
+    nodoc!
+
+    actions :index do
+      # Set the title of this action
+      title "Listing blog posts"
+      description "..."
+    end
+
+    actions :show do
+      # Do not display this action.
+      nodoc!
+    end
+
+  end
+end
+```
+
+
+##### `valid` / `model_params`
+
+```ruby
+class BlogPostsController < ApiController
+  brainstem_params do
+
+    # Add an `:category_id` param to all actions in this controller / children:
+    valid :category_id, info: "(required) the category's ID"
+
+    # Do not document this additional field.
+    valid :lang,
+      info: "(optional) the language of the requested post",
+      nodoc: true
+
+    actions :show do
+      # Declare a nested param under the `brainstem_model_name` root key,
+      # i.e. `params[:blog_post][:id]`):
+      model_params do |post|
+        post.valid :id, info: "(required) the id of the post"
+      end
+    end
+
+    actions :share do
+      # Declare a nested param with an explicit root key:, i.e. `params[:share][...]`
+      model_param :share do
+        # ...
+      end
+    end
+
+
+    def self.param_root
+      :widgets
+    end
+
+
+    actions :update do
+      # Declare a dynamic root key, i.e. `params[:widgets][:id]`
+      model_params(-> (controller_klass) { controller_class.param_root } do |p|
+        p.valid :id #, ...
+      end
+    end
+  end
+end
+```
+
+##### `presents`
+
+```ruby
+class BlogPostsController < ApiController
+  brainstem_params do
+    # Includes a link to the presenter for `BlogPost` in each action.
+    presents BlogPost
+  end
+```
+
+### Extending and Customizing the API Documentation
+
+For more information on extending and customizing the API documentation, please
+see the
+[API Doc Generator developer documentation](./docs/api_doc_generator.markdown).
+
 
 --
 
@@ -524,12 +865,15 @@ Brainstem provides a rich DSL for building presenters.  This section details the
 
   ```ruby
   fields do
-    field :name, :string, "the Widget's name"
-    field :legacy, :boolean, "true for legacy Widgets, false otherwise",
+    field :name, :string, info: "the Widget's name"
+    field :legacy, :boolean,
+          info: "true for legacy Widgets, false otherwise",
           via: :legacy?
-    field :dynamic_name, :string, "a formatted name for this Widget",
+    field :dynamic_name, :string,
+          info: "a formatted name for this Widget",
           dynamic: lambda { |widget| "This Widget's name is #{widget.name}" }
-    field :longform_description, :string, "feature-length description of this Widget",
+    field :longform_description, :string,
+          info: "feature-length description of this Widget",
           optional: true
 
     # Fields can be nested
@@ -561,14 +905,16 @@ Brainstem provides a rich DSL for building presenters.  This section details the
 
   ```ruby
   associations do
-    association :features, Feature, "features associated with this Widget"
-    association :location, Location, "the location of this Widget"
-    association :previous_location, Location, "the Widget's previous location",
+    association :features, Feature, info: "features associated with this Widget"
+    association :location, Location, info: "the location of this Widget"
+    association :previous_location, Location,
+                info: "the Widget's previous location",
                 dynamic: lambda { |widget| widget.previous_locations.first }
-    association :associated_objects, :polymorphic, "a mixture of objects related to this Widget"
+    association :associated_objects, :polymorphic,
+                info: "a mixture of objects related to this Widget"
   end
   ```
-  
+
 * `lookup` - Use this option to avoid N + 1 queries for Fields and Associations. The `lookup` lambda runs once when
 presenting and every presented model gets its assocation or value from the cache the `lookup` lambda generates. The
 `lookup` lambda takes in the presented models and should generate a cache containing the models' coresponding assocations
@@ -579,7 +925,8 @@ the `lookup` will be used.
 
   ```ruby
   associations do
-    association :current_user_groups, Group, "the Groups for the current user",
+    association :current_user_groups, Group,
+      info: "the Groups for the current user",
       lookup: lambda { |models|
         Group.where(subject_id: models.map(&:id)
           .where(user_id: current_user.id)
@@ -595,12 +942,13 @@ the `lookup` will be used.
 
   ```ruby
   fields do
-    field :current_user_post_count, Post, "count of Posts the current_user has for this model",
-      lookup: lambda { |models| 
+    field :current_user_post_count, Post,
+      info: "count of Posts the current_user has for this model",
+      lookup: lambda { |models|
         lookup = Post.where(subject_id: models.map(&:id)
           .where(user_id: current_user.id)
-          .group_by { |post| post.subject_id } 
-		  
+          .group_by { |post| post.subject_id }
+
         lookup
        },
        lookup_fetch: lambda { |lookup, model| lookup[model.id] }
@@ -617,24 +965,27 @@ the `lookup` will be used.
   conditionals do
     model   :title_is_hello,
             lambda { |model| model.title == 'hello' },
-            'visible when the title is hello'
+            info: 'visible when the title is hello'
 
     request :user_is_bob,
             lambda { current_user == 'bob' }, # Assuming some sort of `helper` that provides `current_user`
-            'visible only to bob'
+            info: 'visible only to bob'
   end
 
   fields do
-    field :hello_title, :string, 'the title, when it is exactly the word "hello"',
+    field :hello_title, :string,
+          info: 'the title, when it is exactly the word "hello"',
           dynamic: lambda { |model| model.title + " is the title" },
           if: :title_is_hello
 
-    field :secret, :string, "a secret, via the secret_info model method, only visible to bob and when the model's title is hello",
+    field :secret, :string,
+          info: "a secret, via the secret_info model method, only visible to bob and when the model's title is hello",
           via: :secret_info,
           if: [:user_is_bob, :title_is_hello]
 
     with_options if: :user_is_bob do
-      field :bob_title, :string, 'another name for the title, only visible to Bob',
+      field :bob_title, :string,
+            info: 'another name for the title, only visible to Bob',
             via: :title
     end
   end

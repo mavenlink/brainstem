@@ -1,5 +1,12 @@
 # Changelog
 
++ **1.0.0 - _07/20/2017_
+  - Add the capability to generate the documentation extracted from your properly annotated
+    presenters and controllers using `bundle exec brainstem generate [ARGS]`.
+  - Update Brainstem to use Ruby version 2.3.3.
+  - Add support for Ruby versions 2.2.7, 2.3.4 & 2.4.1 and drop support for Ruby version 2.1.10.
+  - Drop support for specifying description param as a string and not with the `info` key in the options hash.
+
 + **1.0.0.pre.2** - _04/12/2017_
   - Added support for specifying the description for conditionals, fields and associations with the `info` key in the options hash.
   - Added a deprecation warning when description param is specified as a string and not with the `info` key in the options hash.

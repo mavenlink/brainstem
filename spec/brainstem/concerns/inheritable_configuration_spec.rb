@@ -33,22 +33,51 @@ describe Brainstem::Concerns::InheritableConfiguration do
       expect(parent_class.configuration['ten']).to be_nil
     end
 
-    describe '#keys' do
-      it "returns the union of this class's keys with any parent keys" do
+    it "does not inherit nonheritable keys" do
+      expect(parent_class.configuration['nonheritable']).to be_nil
+      parent_class.configuration.nonheritable! :nonheritable
+      parent_class.configuration['nonheritable'] = "parent"
+      expect(parent_class.configuration['nonheritable']).to eq "parent"
+
+      subclass = Class.new(parent_class)
+      expect(subclass.configuration['nonheritable']).to be_nil
+
+      subclass.configuration['nonheritable'] = "child"
+
+      subsubclass = Class.new(subclass)
+      expect(subsubclass.configuration['nonheritable']).to be_nil
+    end
+
+    describe '#keys and #to_h' do
+      let(:subclass) { Class.new(parent_class) }
+      let(:subsubclass) { Class.new(subclass) }
+
+      before do
         parent_class.configuration['1'] = :a
         parent_class.configuration['2'] = :b
 
-        subclass = Class.new(parent_class)
         subclass.configuration['2'] = :c
         subclass.configuration['3'] = :d
 
-        subsubclass = Class.new(subclass)
         subsubclass.configuration['3'] = :e
         subsubclass.configuration['4'] = :f
+      end
 
+      it "returns the union of this class's keys with any parent keys" do
         expect(parent_class.configuration.keys).to eq ['1', '2']
+        expect(parent_class.configuration.to_h).to eq({ '1' => :a, '2' => :b })
         expect(subclass.configuration.keys).to eq ['1', '2', '3']
+        expect(subclass.configuration.to_h).to eq({ '1' => :a, '2' => :c, '3' => :d })
         expect(subsubclass.configuration.keys).to eq ['1', '2', '3', '4']
+        expect(subsubclass.configuration.to_h).to eq({ '1' => :a, '2' => :c, '3' => :e, '4' => :f })
+
+        # it doesn't mutate storage
+        subclass.configuration.to_h['1'] = :new
+        subclass.configuration.to_h['2'] = :new
+        expect(subclass.configuration['1']).to eq :a
+        expect(subclass.configuration['2']).to eq :c
+        expect(parent_class.configuration['1']).to eq :a
+        expect(parent_class.configuration['2']).to eq :b
 
         expect(parent_class.configuration['1']).to eq :a
         expect(parent_class.configuration['2']).to eq :b
@@ -61,6 +90,64 @@ describe Brainstem::Concerns::InheritableConfiguration do
         expect(subsubclass.configuration['2']).to eq :c
         expect(subsubclass.configuration['3']).to eq :e
         expect(subsubclass.configuration['4']).to eq :f
+      end
+
+      it "does not return nonheritable keys in the parent" do
+        parent_class.configuration.nonheritable! :nonheritable
+        parent_class.configuration['nonheritable'] = "why yes, I am nonheritable"
+        expect(subclass.configuration.keys).not_to include 'nonheritable'
+
+        expect(subclass.configuration.to_h.keys).not_to include 'nonheritable'
+        expect(subclass.configuration.has_key?('nonheritable')).to eq false
+      end
+    end
+
+    describe "#fetch" do
+      let(:config)    { parent_class.configuration }
+      let(:my_block)  { Proc.new { nil } }
+
+      before do
+        parent_class.configuration["my_key"] = "yep"
+      end
+
+      context "when key is found" do
+        it "returns the key" do
+          expect(config.fetch("my_key")).to eq "yep"
+        end
+      end
+
+      context "when key is not found" do
+        context "when default or block not given" do
+          it "raises a KeyError exception" do
+            expect { config.fetch("fake_key") }.to raise_exception KeyError
+          end
+        end
+
+        context "when block given" do
+          before do
+            mock(my_block).call { "hey" }
+          end
+
+          it "evals and returns the block" do
+            expect(config.fetch("fake_key", &my_block)).to eq "hey"
+          end
+        end
+
+        context "when default given" do
+          it "returns the default" do
+            expect(config.fetch("fake_key", "hey")).to eq "hey"
+          end
+        end
+
+        context "when default and block given" do
+          before do
+            mock(my_block).call("hey") { "sup" }
+          end
+
+          it "evals and returns the block, passing it the default" do
+            expect(config.fetch("fake_key", "hey", &my_block)).to eq "sup"
+          end
+        end
       end
     end
 
@@ -197,6 +284,19 @@ describe Brainstem::Concerns::InheritableConfiguration do
       it 'will not override arrays' do
         subclass = Class.new(parent_class)
         expect(lambda { subclass.configuration['list'] = 2 }).to raise_error('You cannot override an inheritable array once set')
+      end
+    end
+
+    describe "#nonheritable!" do
+      it "adds the key to the nonheritable attributes list" do
+        parent_class.configuration.nonheritable! :nonheritable
+        expect(parent_class.configuration.nonheritable_keys.to_a).to eq ["nonheritable"]
+      end
+
+      it "dedupes" do
+        parent_class.configuration.nonheritable! :nonheritable
+        parent_class.configuration.nonheritable! :nonheritable
+        expect(parent_class.configuration.nonheritable_keys.to_a).to eq ["nonheritable"]
       end
     end
   end

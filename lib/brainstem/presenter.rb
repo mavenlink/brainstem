@@ -1,7 +1,9 @@
 require 'date'
+require 'set' # For possible brainstem keys
 require 'brainstem/time_classes'
 require 'brainstem/preloader'
 require 'brainstem/concerns/presenter_dsl'
+require 'active_support/core_ext/hash/except'
 
 module Brainstem
   # @abstract Subclass and override {#present} to implement a presenter.
@@ -23,6 +25,20 @@ module Brainstem
       end
       @presents
     end
+
+
+    #
+    # Returns the set of possible brainstem keys for the classes presented.
+    #
+    # If the presenter specifies a key, that will be returned as the only
+    # member of the set.
+    #
+    def self.possible_brainstem_keys
+      @possible_brainstem_keys ||= begin
+        Set.new(presents.map(&presenter_collection.method(:brainstem_key_for!)))
+      end
+    end
+
 
     # Return the second-to-last module in the name of this presenter, which Brainstem considers to be the 'namespace'.
     # E.g., Api::V1::FooPresenter has a namespace of "V1".
@@ -140,10 +156,9 @@ module Brainstem
 
       apply_default_filters = options.fetch(:apply_default_filters) { true }
 
-      configuration[:filters].each do |filter_name, filter|
+      configuration[:filters].each do |filter_name, filter_options|
         user_value = format_filter_value(user_params[filter_name])
 
-        filter_options = filter[0]
         filter_arg = apply_default_filters && user_value.nil? ? filter_options[:default] : user_value
         filters_hash[filter_name] = filter_arg unless filter_arg.nil?
       end
@@ -175,10 +190,10 @@ module Brainstem
 
       requested_filters = extract_filters(user_params, options)
       requested_filters.each do |filter_name, filter_arg|
-        filter_lambda = configuration[:filters][filter_name][1]
+        filter_lambda = configuration[:filters][filter_name][:value]
 
         args_for_filter_lambda = [filter_arg]
-        args_for_filter_lambda << requested_filters if configuration[:filters][filter_name][0][:include_params]
+        args_for_filter_lambda << requested_filters if configuration[:filters][filter_name][:include_params]
 
         if filter_lambda
           scope = helper_instance.instance_exec(scope, *args_for_filter_lambda, &filter_lambda)
@@ -193,7 +208,7 @@ module Brainstem
     # Given user params, apply a validated sort order to the given scope.
     def apply_ordering_to_scope(scope, user_params)
       sort_name, direction = calculate_sort_name_and_direction(user_params)
-      order = configuration[:sort_orders][sort_name]
+      order = configuration[:sort_orders].fetch(sort_name, {})[:value]
 
       ordered_scope = case order
         when Proc
@@ -391,10 +406,16 @@ module Brainstem
       end
     end
 
+
+    def self.presenter_collection
+      Brainstem.presenter_collection(namespace)
+    end
+
+
     # @api protected
     # Find the global presenter collection for our namespace.
     def presenter_collection
-      Brainstem.presenter_collection(self.class.namespace)
+      self.class.presenter_collection
     end
 
     # @api protected

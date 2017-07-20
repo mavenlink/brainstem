@@ -5,10 +5,16 @@ require 'brainstem/concerns/presenter_dsl'
 #
 # brainstem_key :projects
 #
+# title "Project"
+# description "It does stuff"
+#
+#
 # conditionals do
 #   model   :title_is_hello, lambda { workspace.title == 'hello' }, info: 'visible when the title is hello'
 #   request :user_is_bob, lambda { current_user.username == 'bob' }, info: 'visible only to bob'
 # end
+#
+# sort_order :created_at, ".created_at"
 #
 # fields do
 #   field :title, :string
@@ -66,10 +72,98 @@ describe Brainstem::Concerns::PresenterDSL do
     end
   end
 
+  describe 'the title method' do
+    it "is stored in the configuration" do
+      presenter_class.title "Project"
+      expect(presenter_class.configuration[:title][:info]).to eq "Project"
+    end
+
+    it "stores options" do
+      presenter_class.title "Project", nodoc: true
+      expect(presenter_class.configuration[:title][:nodoc]).to be true
+    end
+
+    it "is not inherited" do
+      presenter_class.title "Project"
+      subclass = Class.new(presenter_class)
+      expect(subclass.configuration).not_to have_key :title
+    end
+  end
+
+  describe 'the description method' do
+    it "is stored in the configuration" do
+      presenter_class.description "desc 123"
+      expect(presenter_class.configuration[:description][:info]).to eq "desc 123"
+    end
+
+    it "stores options" do
+      presenter_class.description "Project", nodoc: true
+      expect(presenter_class.configuration[:description][:nodoc]).to be true
+    end
+
+    it "is not inherited" do
+      presenter_class.description "desc 123"
+      subclass = Class.new(presenter_class)
+      expect(subclass.configuration).not_to have_key :description
+    end
+  end
+
+  describe 'the nodoc! method' do
+    before do
+      presenter_class.nodoc!
+    end
+
+    it "is stored in the configuration" do
+      expect(presenter_class.configuration[:nodoc]).to be true
+    end
+  end
+
+
+  # sort_order :created_at, ".created_at"
+  describe 'the sort_order block' do
+    let(:value)   { "widgets.created_at" }
+    let(:orders)  { presenter_class.configuration[:sort_orders] }
+
+    context "when passed value is a column" do
+      before do
+        presenter_class.sort_order :created_at, value, info: "sorts by creation time"
+      end
+
+      it "is stored in the configuration by name" do
+        expect(orders).to have_key "created_at"
+      end
+
+      it "stores the value passed" do
+        expect(orders[:created_at][:value]).to eq "widgets.created_at"
+      end
+
+      it "stores the documentation" do
+        expect(orders[:created_at][:info]).to eq "sorts by creation time"
+      end
+    end
+
+    context "when passed value is a block" do
+      let(:value) { Proc.new { nil } }
+
+      before do
+        presenter_class.sort_order :created_at, info: "sorts by creation time", &value
+      end
+
+      it "stores the value passed" do
+        expect(orders[:created_at][:value]).to eq value
+      end
+
+      it "stores the documentation" do
+        expect(orders[:created_at][:info]).to eq "sorts by creation time"
+      end
+    end
+  end
+
+
   describe 'the conditional block' do
     before do
       presenter_class.conditionals do
-        model      :title_is_hello, lambda { |workspace| workspace.title == 'hello' }, info: 'visible when the title is hello'
+        model      :title_is_hello, lambda { |workspace| workspace.title == 'hello' }, info: 'visible when the title is hello', nodoc: true
         request    :user_is_bob, lambda { current_user == 'bob' }, info: 'visible only to bob'
       end
     end
@@ -79,6 +173,7 @@ describe Brainstem::Concerns::PresenterDSL do
       expect(presenter_class.configuration[:conditionals][:title_is_hello].action).to be_present
       expect(presenter_class.configuration[:conditionals][:title_is_hello].type).to eq :model
       expect(presenter_class.configuration[:conditionals][:title_is_hello].description).to eq 'visible when the title is hello'
+      expect(presenter_class.configuration[:conditionals][:title_is_hello].options).to eq({ nodoc: true, info: 'visible when the title is hello' })
       expect(presenter_class.configuration[:conditionals][:user_is_bob].action).to be_present
       expect(presenter_class.configuration[:conditionals][:user_is_bob].type).to eq :request
       expect(presenter_class.configuration[:conditionals][:user_is_bob].description).to eq 'visible only to bob'
@@ -93,7 +188,9 @@ describe Brainstem::Concerns::PresenterDSL do
       expect(presenter_class.configuration[:conditionals].keys).to eq %w[title_is_hello user_is_bob]
       expect(subclass.configuration[:conditionals].keys).to eq %w[title_is_hello user_is_bob silly_conditional]
       expect(presenter_class.configuration[:conditionals][:title_is_hello].description).to eq "visible when the title is hello"
+      expect(presenter_class.configuration[:conditionals][:title_is_hello].options).to eq({ nodoc: true, info: "visible when the title is hello" })
       expect(subclass.configuration[:conditionals][:title_is_hello].description).to eq "visible when the title is hello (in all caps)"
+      expect(subclass.configuration[:conditionals][:title_is_hello].options).to eq({ info: "visible when the title is hello (in all caps)" })
     end
 
     context 'when options hash is a hash with indifferent access' do
@@ -108,27 +205,6 @@ describe Brainstem::Concerns::PresenterDSL do
         expect(presenter_class.configuration[:conditionals][:user_is_jane].action).to be_present
         expect(presenter_class.configuration[:conditionals][:user_is_jane].type).to eq :request
         expect(presenter_class.configuration[:conditionals][:user_is_jane].description).to eq 'visible only to Jane'
-      end
-    end
-
-    context 'when description is specified in the deprecated format' do
-      before do
-        stub(ActiveSupport::Deprecation).warn.with(anything, anything)
-
-        presenter_class.conditionals do
-          model :user_is_jane, lambda { current_user == 'jane' }, 'visible only to Jane'
-        end
-      end
-
-      it 'stores the correct configuration' do
-        expect(presenter_class.configuration[:conditionals].keys).to include('user_is_jane')
-        expect(presenter_class.configuration[:conditionals][:user_is_jane].action).to be_present
-        expect(presenter_class.configuration[:conditionals][:user_is_jane].type).to eq :model
-        expect(presenter_class.configuration[:conditionals][:user_is_jane].description).to eq 'visible only to Jane'
-      end
-
-      it 'adds a deprecation warning' do
-        expect(ActiveSupport::Deprecation).to have_received.warn.with(anything, anything)
       end
     end
   end
@@ -273,26 +349,6 @@ describe Brainstem::Concerns::PresenterDSL do
         expect(presenter_class.configuration[:fields][:synced_at].description).to eq 'Last time the object was synced'
       end
     end
-
-    context "when description is specified in the deprecated format" do
-      before do
-        stub(ActiveSupport::Deprecation).warn.with(anything, anything)
-
-        presenter_class.fields do
-          field :synced_at, :datetime, "Last time the object was synced"
-        end
-      end
-
-      it "stores the correct configuration" do
-        expect(presenter_class.configuration[:fields].keys).to include('synced_at')
-        expect(presenter_class.configuration[:fields][:synced_at].type).to eq :datetime
-        expect(presenter_class.configuration[:fields][:synced_at].description).to eq 'Last time the object was synced'
-      end
-
-      it 'adds a deprecation warning' do
-        expect(ActiveSupport::Deprecation).to have_received.warn.with(anything, anything)
-      end
-    end
   end
 
   describe 'the associations block' do
@@ -352,29 +408,6 @@ describe Brainstem::Concerns::PresenterDSL do
           info: 'The other things in this Workspace',
           restrict_to_only: true
         )
-      end
-    end
-
-    context "when description is specified in the deprecated format" do
-      before do
-        stub(ActiveSupport::Deprecation).warn.with(anything, anything)
-
-        presenter_class.associations do
-          association :something_else, :polymorphic, 'The other things in this Workspace', restrict_to_only: true
-        end
-      end
-
-      it "stores the correct configuration" do
-        expect(presenter_class.configuration[:associations].keys).to include('something_else')
-        expect(presenter_class.configuration[:associations][:something_else].description).to eq 'The other things in this Workspace'
-        expect(presenter_class.configuration[:associations][:something_else].options).to eq(
-          info: 'The other things in this Workspace',
-          restrict_to_only: true
-        )
-      end
-
-      it 'adds a deprecation warning' do
-        expect(ActiveSupport::Deprecation).to have_received.warn.with(anything, anything)
       end
     end
   end
@@ -502,16 +535,25 @@ describe Brainstem::Concerns::PresenterDSL do
   end
 
   describe ".filter" do
+    let(:foo) { presenter_class.configuration[:filters][:foo] }
+
     it "creates an entry in the filters configuration" do
-      presenter_class.filter(:foo, :default => true) { 1 }
-      expect(presenter_class.configuration[:filters][:foo][0]).to eq({"default" => true})
-      expect(presenter_class.configuration[:filters][:foo][1]).to be_a(Proc)
+      my_proc = Proc.new { 1 }
+      presenter_class.filter(:foo, :default => true, &my_proc)
+
+      expect(foo).to eq({ "default" => true, "value" => my_proc })
     end
 
     it "accepts names without blocks" do
       presenter_class.filter(:foo)
-      expect(presenter_class.configuration[:filters][:foo][1]).to be_nil
+      expect(foo[:value]).to be_nil
     end
+
+    it "records the info option" do
+      presenter_class.filter(:foo, :info => "This is documented.")
+      expect(foo[:info]).to eq "This is documented."
+    end
+
   end
 
   describe ".search" do

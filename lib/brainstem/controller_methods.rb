@@ -1,15 +1,18 @@
 require 'brainstem/concerns/controller_param_management'
 require 'brainstem/concerns/error_presentation'
+require 'brainstem/concerns/controller_dsl'
 
 module Brainstem
 
-  # ControllerMethods are intended to be included into controllers that will be handling requests for presented objects.
-  # The present method will pass through +params+, so that any allowed and requested includes, filters, sort orders
-  # will be applied to the presented data.
+  # ControllerMethods are intended to be included into controllers that will be
+  # handling requests for presented objects.  The present method will pass
+  # through +params+, so that any allowed and requested includes, filters, sort
+  # orders will be applied to the presented data.
   module ControllerMethods
     extend ActiveSupport::Concern
     include Concerns::ControllerParamManagement
     include Concerns::ErrorPresentation
+    include Concerns::ControllerDSL
 
     # Return a Ruby hash that contains models requested by the user's params and allowed
     # by the +name+ presenter's configuration.

@@ -12,6 +12,8 @@ require_relative 'spec_helpers/schema'
 require_relative 'spec_helpers/db'
 require_relative 'spec_helpers/rr'
 
+Dir["./spec/shared/**/*.rb"].each {|f| require f}
+
 DatabaseCleaner.strategy = :transaction
 
 RSpec.configure do |config|
