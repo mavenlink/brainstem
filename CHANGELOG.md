@@ -1,6 +1,6 @@
 # Changelog
 
-+ **1.0.0 - _07/17/2017_
++ **1.0.0 - _07/20/2017_
   - Add the capability to generate the documentation extracted from your properly annotated
     presenters and controllers using `bundle exec brainstem generate [ARGS]`.
   - Update Brainstem to use Ruby version 2.3.3.
