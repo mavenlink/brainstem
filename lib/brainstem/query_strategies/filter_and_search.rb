@@ -11,7 +11,7 @@ module Brainstem
           scope = @options[:primary_presenter].apply_ordering_to_scope(scope, @options[:params])
           primary_models = evaluate_scope(scope)
         else
-          primary_models = scope.to_a
+          primary_models = evaluate_scope(scope)
           primary_models = order_for_search(primary_models, ordered_search_ids)
           primary_models = paginate_array(primary_models)
         end
