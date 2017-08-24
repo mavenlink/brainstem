@@ -2,11 +2,10 @@ require 'spec_helper'
 
 describe Brainstem::QueryStrategies::FilterAndSearch do
   let(:bob) { User.find_by_username('bob') }
+  let(:jane) { User.find_by_username('jane') }
 
-  let(:params) { {
+  let(:default_params) { {
     "owned_by" => bob.id.to_s,
-    per_page: 7,
-    page: 1,
     search: 'toot, otto, toot',
   } }
 
@@ -20,27 +19,46 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
   } }
 
   describe '#execute' do
+    let(:owned_by_bob) { Cheese.owned_by(bob.id)}
+    let(:owned_by_jane) { Cheese.owned_by(jane.id)}
+
     before do
-      CheesePresenter.search do |string, options|
-        [[2,3,4,5,6,8,9,10,11,12], 11]
+      $search_results = Cheese.all.pluck(:id).shuffle
+    end
+
+    before do
+      CheesePresenter.search do |_, _|
+        [$search_results, $search_results.count]
       end
 
       CheesePresenter.filter(:owned_by) { |scope, user_id| scope.owned_by(user_id.to_i) }
       CheesePresenter.sort_order(:id)   { |scope, direction| scope.order("cheeses.id #{direction}") }
     end
 
-    it 'takes the intersection of the search and filter results' do
-      results, count = described_class.new(options).execute(Cheese.unscoped)
-      expect(count).to eq(8)
-      expect(results.map(&:id)).to eq([2,3,4,5,8,10,11])
+    context 'when an order is specified' do
+      let(:params) { default_params.merge({ order: 'id:asc' })}
+      let(:expected_ordered_ids) { owned_by_bob.order("cheeses.id ASC").pluck(:id) }
+
+      it 'returns the filtered, ordered search results' do
+        results, count = described_class.new(options).execute(Cheese.all)
+        expect(count).to eq(owned_by_bob.count)
+        expect(results.map(&:id)).to eq(expected_ordered_ids)
+      end
     end
 
-    it "applies ordering to the scope" do
-      options[:params]["order"] = 'id:desc'
-      proxy.instance_of(Brainstem::Presenter).apply_ordering_to_scope(anything, anything).times(1)
-      results, count = described_class.new(options).execute(Cheese.unscoped)
-      expect(count).to eq(8)
-      expect(results.map(&:id)).to eq([12,11,10,8,5,4,3])
+    context 'when no order is specified' do
+      let(:params) { default_params }
+      let(:expected_ordered_ids) { $search_results - owned_by_jane.pluck(:id) }
+
+      before do
+        expect(params[:order]).not_to be_present
+      end
+
+      it 'returns the filtered results ordered by search' do
+        results, count = described_class.new(options).execute(Cheese.all)
+        expect(count).to eq(owned_by_bob.count)
+        expect(results.map(&:id)).to eq(expected_ordered_ids)
+      end
     end
   end
 end

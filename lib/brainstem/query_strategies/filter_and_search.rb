@@ -5,10 +5,17 @@ module Brainstem
         ordered_search_ids = run_search(scope, filter_includes.map(&:name))
         scope = scope.where(id: ordered_search_ids)
         scope = @options[:primary_presenter].apply_filters_to_scope(scope, @options[:params], @options)
-        scope = @options[:primary_presenter].apply_ordering_to_scope(scope, @options[:params])
         count = scope.count
-        scope = paginate(scope)
-        primary_models = evaluate_scope(scope)
+
+        if ordering?
+          scope = paginate(scope)
+          scope = @options[:primary_presenter].apply_ordering_to_scope(scope, @options[:params])
+          primary_models = evaluate_scope(scope)
+        else
+          primary_models = scope.to_a
+          primary_models = order_for_search(primary_models, ordered_search_ids)
+          primary_models = paginate_array(primary_models)
+        end
 
         [primary_models, count]
       end
@@ -16,10 +23,8 @@ module Brainstem
       private
 
       def run_search(scope, includes)
-        sort_name, direction = @options[:primary_presenter].calculate_sort_name_and_direction @options[:params]
         search_options = HashWithIndifferentAccess.new(
           include: includes,
-          order: { sort_order: sort_name, direction: direction },
           limit: @options[:default_max_filter_and_search_page],
           offset: 0
         )
@@ -44,6 +49,37 @@ module Brainstem
         end
 
         scope.limit(limit).offset(offset).distinct
+      end
+
+      def ordering?
+        @options[:params][:order].present?
+      end
+
+      def order_for_search(records, ordered_search_ids)
+        ids_to_position = {}
+        ordered_records = []
+
+        ordered_search_ids.each_with_index do |id, index|
+          ids_to_position[id] = index
+        end
+
+        records.each do |record|
+          ordered_records[ids_to_position[record.id]] = record
+        end
+
+        ordered_records.compact
+      end
+
+      def paginate_array(array)
+        if @options[:params][:limit].present? && @options[:params][:offset].present?
+          limit = calculate_limit
+          offset = calculate_offset
+        else
+          limit = calculate_per_page
+          offset = limit * (calculate_page - 1)
+        end
+
+        array.drop(offset).first(limit) # do we need to uniq this?
       end
     end
   end
