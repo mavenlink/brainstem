@@ -39,14 +39,7 @@ module Brainstem
       end
 
       def paginate(scope)
-        if @options[:params][:limit].present? && @options[:params][:offset].present?
-          limit = calculate_limit
-          offset = calculate_offset
-        else
-          limit = calculate_per_page
-          offset = limit * (calculate_page - 1)
-        end
-
+        limit, offset = calculate_limit_and_offset
         scope.limit(limit).offset(offset).distinct
       end
 
@@ -54,30 +47,8 @@ module Brainstem
         @options[:params][:order].present?
       end
 
-      def order_for_search(records, ordered_search_ids)
-        ids_to_position = {}
-        ordered_records = []
-
-        ordered_search_ids.each_with_index do |id, index|
-          ids_to_position[id] = index
-        end
-
-        records.each do |record|
-          ordered_records[ids_to_position[record.id]] = record
-        end
-
-        ordered_records.compact
-      end
-
       def paginate_array(array)
-        if @options[:params][:limit].present? && @options[:params][:offset].present?
-          limit = calculate_limit
-          offset = calculate_offset
-        else
-          limit = calculate_per_page
-          offset = limit * (calculate_page - 1)
-        end
-
+        limit, offset = calculate_limit_and_offset
         array.drop(offset).first(limit) # do we need to uniq this?
       end
     end
