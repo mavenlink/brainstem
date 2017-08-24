@@ -18,6 +18,10 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
     params: params
   } }
 
+  def run_query
+    described_class.new(options).execute(Cheese.all)
+  end
+
   describe '#execute' do
     let(:owned_by_bob) { Cheese.owned_by(bob.id)}
     let(:owned_by_jane) { Cheese.owned_by(jane.id)}
@@ -40,7 +44,7 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
       let(:expected_ordered_ids) { owned_by_bob.order("cheeses.id ASC").pluck(:id) }
 
       it 'returns the filtered, ordered search results' do
-        results, count = described_class.new(options).execute(Cheese.all)
+        results, count = run_query
         expect(count).to eq(owned_by_bob.count)
         expect(results.map(&:id)).to eq(expected_ordered_ids)
       end
@@ -55,7 +59,7 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
       end
 
       it 'returns the filtered results ordered by search' do
-        results, count = described_class.new(options).execute(Cheese.all)
+        results, count = run_query
         expect(count).to eq(owned_by_bob.count)
         expect(results.map(&:id)).to eq(expected_ordered_ids)
       end
