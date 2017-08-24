@@ -40,13 +40,40 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
     end
 
     context 'when an order is specified' do
-      let(:params) { default_params.merge({ order: 'id:asc' })}
+      let(:order) { 'id:asc' }
+      let(:params) { default_params.merge({ order: order })}
       let(:expected_ordered_ids) { owned_by_bob.order("cheeses.id ASC").pluck(:id) }
 
       it 'returns the filtered, ordered search results' do
         results, count = run_query
         expect(count).to eq(owned_by_bob.count)
         expect(results.map(&:id)).to eq(expected_ordered_ids)
+      end
+
+      context 'with limit and offset params' do
+        let(:limit) { 2 }
+        let(:offset) { 4 }
+        let(:params) { default_params.merge({ order: order, limit: limit, offset: offset })}
+        let(:expected_paginated_ids) { expected_ordered_ids.drop(offset).first(limit) }
+
+        it 'returns the filtered, ordered, paginated results' do
+          results, count = run_query
+          expect(count).to eq(owned_by_bob.count)
+          expect(results.map(&:id)).to eq(expected_paginated_ids)
+        end
+      end
+
+      context 'with page and per_page params' do
+        let(:page) { 2 }
+        let(:per_page) { 3 }
+        let(:params) { default_params.merge({ order: order, page: page, per_page: per_page })}
+        let(:expected_paginated_ids) { expected_ordered_ids.drop(per_page).first(per_page) }
+
+        it 'returns the filtered, ordered, paginated results' do
+          results, count = run_query
+          expect(count).to eq(owned_by_bob.count)
+          expect(results.map(&:id)).to eq(expected_paginated_ids)
+        end
       end
     end
 
@@ -62,6 +89,32 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
         results, count = run_query
         expect(count).to eq(owned_by_bob.count)
         expect(results.map(&:id)).to eq(expected_ordered_ids)
+      end
+
+      context 'with limit and offset params' do
+        let(:limit) { 2 }
+        let(:offset) { 4 }
+        let(:params) { default_params.merge({ limit: limit, offset: offset })}
+        let(:expected_paginated_ids) { expected_ordered_ids.drop(offset).first(limit) }
+
+        it 'returns the filtered, ordered, paginated results' do
+          results, count = run_query
+          expect(count).to eq(owned_by_bob.count)
+          expect(results.map(&:id)).to eq(expected_paginated_ids)
+        end
+      end
+
+      context 'with page and per_page params' do
+        let(:page) { 2 }
+        let(:per_page) { 3 }
+        let(:params) { default_params.merge({ page: page, per_page: per_page })}
+        let(:expected_paginated_ids) { expected_ordered_ids.drop(per_page).first(per_page) }
+
+        it 'returns the filtered, ordered, paginated results' do
+          results, count = run_query
+          expect(count).to eq(owned_by_bob.count)
+          expect(results.map(&:id)).to eq(expected_paginated_ids)
+        end
       end
     end
   end

@@ -2,8 +2,7 @@ module Brainstem
   module QueryStrategies
     class FilterAndSearch < BaseStrategy
       def execute(scope)
-        ordered_search_ids = run_search(scope, filter_includes.map(&:name))
-        scope = scope.where(id: ordered_search_ids)
+        scope, ordered_search_ids = run_search(scope, filter_includes.map(&:name))
         scope = @options[:primary_presenter].apply_filters_to_scope(scope, @options[:params], @options)
         count = scope.count
 
@@ -33,7 +32,7 @@ module Brainstem
 
         result_ids, _ = @options[:primary_presenter].run_search(@options[:params][:search], search_options)
         if result_ids
-          result_ids
+          [scope.where(id: result_ids), result_ids]
         else
           raise(SearchUnavailableError, 'Search is currently unavailable')
         end
