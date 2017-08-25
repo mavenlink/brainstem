@@ -4,16 +4,22 @@ module Brainstem
       def execute(scope)
         scope, ordered_search_ids = run_search(scope, filter_includes.map(&:name))
         scope = @options[:primary_presenter].apply_filters_to_scope(scope, @options[:params], @options)
-        count = scope.count
 
         if ordering?
+          count = scope.count
           scope = paginate(scope)
           scope = @options[:primary_presenter].apply_ordering_to_scope(scope, @options[:params])
           primary_models = evaluate_scope(scope)
         else
-          primary_models = evaluate_scope(scope)
-          primary_models = order_for_search(primary_models, ordered_search_ids)
-          primary_models = paginate_array(primary_models)
+          filtered_ids = scope.pluck(:id)
+          count = filtered_ids.size
+
+          ordered_ids = order_for_search(filtered_ids, ordered_search_ids, false)
+          ordered_paginated_ids = paginate_array(ordered_ids)
+
+          scope = scope.unscoped.where(id: ordered_paginated_ids)
+          primary_models = scope.to_a
+          primary_models = order_for_search(primary_models, ordered_paginated_ids)
         end
 
         [primary_models, count]

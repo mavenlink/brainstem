@@ -58,7 +58,7 @@ module Brainstem
         end
       end
 
-      def order_for_search(records, ordered_search_ids)
+      def order_for_search(records, ordered_search_ids, with_models = true)
         ids_to_position = {}
         ordered_records = []
 
@@ -67,7 +67,7 @@ module Brainstem
         end
 
         records.each do |record|
-          ordered_records[ids_to_position[record.id]] = record
+          ordered_records[ids_to_position[with_models ? record.id : record ]] = record
         end
 
         ordered_records.compact

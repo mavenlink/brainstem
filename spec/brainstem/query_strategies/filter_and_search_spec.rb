@@ -91,6 +91,10 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
         expect(results.map(&:id)).to eq(expected_ordered_ids)
       end
 
+      it 'only does two database queries' do
+        expect { run_query }.to make_database_queries(count: 2)
+      end
+
       context 'with limit and offset params' do
         let(:limit) { 2 }
         let(:offset) { 4 }
