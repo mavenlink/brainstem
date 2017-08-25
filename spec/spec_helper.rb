@@ -6,6 +6,7 @@ require 'sqlite3'
 require 'database_cleaner'
 require 'pry'
 require 'pry-nav'
+require 'db-query-matchers'
 
 require 'brainstem'
 require_relative 'spec_helpers/schema'
