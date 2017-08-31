@@ -44,13 +44,15 @@ module Brainstem
         end
       end
 
+      def ordering?
+        sort_name = @options[:params][:order].to_s.split(":").first
+        sort_orders = @options[:primary_presenter].configuration[:sort_orders]
+        sort_name.present? && sort_orders && sort_orders[sort_name].present?
+      end
+
       def paginate(scope)
         limit, offset = calculate_limit_and_offset
         scope.limit(limit).offset(offset).distinct
-      end
-
-      def ordering?
-        @options[:params][:order].present?
       end
 
       def paginate_array(array)
