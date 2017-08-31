@@ -30,6 +30,10 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
       $search_results = Cheese.all.pluck(:id).shuffle
     end
 
+    after do
+      $search_results = nil
+    end
+
     before do
       CheesePresenter.search do |_, _|
         [$search_results, $search_results.count]
