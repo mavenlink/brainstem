@@ -120,4 +120,46 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
       end
     end
   end
+
+  describe '#ordering?' do
+    context 'when the order param is passed' do
+      let(:params) { default_params.merge({ order: 'canadianness' })}
+
+      context 'and it exists on the presenter' do
+        before do
+          CheesePresenter.sort_order(:canadianness) { |scope, direction| scope.order("cheeses.hockey #{direction}") }
+          expect(CheesePresenter.configuration[:sort_orders][:canadianness]).to be_present
+        end
+
+        it 'returns true' do
+          query_strat = described_class.new(options)
+          expect(query_strat.send(:ordering?)).to eq(true)
+        end
+      end
+
+      context 'and it does not exist on the presenter' do
+        before do
+         expect(CheesePresenter.configuration[:sort_orders][:canadianness]).not_to be_present
+        end
+
+        it 'returns false' do
+          query_strat = described_class.new(options)
+          expect(query_strat.send(:ordering?)).to eq(false)
+        end
+      end
+    end
+
+    context 'when the order param is not passed' do
+      let(:params) { default_params }
+
+      before do
+        expect(params[:order]).not_to be_present
+      end
+
+      it 'returns false' do
+        query_strat = described_class.new(options)
+        expect(query_strat.send(:ordering?)).to eq(false)
+      end
+    end
+  end
 end
