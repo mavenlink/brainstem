@@ -38,7 +38,8 @@ module Brainstem
 
         result_ids, _ = @options[:primary_presenter].run_search(@options[:params][:search], search_options)
         if result_ids
-          [scope.where(id: result_ids), result_ids]
+          resulting_scope = scope.where(id: result_ids)
+          [resulting_scope, result_ids]
         else
           raise(SearchUnavailableError, 'Search is currently unavailable')
         end
