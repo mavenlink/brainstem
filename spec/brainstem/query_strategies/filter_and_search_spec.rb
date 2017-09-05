@@ -18,21 +18,19 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
     params: params
   } }
 
-  def run_query
-    described_class.new(options).execute(Cheese.all)
-  end
-
   describe '#execute' do
+    def run_query
+      described_class.new(options).execute(Cheese.all)
+    end
+
     let(:owned_by_bob) { Cheese.owned_by(bob.id)}
     let(:owned_by_jane) { Cheese.owned_by(jane.id)}
 
     before do
-      $search_results = Cheese.all.pluck(:id).shuffle
-    end
+      @search_results = search_results = Cheese.all.pluck(:id).shuffle
 
-    before do
-      CheesePresenter.search do |_, _|
-        [$search_results, $search_results.count]
+      CheesePresenter.search do
+        [search_results, search_results.count]
       end
 
       CheesePresenter.filter(:owned_by) { |scope, user_id| scope.owned_by(user_id.to_i) }
@@ -79,7 +77,7 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
 
     context 'when no order is specified' do
       let(:params) { default_params }
-      let(:expected_ordered_ids) { $search_results - owned_by_jane.pluck(:id) }
+      let(:expected_ordered_ids) { @search_results - owned_by_jane.pluck(:id) }
 
       before do
         expect(params[:order]).not_to be_present
