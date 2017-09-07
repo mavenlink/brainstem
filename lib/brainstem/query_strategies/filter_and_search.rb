@@ -14,11 +14,17 @@ module Brainstem
           filtered_ids = scope.pluck(:id)
           count = filtered_ids.size
 
-          ordered_ids = order_for_search(filtered_ids, ordered_search_ids, false)
+          # order a potentially large set of ids
+          ordered_ids = order_for_search(filtered_ids, ordered_search_ids, with_ids: true)
           ordered_paginated_ids = paginate_array(ordered_ids)
 
           scope = scope.unscoped.where(id: ordered_paginated_ids)
+          # not using `evaluate_scope` because we are already instantiating
+          # a scope based on ids
           primary_models = scope.to_a
+
+          # Once hydrated, a page worth of models needs to be reordered
+          # due to the `scope.unscoped.where(id: ...` clobbering our ordering
           primary_models = order_for_search(primary_models, ordered_paginated_ids)
         end
 
