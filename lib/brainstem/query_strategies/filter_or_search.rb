@@ -68,35 +68,13 @@ module Brainstem
       end
 
       def paginate(scope)
-        if @options[:params][:limit].present? && @options[:params][:offset].present?
-          limit = calculate_limit
-          offset = calculate_offset
-        else
-          limit = calculate_per_page
-          offset = limit * (calculate_page - 1)
-        end
-
+        limit, offset = calculate_limit_and_offset
         [scope.limit(limit).offset(offset).distinct, scope.select("distinct #{scope.connection.quote_table_name @options[:table_name]}.id").count]
       end
 
       def handle_only(scope, only)
         ids = (only || "").split(",").select {|id| id =~ /\A\d+\z/}.uniq
         [scope.where(:id => ids), scope.where(:id => ids).count]
-      end
-
-      def order_for_search(records, ordered_search_ids)
-        ids_to_position = {}
-        ordered_records = []
-
-        ordered_search_ids.each_with_index do |id, index|
-          ids_to_position[id] = index
-        end
-
-        records.each do |record|
-          ordered_records[ids_to_position[record.id]] = record
-        end
-
-        ordered_records.compact
       end
     end
   end

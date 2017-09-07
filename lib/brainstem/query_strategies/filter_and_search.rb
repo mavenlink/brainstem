@@ -2,13 +2,31 @@ module Brainstem
   module QueryStrategies
     class FilterAndSearch < BaseStrategy
       def execute(scope)
-        ordered_search_ids = run_search(scope, filter_includes.map(&:name))
-        scope = scope.where(id: ordered_search_ids)
+        scope, ordered_search_ids = run_search(scope, filter_includes.map(&:name))
         scope = @options[:primary_presenter].apply_filters_to_scope(scope, @options[:params], @options)
-        scope = @options[:primary_presenter].apply_ordering_to_scope(scope, @options[:params])
-        count = scope.count
-        scope = paginate(scope)
-        primary_models = evaluate_scope(scope)
+
+        if ordering?
+          count = scope.count
+          scope = paginate(scope)
+          scope = @options[:primary_presenter].apply_ordering_to_scope(scope, @options[:params])
+          primary_models = evaluate_scope(scope)
+        else
+          filtered_ids = scope.pluck(:id)
+          count = filtered_ids.size
+
+          # order a potentially large set of ids
+          ordered_ids = order_for_search(filtered_ids, ordered_search_ids, with_ids: true)
+          ordered_paginated_ids = paginate_array(ordered_ids)
+
+          scope = scope.unscoped.where(id: ordered_paginated_ids)
+          # not using `evaluate_scope` because we are already instantiating
+          # a scope based on ids
+          primary_models = scope.to_a
+
+          # Once hydrated, a page worth of models needs to be reordered
+          # due to the `scope.unscoped.where(id: ...` clobbering our ordering
+          primary_models = order_for_search(primary_models, ordered_paginated_ids)
+        end
 
         [primary_models, count]
       end
@@ -16,10 +34,8 @@ module Brainstem
       private
 
       def run_search(scope, includes)
-        sort_name, direction = @options[:primary_presenter].calculate_sort_name_and_direction @options[:params]
         search_options = HashWithIndifferentAccess.new(
           include: includes,
-          order: { sort_order: sort_name, direction: direction },
           limit: @options[:default_max_filter_and_search_page],
           offset: 0
         )
@@ -28,22 +44,27 @@ module Brainstem
 
         result_ids, _ = @options[:primary_presenter].run_search(@options[:params][:search], search_options)
         if result_ids
-          result_ids
+          resulting_scope = scope.where(id: result_ids)
+          [resulting_scope, result_ids]
         else
           raise(SearchUnavailableError, 'Search is currently unavailable')
         end
       end
 
-      def paginate(scope)
-        if @options[:params][:limit].present? && @options[:params][:offset].present?
-          limit = calculate_limit
-          offset = calculate_offset
-        else
-          limit = calculate_per_page
-          offset = limit * (calculate_page - 1)
-        end
+      def ordering?
+        sort_name = @options[:params][:order].to_s.split(":").first
+        sort_orders = @options[:primary_presenter].configuration[:sort_orders]
+        sort_name.present? && sort_orders && sort_orders[sort_name].present?
+      end
 
+      def paginate(scope)
+        limit, offset = calculate_limit_and_offset
         scope.limit(limit).offset(offset).distinct
+      end
+
+      def paginate_array(array)
+        limit, offset = calculate_limit_and_offset
+        array.drop(offset).first(limit) # do we need to uniq this?
       end
     end
   end
