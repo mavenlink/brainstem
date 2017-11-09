@@ -24,6 +24,33 @@ describe Brainstem::DSL::Association do
     end
   end
 
+  describe 'plural' do
+    context 'when `plural` is specified in the options' do
+      let(:options) { { plural: true } }
+
+      it 'returns the value specified in the plural key' do
+        expect(association.plural).to eq true
+      end
+    end
+
+    context 'when `plural` is not specified in the options' do
+      it 'delegates to ruby singularize and pluralize to guess if the association is plural or singular' do
+        class Dress
+
+        end
+
+        singular_association = Brainstem::DSL::Association.new('user', User, {})
+        weird_singular_association = Brainstem::DSL::Association.new('dress', Dress, {})
+        plural_association = Brainstem::DSL::Association.new('users', User, {})
+        weird_plural_association = Brainstem::DSL::Association.new('dresses', Dress, {})
+        expect(singular_association.plural).to eq false
+        expect(plural_association.plural).to eq true
+        expect(weird_singular_association.plural).to eq false
+        expect(weird_plural_association.plural).to eq true
+      end
+    end
+  end
+
   describe "#run_on" do
     let(:context) { { } }
 
