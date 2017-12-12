@@ -120,6 +120,7 @@ module Brainstem
           #
           # @param [String] name the param name
           # @param [Hash] options information pertinent to the param
+          # @option [Boolean] options :required
           # @option [Boolean] options :legacy
           # @option [Boolean] options :recursive
           # @option [String,Symbol] options :only Deprecated: use +actions+
@@ -136,6 +137,7 @@ module Brainstem
 
             if options.keys.any?
               text += "\n"
+              text += md_li("Required: #{options[:required].to_s}",   indent + 1) if options.has_key?(:required) && options[:required]
               text += md_li("Legacy: #{options[:legacy].to_s}",       indent + 1) if options.has_key?(:legacy)
               text += md_li("Recursive: #{options[:recursive].to_s}", indent + 1) if options.has_key?(:recursive)
               text.chomp!
