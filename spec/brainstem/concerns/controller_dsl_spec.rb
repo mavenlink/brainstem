@@ -115,10 +115,10 @@ module Brainstem
         end
 
         it "merges options" do
-          mock(subject).valid(:thing, root: "widgets", nodoc: true)
+          mock(subject).valid(:thing, root: "widgets", nodoc: true, required: true)
 
           subject.model_params :widgets do |param|
-            param.valid :thing, nodoc: true
+            param.valid :thing, nodoc: true, required: true
           end
         end
       end
@@ -128,11 +128,13 @@ module Brainstem
           it "appends to the valid params hash" do
             subject.brainstem_params do
               valid :sprocket_name,
-                info: "sprockets[sprocket_name] is required"
+                info: "sprockets[sprocket_name] is required",
+                required: true
             end
 
             expect(subject.configuration[:_default][:valid_params][:sprocket_name][:info]).to \
               eq "sprockets[sprocket_name] is required"
+            expect(subject.configuration[:_default][:valid_params][:sprocket_name][:required]).to be_truthy
           end
         end
 
@@ -141,7 +143,8 @@ module Brainstem
             # This is HWIA, so all keys are stringified
             data = {
               "recursive" => true,
-              "info" => "sprockets[sub_sprockets] is recursive and an array"
+              "info" => "sprockets[sub_sprockets] is recursive and an array",
+              "required" => true
             }
 
             subject.brainstem_params do
@@ -338,17 +341,19 @@ module Brainstem
 
           subject.brainstem_params do
             valid :unrelated_root_key,
-              info: "it's unrelated."
+              info: "it's unrelated.",
+              required: true
 
             model_params(brainstem_model_name) do |params|
               params.valid :sprocket_parent_id,
-                info: "sprockets[sprocket_parent_id] is required"
+                info: "sprockets[sprocket_parent_id] is not required"
             end
 
             actions :show do
               model_params(brainstem_model_name) do |params|
                 params.valid :sprocket_name,
-                  info: "sprockets[sprocket_name] is required"
+                  info: "sprockets[sprocket_name] is required",
+                  required: true
               end
             end
           end
@@ -371,8 +376,8 @@ module Brainstem
           stub.any_instance_of(subject).action_name { "show" }
 
           expect(subject.new.brainstem_valid_params).to eq({
-            "sprocket_name" => { "info" => "sprockets[sprocket_name] is required", "root" => "widget" },
-            "sprocket_parent_id" => { "info" => "sprockets[sprocket_parent_id] is required", "root" => "widget" }
+            "sprocket_name" => { "info" => "sprockets[sprocket_name] is required", "root" => "widget", "required" => true },
+            "sprocket_parent_id" => { "info" => "sprockets[sprocket_parent_id] is not required", "root" => "widget" }
           })
         end
 
