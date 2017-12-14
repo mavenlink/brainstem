@@ -10,7 +10,7 @@ describe Brainstem::PresenterCollection do
   let(:jane) { User.where(:username => "jane").first }
 
   describe "#presenting" do
-    describe "#pagination" do
+    describe "pagination" do
       before do
         @presenter_collection.default_per_page = 2
         @presenter_collection.default_max_per_page = 3
