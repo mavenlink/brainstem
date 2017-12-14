@@ -161,7 +161,6 @@ describe Brainstem::PresenterCollection do
       end
 
       describe "pagination keys" do
-        # let(:record_count) { Workspace.unscoped.count }
         let(:result) { @presenter_collection.presenting("workspaces", params: params) { Workspace.unscoped } }
 
         describe "page_number" do
