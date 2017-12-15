@@ -76,7 +76,7 @@ module Brainstem
 
       struct = {
         'count' => count,
-        'page_number' => count > 0 ? params.fetch(:page, 1) : 0,
+        'page_number' => count > 0 ? params.fetch(:page, 1).to_i : 0,
         'page_count' => count > 0 ? (count.to_f / per_page).ceil : 0,
         'results' => [],
         brainstem_key => {},
