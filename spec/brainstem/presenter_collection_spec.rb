@@ -161,7 +161,8 @@ describe Brainstem::PresenterCollection do
       end
 
       describe "pagination keys" do
-        let(:result) { @presenter_collection.presenting("workspaces", params: params) { Workspace.unscoped } }
+        let(:max_per_page) { nil }
+        let(:result) { @presenter_collection.presenting("workspaces", params: params, max_per_page: max_per_page) { Workspace.unscoped } }
 
         describe "page_number" do
           describe "when page is provided" do
@@ -200,19 +201,27 @@ describe Brainstem::PresenterCollection do
         end
 
         describe "page_size" do
-          describe "when per_page is provided" do
-            let(:params) { { per_page: 666 } }
+          [
+            # per_page  default_per_page  max_per_page  default_max_per_page  expected   message
+            [       10,               20,          100,                  200,       10,  "per page < max"],
+            [      nil,               20,          100,                  200,       20,  "no per page and default < max"],
+            [      nil,              200,          100,                  200,      100,  "no per page and default > max"],
+            [      150,               20,          100,                  200,      100,  "per page > max"],
+            [      150,               20,          nil,                  200,      150,  "no max and per page < default max"],
+            [      250,               20,          nil,                  200,      200,  "no max and per page > default max"],
+          ].each do |per_page, default_per_page, max_per_page, default_max_per_page, expected, message|
+            describe "for foo" do
+              let(:params) { { per_page: per_page } }
+              let(:max_per_page) { max_per_page }
 
-            it "indicates the provided value" do
-              expect(result["page_size"]).to eq(666)
-            end
-          end
+              before do
+                @presenter_collection.default_per_page = default_per_page
+                @presenter_collection.default_max_per_page = default_max_per_page
+              end
 
-          describe "when per_page is not provided" do
-            let(:params) { {} }
-
-            it "uses the default value" do
-              expect(result["page_size"]).to eq(@presenter_collection.default_per_page)
+              it "handles '#{message}'" do
+                expect(result["page_size"]).to eq(expected)
+              end
             end
           end
         end
