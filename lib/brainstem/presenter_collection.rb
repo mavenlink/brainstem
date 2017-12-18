@@ -71,12 +71,11 @@ module Brainstem
       selected_associations = filter_includes(options)
 
       optional_fields = filter_optional_fields(options)
-      per_page = [1, options[:params].fetch(:per_page, default_per_page).to_i].max
 
       struct = {
         'count' => count,
-        'page_number' => count > 0 ? options[:params].fetch(:page, 1).to_i : 0,
-        'page_count' => count > 0 ? (count.to_f / per_page).ceil : 0,
+        'page_number' => page_number(count, options[:params]),
+        'page_count' => page_count(count, per_page(options[:params])),
         'results' => [],
         brainstem_key => {},
       }
@@ -189,6 +188,18 @@ module Brainstem
       if options[:as].present?
         raise "PresenterCollection#presenting no longer accepts the :as option.  Use the brainstem_key annotation in your presenters instead."
       end
+    end
+
+    def page_number(count, params)
+      count > 0 ? params.fetch(:page, 1).to_i : 0
+    end
+
+    def page_count(count, per_page)
+      count > 0 ? (count.to_f / per_page).ceil : 0
+    end
+
+    def per_page(params)
+      [1, params.fetch(:per_page, default_per_page).to_i].max
     end
   end
 end
