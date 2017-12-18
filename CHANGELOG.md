@@ -3,6 +3,7 @@
 + **1.1.0 - _12/18/2017_
   - Add `page_number` key to API responses
   - Add `page_count` key to API responses
+  - Add `page_size` key to API responses
 
 + **1.0.0 - _07/20/2017_
   - Add the capability to generate the documentation extracted from your properly annotated

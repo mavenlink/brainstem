@@ -71,11 +71,13 @@ module Brainstem
       selected_associations = filter_includes(options)
 
       optional_fields = filter_optional_fields(options)
+      page_size = per_page(options[:params])
 
       struct = {
         'count' => count,
         'page_number' => page_number(count, options[:params]),
-        'page_count' => page_count(count, per_page(options[:params])),
+        'page_count' => page_count(count, page_size),
+        'page_size' => page_size,
         'results' => [],
         brainstem_key => {},
       }

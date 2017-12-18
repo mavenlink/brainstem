@@ -222,6 +222,9 @@ Responses will look like the following:
   # Total number pages available.
   page_count: 1,
 
+  # Number of results per page.
+  page_size: 20,
+
   # A lookup table to top-level keys. Necessary
   # because some objects can have associations of
   # the same type as themselves. Also helps to
