@@ -216,6 +216,12 @@ Responses will look like the following:
   # Total number of results that matched the query.
   count: 5,
 
+  # Current page returned in the response.
+  page_number: 1,
+
+  # Total number pages available.
+  page_count: 1,
+
   # A lookup table to top-level keys. Necessary
   # because some objects can have associations of
   # the same type as themselves. Also helps to
