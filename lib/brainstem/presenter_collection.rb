@@ -71,7 +71,7 @@ module Brainstem
       selected_associations = filter_includes(options)
 
       optional_fields = filter_optional_fields(options)
-      page_size = per_page(options)
+      page_size = calculate_per_page(options)
 
       struct = {
         'count' => count,
@@ -192,7 +192,7 @@ module Brainstem
       end
     end
 
-    def per_page(options)
+    def calculate_per_page(options)
       per_page = [(options[:params][:per_page] || options[:per_page] || default_per_page).to_i, (options[:max_per_page] || default_max_per_page).to_i].min
       per_page = default_per_page if per_page < 1
       per_page
