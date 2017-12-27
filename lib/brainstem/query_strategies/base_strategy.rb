@@ -18,7 +18,7 @@ module Brainstem
         # On complex queries, MySQL can sometimes handle 'SELECT id FROM ... ORDER BY ...' much faster than
         # 'SELECT * FROM ...', so we pluck the ids, then find those specific ids in a separate query.
         if(ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql|sqlite/i)
-          if with_count && (ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql/i)
+          if(ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql/i)
             ids = scope.pluck("SQL_CALC_FOUND_ROWS #{scope.table_name}.id")
             @last_count = ActiveRecord::Base.connection.execute("select found_rows()").first.first
           else
