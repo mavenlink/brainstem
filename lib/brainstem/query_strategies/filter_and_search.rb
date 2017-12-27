@@ -10,6 +10,7 @@ module Brainstem
           scope = paginate(scope)
           scope = @options[:primary_presenter].apply_ordering_to_scope(scope, @options[:params])
           primary_models = evaluate_scope(scope)
+          count = detected_count || scope.count
         else
           filtered_ids = scope.pluck(:id)
           count = filtered_ids.size
