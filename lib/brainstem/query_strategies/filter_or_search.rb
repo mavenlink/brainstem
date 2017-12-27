@@ -28,7 +28,7 @@ module Brainstem
           scope = @options[:primary_presenter].apply_ordering_to_scope(scope, @options[:params])
 
           primary_models = evaluate_scope(scope)
-          count = detect_count || count_scope.count
+          count = detected_count || count_scope.count
         end
 
         [primary_models, count]
