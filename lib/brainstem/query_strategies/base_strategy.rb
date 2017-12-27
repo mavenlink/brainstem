@@ -34,7 +34,7 @@ module Brainstem
         end
       end
       
-      def detected_count(scope)
+      def detected_count
         ret = @last_count
         @last_count = nil
         ret
