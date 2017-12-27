@@ -6,7 +6,7 @@ module Brainstem
     class BaseStrategy
       def initialize(options)
         @options = options
-        @last_count = -1
+        @last_count = nil
       end
 
       def execute(scope)
@@ -23,7 +23,7 @@ module Brainstem
             @last_count = ActiveRecord::Base.connection.execute("select found_rows()").first.first
           else
             ids = scope.pluck("#{scope.table_name}.id")
-            @last_count = -1
+            @last_count = nil
           end
           
           id_lookup = {}
@@ -35,7 +35,9 @@ module Brainstem
       end
       
       def detected_count(scope)
-        @last_count
+        ret = @last_count
+        @last_count = nil
+        ret
       end
 
       private
