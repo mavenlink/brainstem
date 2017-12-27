@@ -18,18 +18,17 @@ module Brainstem
 
           if @options[:params][:only].present?
             # Handle Only
-            scope, count = handle_only(scope, @options[:params][:only])
+            scope, count_scope = handle_only(scope, @options[:params][:only])
           else
             # Paginate
-            scope, count = paginate scope
+            scope, count_scope = paginate scope
           end
-
-          count = count.keys.length if count.is_a?(Hash)
 
           # Ordering
           scope = @options[:primary_presenter].apply_ordering_to_scope(scope, @options[:params])
 
           primary_models = evaluate_scope(scope)
+          count = detect_count || count_scope.count
         end
 
         [primary_models, count]
@@ -69,12 +68,12 @@ module Brainstem
 
       def paginate(scope)
         limit, offset = calculate_limit_and_offset
-        [scope.limit(limit).offset(offset).distinct, scope.select("distinct #{scope.connection.quote_table_name @options[:table_name]}.id").count]
+        [scope.limit(limit).offset(offset).distinct, scope.select("distinct #{scope.connection.quote_table_name @options[:table_name]}.id")]
       end
 
       def handle_only(scope, only)
         ids = (only || "").split(",").select {|id| id =~ /\A\d+\z/}.uniq
-        [scope.where(:id => ids), scope.where(:id => ids).count]
+        [scope.where(:id => ids), scope.where(:id => ids)]
       end
     end
   end
