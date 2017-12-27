@@ -29,6 +29,7 @@ module Brainstem
 
           primary_models = evaluate_scope(scope)
           count = detected_count || count_scope.count
+          count = count.keys.length if count.is_a?(Hash)
         end
 
         [primary_models, count]
