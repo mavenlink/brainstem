@@ -20,7 +20,7 @@ module Brainstem
         if(ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql|sqlite/i)
           if(ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql/i)
             ids = scope.pluck("SQL_CALC_FOUND_ROWS #{scope.table_name}.id")
-            @last_count = ActiveRecord::Base.connection.execute("select FOUND_ROWS()").first.first
+            @last_count = ActiveRecord::Base.connection.execute("SELECT FOUND_ROWS()").first.first
           else
             ids = scope.pluck("#{scope.table_name}.id")
             @last_count = nil
