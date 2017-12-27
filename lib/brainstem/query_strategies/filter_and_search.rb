@@ -6,11 +6,11 @@ module Brainstem
         scope = @options[:primary_presenter].apply_filters_to_scope(scope, @options[:params], @options)
 
         if ordering?
-          count = scope.count
+          count_scope = scope
           scope = paginate(scope)
           scope = @options[:primary_presenter].apply_ordering_to_scope(scope, @options[:params])
           primary_models = evaluate_scope(scope)
-          count = detected_count || scope.count
+          count = detected_count || count_scope.count
         else
           filtered_ids = scope.pluck(:id)
           count = filtered_ids.size
