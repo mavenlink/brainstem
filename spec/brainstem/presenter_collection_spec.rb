@@ -201,28 +201,10 @@ describe Brainstem::PresenterCollection do
         end
 
         describe "page_size" do
-          [
-            # per_page  default_per_page  max_per_page  default_max_per_page  expected   message
-            [       10,               20,          100,                  200,       10,  "per page < max"],
-            [      nil,               20,          100,                  200,       20,  "no per page and default < max"],
-            [      nil,              200,          100,                  200,      100,  "no per page and default > max"],
-            [      150,               20,          100,                  200,      100,  "per page > max"],
-            [      150,               20,          nil,                  200,      150,  "no max and per page < default max"],
-            [      250,               20,          nil,                  200,      200,  "no max and per page > default max"],
-          ].each do |per_page, default_per_page, max_per_page, default_max_per_page, expected, message|
-            describe "for foo" do
-              let(:params) { { per_page: per_page } }
-              let(:max_per_page) { max_per_page }
+          let(:params) { {} }
 
-              before do
-                @presenter_collection.default_per_page = default_per_page
-                @presenter_collection.default_max_per_page = default_max_per_page
-              end
-
-              it "handles '#{message}'" do
-                expect(result["page_size"]).to eq(expected)
-              end
-            end
+          it "calculates the correct page size" do
+            expect(result["page_count"]).to eq(3)
           end
         end
       end
