@@ -53,17 +53,18 @@ module Brainstem
       options[:default_max_per_page] = default_max_per_page
       options[:default_max_filter_and_search_page] = default_max_filter_and_search_page
 
-      primary_models, count = strategy(options, scope).execute(scope)
+      strategy = get_strategy(options, scope)
+      primary_models, count = strategy.execute(scope)
 
       # Determine if an exception should be raised on an empty result set.
       if options[:raise_on_empty] && primary_models.empty?
         raise options[:empty_error_class] || ActiveRecord::RecordNotFound
       end
 
-      structure_response(presented_class, primary_models, count, options)
+      structure_response(presented_class, primary_models, strategy, count, options)
     end
 
-    def structure_response(presented_class, primary_models, count, options)
+    def structure_response(presented_class, primary_models, strategy, count, options)
       # key these models will use in the struct that is output
       brainstem_key = brainstem_key_for!(presented_class)
 
@@ -71,7 +72,7 @@ module Brainstem
       selected_associations = filter_includes(options)
 
       optional_fields = filter_optional_fields(options)
-      page_size = calculate_per_page(options)
+      page_size = strategy.calculate_per_page
 
       struct = {
         'count' => count,
@@ -153,7 +154,7 @@ module Brainstem
 
     private
 
-    def strategy(options, scope)
+    def get_strategy(options, scope)
       strat = options[:primary_presenter].get_query_strategy
 
       return Brainstem::QueryStrategies::FilterAndSearch.new(options) if strat == :filter_and_search && searching?(options)
@@ -190,12 +191,6 @@ module Brainstem
       if options[:as].present?
         raise "PresenterCollection#presenting no longer accepts the :as option.  Use the brainstem_key annotation in your presenters instead."
       end
-    end
-
-    def calculate_per_page(options)
-      per_page = [(options[:params][:per_page] || options[:per_page] || default_per_page).to_i, (options[:max_per_page] || default_max_per_page).to_i].min
-      per_page = default_per_page if per_page < 1
-      per_page
     end
   end
 end

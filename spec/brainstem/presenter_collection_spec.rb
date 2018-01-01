@@ -1154,7 +1154,8 @@ describe Brainstem::PresenterCollection do
 
   describe '#structure_response' do
     let(:options) { {params: {}, primary_presenter: @presenter_collection.for!(Workspace) } }
-    let(:response_body) { @presenter_collection.structure_response(Workspace, Workspace.all, 17, options) }
+    let(:response_body) { @presenter_collection.structure_response(Workspace, Workspace.all, strategy, 17, options) }
+    let(:strategy) { OpenStruct.new(calculate_per_page: 25) }
 
     it 'has a count' do
       expect(response_body['count']).to eq(17)

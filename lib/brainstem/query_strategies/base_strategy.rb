@@ -26,6 +26,12 @@ module Brainstem
         end
       end
 
+      def calculate_per_page
+        per_page = [(@options[:params][:per_page] || @options[:per_page] || @options[:default_per_page]).to_i, (@options[:max_per_page] || @options[:default_max_per_page]).to_i].min
+        per_page = @options[:default_per_page] if per_page < 1
+        per_page
+      end
+
       private
 
       def calculate_limit
@@ -34,12 +40,6 @@ module Brainstem
 
       def calculate_offset
         [@options[:params][:offset].to_i, 0].max
-      end
-
-      def calculate_per_page
-        per_page = [(@options[:params][:per_page] || @options[:per_page] || @options[:default_per_page]).to_i, (@options[:max_per_page] || @options[:default_max_per_page]).to_i].min
-        per_page = @options[:default_per_page] if per_page < 1
-        per_page
       end
 
       def calculate_page
