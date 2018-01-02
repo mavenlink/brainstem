@@ -78,7 +78,7 @@ module Brainstem
         'count' => count,
         'results' => [],
         brainstem_key => {},
-        '_meta' => {
+        'meta' => {
           'count' => count,
           'page_count' => count > 0 ? (count.to_f / page_size).ceil : 0,
           'page_number' => count > 0 ? options[:params].fetch(:page, 1).to_i : 0,
