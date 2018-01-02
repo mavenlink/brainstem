@@ -76,11 +76,14 @@ module Brainstem
 
       struct = {
         'count' => count,
-        'page_number' => count > 0 ? options[:params].fetch(:page, 1).to_i : 0,
-        'page_count' => count > 0 ? (count.to_f / page_size).ceil : 0,
-        'page_size' => page_size,
         'results' => [],
         brainstem_key => {},
+        '_meta' => {
+          'count' => count,
+          'page_count' => count > 0 ? (count.to_f / page_size).ceil : 0,
+          'page_number' => count > 0 ? options[:params].fetch(:page, 1).to_i : 0,
+          'page_size' => page_size,
+        }
       }
 
       # Build top-level keys for all requested associations.
