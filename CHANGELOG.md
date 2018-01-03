@@ -1,5 +1,8 @@
 # Changelog
 
++ **1.1.0 - _12/18/2017_
+  - Add `meta` key to API responses which includes `page_number`, `page_count`, and `page_size` keys.
+
 + **1.0.0 - _07/20/2017_
   - Add the capability to generate the documentation extracted from your properly annotated
     presenters and controllers using `bundle exec brainstem generate [ARGS]`.
