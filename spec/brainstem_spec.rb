@@ -12,6 +12,17 @@ describe Brainstem do
     end
   end
 
+  describe "mysql_use_calc_found_rows attribute" do
+    it "can be set and read" do
+      Brainstem.mysql_use_calc_found_rows = true
+      expect(Brainstem.mysql_use_calc_found_rows).to eq(true)
+    end
+
+    it "returns false if unset" do
+      expect(Brainstem.mysql_use_calc_found_rows).to eq(false)
+    end
+  end
+
   describe "presenter collection method" do
     it "returns an instance of PresenterCollection" do
       expect(Brainstem.presenter_collection).to be_a(Brainstem::PresenterCollection)
