@@ -2,7 +2,11 @@ require 'active_record'
 require 'logger'
 require 'rr'
 require 'rspec'
-require 'sqlite3'
+if ENV['USE_MYSQL']
+  require 'mysql2'
+else
+  require 'sqlite3'
+end
 require 'database_cleaner'
 require 'pry'
 require 'pry-nav'
