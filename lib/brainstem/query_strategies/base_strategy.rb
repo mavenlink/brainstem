@@ -18,14 +18,14 @@ module Brainstem
         # On complex queries, MySQL can sometimes handle 'SELECT id FROM ... ORDER BY ...' much faster than
         # 'SELECT * FROM ...', so we pluck the ids, then find those specific ids in a separate query.
         if(ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql|sqlite/i)
-          if(ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql/i)
+          if(Brainstem.mysql_use_calc_found_rows && ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql/i)
             ids = scope.pluck("SQL_CALC_FOUND_ROWS #{scope.table_name}.id")
             @last_count = ActiveRecord::Base.connection.execute("SELECT FOUND_ROWS()").first.first
           else
             ids = scope.pluck("#{scope.table_name}.id")
             @last_count = nil
           end
-          
+
           id_lookup = {}
           ids.each.with_index { |id, index| id_lookup[id] = index }
           primary_models = scope.klass.where(id: id_lookup.keys).sort_by { |model| id_lookup[model.id] }
@@ -33,7 +33,7 @@ module Brainstem
           primary_models = scope.to_a
         end
       end
-      
+
       def detected_count
         ret = @last_count
         @last_count = nil
