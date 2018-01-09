@@ -3,6 +3,8 @@ require 'spec_helper'
 # The functionality of this is mainly tested in more integration-y tests in presenter_collection_spec.rb
 
 describe Brainstem::QueryStrategies::FilterOrSearch do
+  it_behaves_like Brainstem::QueryStrategies::BaseStrategy
+
   describe '#execute' do
     context 'we are searching' do
       let(:subject) { described_class.new(@options) }

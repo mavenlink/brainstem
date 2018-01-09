@@ -10,7 +10,7 @@ describe Brainstem::PresenterCollection do
   let(:jane) { User.where(:username => "jane").first }
 
   describe "#presenting" do
-    describe "#pagination" do
+    describe "pagination" do
       before do
         @presenter_collection.default_per_page = 2
         @presenter_collection.default_max_per_page = 3
@@ -159,6 +159,64 @@ describe Brainstem::PresenterCollection do
           expect(result['count']).to eq(Workspace.count)
         end
       end
+
+      describe "meta keys" do
+        let(:max_per_page) { nil }
+        let(:meta_keys) { result["meta"] }
+        let(:result) { @presenter_collection.presenting("workspaces", params: params, max_per_page: max_per_page) { Workspace.unscoped } }
+
+        describe "count" do
+          let(:params) { {} }
+
+          it "includes the count" do
+            expect(meta_keys["count"]).to eq(6)
+          end
+        end
+
+        describe "page_number" do
+          describe "when page is provided" do
+            let(:params) { { page: 2 } }
+
+            it "indicates the provided page" do
+              expect(meta_keys["page_number"]).to eq(2)
+            end
+          end
+
+          describe "when page is not profided" do
+            let(:params) { {} }
+
+            it "indicates the first page" do
+              expect(meta_keys["page_number"]).to eq(1)
+            end
+          end
+        end
+
+        describe "page_count" do
+          describe "when per_page is provided" do
+            let(:params) { { per_page: 4 } }
+
+            it "calculates the correct page count" do
+              expect(meta_keys["page_count"]).to eq(2)
+            end
+          end
+
+          describe "when per_page is not provided" do
+            let(:params) { {} }
+
+            it "calculates the correct page count based on the default page size" do
+              expect(meta_keys["page_count"]).to eq(3)
+            end
+          end
+        end
+
+        describe "page_size" do
+          let(:params) { {} }
+
+          it "calculates the correct page size" do
+            expect(meta_keys["page_count"]).to eq(3)
+          end
+        end
+      end
     end
 
     describe 'strategies' do
@@ -256,7 +314,7 @@ describe Brainstem::PresenterCollection do
     describe "the 'results' top level key" do
       it "comes back with an explicit list of the matching results" do
         structure = @presenter_collection.presenting("workspaces", :params => { :include => "tasks" }, :max_per_page => 2) { Workspace.where(:id => 1) }
-        expect(structure.keys).to match_array %w[workspaces tasks count results]
+        expect(structure.keys).to match_array %w[workspaces tasks count results meta]
         expect(structure['results']).to eq(Workspace.where(:id => 1).limit(2).map {|w| { 'key' => 'workspaces', 'id' => w.id.to_s } })
         expect(structure['workspaces'].keys).to eq(%w[1])
       end
@@ -265,10 +323,10 @@ describe Brainstem::PresenterCollection do
     describe "includes" do
       it "reads allowed includes from the presenter" do
         result = @presenter_collection.presenting("workspaces", :params => { :include => "drop table,tasks,users" }) { Workspace.unscoped }
-        expect(result.keys).to match_array %w[count workspaces tasks results]
+        expect(result.keys).to match_array %w[count meta workspaces tasks results]
 
         result = @presenter_collection.presenting("workspaces", :params => { :include => "foo,tasks,lead_user" }) { Workspace.unscoped }
-        expect(result.keys).to match_array %w[count workspaces tasks users results]
+        expect(result.keys).to match_array %w[count meta workspaces tasks users results]
       end
 
       it "defaults to not include any allowed includes" do
@@ -304,7 +362,7 @@ describe Brainstem::PresenterCollection do
         result = @presenter_collection.presenting("tasks", :params => { :include => "workspace" }, :max_per_page => 2) { Task.where(:id => t.id) }
         expect(result['tasks'].keys).to eq([ t.id.to_s ])
         expect(result['workspaces']).to eq({})
-        expect(result.keys).to match_array %w[tasks workspaces count results]
+        expect(result.keys).to match_array %w[tasks workspaces count meta results]
       end
 
       context 'when including something of the same type as the primary model' do
@@ -911,7 +969,7 @@ describe Brainstem::PresenterCollection do
       context "when there is no sort provided" do
         it "returns an empty array when there are no objects" do
           result = @presenter_collection.presenting("workspaces") { Workspace.where(:id => nil) }
-          expect(result).to eq('count' => 0, 'workspaces' => {}, 'results' => [])
+          expect(result).to eq('count' => 0, 'meta' => { 'count' => 0, 'page_count' => 0, 'page_number' => 0, 'page_size' => 20 }, 'workspaces' => {}, 'results' => [])
         end
 
         it "falls back to the object's sort order when nothing is provided" do
@@ -966,7 +1024,7 @@ describe Brainstem::PresenterCollection do
 
         result = @presenter_collection.presenting("workspaces", :params => { :order => "description:drop table" }) { Workspace.where("id is not null") }
         expect(last_direction).to eq('asc')
-        expect(result.keys).to match_array %w[count workspaces results]
+        expect(result.keys).to match_array %w[count meta workspaces results]
 
         result = @presenter_collection.presenting("workspaces", :params => { :order => "description:;;hacker;;" }) { Workspace.where("id is not null") }
         expect(last_direction).to eq('asc')
@@ -1087,7 +1145,8 @@ describe Brainstem::PresenterCollection do
 
   describe '#structure_response' do
     let(:options) { {params: {}, primary_presenter: @presenter_collection.for!(Workspace) } }
-    let(:response_body) { @presenter_collection.structure_response(Workspace, Workspace.all, 17, options) }
+    let(:response_body) { @presenter_collection.structure_response(Workspace, Workspace.all, strategy, 17, options) }
+    let(:strategy) { OpenStruct.new(calculate_per_page: 25) }
 
     it 'has a count' do
       expect(response_body['count']).to eq(17)

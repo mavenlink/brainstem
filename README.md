@@ -184,6 +184,11 @@ Rails.application.config.to_prepare do
   # Set the current default API namespace.
   Brainstem.default_namespace = :v1
 
+  # (Optional) Utilize MySQL's [FOUND_ROWS()](https://dev.mysql.com/doc/refman/5.7/en/information-functions.html#function_found-rows) 
+  # functionality to avoid issuing a new query to calculate the record count, 
+  # which has the potential to up to double the response time of the endpoint.
+  Brainstem.mysql_use_calc_found_rows = true 
+
   # (Optional) Load a default base helper into all presenters. You could use
   # this to bring in a concept like `current_user`.  # While not necessarily the
   # best approach, something like http://stackoverflow.com/a/11670283 can
@@ -215,6 +220,21 @@ Responses will look like the following:
 {
   # Total number of results that matched the query.
   count: 5,
+
+  # Information about the request and response.
+  meta: {
+    # Total number of results that matched the query.
+    count: 5,
+
+    # Current page returned in the response.
+    page_number: 1,
+
+    # Total number pages available.
+    page_count: 1,
+
+    # Number of results per page.
+    page_size: 20,
+  },
 
   # A lookup table to top-level keys. Necessary
   # because some objects can have associations of

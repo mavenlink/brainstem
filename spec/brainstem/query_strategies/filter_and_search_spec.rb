@@ -18,6 +18,8 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
     params: params
   } }
 
+  it_behaves_like Brainstem::QueryStrategies::BaseStrategy
+
   describe '#execute' do
     def run_query
       described_class.new(options).execute(Cheese.all)

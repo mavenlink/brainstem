@@ -1,5 +1,11 @@
 # Changelog
 
++ **1.1.1 - _01/09/2017_
+  - Add `Brainstem.mysql_use_calc_found_rows` boolean config option to utilize MySQL's [FOUND_ROWS()](https://dev.mysql.com/doc/refman/5.7/en/information-functions.html#function_found-rows) functionality to avoid issuing a new query to calculate the record count, which has the potential to up to double the response time of the endpoint. 
+
++ **1.1.0 - _12/18/2017_
+  - Add `meta` key to API responses which includes `page_number`, `page_count`, and `page_size` keys.
+
 + **1.0.0 - _07/20/2017_
   - Add the capability to generate the documentation extracted from your properly annotated
     presenters and controllers using `bundle exec brainstem generate [ARGS]`.
