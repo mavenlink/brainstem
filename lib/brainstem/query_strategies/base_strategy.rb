@@ -14,28 +14,20 @@ module Brainstem
       end
 
       def evaluate_scope(scope)
+        @last_count = nil
+
         # Load models!
         # On complex queries, MySQL can sometimes handle 'SELECT id FROM ... ORDER BY ...' much faster than
         # 'SELECT * FROM ...', so we pluck the ids, then find those specific ids in a separate query.
-        if(ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql|sqlite/i)
-          if(Brainstem.mysql_use_calc_found_rows && ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql/i)
-            ids = scope.pluck("SQL_CALC_FOUND_ROWS #{scope.table_name}.id")
-            @last_count = ActiveRecord::Base.connection.execute("SELECT FOUND_ROWS()").first.first
-          else
-            ids = scope.pluck("#{scope.table_name}.id")
-            @last_count = nil
-          end
-
-          id_lookup = {}
-          ids.each.with_index { |id, index| id_lookup[id] = index }
-          primary_models = scope.klass.where(id: id_lookup.keys).sort_by { |model| id_lookup[model.id] }
+        if ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql|sqlite/i
+          get_ids_sql(scope)
         else
-          primary_models = scope.to_a
+          scope.to_a
         end
       end
 
-      def detected_count
-        ret = @last_count
+      def evaluate_count(count_scope)
+        ret = @last_count || count_scope.count
         @last_count = nil
         ret
       end
@@ -47,6 +39,19 @@ module Brainstem
       end
 
       private
+
+      def get_ids_sql(scope)
+        if Brainstem.mysql_use_calc_found_rows && ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql/i
+          ids = scope.pluck("SQL_CALC_FOUND_ROWS #{scope.table_name}.id")
+          @last_count = ActiveRecord::Base.connection.execute("SELECT FOUND_ROWS()").first.first
+        else
+          ids = scope.pluck("#{scope.table_name}.id")
+        end
+
+        id_lookup = {}
+        ids.each.with_index { |id, index| id_lookup[id] = index }
+        scope.klass.where(id: id_lookup.keys).sort_by { |model| id_lookup[model.id] }
+      end
 
       def calculate_limit
         [[@options[:params][:limit].to_i, 1].max, (@options[:max_per_page] || @options[:default_max_per_page]).to_i].min

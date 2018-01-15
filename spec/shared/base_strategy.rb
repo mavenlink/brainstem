@@ -22,7 +22,12 @@ shared_examples_for Brainstem::QueryStrategies::BaseStrategy do
             to make_database_queries({ count: 1, matching: "SELECT SQL_CALC_FOUND_ROWS workspaces.id FROM" }).
             and make_database_queries({ count: 1, matching: "SELECT FOUND_ROWS()" })
 
-          expect(strategy.detected_count).to eq(Workspace.count)
+          count_scope_that_should_not_be_used = Workspace.none
+          count_expected = Workspace.count
+
+          expect {
+            expect(strategy.evaluate_count(count_scope_that_should_not_be_used)).to eq(count_expected)
+          }.not_to make_database_queries
         end
       end
 
@@ -33,11 +38,12 @@ shared_examples_for Brainstem::QueryStrategies::BaseStrategy do
 
         it 'returns the results by issuing a count query' do
           expect { strategy.evaluate_scope(Workspace.unscoped) }.
-              not_to make_database_queries({ count: 1, matching: "SELECT SQL_CALC_FOUND_ROWS workspaces.id FROM" })
+            not_to make_database_queries({ count: 1, matching: "SELECT SQL_CALC_FOUND_ROWS workspaces.id FROM" })
           expect { strategy.evaluate_scope(Workspace.unscoped) }.
-              not_to make_database_queries({ count: 1, matching: "SELECT FOUND_ROWS()" })
+            not_to make_database_queries({ count: 1, matching: "SELECT FOUND_ROWS()" })
 
-          expect(strategy.detected_count).to be_nil
+          expect { strategy.evaluate_count(Workspace.unscoped) }.
+            to make_database_queries({ count: 1, matching: "SELECT COUNT(*) FROM" })
         end
       end
     end
