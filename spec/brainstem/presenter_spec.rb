@@ -747,7 +747,8 @@ describe Brainstem::Presenter do
         end
 
         sql = presenter.apply_ordering_to_scope(scope, 'order' => 'title').to_sql
-        expect(sql).to match(/order by workspaces.title desc, workspaces.id desc, "workspaces"."id" ASC/i)
+        # match SQLite and MySQL quotes
+        expect(sql).to match(/order by workspaces\.title desc, workspaces.id desc, [`"]workspaces[`"]\.[`"]id[`"] ASC/i)
         # this should be ok, since the first id sort will never have a tie
       end
 
@@ -757,7 +758,8 @@ describe Brainstem::Presenter do
         end
 
         sql = presenter.apply_ordering_to_scope(scope, 'order' => 'title').to_sql
-        expect(sql).to match(/order by workspaces.title desc, "workspaces"."id" ASC/i)
+        # match SQLite and MySQL quotes
+        expect(sql).to match(/order by workspaces\.title desc, [`"]workspaces[`"]\.[`"]id[`"] ASC/i)
       end
     end
 
@@ -772,7 +774,8 @@ describe Brainstem::Presenter do
 
         it 'applies the named ordering in the given direction and adds the primary key as a fallback sort' do
           sql = presenter.apply_ordering_to_scope(scope, order).to_sql
-          expect(sql).to match(/ORDER BY workspaces.title asc, "workspaces"."id" ASC/i)
+          # match SQLite and MySQL quotes
+          expect(sql).to match(/ORDER BY workspaces\.title asc, [`"]workspaces[`"]\.[`"]id[`"] ASC/i)
         end
       end
 
@@ -781,7 +784,8 @@ describe Brainstem::Presenter do
 
         it 'applies the named ordering in the given direction and adds the primary key as a fallback sort' do
           sql = presenter.apply_ordering_to_scope(scope, order).to_sql
-          expect(sql).to match(/order by workspaces.title asc, "workspaces"."id" ASC/i)
+          # match SQLite and MySQL quotes
+          expect(sql).to match(/order by workspaces\.title asc, [`"]workspaces[`"]\.[`"]id[`"] ASC/i)
         end
       end
     end
@@ -791,7 +795,8 @@ describe Brainstem::Presenter do
 
       it 'orders by the primary key' do
         sql = presenter.apply_ordering_to_scope(scope, order).to_sql
-        expect(sql).to match(/order by "workspaces"."id" ASC/i)
+        # match SQLite and MySQL quotes
+        expect(sql).to match(/order by [`"]workspaces[`"]\.[`"]id[`"] ASC/i)
       end
     end
 
@@ -809,7 +814,7 @@ describe Brainstem::Presenter do
 
       it 'does not add a fallback deterministic sort, and you deserve whatever fate befalls you' do
         sql = presenter.apply_ordering_to_scope(scope, order).to_sql.squish
-        expect(sql).to eq("SELECT \"workspaces\".* FROM \"workspaces\" WHERE \"workspaces\".\"type\" IN ('Cthulhu') ORDER BY workspaces.updated_at asc")
+        expect(sql).to match(/SELECT [`"]workspaces[`"]\.\* FROM [`"]workspaces[`"] WHERE [`"]workspaces[`"]\.[`"]type[`"] IN \('Cthulhu'\) ORDER BY workspaces\.updated_at asc/i)
       end
     end
   end

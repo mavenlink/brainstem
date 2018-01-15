@@ -8,7 +8,15 @@ rvm:
   - 2.4.3
   - 2.5.0
 
-before_install: gem install bundler
+services:
+  - mysql
+
+before_install:
+  - gem install bundler
+  - mysql -e 'CREATE DATABASE IF NOT EXISTS test;'
+
+env:
+  - USE_MYSQL=true
 
 git:
   depth: 1

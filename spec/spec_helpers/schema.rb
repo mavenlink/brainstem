@@ -1,4 +1,9 @@
-ActiveRecord::Base.establish_connection(:adapter => 'sqlite3', :database => ':memory:')
+if ENV['USE_MYSQL']
+  ActiveRecord::Base.establish_connection(:adapter => 'mysql2', :database => 'test', :username => 'root', :password => '', :host => '127.0.0.1')
+else
+  ActiveRecord::Base.establish_connection(:adapter => 'sqlite3', :database => ':memory:')
+end
+
 ActiveRecord::Schema.define do
   self.verbose = false
 

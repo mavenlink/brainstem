@@ -29,18 +29,63 @@ describe Brainstem::QueryStrategies::FilterOrSearch do
     end
 
     context 'we are not searching' do
-      let(:subject) { described_class.new(@options) }
-
-      before do
-        @options = { primary_presenter: WorkspacePresenter.new,
-                     table_name: 'workspaces',
-                     default_per_page: 20,
-                     default_max_per_page: 200,
-                     params: { } }
+      let(:options) do
+        {
+          primary_presenter: WorkspacePresenter.new,
+          table_name: 'workspaces',
+          default_per_page: 20,
+          default_max_per_page: 200,
+          params: {}
+        }
       end
+      let(:subject) { described_class.new(options) }
 
       it 'returns the primary models and count' do
         expect(subject.execute(Workspace.unscoped)).to eq([Workspace.unscoped.to_a, Workspace.count])
+      end
+
+      if(ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql/i)
+        describe 'mysql_use_calc_found_rows' do
+          context 'when using mysql_use_calc_found_rows' do
+            before do
+              Brainstem.mysql_use_calc_found_rows = true
+              expect(Brainstem.mysql_use_calc_found_rows).to eq(true)
+            end
+
+            after do
+              Brainstem.mysql_use_calc_found_rows = false
+            end
+
+            it 'returns the results without issuing a second query' do
+              expect { subject.execute(Workspace.unscoped) }.
+                not_to make_database_queries({ count: 1, matching: "SELECT COUNT(*) FROM" })
+
+              expect { subject.execute(Workspace.unscoped) }.
+                to make_database_queries({ count: 1, matching: "SELECT  DISTINCT SQL_CALC_FOUND_ROWS workspaces.id FROM" }).
+                and make_database_queries({ count: 1, matching: "SELECT FOUND_ROWS()" })
+
+              _, count = subject.execute(Workspace.unscoped)
+              expect(count).to eq(Workspace.count)
+            end
+          end
+
+          context 'when not using mysql_use_calc_found_rows' do
+            before do
+              expect(Brainstem.mysql_use_calc_found_rows).to eq(false)
+            end
+
+            it 'returns the results by issuing a count query' do
+              expect { subject.execute(Workspace.unscoped) }.
+                to make_database_queries({ count: 1, matching: "SELECT COUNT(distinct `workspaces`.id) FROM" })
+
+              expect { subject.execute(Workspace.unscoped) }.
+                not_to make_database_queries({ count: 1, matching: "SELECT  DISTINCT SQL_CALC_FOUND_ROWS workspaces.id FROM" })
+
+              expect { subject.execute(Workspace.unscoped) }.
+                not_to make_database_queries({ count: 1, matching: "SELECT FOUND_ROWS()" })
+            end
+          end
+        end
       end
     end
   end

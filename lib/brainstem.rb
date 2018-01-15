@@ -21,6 +21,19 @@ module Brainstem
     @default_namespace || "none"
   end
 
+  # Sets {mysql_use_calc_found_rows} to a new value.
+  # @param [Boolean] bool
+  # @return [Boolean] the new mysql_use_calc_found_rows setting
+  def self.mysql_use_calc_found_rows=(bool)
+    @mysql_use_calc_found_rows = bool
+  end
+
+  # Whether or not to use MYSQL_CALC_FOUND_ROWS to calculate the result set count instead of issuing two queries.
+  # @return [Boolean] the mysql_use_calc_found_rows setting
+  def self.mysql_use_calc_found_rows
+    @mysql_use_calc_found_rows || false
+  end
+
   # @param [String] namespace
   # @return [PresenterCollection] the {PresenterCollection} for the given namespace.
   def self.presenter_collection(namespace = nil)
@@ -73,5 +86,6 @@ module Brainstem
 
     @presenter_collection = {}
     @default_namespace = nil
+    @mysql_use_calc_found_rows = false
   end
 end
