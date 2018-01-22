@@ -145,11 +145,15 @@ module Brainstem
         # @option options [Boolean] :required if the param is required for
         #   the endpoint
         #
-        def valid(field_name, options = { nodoc: false, required: false })
+        def valid(field_name, options = {})
           valid_params = configuration[brainstem_params_context][:valid_params]
-          valid_params[field_name.to_sym] = options
+
+          options[:type] = options[:type].to_s if options.has_key?(:type)
+          valid_params[field_name.to_sym] = DEFAULT_PARAM_OPTIONS.merge(options)
         end
 
+        DEFAULT_PARAM_OPTIONS = { nodoc: false, required: false, type: 'string' }
+        private_constant :DEFAULT_PARAM_OPTIONS
 
         #
         # Adds a transform to the list of transforms. Used to rename incoming
