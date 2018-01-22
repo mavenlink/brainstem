@@ -142,8 +142,10 @@ module Brainstem
         #   under which param should it be nested?
         # @option options [Boolean] :nodoc should this param appear in the
         #   documentation?
+        # @option options [Boolean] :required if the param is required for
+        #   the endpoint
         #
-        def valid(field_name, options = { nodoc: false })
+        def valid(field_name, options = { nodoc: false, required: false })
           valid_params = configuration[brainstem_params_context][:valid_params]
           valid_params[field_name.to_sym] = options
         end
