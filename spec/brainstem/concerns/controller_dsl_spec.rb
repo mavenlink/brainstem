@@ -115,10 +115,10 @@ module Brainstem
         end
 
         it "merges options" do
-          mock(subject).valid(:thing, root: "widgets", nodoc: true, required: true)
+          mock(subject).valid(:thing, root: "widgets", nodoc: true, required: true, type: 'integer')
 
           subject.model_params :widgets do |param|
-            param.valid :thing, nodoc: true, required: true
+            param.valid :thing, nodoc: true, required: true, type: 'integer'
           end
         end
       end
@@ -129,30 +129,51 @@ module Brainstem
             subject.brainstem_params do
               valid :sprocket_name,
                 info: "sprockets[sprocket_name] is required",
-                required: true
+                required: true,
+                type: 'string'
             end
 
             expect(subject.configuration[:_default][:valid_params][:sprocket_name][:info]).to \
               eq "sprockets[sprocket_name] is required"
             expect(subject.configuration[:_default][:valid_params][:sprocket_name][:required]).to be_truthy
+            expect(subject.configuration[:_default][:valid_params][:sprocket_name][:type]).to eq('string')
           end
         end
 
-        context "when given a name and an options hash" do
+        context "when given a name and an HWIA options hash" do
           it "appends to the valid params hash" do
-            # This is HWIA, so all keys are stringified
+            # This is Hash With Indifferent Access, so all keys are stringified
             data = {
               "recursive" => true,
-              "info" => "sprockets[sub_sprockets] is recursive and an array",
-              "required" => true
+              "info"      => "sprockets[sub_sprockets] is recursive and an array",
+              "required"  => true,
+              "type"      => "hash"
             }
 
             subject.brainstem_params do
               valid :sub_sprockets, data
             end
 
-            expect(subject.configuration[:_default][:valid_params][:sub_sprockets]).to \
-              eq data
+            expect(subject.configuration[:_default][:valid_params][:sub_sprockets]).to eq({
+              "recursive" => true,
+              "info"      => "sprockets[sub_sprockets] is recursive and an array",
+              "required"  => true,
+              "type"      => "hash",
+              "nodoc"     => false
+            })
+          end
+        end
+
+        context "when no options are provided" do
+          it "sets default options for the param" do
+            subject.brainstem_params do
+              valid :sprocket_name
+            end
+
+            configuration = subject.configuration[:_default][:valid_params][:sprocket_name]
+            expect(configuration[:nodoc]).to be_falsey
+            expect(configuration[:required]).to be_falsey
+            expect(configuration[:type]).to eq('string')
           end
         end
       end
@@ -321,7 +342,7 @@ module Brainstem
         it "allows passing multiple symbols" do
           subject.brainstem_params do
             actions :show, :index do
-              valid :param_1, "something"
+              valid :param_1, info: "something"
             end
           end
 
@@ -342,11 +363,13 @@ module Brainstem
           subject.brainstem_params do
             valid :unrelated_root_key,
               info: "it's unrelated.",
-              required: true
+              required: true,
+              type: "string"
 
             model_params(brainstem_model_name) do |params|
               params.valid :sprocket_parent_id,
-                info: "sprockets[sprocket_parent_id] is not required"
+                info: "sprockets[sprocket_parent_id] is not required",
+                type: "long"
             end
 
             actions :show do
@@ -376,8 +399,20 @@ module Brainstem
           stub.any_instance_of(subject).action_name { "show" }
 
           expect(subject.new.brainstem_valid_params).to eq({
-            "sprocket_name" => { "info" => "sprockets[sprocket_name] is required", "root" => "widget", "required" => true },
-            "sprocket_parent_id" => { "info" => "sprockets[sprocket_parent_id] is not required", "root" => "widget" }
+            "sprocket_name" => {
+              "info"     => "sprockets[sprocket_name] is required",
+              "root"     => "widget",
+              "required" => true,
+              "type"     => "string",
+              "nodoc"    => false
+            },
+            "sprocket_parent_id" => {
+              "info"     => "sprockets[sprocket_parent_id] is not required",
+              "root"     => "widget",
+              "type"     => "long",
+              "nodoc"    => false,
+              "required" => false
+            }
           })
         end
 
