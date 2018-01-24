@@ -201,6 +201,16 @@ module Brainstem
                   param.valid :template_id, required: true, type: 'integer'
                   param.valid :template_title, type: 'string'
                 end
+
+                model_params :sprocket do |param|
+                  param.valid :sprocket_template, required: true, type: 'hash' do |param|
+                    param.valid :template_id, required: true, type: 'integer'
+
+                    param.valid :template_data, type: 'hash' do |nested_param|
+                      param.valid :template_title, type: 'string'
+                    end
+                  end
+                end
               end
 
               parent_configuration = subject.configuration[:_default][:valid_params][:sprocket_template]
@@ -210,12 +220,18 @@ module Brainstem
               child_1_configuration = subject.configuration[:_default][:valid_params][:template_id]
               expect(child_1_configuration[:required]).to be_truthy
               expect(child_1_configuration[:type]).to eq('integer')
-              expect(child_1_configuration[:root]).to eq('sprocket_template')
+              expect(child_1_configuration[:root]).to eq('sprocket')
+              expect(child_1_configuration[:ancestors]).to eq(['sprocket_template'])
 
-              child_2_configuration = subject.configuration[:_default][:valid_params][:template_title]
-              expect(child_2_configuration[:required]).to be_falsey
-              expect(child_2_configuration[:type]).to eq('string')
-              expect(child_2_configuration[:root]).to eq('sprocket_template')
+              child_2_configuration = subject.configuration[:_default][:valid_params][:template_data]
+              expect(child_2_configuration[:type]).to eq('hash')
+              expect(child_2_configuration[:root]).to eq('sprocket')
+              expect(child_2_configuration[:ancestors]).to eq(['sprocket_template'])
+
+              child_3_configuration = subject.configuration[:_default][:valid_params][:template_title]
+              expect(child_3_configuration[:type]).to eq('string')
+              expect(child_3_configuration[:root]).to eq('sprocket')
+              expect(child_3_configuration[:ancestors]).to eq(['sprocket_template', 'template_data'])
             end
           end
 
@@ -236,12 +252,14 @@ module Brainstem
               child_1_configuration = subject.configuration[:_default][:valid_params][:task_id]
               expect(child_1_configuration[:required]).to be_truthy
               expect(child_1_configuration[:type]).to eq('integer')
-              expect(child_1_configuration[:root]).to eq('sprocket_tasks')
+              expect(child_1_configuration[:root]).to be_nil
+              expect(child_1_configuration[:ancestors]).to eq(['sprocket_tasks'])
 
               child_2_configuration = subject.configuration[:_default][:valid_params][:task_title]
               expect(child_2_configuration[:required]).to be_falsey
               expect(child_2_configuration[:type]).to eq('string')
-              expect(child_2_configuration[:root]).to eq('sprocket_tasks')
+              expect(child_2_configuration[:root]).to be_nil
+              expect(child_1_configuration[:ancestors]).to eq(['sprocket_tasks'])
             end
           end
         end

@@ -127,7 +127,7 @@ module Brainstem
         #   method accepting the controller constant and returning one
         #
         def model_params(root = Proc.new { |klass| klass.brainstem_model_name }, &block)
-          with_options({ root: root.is_a?(Symbol) ? root.to_s : root }, &block)
+          with_options({ root: sanitize_root_option(root) }, &block)
         end
 
 
@@ -152,7 +152,15 @@ module Brainstem
             options[:type] = 'hash' unless options.has_key?(:type)
             valid_params[field_name.to_sym] = DEFAULT_PARAM_OPTIONS.merge(options)
 
-            with_options({ root: field_name.to_s }, &block)
+            ancestors = options[:ancestors] || []
+            ancestors << field_name.to_s
+
+            ancestry_options = {
+              root: sanitize_root_option(options[:root]),
+              ancestors: ancestors
+            }.reject { |_, v| v.blank? }
+
+            with_options(ancestry_options, &block)
           else
             options[:type] = options[:type].to_s if options.has_key?(:type)
             valid_params[field_name.to_sym] = DEFAULT_PARAM_OPTIONS.merge(options)
@@ -161,6 +169,10 @@ module Brainstem
 
         DEFAULT_PARAM_OPTIONS = { nodoc: false, required: false, type: 'string' }
         private_constant :DEFAULT_PARAM_OPTIONS
+
+        def sanitize_root_option(root)
+          root.is_a?(Symbol) ? root.to_s : root
+        end
 
         #
         # Adds a transform to the list of transforms. Used to rename incoming
