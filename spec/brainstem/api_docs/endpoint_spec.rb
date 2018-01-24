@@ -208,6 +208,338 @@ module Brainstem
         end
 
 
+        describe "#params_configuration_tree" do
+          let(:nested_param)      { { title: { nodoc: nodoc, type: 'string', root: :sprocket } } }
+          let(:proc_nested_param) { { title: { nodoc: nodoc, type: 'string', root: Proc.new { |klass| klass.brainstem_model_name } } } }
+          let(:root_param)        { { title: { nodoc: nodoc, type: 'string' } } }
+          let(:default_config)    { { valid_params: which_param } }
+
+          context "non-nested params" do
+            let(:which_param) { root_param }
+
+            context "when nodoc" do
+              let(:nodoc) { true }
+
+              it "rejects the key" do
+                expect(subject.params_configuration_tree).to be_empty
+              end
+            end
+
+            context "when not nodoc" do
+              let(:nodoc) { false }
+
+              it "lists it as a root param" do
+                expect(subject.params_configuration_tree).to eq(
+                  {
+                    title: { type: 'string' }
+                  }.with_indifferent_access
+                )
+              end
+
+              context "when param has an item" do
+                let(:which_param) { { only: { nodoc: nodoc, type: 'array', item: 'integer' } } }
+
+                it "lists it as a root param" do
+                  expect(subject.params_configuration_tree).to eq(
+                    {
+                      only: { type: 'array', item: 'integer' }
+                    }.with_indifferent_access
+                  )
+                end
+              end
+            end
+          end
+
+          context "nested params" do
+            let(:which_param) { nested_param }
+
+            context "when nodoc" do
+              let(:nodoc) { true }
+
+              it "rejects the key" do
+                expect(subject.params_configuration_tree).to be_empty
+              end
+            end
+
+            context "when not nodoc" do
+              it "lists it as a nested param" do
+                expect(subject.params_configuration_tree).to eq(
+                  {
+                    sprocket: {
+                      title: {
+                        type: 'string'
+                      }
+                    }
+                  }.with_indifferent_access
+                )
+              end
+
+              context "when nested param has an item" do
+                let(:which_param) {
+                  {
+                    ids: { nodoc: nodoc, type: 'array', item: 'integer', root: :sprocket }
+                  }
+                }
+
+                it "lists it as a nested param" do
+                  expect(subject.params_configuration_tree).to eq(
+                    {
+                      sprocket: {
+                        ids: {
+                          type: 'array',
+                          item: 'integer'
+                        }
+                      }
+                    }.with_indifferent_access
+                  )
+                end
+              end
+            end
+          end
+
+          context "proc nested params" do
+            let(:which_param) { proc_nested_param }
+
+            context "when nodoc" do
+              let(:nodoc) { true }
+
+              it "rejects the key" do
+                expect(subject.params_configuration_tree).to be_empty
+              end
+            end
+
+            context "when not nodoc" do
+              it "evaluates the proc in the controller's context and lists it as a nested param" do
+                mock.proxy(const).brainstem_model_name
+                expect(subject.params_configuration_tree).to eq(
+                  {
+                    widget: {
+                      title: {
+                        type: 'string'
+                      }
+                    }
+                  }.with_indifferent_access
+                )
+              end
+            end
+          end
+
+          context "multi nested params" do
+            context "has a root & ancestors" do
+              let(:which_param) {
+                {
+                  id: {
+                    type: 'integer'
+                  },
+                  task: {
+                    type: 'hash',
+                    root: 'project'
+                  },
+                  title: {
+                    type: 'string',
+                    root: 'project',
+                    ancestors: %w(task)
+                  },
+                  checklist: {
+                    type: 'array',
+                    item: 'hash',
+                    root: 'project',
+                    ancestors: %w(task)
+                  },
+                  name: {
+                    type: 'string',
+                    root: 'project',
+                    ancestors: %w(task checklist)
+                  }
+                }
+              }
+
+              context "when a leaf param has no doc" do
+                before do
+                  which_param[:name][:nodoc] = true
+                end
+
+                it "rejects the key" do
+                  expect(subject.params_configuration_tree).to eq(
+                    {
+                      id: {
+                        type: 'integer',
+                      },
+                      project: {
+                        task: {
+                          type: 'hash',
+                          children: {
+                            title: {
+                              type: 'string',
+                            },
+                            checklist: {
+                              type: 'array',
+                              item: 'hash',
+                            },
+                          },
+                        },
+                      },
+                    }.with_indifferent_access
+                  )
+                end
+              end
+
+              context "when nodoc on a parent param" do
+                before do
+                  which_param[:checklist][:nodoc] = true
+                end
+
+                it "rejects the parent key and its children" do
+                  expect(subject.params_configuration_tree).to eq(
+                    {
+                      id: {
+                        type: 'integer',
+                      },
+                      project: {
+                        task: {
+                          type: 'hash',
+                          children: {
+                            title: {
+                              type: 'string',
+                            },
+                          },
+                        },
+                      },
+                    }.with_indifferent_access
+                  )
+                end
+              end
+
+              context "when not nodoc" do
+                it "evaluates the proc in the controller's context and lists it as a nested param" do
+                  expect(subject.params_configuration_tree).to eq(
+                    {
+                      id: {
+                        type: 'integer',
+                      },
+                      project: {
+                        task: {
+                          type: 'hash',
+                          children: {
+                            title: {
+                              type: 'string',
+                            },
+                            checklist: {
+                              type: 'array',
+                              item: 'hash',
+                              children: {
+                                name: {
+                                  type: 'string',
+                                },
+                              },
+                            },
+                          },
+                        },
+                      },
+                    }.with_indifferent_access
+                  )
+                end
+              end
+            end
+
+            context "has only ancestors" do
+              let(:which_param) {
+                {
+                  task: {
+                    type: 'hash',
+                  },
+                  title: {
+                    type: 'string',
+                    ancestors: %w(task)
+                  },
+                  checklist: {
+                    type: 'array',
+                    item: 'hash',
+                    ancestors: %w(task)
+                  },
+                  name: {
+                    type: 'string',
+                    ancestors: %w(task checklist)
+                  }
+                }
+              }
+
+              context "when a leaf param has no doc" do
+                before do
+                  which_param[:name][:nodoc] = true
+                end
+
+                it "rejects the key" do
+                  expect(subject.params_configuration_tree).to eq(
+                    {
+                      task: {
+                        type: 'hash',
+                        children: {
+                          title: {
+                            type: 'string',
+                          },
+                          checklist: {
+                            type: 'array',
+                            item: 'hash',
+                          },
+                        },
+                      },
+                    }.with_indifferent_access
+                  )
+                end
+              end
+
+              context "when parent param has nodoc" do
+                before do
+                  which_param[:checklist][:nodoc] = true
+                end
+
+                it "rejects the parent key and its children" do
+                  expect(subject.params_configuration_tree).to eq(
+                    {
+                      task: {
+                        type: 'hash',
+                        children: {
+                          title: {
+                            type: 'string',
+                          },
+                        },
+                      }
+                    }.with_indifferent_access
+                  )
+                end
+              end
+
+              context "when not nodoc" do
+                it "evaluates the proc in the controller's context and lists it as a nested param" do
+                  expect(subject.params_configuration_tree).to eq(
+                    {
+                      task: {
+                        type: 'hash',
+                        children: {
+                          title: {
+                            type: 'string',
+                          },
+                          checklist: {
+                            type: 'array',
+                            item: 'hash',
+                            children: {
+                              name: {
+                                type: 'string',
+                              },
+                            },
+                          },
+                        },
+                      },
+                    }.with_indifferent_access
+                  )
+                end
+              end
+            end
+          end
+        end
+
+
         describe "#valid_presents" do
           it "returns the presents key from action or default" do
             mock(subject).key_with_default_fallback(:presents)

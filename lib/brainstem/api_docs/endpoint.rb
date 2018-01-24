@@ -147,6 +147,70 @@ module Brainstem
 
 
       #
+      # Returns a hash of all params nested under the specified root or
+      # parent fields along with their type, item type & children.
+      #
+      # @return [Hash{Symbol => Hash}] root keys and their type info, item info & children
+      #   nested under them.
+      #
+      def params_configuration_tree
+        @params_configuration_tree ||= begin
+          valid_params_hash = valid_params.to_h.with_indifferent_access
+          result = ActiveSupport::HashWithIndifferentAccess.new
+
+          valid_params_hash.each do |field, field_options|
+            next if field_options[:nodoc]
+
+            root = evaluate_root(field_options[:root])
+            ancestors = field_options[:ancestors]
+            if root.nil? && ancestors.blank?
+              result[field] = format_field_options(field_options)
+            else
+              result[root] ||= {} if root
+
+              if ancestors.present?
+                ancestors.inject(root ? result[root] : result) do |traversed_hash, ancestor_name|
+                  break if valid_params_hash[ancestor_name][:nodoc]
+
+                  ancestor_name = ancestor_name.to_s
+                  traversed_hash[ancestor_name] ||= {}
+                  traversed_hash[ancestor_name][:children] ||= {}
+                  if ancestors.last == ancestor_name
+                    traversed_hash[ancestor_name][:children].merge!(field => format_field_options(field_options))
+                  end
+                  traversed_hash[ancestor_name][:children]
+                end
+              else
+                result[root][field] ||= {}
+                result[root][field].merge!(format_field_options(field_options))
+              end
+            end
+          end
+
+          result
+        end
+      end
+
+
+      #
+      # Evalulates root option
+      #
+      def evaluate_root(root)
+        return root if root.nil?
+
+        root.respond_to?(:call) ? root.call(controller.const) : root
+      end
+
+
+      #
+      # Extracts type and item attributes from the given field options
+      #
+      def format_field_options(field_options)
+        field_options.slice(:type, :item)
+      end
+
+
+      #
       # Retrieves the +presents+ settings.
       #
       def valid_presents
