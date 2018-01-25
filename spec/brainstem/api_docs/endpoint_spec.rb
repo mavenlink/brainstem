@@ -265,10 +265,13 @@ module Brainstem
                 expect(subject.params_configuration_tree).to eq(
                   {
                     sprocket: {
-                      title: {
-                        nodoc: nodoc,
-                        type: 'string',
-                        root: :sprocket
+                      type: 'hash',
+                      children: {
+                        title: {
+                          nodoc: nodoc,
+                          type: 'string',
+                          root: :sprocket
+                        }
                       }
                     }
                   }.with_indifferent_access
@@ -286,11 +289,14 @@ module Brainstem
                   expect(subject.params_configuration_tree).to eq(
                     {
                       sprocket: {
-                        ids: {
-                          nodoc: nodoc,
-                          type: 'array',
-                          item: 'integer',
-                          root: :sprocket
+                        type: 'hash',
+                        children: {
+                          ids: {
+                            nodoc: nodoc,
+                            type: 'array',
+                            item: 'integer',
+                            root: :sprocket
+                          }
                         }
                       }
                     }.with_indifferent_access
@@ -319,11 +325,15 @@ module Brainstem
 
                 result = subject.params_configuration_tree
                 expect(result.keys).to eq(%w(widget))
-                expect(result[:widget].keys).to eq(%w(title))
-                expect(result[:widget][:title].keys).to eq(%w(nodoc type root))
-                expect(result[:widget][:title][:nodoc]).to eq(nodoc)
-                expect(result[:widget][:title][:type]).to eq('string')
-                expect(result[:widget][:title][:root]).to be_a(Proc)
+
+                children_of_the_root = result[:widget][:children]
+                expect(children_of_the_root.keys).to eq(%w(title))
+
+                title_param = children_of_the_root[:title]
+                expect(title_param.keys).to eq(%w(nodoc type root))
+                expect(title_param[:nodoc]).to eq(nodoc)
+                expect(title_param[:type]).to eq('string')
+                expect(title_param[:root]).to be_a(Proc)
               end
             end
           end
@@ -370,20 +380,23 @@ module Brainstem
                         type: 'integer',
                       },
                       project: {
-                        task: {
-                          type: 'hash',
-                          root: 'project',
-                          children: {
-                            title: {
-                              type: 'string',
-                              root: 'project',
-                              ancestors: %w(task)
-                            },
-                            checklist: {
-                              type: 'array',
-                              item: 'hash',
-                              root: 'project',
-                              ancestors: %w(task)
+                        type: 'hash',
+                        children: {
+                          task: {
+                            type: 'hash',
+                            root: 'project',
+                            children: {
+                              title: {
+                                type: 'string',
+                                root: 'project',
+                                ancestors: %w(task)
+                              },
+                              checklist: {
+                                type: 'array',
+                                item: 'hash',
+                                root: 'project',
+                                ancestors: %w(task)
+                              },
                             },
                           },
                         },
@@ -405,14 +418,17 @@ module Brainstem
                         type: 'integer',
                       },
                       project: {
-                        task: {
-                          type: 'hash',
-                          root: 'project',
-                          children: {
-                            title: {
-                              type: 'string',
-                              root: 'project',
-                              ancestors: %w(task)
+                        type: 'hash',
+                        children: {
+                          task: {
+                            type: 'hash',
+                            root: 'project',
+                            children: {
+                              title: {
+                                type: 'string',
+                                root: 'project',
+                                ancestors: %w(task)
+                              },
                             },
                           },
                         },
@@ -430,25 +446,28 @@ module Brainstem
                         type: 'integer',
                       },
                       project: {
-                        task: {
-                          type: 'hash',
-                          root: 'project',
-                          children: {
-                            title: {
-                              type: 'string',
-                              root: 'project',
-                              ancestors: %w(task)
-                            },
-                            checklist: {
-                              type: 'array',
-                              item: 'hash',
-                              root: 'project',
-                              ancestors: %w(task),
-                              children: {
-                                name: {
-                                  type: 'string',
-                                  root: 'project',
-                                  ancestors: %w(task checklist)
+                        type: 'hash',
+                        children: {
+                          task: {
+                            type: 'hash',
+                            root: 'project',
+                            children: {
+                              title: {
+                                type: 'string',
+                                root: 'project',
+                                ancestors: %w(task)
+                              },
+                              checklist: {
+                                type: 'array',
+                                item: 'hash',
+                                root: 'project',
+                                ancestors: %w(task),
+                                children: {
+                                  name: {
+                                    type: 'string',
+                                    root: 'project',
+                                    ancestors: %w(task checklist)
+                                  },
                                 },
                               },
                             },

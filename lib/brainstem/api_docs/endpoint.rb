@@ -166,10 +166,10 @@ module Brainstem
             if root.nil? && ancestors.blank?
               result[field] = field_options
             else
-              result[root] ||= {} if root
+              result[root] ||= { type: 'hash', children: {} } if root
 
               if ancestors.present?
-                ancestors.inject(root ? result[root] : result) do |traversed_hash, ancestor_name|
+                ancestors.inject(root ? result[root][:children] : result) do |traversed_hash, ancestor_name|
                   break if valid_params_hash[ancestor_name][:nodoc]
 
                   ancestor_name = ancestor_name.to_s
@@ -181,8 +181,8 @@ module Brainstem
                   traversed_hash[ancestor_name][:children]
                 end
               else
-                result[root][field] ||= {}
-                result[root][field].merge!(field_options)
+                result[root][:children][field] ||= {}
+                result[root][:children][field].merge!(field_options)
               end
             end
           end
