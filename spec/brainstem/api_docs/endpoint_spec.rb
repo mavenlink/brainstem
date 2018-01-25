@@ -209,12 +209,10 @@ module Brainstem
 
 
         describe "#params_configuration_tree" do
-          let(:nested_param)      { { title: { nodoc: nodoc, type: 'string', root: :sprocket } } }
-          let(:proc_nested_param) { { title: { nodoc: nodoc, type: 'string', root: Proc.new { |klass| klass.brainstem_model_name } } } }
-          let(:root_param)        { { title: { nodoc: nodoc, type: 'string' } } }
-          let(:default_config)    { { valid_params: which_param } }
+          let(:default_config) { { valid_params: which_param } }
 
           context "non-nested params" do
+            let(:root_param)  { { title: { nodoc: nodoc, type: 'string' } } }
             let(:which_param) { root_param }
 
             context "when nodoc" do
@@ -231,7 +229,7 @@ module Brainstem
               it "lists it as a root param" do
                 expect(subject.params_configuration_tree).to eq(
                   {
-                    title: { type: 'string' }
+                    title: { nodoc: nodoc, type: 'string' }
                   }.with_indifferent_access
                 )
               end
@@ -242,7 +240,7 @@ module Brainstem
                 it "lists it as a root param" do
                   expect(subject.params_configuration_tree).to eq(
                     {
-                      only: { type: 'array', item: 'integer' }
+                      only: { nodoc: nodoc, type: 'array', item: 'integer' }
                     }.with_indifferent_access
                   )
                 end
@@ -251,7 +249,8 @@ module Brainstem
           end
 
           context "nested params" do
-            let(:which_param) { nested_param }
+            let(:nested_param) { { title: { nodoc: nodoc, type: 'string', root: :sprocket } } }
+            let(:which_param)  { nested_param }
 
             context "when nodoc" do
               let(:nodoc) { true }
@@ -267,7 +266,9 @@ module Brainstem
                   {
                     sprocket: {
                       title: {
-                        type: 'string'
+                        nodoc: nodoc,
+                        type: 'string',
+                        root: :sprocket
                       }
                     }
                   }.with_indifferent_access
@@ -286,8 +287,10 @@ module Brainstem
                     {
                       sprocket: {
                         ids: {
+                          nodoc: nodoc,
                           type: 'array',
-                          item: 'integer'
+                          item: 'integer',
+                          root: :sprocket
                         }
                       }
                     }.with_indifferent_access
@@ -298,7 +301,9 @@ module Brainstem
           end
 
           context "proc nested params" do
-            let(:which_param) { proc_nested_param }
+            let!(:root_proc)        { Proc.new { |klass| klass.brainstem_model_name } }
+            let(:proc_nested_param) { { title: { nodoc: nodoc, type: 'string', root: root_proc } } }
+            let(:which_param)       { proc_nested_param }
 
             context "when nodoc" do
               let(:nodoc) { true }
@@ -311,15 +316,14 @@ module Brainstem
             context "when not nodoc" do
               it "evaluates the proc in the controller's context and lists it as a nested param" do
                 mock.proxy(const).brainstem_model_name
-                expect(subject.params_configuration_tree).to eq(
-                  {
-                    widget: {
-                      title: {
-                        type: 'string'
-                      }
-                    }
-                  }.with_indifferent_access
-                )
+
+                result = subject.params_configuration_tree
+                expect(result.keys).to eq(%w(widget))
+                expect(result[:widget].keys).to eq(%w(title))
+                expect(result[:widget][:title].keys).to eq(%w(nodoc type root))
+                expect(result[:widget][:title][:nodoc]).to eq(nodoc)
+                expect(result[:widget][:title][:type]).to eq('string')
+                expect(result[:widget][:title][:root]).to be_a(Proc)
               end
             end
           end
@@ -368,13 +372,18 @@ module Brainstem
                       project: {
                         task: {
                           type: 'hash',
+                          root: 'project',
                           children: {
                             title: {
                               type: 'string',
+                              root: 'project',
+                              ancestors: %w(task)
                             },
                             checklist: {
                               type: 'array',
                               item: 'hash',
+                              root: 'project',
+                              ancestors: %w(task)
                             },
                           },
                         },
@@ -398,9 +407,12 @@ module Brainstem
                       project: {
                         task: {
                           type: 'hash',
+                          root: 'project',
                           children: {
                             title: {
                               type: 'string',
+                              root: 'project',
+                              ancestors: %w(task)
                             },
                           },
                         },
@@ -420,16 +432,23 @@ module Brainstem
                       project: {
                         task: {
                           type: 'hash',
+                          root: 'project',
                           children: {
                             title: {
                               type: 'string',
+                              root: 'project',
+                              ancestors: %w(task)
                             },
                             checklist: {
                               type: 'array',
                               item: 'hash',
+                              root: 'project',
+                              ancestors: %w(task),
                               children: {
                                 name: {
                                   type: 'string',
+                                  root: 'project',
+                                  ancestors: %w(task checklist)
                                 },
                               },
                             },
@@ -477,10 +496,12 @@ module Brainstem
                         children: {
                           title: {
                             type: 'string',
+                            ancestors: %w(task)
                           },
                           checklist: {
                             type: 'array',
                             item: 'hash',
+                            ancestors: %w(task)
                           },
                         },
                       },
@@ -502,6 +523,7 @@ module Brainstem
                         children: {
                           title: {
                             type: 'string',
+                            ancestors: %w(task)
                           },
                         },
                       }
@@ -519,13 +541,16 @@ module Brainstem
                         children: {
                           title: {
                             type: 'string',
+                            ancestors: %w(task)
                           },
                           checklist: {
                             type: 'array',
                             item: 'hash',
+                            ancestors: %w(task),
                             children: {
                               name: {
                                 type: 'string',
+                                ancestors: %w(task checklist)
                               },
                             },
                           },

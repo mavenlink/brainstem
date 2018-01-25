@@ -155,7 +155,7 @@ module Brainstem
       #
       def params_configuration_tree
         @params_configuration_tree ||= begin
-          valid_params_hash = valid_params.to_h.with_indifferent_access
+          valid_params_hash = valid_params.to_h.deep_dup.with_indifferent_access
           result = ActiveSupport::HashWithIndifferentAccess.new
 
           valid_params_hash.each do |field, field_options|
@@ -164,7 +164,7 @@ module Brainstem
             root = evaluate_root(field_options[:root])
             ancestors = field_options[:ancestors]
             if root.nil? && ancestors.blank?
-              result[field] = format_field_options(field_options)
+              result[field] = field_options
             else
               result[root] ||= {} if root
 
@@ -176,13 +176,13 @@ module Brainstem
                   traversed_hash[ancestor_name] ||= {}
                   traversed_hash[ancestor_name][:children] ||= {}
                   if ancestors.last == ancestor_name
-                    traversed_hash[ancestor_name][:children].merge!(field => format_field_options(field_options))
+                    traversed_hash[ancestor_name][:children].merge!(field => field_options)
                   end
                   traversed_hash[ancestor_name][:children]
                 end
               else
                 result[root][field] ||= {}
-                result[root][field].merge!(format_field_options(field_options))
+                result[root][field].merge!(field_options)
               end
             end
           end
@@ -199,14 +199,6 @@ module Brainstem
         return root if root.nil?
 
         root.respond_to?(:call) ? root.call(controller.const) : root
-      end
-
-
-      #
-      # Extracts type and item attributes from the given field options
-      #
-      def format_field_options(field_options)
-        field_options.slice(:type, :item)
       end
 
 
