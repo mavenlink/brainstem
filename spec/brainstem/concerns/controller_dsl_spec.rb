@@ -176,6 +176,75 @@ module Brainstem
             expect(configuration[:type]).to eq('string')
           end
         end
+
+        context "when type is specified" do
+          context "when type is an array" do
+            it "sets the type and sub type appropriately" do
+              subject.brainstem_params do
+                valid :sprocket_ids, {
+                  required: true,
+                  type: 'array',
+                  item: 'string',
+                }
+              end
+
+              expect(subject.configuration[:_default][:valid_params][:sprocket_ids][:required]).to be_truthy
+              expect(subject.configuration[:_default][:valid_params][:sprocket_ids][:type]).to eq('array')
+              expect(subject.configuration[:_default][:valid_params][:sprocket_ids][:item]).to eq('string')
+            end
+          end
+
+          context "when type is a hash and has a block" do
+            it "sets the type and sub type appropriately" do
+              subject.brainstem_params do
+                valid :sprocket_template, required: true, type: 'hash' do |param|
+                  param.valid :template_id, required: true, type: 'integer'
+                  param.valid :template_title, type: 'string'
+                end
+              end
+
+              parent_configuration = subject.configuration[:_default][:valid_params][:sprocket_template]
+              expect(parent_configuration[:required]).to be_truthy
+              expect(parent_configuration[:type]).to eq('hash')
+
+              child_1_configuration = subject.configuration[:_default][:valid_params][:template_id]
+              expect(child_1_configuration[:required]).to be_truthy
+              expect(child_1_configuration[:type]).to eq('integer')
+              expect(child_1_configuration[:root]).to eq('sprocket_template')
+
+              child_2_configuration = subject.configuration[:_default][:valid_params][:template_title]
+              expect(child_2_configuration[:required]).to be_falsey
+              expect(child_2_configuration[:type]).to eq('string')
+              expect(child_2_configuration[:root]).to eq('sprocket_template')
+            end
+          end
+
+          context "when type is array and has a block" do
+            it "sets the type and sub type appropriately" do
+              subject.brainstem_params do
+                valid :sprocket_tasks, required: true, type: 'array', item: 'hash' do |param|
+                  param.valid :task_id, required: true, type: 'integer'
+                  param.valid :task_title, type: 'string'
+                end
+              end
+
+              parent_configuration = subject.configuration[:_default][:valid_params][:sprocket_tasks]
+              expect(parent_configuration[:required]).to be_truthy
+              expect(parent_configuration[:type]).to eq('array')
+              expect(parent_configuration[:item]).to eq('hash')
+
+              child_1_configuration = subject.configuration[:_default][:valid_params][:task_id]
+              expect(child_1_configuration[:required]).to be_truthy
+              expect(child_1_configuration[:type]).to eq('integer')
+              expect(child_1_configuration[:root]).to eq('sprocket_tasks')
+
+              child_2_configuration = subject.configuration[:_default][:valid_params][:task_title]
+              expect(child_2_configuration[:required]).to be_falsey
+              expect(child_2_configuration[:type]).to eq('string')
+              expect(child_2_configuration[:root]).to eq('sprocket_tasks')
+            end
+          end
+        end
       end
 
       describe ".transform" do

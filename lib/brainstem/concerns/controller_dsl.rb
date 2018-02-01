@@ -145,11 +145,18 @@ module Brainstem
         # @option options [Boolean] :required if the param is required for
         #   the endpoint
         #
-        def valid(field_name, options = {})
+        def valid(field_name, options = {}, &block)
           valid_params = configuration[brainstem_params_context][:valid_params]
 
-          options[:type] = options[:type].to_s if options.has_key?(:type)
-          valid_params[field_name.to_sym] = DEFAULT_PARAM_OPTIONS.merge(options)
+          if block_given?
+            options[:type] = 'hash' unless options.has_key?(:type)
+            valid_params[field_name.to_sym] = DEFAULT_PARAM_OPTIONS.merge(options)
+
+            with_options({ root: field_name.to_s }, &block)
+          else
+            options[:type] = options[:type].to_s if options.has_key?(:type)
+            valid_params[field_name.to_sym] = DEFAULT_PARAM_OPTIONS.merge(options)
+          end
         end
 
         DEFAULT_PARAM_OPTIONS = { nodoc: false, required: false, type: 'string' }
