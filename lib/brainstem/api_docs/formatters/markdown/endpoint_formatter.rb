@@ -87,32 +87,28 @@ module Brainstem
 
             output << md_h5("Valid Parameters")
             output << md_ul do
-              endpoint.root_param_keys.inject("") do |buff, (root_param_name, child_keys)|
-                if child_keys.nil?
-                  buff += parameter_with_indent_level(
-                    root_param_name,
-                    endpoint.valid_params[root_param_name],
-                    0
-                  )
-                else
-                  text = md_inline_code(root_param_name) + "\n"
-
-                  child_keys.each do |param_name|
-                    text += parameter_with_indent_level(
-                      param_name,
-                      endpoint.valid_params[param_name],
-                      1
-                    )
-                  end
-
-                  buff << md_li(text)
-                end
-
-                buff
+              endpoint.params_configuration_tree.inject("") do |buff, (field_name, field_info)|
+                buff << format_param_tree!("", field_name, field_info)
               end
             end
           end
 
+
+          # Formats the parent parameter and its children
+          def format_param_tree!(buffer, field_name, field_info, indentation = 0)
+            buffer += parameter_with_indent_level(
+              field_name,
+              field_info,
+              indentation
+            )
+
+            children = field_info['children'] || []
+            children.each do |child_field_name, child_field_info|
+              buffer = format_param_tree!(buffer, child_field_name, child_field_info, indentation + 1)
+            end
+
+            buffer
+          end
 
           #
           # Formats a given parameter with a variable indent level. Useful for
