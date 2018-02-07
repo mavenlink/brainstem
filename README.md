@@ -586,7 +586,40 @@ class BlogPostsController < ApiController
       # Declare a nested param under the `brainstem_model_name` root key,
       # i.e. `params[:blog_post][:id]`):
       model_params do |post|
-        post.valid :id, info: "(required) the id of the post"
+        post.valid :id, info: "the id of the post", required: true
+      end
+    end
+
+    actions :create do
+      model_params :post do |params|
+        params.valid :message,
+          info: "the id of the post",
+          required: true
+
+        params.valid :viewable_by,
+          type: "array",
+          item: "integer",
+          info: "an array of user ids that can access the post"
+
+        params.valid :options, type: 'hash' do |option_params|
+          option_param.valid :editable,
+            type: 'boolean',
+            info: 'indicates if the post is editable'
+          option_param.valid :pinned,
+            type: 'boolean',
+            info: 'indicates if the post is pinned'
+        end
+
+        params.valid :replies, type: 'array', item: 'hash' do |reply_params|
+          reply_params.user_id,
+            type: 'integer',
+            required: true,
+            info: 'the id for the creator of the reply'
+
+          reply_params.message,
+            required: true,
+            info: 'the message of the reply'
+        end
       end
     end
 
