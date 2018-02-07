@@ -222,12 +222,12 @@ module Brainstem
 
                   context "for non-root params" do
                     it "outputs sub params under a list item" do
-                      expect(subject.output).to include "- `widget`\n    - `sprocket_id` - the id of the sprocket\n    - `sprocket_child`"
+                      expect(subject.output).to include "- `widget` (`Hash`)\n    - `sprocket_id` (`Integer`) - the id of the sprocket\n    - `sprocket_child` (`String`)"
                     end
                   end
 
                   it "includes the info on a hash key" do
-                    expect(subject.output).to include "`sprocket_child` - it does the thing"
+                    expect(subject.output).to include "`sprocket_child` (`String`) - it does the thing"
                   end
 
                   it "includes the recursivity if specified" do
@@ -265,15 +265,15 @@ module Brainstem
                     it "outputs sub params under a list item" do
                       output = subject.output
                       expect(output).to include("##### Valid Parameters\n\n")
-                      expect(output).to include("- `only` - which ids to include\n")
-                      expect(output).to include("- `widget`\n")
-                      expect(output).to include("    - `sprocket_id` - the id of the sprocket\n")
-                      expect(output).to include("    - `sprocket_child` - it does the thing\n")
+                      expect(output).to include("- `only` (`Array<Integer>`) - which ids to include\n")
+                      expect(output).to include("- `widget` (`Hash`)\n")
+                      expect(output).to include("    - `sprocket_id` (`Integer`) - the id of the sprocket\n")
+                      expect(output).to include("    - `sprocket_child` (`String`) - it does the thing\n")
                       expect(output).to include("        - Legacy: false\n")
                       expect(output).to include("        - Recursive: true\n")
-                      expect(output).to include("    - `sprocket_template` - the template for the sprocket\n")
-                      expect(output).to include("        - `sprocket_template_json` - the json blob of the sprocket template\n")
-                      expect(output).to include("        - `sprocket_template_title` - the title of the sprocket template\n\n\n")
+                      expect(output).to include("    - `sprocket_template` (`Hash`) - the template for the sprocket\n")
+                      expect(output).to include("        - `sprocket_template_json` (`String`) - the json blob of the sprocket template\n")
+                      expect(output).to include("        - `sprocket_template_title` (`String`) - the title of the sprocket template\n\n\n")
                     end
                   end
 

@@ -69,6 +69,15 @@ module Brainstem
           def md_a(text, link)
             "[#{text}](#{link})"
           end
+
+
+          def md_inline_type(type, item_type = nil)
+            return "" if type.blank?
+
+            text = type.to_s.capitalize
+            text += "<#{item_type.to_s.capitalize}>" if item_type.present?
+            " (#{md_inline_code(text)})"
+          end
         end
       end
     end
