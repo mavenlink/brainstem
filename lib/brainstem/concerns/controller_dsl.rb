@@ -127,7 +127,7 @@ module Brainstem
         #   method accepting the controller constant and returning one
         #
         def model_params(root = Proc.new { |klass| klass.brainstem_model_name }, &block)
-          with_options({ root: root.is_a?(Symbol) ? root.to_s : root }, &block)
+          with_options({ root: sanitize_root_option(root) }, &block)
         end
 
 
@@ -142,12 +142,37 @@ module Brainstem
         #   under which param should it be nested?
         # @option options [Boolean] :nodoc should this param appear in the
         #   documentation?
+        # @option options [Boolean] :required if the param is required for
+        #   the endpoint
         #
-        def valid(field_name, options = { nodoc: false })
+        def valid(field_name, options = {}, &block)
           valid_params = configuration[brainstem_params_context][:valid_params]
-          valid_params[field_name.to_sym] = options
+
+          if block_given?
+            options[:type] = 'hash' unless options.has_key?(:type)
+            valid_params[field_name.to_sym] = DEFAULT_PARAM_OPTIONS.merge(options)
+
+            ancestors = options[:ancestors] || []
+            ancestors << field_name.to_s
+
+            ancestry_options = {
+              root: sanitize_root_option(options[:root]),
+              ancestors: ancestors
+            }.reject { |_, v| v.blank? }
+
+            with_options(ancestry_options, &block)
+          else
+            options[:type] = options[:type].to_s if options.has_key?(:type)
+            valid_params[field_name.to_sym] = DEFAULT_PARAM_OPTIONS.merge(options)
+          end
         end
 
+        DEFAULT_PARAM_OPTIONS = { nodoc: false, required: false, type: 'string' }
+        private_constant :DEFAULT_PARAM_OPTIONS
+
+        def sanitize_root_option(root)
+          root.is_a?(Symbol) ? root.to_s : root
+        end
 
         #
         # Adds a transform to the list of transforms. Used to rename incoming

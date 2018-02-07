@@ -115,10 +115,10 @@ module Brainstem
         end
 
         it "merges options" do
-          mock(subject).valid(:thing, root: "widgets", nodoc: true)
+          mock(subject).valid(:thing, root: "widgets", nodoc: true, required: true, type: 'integer')
 
           subject.model_params :widgets do |param|
-            param.valid :thing, nodoc: true
+            param.valid :thing, nodoc: true, required: true, type: 'integer'
           end
         end
       end
@@ -128,28 +128,139 @@ module Brainstem
           it "appends to the valid params hash" do
             subject.brainstem_params do
               valid :sprocket_name,
-                info: "sprockets[sprocket_name] is required"
+                info: "sprockets[sprocket_name] is required",
+                required: true,
+                type: 'string'
             end
 
             expect(subject.configuration[:_default][:valid_params][:sprocket_name][:info]).to \
               eq "sprockets[sprocket_name] is required"
+            expect(subject.configuration[:_default][:valid_params][:sprocket_name][:required]).to be_truthy
+            expect(subject.configuration[:_default][:valid_params][:sprocket_name][:type]).to eq('string')
           end
         end
 
-        context "when given a name and an options hash" do
+        context "when given a name and an HWIA options hash" do
           it "appends to the valid params hash" do
-            # This is HWIA, so all keys are stringified
+            # This is Hash With Indifferent Access, so all keys are stringified
             data = {
               "recursive" => true,
-              "info" => "sprockets[sub_sprockets] is recursive and an array"
+              "info"      => "sprockets[sub_sprockets] is recursive and an array",
+              "required"  => true,
+              "type"      => "hash"
             }
 
             subject.brainstem_params do
               valid :sub_sprockets, data
             end
 
-            expect(subject.configuration[:_default][:valid_params][:sub_sprockets]).to \
-              eq data
+            expect(subject.configuration[:_default][:valid_params][:sub_sprockets]).to eq({
+              "recursive" => true,
+              "info"      => "sprockets[sub_sprockets] is recursive and an array",
+              "required"  => true,
+              "type"      => "hash",
+              "nodoc"     => false
+            })
+          end
+        end
+
+        context "when no options are provided" do
+          it "sets default options for the param" do
+            subject.brainstem_params do
+              valid :sprocket_name
+            end
+
+            configuration = subject.configuration[:_default][:valid_params][:sprocket_name]
+            expect(configuration[:nodoc]).to be_falsey
+            expect(configuration[:required]).to be_falsey
+            expect(configuration[:type]).to eq('string')
+          end
+        end
+
+        context "when type is specified" do
+          context "when type is an array" do
+            it "sets the type and sub type appropriately" do
+              subject.brainstem_params do
+                valid :sprocket_ids, {
+                  required: true,
+                  type: 'array',
+                  item: 'string',
+                }
+              end
+
+              expect(subject.configuration[:_default][:valid_params][:sprocket_ids][:required]).to be_truthy
+              expect(subject.configuration[:_default][:valid_params][:sprocket_ids][:type]).to eq('array')
+              expect(subject.configuration[:_default][:valid_params][:sprocket_ids][:item]).to eq('string')
+            end
+          end
+
+          context "when type is a hash and has a block" do
+            it "sets the type and sub type appropriately" do
+              subject.brainstem_params do
+                valid :sprocket_template, required: true, type: 'hash' do |param|
+                  param.valid :template_id, required: true, type: 'integer'
+                  param.valid :template_title, type: 'string'
+                end
+
+                model_params :sprocket do |param|
+                  param.valid :sprocket_template, required: true, type: 'hash' do |param|
+                    param.valid :template_id, required: true, type: 'integer'
+
+                    param.valid :template_data, type: 'hash' do |nested_param|
+                      param.valid :template_title, type: 'string'
+                    end
+                  end
+                end
+              end
+
+              parent_configuration = subject.configuration[:_default][:valid_params][:sprocket_template]
+              expect(parent_configuration[:required]).to be_truthy
+              expect(parent_configuration[:type]).to eq('hash')
+
+              child_1_configuration = subject.configuration[:_default][:valid_params][:template_id]
+              expect(child_1_configuration[:required]).to be_truthy
+              expect(child_1_configuration[:type]).to eq('integer')
+              expect(child_1_configuration[:root]).to eq('sprocket')
+              expect(child_1_configuration[:ancestors]).to eq(['sprocket_template'])
+
+              child_2_configuration = subject.configuration[:_default][:valid_params][:template_data]
+              expect(child_2_configuration[:type]).to eq('hash')
+              expect(child_2_configuration[:root]).to eq('sprocket')
+              expect(child_2_configuration[:ancestors]).to eq(['sprocket_template'])
+
+              child_3_configuration = subject.configuration[:_default][:valid_params][:template_title]
+              expect(child_3_configuration[:type]).to eq('string')
+              expect(child_3_configuration[:root]).to eq('sprocket')
+              expect(child_3_configuration[:ancestors]).to eq(['sprocket_template', 'template_data'])
+            end
+          end
+
+          context "when type is array and has a block" do
+            it "sets the type and sub type appropriately" do
+              subject.brainstem_params do
+                valid :sprocket_tasks, required: true, type: 'array', item: 'hash' do |param|
+                  param.valid :task_id, required: true, type: 'integer'
+                  param.valid :task_title, type: 'string'
+                end
+              end
+
+              parent_configuration = subject.configuration[:_default][:valid_params][:sprocket_tasks]
+              expect(parent_configuration[:required]).to be_truthy
+              expect(parent_configuration[:type]).to eq('array')
+              expect(parent_configuration[:item]).to eq('hash')
+
+              child_1_configuration = subject.configuration[:_default][:valid_params][:task_id]
+              expect(child_1_configuration[:required]).to be_truthy
+              expect(child_1_configuration[:type]).to eq('integer')
+              expect(child_1_configuration[:root]).to be_nil
+              expect(child_1_configuration[:ancestors]).to eq(['sprocket_tasks'])
+
+              child_2_configuration = subject.configuration[:_default][:valid_params][:task_title]
+              expect(child_2_configuration[:required]).to be_falsey
+              expect(child_2_configuration[:type]).to eq('string')
+              expect(child_2_configuration[:root]).to be_nil
+              expect(child_1_configuration[:ancestors]).to eq(['sprocket_tasks'])
+            end
           end
         end
       end
@@ -318,7 +429,7 @@ module Brainstem
         it "allows passing multiple symbols" do
           subject.brainstem_params do
             actions :show, :index do
-              valid :param_1, "something"
+              valid :param_1, info: "something"
             end
           end
 
@@ -338,17 +449,21 @@ module Brainstem
 
           subject.brainstem_params do
             valid :unrelated_root_key,
-              info: "it's unrelated."
+              info: "it's unrelated.",
+              required: true,
+              type: "string"
 
             model_params(brainstem_model_name) do |params|
               params.valid :sprocket_parent_id,
-                info: "sprockets[sprocket_parent_id] is required"
+                info: "sprockets[sprocket_parent_id] is not required",
+                type: "long"
             end
 
             actions :show do
               model_params(brainstem_model_name) do |params|
                 params.valid :sprocket_name,
-                  info: "sprockets[sprocket_name] is required"
+                  info: "sprockets[sprocket_name] is required",
+                  required: true
               end
             end
           end
@@ -371,8 +486,20 @@ module Brainstem
           stub.any_instance_of(subject).action_name { "show" }
 
           expect(subject.new.brainstem_valid_params).to eq({
-            "sprocket_name" => { "info" => "sprockets[sprocket_name] is required", "root" => "widget" },
-            "sprocket_parent_id" => { "info" => "sprockets[sprocket_parent_id] is required", "root" => "widget" }
+            "sprocket_name" => {
+              "info"     => "sprockets[sprocket_name] is required",
+              "root"     => "widget",
+              "required" => true,
+              "type"     => "string",
+              "nodoc"    => false
+            },
+            "sprocket_parent_id" => {
+              "info"     => "sprockets[sprocket_parent_id] is not required",
+              "root"     => "widget",
+              "type"     => "long",
+              "nodoc"    => false,
+              "required" => false
+            }
           })
         end
 

@@ -120,29 +120,58 @@ module Brainstem
 
 
       #
-      # Returns a hash of all root-level params with values of an array of
-      # the parameters nested underneath, or +nil+ in the event they are
-      # root-level non-nested params.
+      # Returns a hash of all params nested under the specified root or
+      # parent fields along with their type, item type & children.
       #
-      # @return [Hash{Symbol => Array,NilClass}] root keys and the keys
-      #   nested under them, or nil if not a nested param.
+      # @return [Hash{Symbol => Hash}] root keys and their type info, item info & children
+      #   nested under them.
       #
-      def root_param_keys
-        @root_param_keys ||= begin
-          valid_params.to_h
-            .inject({}) do |hsh, (field_name, data)|
-              next hsh if data[:nodoc]
+      def params_configuration_tree
+        @params_configuration_tree ||= begin
+          valid_params_hash = valid_params.to_h.deep_dup.with_indifferent_access
+          result = ActiveSupport::HashWithIndifferentAccess.new
 
-              if data.has_key?(:root)
-                key  = data[:root].respond_to?(:call) ? data[:root].call(controller.const) : data[:root]
-                (hsh[key] ||= []) << field_name
+          valid_params_hash.each do |field, field_options|
+            next if field_options[:nodoc]
+
+            root = evaluate_root(field_options[:root])
+            ancestors = field_options[:ancestors]
+            if root.nil? && ancestors.blank?
+              result[field] = field_options
+            else
+              result[root] ||= { type: 'hash', children: {} } if root
+
+              if ancestors.present?
+                ancestors.inject(root ? result[root][:children] : result) do |traversed_hash, ancestor_name|
+                  break if valid_params_hash[ancestor_name][:nodoc]
+
+                  ancestor_name = ancestor_name.to_s
+                  traversed_hash[ancestor_name] ||= {}
+                  traversed_hash[ancestor_name][:children] ||= {}
+                  if ancestors.last == ancestor_name
+                    traversed_hash[ancestor_name][:children].merge!(field => field_options)
+                  end
+                  traversed_hash[ancestor_name][:children]
+                end
               else
-                hsh[field_name] = nil
+                result[root][:children][field] ||= {}
+                result[root][:children][field].merge!(field_options)
               end
-
-              hsh
             end
+          end
+
+          result
         end
+      end
+
+
+      #
+      # Evalulates root option
+      #
+      def evaluate_root(root)
+        return root if root.nil?
+
+        root.respond_to?(:call) ? root.call(controller.const) : root
       end
 
 

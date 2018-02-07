@@ -1,5 +1,49 @@
 # Changelog
 
++ **1.1.2** - _02/06/2018_
+  - Added support for indicating an endpoint param is required with the `required` key in the options hash.
+  ```
+        params.valid :message,
+          info: "the message of the post",
+          required: true
+  ```
+  - Added support for specifying the type of an endpoint param with the `type` key in the options hash. For endpoint params
+  that are an Array, type of list items can be specified using `item` key in the options hash. 
+  ```
+        params.valid :viewable_by,
+          type: "array",
+          item: "integer",
+          info: "an array of user ids that can access the post"
+  ```
+  - Added support for specifying nested endpoint params.
+  ```
+        actions :create do
+          model_params :post do |params|
+            params.valid :options, type: 'hash' do |option_params|
+              option_param.valid :editable,
+                type: 'boolean',
+                info: 'indicates whether the post is editable'
+              option_param.valid :pinned,
+                type: 'boolean',
+                info: 'indicates if the post is pinned'
+            end
+
+            params.valid :replies, type: 'array', item: 'hash' do |reply_params|
+              reply_params.user_id,
+                type: 'integer',
+                required: true,
+                info: 'the id for the creator of the reply'
+
+              reply_params.message,
+                required: true,
+                info: 'the message of the reply'
+            end
+          end
+        end
+  ```
+  - Added support for generating markdown documentation with the `required`, `type` and `item` keys in the options hash for an endpoint param.
+  - Added support for generating markdown documentation with nested endpoint params.
+
 + **1.1.1** - _01/15/2017_
   - Add `Brainstem.mysql_use_calc_found_rows` boolean config option to utilize MySQL's [FOUND_ROWS()](https://dev.mysql.com/doc/refman/5.7/en/information-functions.html#function_found-rows) functionality to avoid issuing a new query to calculate the record count, which has the potential to up to double the response time of the endpoint.
 

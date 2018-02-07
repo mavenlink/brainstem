@@ -83,36 +83,33 @@ module Brainstem
           # Formats each parameter.
           #
           def format_params!
-            return unless endpoint.root_param_keys.any?
+            params_configuration_tree = endpoint.params_configuration_tree
+            return unless params_configuration_tree.keys.any?
 
             output << md_h5("Valid Parameters")
             output << md_ul do
-              endpoint.root_param_keys.inject("") do |buff, (root_param_name, child_keys)|
-                if child_keys.nil?
-                  buff += parameter_with_indent_level(
-                    root_param_name,
-                    endpoint.valid_params[root_param_name],
-                    0
-                  )
-                else
-                  text = md_inline_code(root_param_name) + "\n"
-
-                  child_keys.each do |param_name|
-                    text += parameter_with_indent_level(
-                      param_name,
-                      endpoint.valid_params[param_name],
-                      1
-                    )
-                  end
-
-                  buff << md_li(text)
-                end
-
-                buff
+              params_configuration_tree.inject("") do |buff, (field_name, field_info)|
+                buff << format_param_tree!("", field_name, field_info)
               end
             end
           end
 
+
+          # Formats the parent parameter and its children
+          def format_param_tree!(buffer, field_name, field_info, indentation = 0)
+            buffer += parameter_with_indent_level(
+              field_name,
+              field_info,
+              indentation
+            )
+
+            children = field_info['children'] || []
+            children.each do |child_field_name, child_field_info|
+              buffer = format_param_tree!(buffer, child_field_name, child_field_info, indentation + 1)
+            end
+
+            buffer
+          end
 
           #
           # Formats a given parameter with a variable indent level. Useful for
@@ -120,22 +117,29 @@ module Brainstem
           #
           # @param [String] name the param name
           # @param [Hash] options information pertinent to the param
+          # @option [Boolean] options :required
           # @option [Boolean] options :legacy
           # @option [Boolean] options :recursive
           # @option [String,Symbol] options :only Deprecated: use +actions+
           #   block instead
           # @option [String] options :info the doc string for the param
+          # @option [String] options :type The type of the field.
+          #   e.g. string, integer, boolean, array, hash
+          # @option [String] options :item The type of the items in the field.
+          #   Ideally used when the type of the field is an array or hash.
           # @param [Integer] indent how many levels the output should be
           #   indented from normal
           #
           def parameter_with_indent_level(title, options = {}, indent = 0)
-            options = options.dup
+            options = options.deep_dup
             text    = md_inline_code(title)
 
+            text += md_inline_type(options.delete(:type), options.delete(:item)) if options.has_key?(:type)
             text += " - #{options.delete(:info)}" if options.has_key?(:info)
 
             if options.keys.any?
               text += "\n"
+              text += md_li("Required: #{options[:required].to_s}",   indent + 1) if options.has_key?(:required) && options[:required]
               text += md_li("Legacy: #{options[:legacy].to_s}",       indent + 1) if options.has_key?(:legacy)
               text += md_li("Recursive: #{options[:recursive].to_s}", indent + 1) if options.has_key?(:recursive)
               text.chomp!
