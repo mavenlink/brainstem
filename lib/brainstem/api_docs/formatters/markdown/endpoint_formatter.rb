@@ -83,11 +83,12 @@ module Brainstem
           # Formats each parameter.
           #
           def format_params!
-            return unless endpoint.root_param_keys.any?
+            params_configuration_tree = endpoint.params_configuration_tree
+            return unless params_configuration_tree.keys.any?
 
             output << md_h5("Valid Parameters")
             output << md_ul do
-              endpoint.params_configuration_tree.inject("") do |buff, (field_name, field_info)|
+              params_configuration_tree.inject("") do |buff, (field_name, field_info)|
                 buff << format_param_tree!("", field_name, field_info)
               end
             end

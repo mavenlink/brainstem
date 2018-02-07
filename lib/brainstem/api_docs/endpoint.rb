@@ -120,33 +120,6 @@ module Brainstem
 
 
       #
-      # Returns a hash of all root-level params with values of an array of
-      # the parameters nested underneath, or +nil+ in the event they are
-      # root-level non-nested params.
-      #
-      # @return [Hash{Symbol => Array,NilClass}] root keys and the keys
-      #   nested under them, or nil if not a nested param.
-      #
-      def root_param_keys
-        @root_param_keys ||= begin
-          valid_params.to_h
-            .inject({}) do |hsh, (field_name, data)|
-              next hsh if data[:nodoc]
-
-              if data.has_key?(:root)
-                key  = data[:root].respond_to?(:call) ? data[:root].call(controller.const) : data[:root]
-                (hsh[key] ||= []) << field_name
-              else
-                hsh[field_name] = nil
-              end
-
-              hsh
-            end
-        end
-      end
-
-
-      #
       # Returns a hash of all params nested under the specified root or
       # parent fields along with their type, item type & children.
       #
