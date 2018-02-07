@@ -593,7 +593,7 @@ class BlogPostsController < ApiController
     actions :create do
       model_params :post do |params|
         params.valid :message,
-          info: "the id of the post",
+          info: "the message of the post",
           required: true
 
         params.valid :viewable_by,
