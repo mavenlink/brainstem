@@ -162,6 +162,14 @@ module Brainstem
           opts.on('--markdown', 'use markdown format') do |o|
             options[:sink][:options][:format] = :markdown
           end
+
+
+          opts.on(
+            '--open-api-specification',
+            'dumps an Open Api Specification for presenters and controllers in a single file') do |o|
+            options[:sink][:options][:format] = :oas
+            options[:sink][:method] = Brainstem::ApiDocs::Sinks::OpenApiSpecificationSink.method(:new)
+          end
         end
       end
     end
