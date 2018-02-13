@@ -6,9 +6,9 @@ module Brainstem
   module ApiDocs
     module Sinks
       describe OpenApiSpecificationSink do
-        let(:write_method)  { Object.new }
-        let(:atlas) { Object.new}
-        let(:options) {
+        let(:write_method) { Object.new }
+        let(:atlas)        { Object.new}
+        let(:options)      {
           {
             write_method: write_method,
             write_path: './'
@@ -27,7 +27,7 @@ module Brainstem
 
         it "write info properly triggers file write" do
           mock.proxy(subject).write_spec_to_file!
-          mock(write_method).call('./specification_v2.yml', anything)
+          mock(write_method).call('./specification.yml', anything)
 
           subject << atlas
         end

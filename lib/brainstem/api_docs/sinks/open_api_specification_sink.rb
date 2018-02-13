@@ -9,62 +9,66 @@ module Brainstem
       class OpenApiSpecificationSink < AbstractSink
         extend Forwardable
 
+        DEFAULT_API_VERSION = '1.0.0'
+        private_constant :DEFAULT_API_VERSION
+
+        def valid_options
+          super | [
+            :write_method,
+            :write_path
+          ]
+        end
+
+        attr_writer :write_method,
+                    :write_path
+
+        attr_accessor :atlas,
+                      :format,
+                      :output
+
         delegate [:controllers, :presenters] => :atlas
 
         def <<(atlas)
-          self.atlas = atlas
-          self.output = {}
+          self.atlas  = atlas
+          self.output = ActiveSupport::HashWithIndifferentAccess.new
 
           # Intro Formatter
           write_info_object!
 
           # Schema Definitions Formatter
 
+          # Error Definitions Formatter
+
           # Endpoint Formatter
 
           # Security Formatter
 
-          # Error Formatter
-
           write_spec_to_file!
         end
-
-
-        def valid_options
-          super | [ :write_method, :write_path ]
-        end
-
-
-        attr_writer :write_method,
-          :write_path
-
-        attr_accessor :atlas,
-          :format,
-          :output
 
 
         #######################################################################
         private
         #######################################################################
 
+
         #
         # Use the metadata formatter to get the swagger & info object
         #
         def write_info_object!
           self.output.merge!(
-            ::Brainstem::ApiDocs::FORMATTERS[:info][:oas].call(version: "1.0")
+            ::Brainstem::ApiDocs::FORMATTERS[:info][:oas].call(version: DEFAULT_API_VERSION)
           )
         end
 
         #
         # Writes a given bufer to a filename within the base path.
         #
-        def write_spec_to_file!(filename = 'specification_v2.yml')
+        def write_spec_to_file!(filename = 'specification.yml')
           abs_path = File.join(write_path, filename)
           assert_directory_exists!(abs_path)
           write_method.call(abs_path, output.to_yaml)
         end
-
 
         #
         # Asserts that a directory exists, creating it if it does not.
@@ -74,7 +78,6 @@ module Brainstem
           FileUtils.mkdir_p(dir) unless File.directory?(dir)
         end
 
-
         #
         # Defines how we write out the files.
         #
@@ -83,7 +86,6 @@ module Brainstem
             File.write(name, buff, mode: 'w')
           end
         end
-
 
         def write_path
           @write_path ||= ::Brainstem::ApiDocs.write_path
