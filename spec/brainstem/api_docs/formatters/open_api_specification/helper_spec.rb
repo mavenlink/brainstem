@@ -10,6 +10,32 @@ module Brainstem
 
           subject { klass.new }
 
+          describe "presenter_title" do
+            let(:presenter)    { Presenter }
+            let(:target_class) { "cool_stuff" }
+
+            before do
+              mock(presenter).contextual_documentation(:title) { title }
+              stub(presenter).target_class { target_class }
+            end
+
+            context "when presenter has a title" do
+              let(:title) { "Awesome Sauce!" }
+
+              it "returns the title" do
+                expect(subject.presenter_title(presenter)).to eq(title)
+              end
+            end
+
+            context "when presenter does not have a title" do
+              let(:title) { nil }
+
+              it "returns the formatted target class of the presenter" do
+                expect(subject.presenter_title(presenter)).to eq("Cool Stuff")
+              end
+            end
+          end
+
           describe "type_and_format" do
             context "when type is 'string'" do
               it "returns the correct type and format" do

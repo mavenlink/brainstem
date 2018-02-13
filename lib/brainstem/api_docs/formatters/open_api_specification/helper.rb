@@ -12,7 +12,7 @@ module Brainstem
           end
 
           def type_and_format(type)
-            TYPE_INFO[type.to_s].dup
+            TYPE_INFO[type.to_s].dup.with_indifferent_access
           end
 
           TYPE_INFO = {
