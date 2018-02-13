@@ -29,17 +29,15 @@ module Brainstem
 
         def <<(atlas)
           self.atlas  = atlas
+          self.format = :oas
           self.output = ActiveSupport::HashWithIndifferentAccess.new
 
-          # Intro Formatter
           write_info_object!
+          write_presenter_definitions!
 
-          # Schema Definitions Formatter
-
+          # TODO:
           # Error Definitions Formatter
-
           # Endpoint Formatter
-
           # Security Formatter
 
           write_spec_to_file!
@@ -55,19 +53,47 @@ module Brainstem
         private_constant :DEFAULT_API_VERSION
 
         #
-        # Returns the version of the API
+        # Returns the version of the API.
         #
         def formatted_version
           self.api_version.presence || DEFAULT_API_VERSION
         end
 
         #
-        # Use the metadata formatter to get the swagger & info object
+        # Use the Info formatter to get the swagger & info object.
         #
         def write_info_object!
           self.output.merge!(
-            ::Brainstem::ApiDocs::FORMATTERS[:info][:oas].call(version: formatted_version)
+            ::Brainstem::ApiDocs::FORMATTERS[:info][format].call(version: formatted_version)
           )
+        end
+
+        #
+        # Use the presenter formatters to add schema definitions to the specification.
+        #
+        def write_presenter_definitions!
+          presenter_definitions = presenters
+            .formatted(format)
+            .inject({}) do |definitions, object_with_definition|
+
+            definitions.merge(object_with_definition)
+          end
+
+          inject_objects_under_key!(:definitions, presenter_definitions, true)
+        end
+
+        #
+        # Sort hash by keys and add them to the output nested under the specified top level key
+        #
+        def inject_objects_under_key!(top_level_key, objects, sort = false)
+          self.output[top_level_key] ||= {}
+
+          ordered_keys = sort ? objects.keys.sort : objects.keys
+          ordered_keys.each do |object_key|
+            self.output[top_level_key][object_key] = objects[object_key]
+          end
+
+          self.output
         end
 
         #
@@ -76,7 +102,7 @@ module Brainstem
         def write_spec_to_file!(filename = 'specification.yml')
           abs_path = File.join(write_path, filename)
           assert_directory_exists!(abs_path)
-          write_method.call(abs_path, output.to_yaml)
+          write_method.call(abs_path, output.to_hash.to_yaml)
         end
 
         #

@@ -18,19 +18,61 @@ module Brainstem
 
         subject { described_class.new(options) }
 
-        it "calls write info" do
-          mock.proxy(subject).write_info_object!
-          mock(subject).write_spec_to_file!
-          mock.proxy.any_instance_of(Brainstem::ApiDocs::Formatters::OpenApiSpecification::InfoFormatter).call
+        it "calls the write method" do
+          mock(subject).write_info_object!
+          mock(subject).write_presenter_definitions!
 
-          subject << atlas
-        end
-
-        it "write info properly triggers file write" do
           mock.proxy(subject).write_spec_to_file!
           mock(write_method).call('./specification.yml', anything)
 
           subject << atlas
+        end
+
+        describe "specification" do
+          let(:generated_data) { { 'sprockets' => { 'type' => 'object' } } }
+
+          before do
+            mock.proxy(subject).write_spec_to_file!
+          end
+
+          it "writes the data returned from the info formatter" do
+            mock(subject).write_presenter_definitions!
+
+            mock.proxy(subject).write_info_object!
+            mock.proxy
+              .any_instance_of(Brainstem::ApiDocs::Formatters::OpenApiSpecification::InfoFormatter)
+              .call { generated_data }
+            mock(write_method).call('./specification.yml', generated_data.to_yaml)
+
+            subject << atlas
+          end
+
+          context "when generating schema definitions" do
+            let(:generated_data) {
+              [
+                { 'widgets'   => { 'type' => 'object' } },
+                { 'sprockets' => { 'type' => 'object' } }
+              ]
+            }
+            let(:expected_yaml) {
+              {
+                'definitions' => {
+                  'sprockets' => { 'type' => 'object' },
+                  'widgets'   => { 'type' => 'object' }
+                }
+              }.to_yaml
+            }
+
+            it "writes presenter definitions" do
+              mock(subject).write_info_object!
+
+              mock.proxy(subject).write_presenter_definitions!
+              stub(atlas).presenters.stub!.formatted(:oas) { generated_data }
+              mock(write_method).call('./specification.yml', expected_yaml)
+
+              subject << atlas
+            end
+          end
         end
 
         describe "versioning" do
