@@ -20,6 +20,7 @@ module Brainstem
 
           def initialize(options = {})
             self.output = ActiveSupport::HashWithIndifferentAccess.new
+
             super options
           end
 
@@ -67,8 +68,9 @@ module Brainstem
 
 
           #####################################################################
-          # Override with custom values
+          # Override with custom values                                       #
           #####################################################################
+
 
           def host
             'petstore.swagger.io'
