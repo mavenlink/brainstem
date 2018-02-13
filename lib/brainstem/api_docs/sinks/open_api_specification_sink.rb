@@ -9,11 +9,9 @@ module Brainstem
       class OpenApiSpecificationSink < AbstractSink
         extend Forwardable
 
-        DEFAULT_API_VERSION = '1.0.0'
-        private_constant :DEFAULT_API_VERSION
-
         def valid_options
           super | [
+            :api_version,
             :write_method,
             :write_path
           ]
@@ -22,7 +20,8 @@ module Brainstem
         attr_writer :write_method,
                     :write_path
 
-        attr_accessor :atlas,
+        attr_accessor :api_version,
+                      :atlas,
                       :format,
                       :output
 
@@ -52,12 +51,22 @@ module Brainstem
         #######################################################################
 
 
+        DEFAULT_API_VERSION = '1.0.0'
+        private_constant :DEFAULT_API_VERSION
+
+        #
+        # Returns the version of the API
+        #
+        def formatted_version
+          self.api_version.presence || DEFAULT_API_VERSION
+        end
+
         #
         # Use the metadata formatter to get the swagger & info object
         #
         def write_info_object!
           self.output.merge!(
-            ::Brainstem::ApiDocs::FORMATTERS[:info][:oas].call(version: DEFAULT_API_VERSION)
+            ::Brainstem::ApiDocs::FORMATTERS[:info][:oas].call(version: formatted_version)
           )
         end
 

@@ -41,6 +41,14 @@ module Brainstem
           end
         end
 
+        context "when --api-version" do
+          let(:args) { %w(--api-version=2.0.0 ) }
+
+          it "sets the api version option of the sink" do
+            expect(subject.options[:sink][:options][:api_version]).to eq '2.0.0'
+          end
+        end
+
         context "when --controller-matches" do
           let(:matches) { subject.options[:builder][:args_for_atlas][:controller_matches] }
 
