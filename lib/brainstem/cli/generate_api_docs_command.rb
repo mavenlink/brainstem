@@ -166,7 +166,6 @@ module Brainstem
 
           opts.on('--open-api-specification',
                   'dumps an Open Api Specification for presenters and controllers in a single file') do
-            options[:sink][:options][:format] = :oas
             options[:sink][:method] = Brainstem::ApiDocs::Sinks::OpenApiSpecificationSink.method(:new)
           end
 
