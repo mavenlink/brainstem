@@ -10,10 +10,10 @@ module Brainstem
           include Helper
 
           def initialize(presenter, options = {})
-            self.presenter = presenter
-            self.presented_class = presenter.target_class
-            self.output = ActiveSupport::HashWithIndifferentAccess.new
+            self.presenter  = presenter
             self.definition = ActiveSupport::HashWithIndifferentAccess.new
+            self.output     = ActiveSupport::HashWithIndifferentAccess.new
+
             super options
           end
 
@@ -30,7 +30,7 @@ module Brainstem
             format_type!
             format_fields!
 
-            output.merge!(presented_class => definition.reject { |_, v| v.blank? })
+            output.merge!(presenter.target_class => definition.reject {|_, v| v.blank?})
           end
 
 
@@ -54,19 +54,20 @@ module Brainstem
           def format_fields!
             return unless presenter.valid_fields.any?
 
-            definition.merge!('properties' => format_field_branch(presenter.valid_fields))
+            definition.merge! properties: format_field_branch(presenter.valid_fields)
           end
 
           def format_field_branch(branch)
-            branch.inject({}) do |buffer, (name, field)|
+            branch.inject(ActiveSupport::HashWithIndifferentAccess.new) do |buffer, (name, field)|
               if nested_field?(field)
                 buffer[name.to_s] = {
-                    "type" => "object",
-                    "properties" => format_field_branch(field.to_h)
-                }
+                  type: 'object',
+                  properties: format_field_branch(field.to_h)
+                }.with_indifferent_access
               else
                 buffer[name.to_s] = format_field_leaf(field)
               end
+
               buffer
             end
           end
@@ -76,27 +77,32 @@ module Brainstem
           end
 
           def format_field_leaf(field)
-            type_info = type_and_format(field.type)
+            field_data = type_and_format(field.type)
 
-            object = { "description" => field.description.to_s }.merge(type_and_format(field.type) || {})
+            field_data.merge!(description: format_description_for(field))
+            field_data.delete(:description) if field_data[:description].blank?
 
-            if field.options[:if]
-              conditions = field.options[:if]
-                               .reject { |cond| presenter.conditionals[cond].options[:nodoc] }
-                               .map {|cond| presenter.conditionals[cond].description || "" }
-                               .delete_if(&:empty?)
-                               .join(" and ")
+            field_data
+          end
 
-              object["description"] << "\n\nvisible when #{conditions}\n\n" unless conditions.empty?
-            end
+          def format_description_for(field)
+            field_description = field.description.to_s
+            field_description << format_conditional_description(field.options)
+            field_description << "only returned when requested through the optional_fields param" if field.optional?
+            field_description.try(:chomp!)
+            field_description
+          end
 
-            if field.optional?
-              object["description"] << "only returned when requested through the optional_fields param"
-            end
-            object["description"].try(:chomp!)
-            object.delete("description") if object["description"].blank?
+          def format_conditional_description(field_options)
+            return '' if field_options[:if].blank?
 
-            object
+            conditions = field_options[:if]
+              .reject { |cond| presenter.conditionals[cond].options[:nodoc] }
+              .map    { |cond| presenter.conditionals[cond].description.to_s }
+              .delete_if(&:empty?)
+              .join(' and ')
+
+            conditions.present? ? "\n\nvisible when #{conditions}\n\n" : ''
           end
         end
       end
@@ -104,5 +110,5 @@ module Brainstem
   end
 end
 
-Brainstem::ApiDocs::FORMATTERS[:presenter][:open_api] = \
+Brainstem::ApiDocs::FORMATTERS[:presenter][:oas] = \
   Brainstem::ApiDocs::Formatters::OpenApiSpecification::PresenterFormatter.method(:call)
