@@ -138,6 +138,8 @@ module Brainstem
       endpoint:    {},
       presenter:   {},
 
+      # Formatter for Open Api Specification - Swagger Object(OAS v2)
+      info: {},
     }
   end
 end
