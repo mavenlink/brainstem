@@ -76,18 +76,10 @@ module Brainstem
         context "when --open-api-specification" do
           let(:args) { %w(--open-api-specification) }
 
-          before do
-            expect(subject.options).to have_key :sink
-          end
-
           it "sets sink to a OpenApiSpecificationSink" do
+            expect(subject.options).to have_key :sink
             expect(subject.options[:sink][:method].call).to be_a \
               Brainstem::ApiDocs::Sinks::OpenApiSpecificationSink
-          end
-
-          it "sets format to be `oas`" do
-            expect(subject.options[:sink][:options]).to have_key :format
-            expect(subject.options[:sink][:options][:format]).to eq(:oas)
           end
         end
       end
