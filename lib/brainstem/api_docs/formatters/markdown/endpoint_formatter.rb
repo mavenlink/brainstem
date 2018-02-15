@@ -126,6 +126,10 @@ module Brainstem
           # @option [String,Symbol] options :only Deprecated: use +actions+
           #   block instead
           # @option [String] options :info the doc string for the param
+          # @option [String] options :type The type of the field.
+          #   e.g. string, integer, boolean, array, hash
+          # @option [String] options :item The type of the items in the field.
+          #   Ideally used when the type of the field is an array or hash.
           # @param [Integer] indent how many levels the output should be
           #   indented from normal
           #
@@ -133,6 +137,7 @@ module Brainstem
             options = options.dup
             text    = md_inline_code(title)
 
+            text += md_inline_type(options.delete(:type), options.delete(:item)) if options.has_key?(:type)
             text += " - #{options.delete(:info)}" if options.has_key?(:info)
 
             if options.keys.any?
