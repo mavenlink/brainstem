@@ -136,6 +136,7 @@ module Brainstem
         # the info sent with it.
         #
         # @param [Symbol] field_name the name of the param
+        # @param [Symbol] type the data type of the field. If not specified, will default to `string`.
         # @param [Hash] options
         # @option options [String] :info the documentation for the param
         # @option options [String,Symbol] :root if this is a nested param,
@@ -145,15 +146,38 @@ module Brainstem
         # @option options [Boolean] :required if the param is required for
         #   the endpoint
         #
-        def valid(field_name, options = {})
+        def valid(field_name, type = nil, options = {})
           valid_params = configuration[brainstem_params_context][:valid_params]
 
-          options[:type] = options[:type].to_s if options.has_key?(:type)
+          options = type if type.is_a?(Hash) && options.empty?
+          options[:type] = sanitize_type(type)
+
           valid_params[field_name.to_sym] = DEFAULT_PARAM_OPTIONS.merge(options)
         end
 
-        DEFAULT_PARAM_OPTIONS = { nodoc: false, required: false, type: 'string' }
+        DEFAULT_PARAM_OPTIONS = { nodoc: false, required: false }
         private_constant :DEFAULT_PARAM_OPTIONS
+
+        def sanitize_type(type)
+          if type.is_a?(Hash) || type.blank?
+            deprecated_type_warning
+            type = DEFAULT_DATA_TYPE
+          end
+
+          type.to_s
+        end
+
+        DEFAULT_DATA_TYPE = 'string'
+        private_constant :DEFAULT_DATA_TYPE
+
+        def deprecated_type_warning
+          ActiveSupport::Deprecation.warn(
+            'Please specify the `type` of the parameter as the second argument. If not specified, '\
+              'it will default to the type `:string`. This default behavior will be deprecated in the next major '\
+              'version and will need to be explicitly specified. e.g. `post.valid :message, :text, required: true`',
+            caller
+          )
+        end
 
         #
         # Adds a transform to the list of transforms. Used to rename incoming
