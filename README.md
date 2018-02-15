@@ -66,11 +66,21 @@ module Api
 
       # Specify the fields to be present in the returned JSON.
       fields do
-        field :name, :string, info: "the Widget's name"
-        field :legacy, :boolean, info: "true for legacy Widgets, false otherwise", via: :legacy?
-        field :longform_description, :string, info: "feature-length description of this Widget", optional: true
-        field :updated_at, :datetime, info: "the time of this Widget's last update"
-        field :created_at, :datetime, info: "the time at which this Widget was created"
+        field :name, :string,
+              info: "the Widget's name"
+        field :legacy, :boolean,
+              info: "true for legacy Widgets, false otherwise",
+              via: :legacy?
+        field :longform_description, :string,
+              info: "feature-length description of this Widget",
+              optional: true
+        field :aliases, :array,
+              item_type: :string,
+              info: "the differnt aliases for the widget"
+        field :updated_at, :datetime,
+              info: "the time of this Widget's last update"
+        field :created_at, :datetime,
+              info: "the time at which this Widget was created"
       end
 
       # Associations can be included by providing include=association_name in the URL.
@@ -78,8 +88,10 @@ module Api
       # columns on the model, otherwise the user must explicitly request associations
       # to avoid unnecessary loads.
       associations do
-        association :features, Feature, info: "features associated with this Widget"
-        association :location, Location, info: "the location of this Widget"
+        association :features, Feature,
+                    info: "features associated with this Widget"
+        association :location, Location,
+                    info: "the location of this Widget"
       end
     end
   end
@@ -447,11 +459,14 @@ class PostsPresenter < Brainstem::Presenter
   MARKDOWN
 
   associations do
-    association :author, User, info: "the author of the post"
+    association :author, User,
+                info: "the author of the post"
 
     # Temporarily disable documenting this relationship as we revamp the
     # editorial system:
-    association :editor, User, info: "the editor of the post", nodoc: true
+    association :editor, User,
+                info: "the editor of the post",
+                nodoc: true
   end
 end
 ```
@@ -907,6 +922,9 @@ Brainstem provides a rich DSL for building presenters.  This section details the
     field :dynamic_name, :string,
           info: "a formatted name for this Widget",
           dynamic: lambda { |widget| "This Widget's name is #{widget.name}" }
+    field :aliases, :array,
+          item_type: :string,
+          info: "the differnt aliases for the widget"
     field :longform_description, :string,
           info: "feature-length description of this Widget",
           optional: true

@@ -8,10 +8,17 @@
           info: "the message of the post"
   ```
   - Add support for specifying the type of an endpoint param. For an endpoint param that has type `Array`,
-  type of list items can be specified using `item_type` key in the options hash. 
+    type of list items can be specified using `item_type` key in the options hash.
   ```
         params.valid :viewable_by, :array,
           item_type: :integer,
+          info: "an array of user ids that can access the post"
+  ```
+  - Add support for specifying the data type of an item for a presenter field using `item_type` key in the
+    options hash when the field is of type `Array`.
+  ```
+        field :aliases, :array,
+          item_type: :string,
           info: "an array of user ids that can access the post"
   ```
   - Include the type and item type when generating markdown documentation for endpoint params.  
