@@ -582,13 +582,30 @@ class BlogPostsController < ApiController
       info: "(optional) the language of the requested post",
       nodoc: true
 
+
     actions :show do
       # Declare a nested param under the `brainstem_model_name` root key,
       # i.e. `params[:blog_post][:id]`):
       model_params do |post|
-        post.valid :id, info: "(required) the id of the post"
+        post.valid :id, info: "the id of the post", required: true
       end
     end
+
+
+    actions :create do
+      model_params :post do |params|
+        params.valid :message,
+          type: "string",
+          info: "the id of the post",
+          required: true
+
+        params.valid :viewable_by,
+          type: "array",
+          item: "integer",
+          info: "an array of user ids that can access the post"
+      end
+    end
+
 
     actions :share do
       # Declare a nested param with an explicit root key:, i.e. `params[:share][...]`
