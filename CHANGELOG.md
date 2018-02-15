@@ -1,21 +1,21 @@
 # Changelog
 
-+ **1.1.2** - _02/14/2018_
-  - Added support for indicating an endpoint param is required with the `required` key in the options hash.
++ **1.2.0** - _02/14/2018_
+  - Add the capability to indicate an endpoint param is required with the `required` key in the options hash.
   ```
-        params.valid :message,
-          info: "the message of the post",
-          required: true
+        params.valid :message, :text,
+          required: true,
+          info: "the message of the post"
   ```
-  - Added support for specifying the type of an endpoint param with the `type` key in the options hash. For endpoint params
-  that are an Array, type of list items can be specified using `item` key in the options hash. 
+  - Add support for specifying the type of an endpoint param. For an endpoint param that has type `Array`,
+  type of list items can be specified using `item_type` key in the options hash. 
   ```
-        params.valid :viewable_by,
-          type: "array",
-          item: "integer",
+        params.valid :viewable_by, :array,
+          item_type: :integer,
           info: "an array of user ids that can access the post"
   ```
-  - Added support for generating markdown documentation with the `required`, `type` and `item` keys in the options hash for an endpoint param.
+  - Include the type and item type when generating markdown documentation for endpoint params.  
+  - Add support for generating markdown documentation when the `required` option is specified on an endpoint param.
 
 + **1.1.1** - _01/15/2017_
   - Add `Brainstem.mysql_use_calc_found_rows` boolean config option to utilize MySQL's [FOUND_ROWS()](https://dev.mysql.com/doc/refman/5.7/en/information-functions.html#function_found-rows) functionality to avoid issuing a new query to calculate the record count, which has the potential to up to double the response time of the endpoint.

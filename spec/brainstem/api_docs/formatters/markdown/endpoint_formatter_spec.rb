@@ -137,7 +137,7 @@ module Brainstem
               context "with valid params" do
                 let(:show_config) { {
                   valid_params: {
-                    only: { info: "which ids to include", nodoc: nodoc, type: "array", item: "integer" },
+                    only: { info: "which ids to include", nodoc: nodoc, type: "array", item_type: "integer" },
                     sprocket_id: { info: "the id of the sprocket", root: "widget", nodoc: nodoc, type: "integer" },
                     sprocket_child: { recursive: true, legacy: false, info: "it does the thing", root: "widget", type: "string" },
                   }

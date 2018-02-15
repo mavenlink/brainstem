@@ -130,14 +130,14 @@ module Brainstem
               valid :sprocket_ids, :array,
                 info: "sprockets[sprocket_ids] is required",
                 required: true,
-                item: :integer
+                item_type: :integer
             end
 
             expect(subject.configuration[:_default][:valid_params][:sprocket_ids][:info]).to \
               eq "sprockets[sprocket_ids] is required"
             expect(subject.configuration[:_default][:valid_params][:sprocket_ids][:required]).to be_truthy
             expect(subject.configuration[:_default][:valid_params][:sprocket_ids][:type]).to eq('array')
-            expect(subject.configuration[:_default][:valid_params][:sprocket_ids][:item]).to eq('integer')
+            expect(subject.configuration[:_default][:valid_params][:sprocket_ids][:item_type]).to eq('integer')
           end
         end
 

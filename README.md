@@ -489,17 +489,17 @@ context, and it will keep the documentation isolated to that specific action:
 
 ```ruby
 brainstem_params do
-  valid :global_controller_param,
+  valid :global_controller_param, :string,
     info: "A trivial example of a param that applies to all actions."
 
   actions :index do
     # This adds a `blog_id` param to just the `index` action.
-    valid :blog_id, info: "The id of the blog to which this post belongs"
+    valid :blog_id, :integer, info: "The id of the blog to which this post belongs"
   end
 
   actions :create, :update do
     # This will add an `id` param to both `create` and `update` actions.
-    valid :id, info: "The id of the blog post"
+    valid :id, :integer, info: "The id of the blog post"
   end
 end
 ```
@@ -575,10 +575,10 @@ class BlogPostsController < ApiController
   brainstem_params do
 
     # Add an `:category_id` param to all actions in this controller / children:
-    valid :category_id, info: "(required) the category's ID"
+    valid :category_id, :integer, info: "(required) the category's ID"
 
     # Do not document this additional field.
-    valid :lang,
+    valid :lang, :string,
       info: "(optional) the language of the requested post",
       nodoc: true
 
@@ -587,21 +587,19 @@ class BlogPostsController < ApiController
       # Declare a nested param under the `brainstem_model_name` root key,
       # i.e. `params[:blog_post][:id]`):
       model_params do |post|
-        post.valid :id, info: "the id of the post", required: true
+        post.valid :id, :integer, info: "the id of the post", required: true
       end
     end
 
 
     actions :create do
       model_params :post do |params|
-        params.valid :message,
-          type: "string",
+        params.valid :message, :string,
           info: "the id of the post",
           required: true
 
-        params.valid :viewable_by,
-          type: "array",
-          item: "integer",
+        params.valid :viewable_by, :array,          
+          item_type: :integer,
           info: "an array of user ids that can access the post"
       end
     end

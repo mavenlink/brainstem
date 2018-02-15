@@ -145,7 +145,7 @@ module Brainstem
         #   documentation?
         # @option options [Boolean] :required if the param is required for
         #   the endpoint
-        # @option options [String,Symbol] :item The data type of the items contained in a field.
+        # @option options [String,Symbol] :item_type The data type of the items contained in a field.
         #   Ideally used when the data type of the field is an `array`, `object` or `hash`.
         #
         def valid(field_name, type = nil, options = {})
@@ -244,7 +244,7 @@ module Brainstem
           options = type if type.is_a?(Hash) && options.empty?
 
           options[:type] = sanitize_param_data_type(type)
-          options[:item] = options[:item].to_s if options.has_key?(:item)
+          options[:item_type] = options[:item_type].to_s if options.has_key?(:item_type)
           DEFAULT_PARAM_OPTIONS.merge(options)
         end
 
