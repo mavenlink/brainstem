@@ -127,15 +127,17 @@ module Brainstem
         context "when given a name and an options hash" do
           it "appends to the valid params hash" do
             subject.brainstem_params do
-              valid :sprocket_name, :string,
-                info: "sprockets[sprocket_name] is required",
-                required: true
+              valid :sprocket_ids, :array,
+                info: "sprockets[sprocket_ids] is required",
+                required: true,
+                item: :integer
             end
 
-            expect(subject.configuration[:_default][:valid_params][:sprocket_name][:info]).to \
-              eq "sprockets[sprocket_name] is required"
-            expect(subject.configuration[:_default][:valid_params][:sprocket_name][:required]).to be_truthy
-            expect(subject.configuration[:_default][:valid_params][:sprocket_name][:type]).to eq('string')
+            expect(subject.configuration[:_default][:valid_params][:sprocket_ids][:info]).to \
+              eq "sprockets[sprocket_ids] is required"
+            expect(subject.configuration[:_default][:valid_params][:sprocket_ids][:required]).to be_truthy
+            expect(subject.configuration[:_default][:valid_params][:sprocket_ids][:type]).to eq('array')
+            expect(subject.configuration[:_default][:valid_params][:sprocket_ids][:item]).to eq('integer')
           end
         end
 
