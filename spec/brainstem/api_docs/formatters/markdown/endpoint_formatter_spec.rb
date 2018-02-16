@@ -173,6 +173,12 @@ module Brainstem
                     end
                   end
 
+                  context "for params with type array" do
+                    it "outputs item type along with the field type" do
+                      expect(subject.output).to include "- `only` (`Array<Integer>`) - which ids to include\n"
+                    end
+                  end
+
                   it "includes the info on a hash key" do
                     expect(subject.output).to include "`sprocket_child` (`String`) - it does the thing"
                   end
