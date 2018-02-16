@@ -9,7 +9,7 @@ module Brainstem
 
       def initialize(name, type, options)
         @name = name.to_s
-        @type = type
+        @type = type.to_s
         @conditionals = [options[:if]].flatten.compact
         @options = options
       end

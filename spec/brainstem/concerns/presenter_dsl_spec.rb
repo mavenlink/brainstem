@@ -243,22 +243,22 @@ describe Brainstem::Concerns::PresenterDSL do
       expect(presenter_class.configuration[:fields].keys)
         .to match_array %w[updated_at dynamic_title secret member_ids bob_title nested_permissions]
 
-      expect(presenter_class.configuration[:fields][:updated_at].type).to eq :datetime
+      expect(presenter_class.configuration[:fields][:updated_at].type).to eq 'datetime'
       expect(presenter_class.configuration[:fields][:updated_at].description).to be_nil
 
-      expect(presenter_class.configuration[:fields][:dynamic_title].type).to eq :string
+      expect(presenter_class.configuration[:fields][:dynamic_title].type).to eq 'string'
       expect(presenter_class.configuration[:fields][:dynamic_title].description).to be_nil
       expect(presenter_class.configuration[:fields][:dynamic_title].options[:dynamic]).to be_a(Proc)
 
-      expect(presenter_class.configuration[:fields][:secret].type).to eq :string
+      expect(presenter_class.configuration[:fields][:secret].type).to eq 'string'
       expect(presenter_class.configuration[:fields][:secret].description).to be_nil
       expect(presenter_class.configuration[:fields][:secret].options).to eq({ via: :secret_info, if: [:user_is_bob, :title_is_hello] })
 
-      expect(presenter_class.configuration[:fields][:member_ids].type).to eq :array
+      expect(presenter_class.configuration[:fields][:member_ids].type).to eq 'array'
       expect(presenter_class.configuration[:fields][:member_ids].options[:item_type]).to eq 'integer'
       expect(presenter_class.configuration[:fields][:member_ids].options[:dynamic]).to be_a(Proc)
 
-      expect(presenter_class.configuration[:fields][:bob_title].type).to eq :string
+      expect(presenter_class.configuration[:fields][:bob_title].type).to eq 'string'
       expect(presenter_class.configuration[:fields][:bob_title].description).to eq 'another name for the title, only for Bob'
       expect(presenter_class.configuration[:fields][:bob_title].options).to eq(
         via: :title,
@@ -268,7 +268,7 @@ describe Brainstem::Concerns::PresenterDSL do
     end
 
     it 'handles nesting' do
-      expect(presenter_class.configuration[:fields][:nested_permissions][:something_title].type).to eq :string
+      expect(presenter_class.configuration[:fields][:nested_permissions][:something_title].type).to eq 'string'
       expect(presenter_class.configuration[:fields][:nested_permissions][:something_title].options[:via]).to eq :title
       expect(presenter_class.configuration[:fields][:nested_permissions][:random].options[:dynamic]).to be_a(Proc)
     end
@@ -350,15 +350,15 @@ describe Brainstem::Concerns::PresenterDSL do
       expect(subclass.configuration[:fields].keys)
         .to match_array %w[updated_at dynamic_title secret member_ids bob_title nested_permissions new_nested_permissions]
 
-      expect(presenter_class.configuration[:fields][:nested_permissions][:something_title].type).to eq :string
-      expect(presenter_class.configuration[:fields][:nested_permissions][:random].type).to eq :number
+      expect(presenter_class.configuration[:fields][:nested_permissions][:something_title].type).to eq 'string'
+      expect(presenter_class.configuration[:fields][:nested_permissions][:random].type).to eq 'number'
       expect(presenter_class.configuration[:fields][:nested_permissions][:new]).to be_nil
       expect(presenter_class.configuration[:fields][:nested_permissions][:deeper]).to be_nil
       expect(presenter_class.configuration[:fields][:new_nested_permissions]).to be_nil
 
-      expect(subclass.configuration[:fields][:nested_permissions][:something_title].type).to eq :number # changed this
-      expect(subclass.configuration[:fields][:nested_permissions][:random].type).to eq :number
-      expect(subclass.configuration[:fields][:nested_permissions][:new].type).to eq :string
+      expect(subclass.configuration[:fields][:nested_permissions][:something_title].type).to eq 'number' # changed this
+      expect(subclass.configuration[:fields][:nested_permissions][:random].type).to eq 'number'
+      expect(subclass.configuration[:fields][:nested_permissions][:new].type).to eq 'string'
       expect(subclass.configuration[:fields][:nested_permissions][:deeper][:something]).to be_present
       expect(subclass.configuration[:fields][:new_nested_permissions]).to be_present
     end
@@ -372,7 +372,7 @@ describe Brainstem::Concerns::PresenterDSL do
 
       it "is stored in the configuration correctly" do
         expect(presenter_class.configuration[:fields].keys).to include('synced_at')
-        expect(presenter_class.configuration[:fields][:synced_at].type).to eq :datetime
+        expect(presenter_class.configuration[:fields][:synced_at].type).to eq 'datetime'
         expect(presenter_class.configuration[:fields][:synced_at].description).to eq 'Last time the object was synced'
       end
     end
