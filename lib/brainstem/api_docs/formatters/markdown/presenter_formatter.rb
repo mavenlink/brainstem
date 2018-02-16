@@ -62,7 +62,7 @@ module Brainstem
 
           def format_field_leaf(field, indent_level)
             text = md_inline_code(field.name.to_s)
-            text << " (#{md_inline_code(field.type.to_s.capitalize)})"
+            text << md_inline_type(field.type, field.options[:item_type])
 
             text << "\n"
             text << md_li(field.description, indent_level + 1) if field.description

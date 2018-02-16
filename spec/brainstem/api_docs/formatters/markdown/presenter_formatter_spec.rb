@@ -221,6 +221,25 @@ module Brainstem
                         end
                       end
                     end
+
+                    describe "when field has an item type" do
+                      let(:sprocket_ids) { OpenStruct.new(
+                          name:        :sprocket_ids,
+                          description: lorem,
+                          type:        :array,
+                          options:     { item_type: :integer }
+                        )
+                      }
+                      let(:valid_fields) { { sprocket_ids: sprocket_ids } }
+
+                      before do
+                        stub(sprocket_ids).optional? { optional }
+                      end
+
+                      it "outputs each field's type along with the sub item type" do
+                        expect(subject.output).to include "`sprocket_ids` (`Array<Integer>`)"
+                      end
+                    end
                   end
 
 
