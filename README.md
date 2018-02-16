@@ -505,7 +505,7 @@ context, and it will keep the documentation isolated to that specific action:
 ```ruby
 brainstem_params do
   valid :global_controller_param, :string,
-                                  info: "A trivial example of a param that applies to all actions."
+        info: "A trivial example of a param that applies to all actions."
 
   actions :index do
     # This adds a `blog_id` param to just the `index` action.
