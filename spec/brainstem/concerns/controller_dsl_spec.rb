@@ -165,7 +165,11 @@ module Brainstem
         end
 
         context "when no type is provided" do
-          it "sets type to string" do
+          before do
+            mock(subject).deprecated_type_warning
+          end
+
+          it "defaults to type string" do
             subject.brainstem_params do
               valid :sprocket_name, required: true
             end
@@ -190,7 +194,11 @@ module Brainstem
         end
 
         context "when no type and options are provided" do
-          it "sets default type and options for the param" do
+          before do
+            mock(subject).deprecated_type_warning
+          end
+
+          it "defaults type to string and sets default options for the param" do
             subject.brainstem_params do
               valid :sprocket_name
             end
@@ -203,7 +211,11 @@ module Brainstem
         end
 
         context "when type and options are hashes" do
-          it "ignores the type and resets it to the default type" do
+          before do
+            mock(subject).deprecated_type_warning
+          end
+
+          it "ignores the type and defaults to string" do
             subject.brainstem_params do
               valid :sprocket_name, { troll: true }, { required: true }
             end
