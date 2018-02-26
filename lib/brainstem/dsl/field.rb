@@ -38,7 +38,12 @@ module Brainstem
         options[:optional]
       end
 
+      # Please override in sub classes to compute value of field with the given arguments.
       def run_on(model, context, helper_instance = Object.new)
+        evaluate_value_on(model, context, helper_instance)
+      end
+
+      def evaluate_value_on(model, context, helper_instance = Object.new)
         if options[:lookup]
           run_on_with_lookup(model, context, helper_instance)
         elsif options[:dynamic]
