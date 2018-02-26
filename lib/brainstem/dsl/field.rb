@@ -58,6 +58,15 @@ module Brainstem
         end
       end
 
+      def presentable?(model, context)
+        optioned?(context[:optional_fields]) && conditionals_match?(
+          model,
+          context[:conditionals],
+          context[:helper_instance],
+          context[:conditional_cache]
+        )
+      end
+
       def conditionals_match?(model, presenter_conditionals, helper_instance = Object.new, conditional_cache = { model: {}, request: {} })
         return true unless conditional?
 

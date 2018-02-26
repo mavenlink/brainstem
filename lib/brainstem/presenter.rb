@@ -309,7 +309,7 @@ module Brainstem
       fields.each do |name, field|
         case field
           when DSL::Field
-            if field.conditionals_match?(model, context[:conditionals], context[:helper_instance], context[:conditional_cache]) && field.optioned?(context[:optional_fields])
+            if field.presentable?(model, context)
               result[name] = field.run_on(model, context, context[:helper_instance])
             end
           when DSL::Configuration

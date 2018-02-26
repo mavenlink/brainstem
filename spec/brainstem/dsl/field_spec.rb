@@ -175,6 +175,50 @@ describe Brainstem::DSL::Field do
     end
   end
 
+  describe '#presentable?' do
+    let(:given_context) {
+      {
+        optional_fields: 'optional field',
+        conditionals: 'conditionals',
+        helper_instance: 'helper instance',
+        conditional_cache: 'conditional cache'
+      }
+    }
+    let(:optioned) { false }
+    let(:conditionals_match) { false }
+
+    before do
+      mock(field).optioned?.with(given_context[:optional_fields]) { optioned }
+      stub(field).conditionals_match?.with(
+        model,
+        given_context[:conditionals],
+        given_context[:helper_instance],
+        given_context[:conditional_cache]
+      ) { conditionals_match }
+    end
+
+    it 'calls `optioned?` by passing in the optional fields from the context' do
+      expect(field.presentable?(model, given_context)).to be_falsey
+    end
+
+    context 'when field is not optional' do
+      let(:optioned) { true }
+
+      it 'calls `conditionals_match?` with conditionals, helper instance and conditional cache from the context' do
+        expect(field.presentable?(model, given_context)).to be_falsey
+      end
+    end
+
+    context 'when field is not optional and conditionals match' do
+      let(:optioned) { true }
+      let(:conditionals_match) { true }
+
+      it 'returns true' do
+        expect(field.presentable?(model, given_context)).to be_truthy
+      end
+    end
+  end
+
   describe '#conditionals_match?' do
     let(:fake_conditional) do
       Class.new do
