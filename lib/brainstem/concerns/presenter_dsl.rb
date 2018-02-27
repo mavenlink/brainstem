@@ -1,7 +1,7 @@
 require 'brainstem/concerns/inheritable_configuration'
 require 'brainstem/dsl/association'
 require 'brainstem/dsl/field'
-require 'brainstem/dsl/nested_array_field'
+require 'brainstem/dsl/array_block_field'
 require 'brainstem/dsl/conditional'
 
 require 'brainstem/dsl/base_block'

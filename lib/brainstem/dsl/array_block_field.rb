@@ -3,7 +3,7 @@ require 'brainstem/dsl/field'
 
 module Brainstem
   module DSL
-    class NestedArrayField < Field
+    class ArrayBlockField < Field
       attr_reader :configuration
 
       def initialize(name, type, options)
