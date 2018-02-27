@@ -308,16 +308,6 @@ describe Brainstem::Presenter do
           Class.new(Brainstem::Presenter) do
             presents Workspace
 
-            helper do
-              def current_user
-                'jane'
-              end
-            end
-
-            conditionals do
-              model :title_is_hello, lambda { |model| model.title == 'hello' }, info: 'visible when the title is hello'
-            end
-
             fields do
               fields :tasks, :array do
                 field :name, :string
@@ -385,6 +375,78 @@ describe Brainstem::Presenter do
 
             expect(fields).to have_key('tasks')
             expect(fields['tasks']).to eq(presented_field_data)
+          end
+        end
+
+        describe 'handling of conditional fields' do
+          let(:presenter_class) do
+            Class.new(Brainstem::Presenter) do
+              presents Workspace
+
+              helper do
+                def current_user
+                  'jane'
+                end
+              end
+
+              conditionals do
+                model   :title_is_hello, lambda { |model| model.title == 'hello' }, info: 'visible when the title is hello'
+                request :user_is_bob, lambda { current_user == 'bob' }, info: 'visible only to bob'
+              end
+
+              fields do
+                with_options if: :user_is_bob do
+                  fields :tasks, :array do
+                    field :name, :string
+                  end
+                end
+
+                fields :members, :array, if: :title_is_hello do
+                  field :hello_title, :string,
+                        info: 'the title, when hello',
+                        dynamic: lambda { 'title is hello' }
+
+                  field :foo, :string,
+                        info: 'a secret, via secret_info',
+                        dynamic: lambda { 'foo' },
+                        if: [:user_is_bob]
+                end
+              end
+            end
+          end
+
+          it 'does not return conditional fields when their :if conditionals do not match' do
+            fields = presenter.group_present([model]).first
+
+            expect(fields).to_not have_key('tasks')
+            expect(fields).to_not have_key('members')
+          end
+
+          it 'returns conditional fields when their :if matches' do
+            model.title = 'hello'
+
+            fields = presenter.group_present([model]).first
+
+            expect(fields).to_not have_key('tasks')
+            expect(fields).to have_key('members')
+            expect(fields['members'][0]).to_not have_key('foo')
+            expect(fields['members'][0]['hello_title']).to eq 'title is hello'
+          end
+
+          it 'returns fields with the :if option only when all of the conditionals in that :if are true' do
+            model.title = 'hello'
+            presenter.class.helper do
+              def current_user
+                'bob'
+              end
+            end
+
+            fields = presenter.group_present([model]).first
+
+            expect(fields).to have_key('tasks')
+            expect(fields).to have_key('members')
+            expect(fields['members'][0]['foo']).to eq('foo')
+            expect(fields['members'][0]['hello_title']).to eq('title is hello')
           end
         end
       end
