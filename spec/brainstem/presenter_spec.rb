@@ -301,6 +301,93 @@ describe Brainstem::Presenter do
           end
         end
       end
+
+      describe 'handling of nested array fields' do
+        let(:array_values) { [OpenStruct.new(name: 1), OpenStruct.new(name: 2)] }
+        let(:presenter_class) do
+          Class.new(Brainstem::Presenter) do
+            presents Workspace
+
+            helper do
+              def current_user
+                'jane'
+              end
+            end
+
+            conditionals do
+              model :title_is_hello, lambda { |model| model.title == 'hello' }, info: 'visible when the title is hello'
+            end
+
+            fields do
+              fields :tasks, :array do
+                field :name, :string
+              end
+
+              fields :participants, :array, via: :members do
+                field :username, :string
+              end
+
+              fields :accessible_by, :array, dynamic: -> { [OpenStruct.new(name: 1), OpenStruct.new(name: 2)] } do
+                field :name, :string
+                field :full_name, :string, via: :name
+                field :formatted_name, :string, dynamic: -> (model) { model.name * 2 }
+              end
+            end
+          end
+        end
+        let(:presenter) { presenter_class.new }
+
+        context 'when dynamic option is specified' do
+          def extract_values(fields, field_name, nested_field_name)
+            fields[field_name].map { |data| data[nested_field_name] }
+          end
+
+          it 'calls named methods' do
+            fields = presenter.group_present([model]).first
+
+            expect(fields).to have_key('accessible_by')
+            expect(extract_values(fields, 'accessible_by', 'name')).to eq([1, 2])
+          end
+
+          it 'can call methods with :via' do
+            fields = presenter.group_present([model]).first
+
+            expect(fields).to have_key('accessible_by')
+            expect(extract_values(fields, 'accessible_by', 'full_name')).to eq([1, 2])
+          end
+
+          it 'can call a dynamic lambda' do
+            fields = presenter.group_present([model]).first
+
+            expect(fields).to have_key('accessible_by')
+            expect(extract_values(fields, 'accessible_by', 'formatted_name')).to eq([2, 4])
+          end
+        end
+
+        context 'when via option is specified' do
+          let(:participants) { [model.user] }
+          let(:presented_field_data) { participants.map { |user| { 'username' => user.username } } }
+
+          it 'returns an array of hashes with the specified field' do
+            fields = presenter.group_present([model]).first
+
+            expect(fields).to have_key('participants')
+            expect(fields['participants']).to eq(presented_field_data)
+          end
+        end
+
+        context 'when no option is specified' do
+          let(:tasks) { Task.where(workspace_id: model.id).order(:id).to_a }
+          let(:presented_field_data) { tasks.map { |task| { 'name' => task.name } } }
+
+          it 'returns an array of hashes with the specified field' do
+            fields = presenter.group_present([model]).first
+
+            expect(fields).to have_key('tasks')
+            expect(fields['tasks']).to eq(presented_field_data)
+          end
+        end
+      end
     end
 
     describe "adding object ids as strings" do

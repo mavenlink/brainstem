@@ -76,6 +76,10 @@ class Workspace < ActiveRecord::Base
     "this is secret!"
   end
 
+  def members
+    [user]
+  end
+
   def lead_user
     user
   end
