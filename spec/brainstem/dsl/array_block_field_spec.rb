@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'brainstem/dsl/field'
+require 'brainstem/dsl/array_block_field'
 
 describe Brainstem::DSL::ArrayBlockField do
   let(:name)         { :tasks }
@@ -14,7 +14,7 @@ describe Brainstem::DSL::ArrayBlockField do
     expect(tasks).to_not be_empty
     expect(nested_field.configuration.keys).to be_empty
 
-    # Add sub fields to the nested array field.
+    # Add sub fields to the array block field.
     nested_field.configuration[:name] = Brainstem::DSL::Field.new(:name, type, {})
     nested_field.configuration[:parent_name] = Brainstem::DSL::Field.new(:parent_name, type,
       dynamic: -> (model) { model.parent.try(:name) }
