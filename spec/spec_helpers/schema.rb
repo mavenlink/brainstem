@@ -55,6 +55,7 @@ end
 
 class Task < ActiveRecord::Base
   belongs_to :workspace
+  belongs_to :parent, :class_name => "Task"
   has_many :sub_tasks, :foreign_key => :parent_id, :class_name => "Task"
   has_many :posts
 
