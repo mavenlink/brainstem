@@ -378,6 +378,33 @@ describe Brainstem::Presenter do
           end
         end
 
+        describe 'when nested fields specify not using the parent value' do
+          let(:presenter_class) do
+            Class.new(Brainstem::Presenter) do
+              presents Workspace
+
+              fields do
+                fields :tasks, :array do
+                  field :name, :string
+                  field :secret, :string,
+                        info: 'a secret, via secret_info',
+                        via: :secret_info,
+                        use_parent_value: false
+                end
+              end
+            end
+          end
+          let(:tasks) { Task.where(workspace_id: model.id).order(:id).to_a }
+          let(:presented_field_data) { tasks.map { |task| { 'name' => task.name, 'secret' => model.secret_info } } }
+
+          it 'returns an array of hashes while using the correct model to evaluate the properties' do
+            fields = presenter.group_present([model]).first
+
+            expect(fields).to have_key('tasks')
+            expect(fields['tasks']).to eq(presented_field_data)
+          end
+        end
+
         describe 'handling of conditional fields' do
           let(:presenter_class) do
             Class.new(Brainstem::Presenter) do

@@ -24,6 +24,7 @@ module Brainstem
 
         def merge_parent_options(block_options, parent_options)
           inheritable_options = parent_options.except(*NON_INHERITABLE_FIELD_OPTIONS)
+          inheritable_options[:use_parent_value] = true unless inheritable_options.has_key?(:use_parent_value)
 
           block_options.deep_dup.merge(inheritable_options)
         end

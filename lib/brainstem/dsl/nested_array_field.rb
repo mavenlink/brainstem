@@ -19,7 +19,8 @@ module Brainstem
 
           configuration.each do |field_name, field|
             if field.presentable?(model, context)
-              result[field_name] = field.run_on(evaluated_model, context, context[:helper_instance])
+              model_for_field = field.options[:use_parent_value] ? evaluated_model : model
+              result[field_name] = field.run_on(model_for_field, context, context[:helper_instance])
             end
           end
 
