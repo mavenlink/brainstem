@@ -51,6 +51,10 @@ end
 
 class User < ActiveRecord::Base
   has_many :workspaces
+
+  def type
+    self.class.name
+  end
 end
 
 class Task < ActiveRecord::Base
@@ -86,6 +90,10 @@ class Workspace < ActiveRecord::Base
 
   def missing_user
     nil
+  end
+
+  def type
+    self.class.name
   end
 end
 
