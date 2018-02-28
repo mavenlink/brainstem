@@ -26,6 +26,23 @@ module Brainstem
         end
       end
 
+      def evaluate_value_on(model, context, helper_instance = Object.new)
+        if options[:lookup]
+          run_on_with_lookup(model, context, helper_instance)
+        elsif options[:dynamic]
+          proc = options[:dynamic]
+          if proc.arity == 1
+            helper_instance.instance_exec(model, &proc)
+          else
+            helper_instance.instance_exec(&proc)
+          end
+        elsif options[:via]
+          model.send(options[:via])
+        else
+          raise "Block field #{name} can only be evaluated if :dynamic, :lookup, :via options are specified."
+        end
+      end
+
       def use_parent_value?(field)
         return true unless field.options.has_key?(:use_parent_value)
 

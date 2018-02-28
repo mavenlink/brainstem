@@ -46,6 +46,7 @@ describe Brainstem::DSL::HashBlockField do
 
     describe 'when the field is executable' do
       let(:name) { :lead_user }
+      let(:options) { { info: description, via: :lead_user } }
 
       before do
         expect(nested_field.send(:executable?, model)).to be_truthy

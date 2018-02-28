@@ -26,7 +26,7 @@ module Brainstem
       private_constant :EXECUTABLE_OPTIONS
 
       def executable?(model)
-        (options.keys & EXECUTABLE_OPTIONS).present? || model.respond_to?(name.to_sym)
+        (options.keys & EXECUTABLE_OPTIONS).present?
       end
     end
   end

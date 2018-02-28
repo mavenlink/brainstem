@@ -309,10 +309,6 @@ describe Brainstem::Presenter do
             presents Workspace
 
             fields do
-              fields :tasks, :array do
-                field :name, :string
-              end
-
               fields :participants, :array, via: :members do
                 field :username, :string
               end
@@ -366,25 +362,13 @@ describe Brainstem::Presenter do
           end
         end
 
-        context 'when no option is specified' do
-          let(:tasks) { Task.where(workspace_id: model.id).order(:id).to_a }
-          let(:presented_field_data) { tasks.map { |task| { 'name' => task.name } } }
-
-          it 'returns an array of hashes with the specified field' do
-            fields = presenter.group_present([model]).first
-
-            expect(fields).to have_key('tasks')
-            expect(fields['tasks']).to eq(presented_field_data)
-          end
-        end
-
         describe 'when nested fields specify not using the parent value' do
           let(:presenter_class) do
             Class.new(Brainstem::Presenter) do
               presents Workspace
 
               fields do
-                fields :tasks, :array do
+                fields :tasks, :array, via: :tasks do
                   field :name, :string
                   field :secret, :string,
                         info: 'a secret, via secret_info',
@@ -423,12 +407,12 @@ describe Brainstem::Presenter do
 
               fields do
                 with_options if: :user_is_bob do
-                  fields :tasks, :array do
+                  fields :tasks, :array, dynamic: lambda { |workspace| workspace.tasks.to_a } do
                     field :name, :string
                   end
                 end
 
-                fields :members, :array, if: :title_is_hello do
+                fields :members, :array, via: :members, if: :title_is_hello do
                   field :hello_title, :string,
                         info: 'the title, when hello',
                         dynamic: lambda { 'title is hello' }

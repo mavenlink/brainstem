@@ -5,7 +5,7 @@ describe Brainstem::DSL::ArrayBlockField do
   let(:name)         { :tasks }
   let(:type)         { :array }
   let(:description)  { 'the title of this model' }
-  let(:options)      { { info: description } }
+  let(:options)      { { info: description, via: :tasks } }
   let(:nested_field) { Brainstem::DSL::ArrayBlockField.new(name, type, options) }
   let(:model)        { Workspace.find(1) }
   let(:tasks)        { Task.where(workspace_id: model.id).order(:id).to_a }

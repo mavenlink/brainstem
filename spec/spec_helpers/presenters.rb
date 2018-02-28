@@ -32,7 +32,7 @@
       field :access_level, :integer, dynamic: lambda { 2 }
     end
 
-    fields :members, :array do
+    fields :members, :array, via: :members do
       field :username, :string
       field :secret, :string,
             info: 'a secret, via secret_info',
