@@ -7,14 +7,10 @@ module Brainstem
         end
 
         def fields(name, type = :hash, options = {}, &block)
-          if type == :array
-            nested_field = DSL::ArrayBlockField.new(name, type, smart_merge(block_options, format_options(options)))
-            configuration[name] = nested_field
+          nested_field = DSL::BlockField.for(name, type, smart_merge(block_options, format_options(options)))
+          configuration[name] = nested_field
 
-            descend self.class, nested_field.configuration, merge_parent_options(block_options, options), &block
-          else
-            descend FieldsBlock, configuration.nest!(name), &block
-          end
+          descend self.class, nested_field.configuration, merge_parent_options(block_options, options), &block
         end
 
         private

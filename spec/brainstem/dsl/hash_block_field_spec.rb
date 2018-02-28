@@ -105,4 +105,32 @@ describe Brainstem::DSL::HashBlockField do
       end
     end
   end
+
+  describe '#executable' do
+    subject { nested_field.executable?(model) }
+
+    context 'when dynamic option is specified' do
+      let(:options) { { dynamic: -> { [] } } }
+
+      it { is_expected.to be_truthy }
+    end
+
+    context 'when lookup option is specified' do
+      let(:options) { { lookup: -> { [] } } }
+
+      it { is_expected.to be_truthy }
+    end
+
+    context 'when via option is specified' do
+      let(:options) { { via: :foo } }
+
+      it { is_expected.to be_truthy }
+    end
+
+    context 'when dynamic option is specified' do
+      let(:options) { {} }
+
+      it { is_expected.to be_falsey }
+    end
+  end
 end

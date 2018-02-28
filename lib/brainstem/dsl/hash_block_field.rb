@@ -20,14 +20,12 @@ module Brainstem
         result
       end
 
-      private
-
-      EXECUTABLE_OPTIONS = [:dynamic, :via, :lookup]
-      private_constant :EXECUTABLE_OPTIONS
-
       def executable?(model)
         (options.keys & EXECUTABLE_OPTIONS).present?
       end
+
+      EXECUTABLE_OPTIONS = [:dynamic, :via, :lookup]
+      private_constant :EXECUTABLE_OPTIONS
     end
   end
 end
