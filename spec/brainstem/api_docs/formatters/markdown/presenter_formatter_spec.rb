@@ -150,8 +150,7 @@ module Brainstem
                     end
 
                     it "outputs the child nodes as sub-list items" do
-                      expect(subject.output).to \
-                        include("\n- `sprockets`\n    - `sprocket_name`")
+                      expect(subject.output).to include("\n- `sprockets` (`Hash`)\n    - `sprocket_name`")
                     end
                   end
 
@@ -177,7 +176,48 @@ module Brainstem
 
                     it "outputs the child nodes as sub-list items" do
                       expect(subject.output).to \
-                        include("\n- `sprockets`\n    - `sub_sprocket`\n        - `sprocket_name`")
+                        include("\n- `sprockets` (`Hash`)\n    - `sub_sprocket` (`Hash`)\n        - `sprocket_name`")
+                    end
+                  end
+
+                  context "when branch has properties" do
+                    let(:conditionals) do
+                      {
+                        :it_is_a_friday => OpenStruct.new(
+                          description: "it is a friday",
+                          name: :it_is_a_friday,
+                          type: :request,
+                          options: {}
+                        )
+                      }
+                    end
+
+                    before do
+                      presenter_class.fields do
+                        fields :sprockets, :array, info: "parent", if: :it_is_a_friday do
+                          field :sprocket_name, :string, via: :name, info: "whatever"
+                        end
+                      end
+
+                      subject.send(:format_fields!)
+                    end
+
+                    it "outputs the name of the branch as a list item" do
+                      expect(subject.output.scan(/\n-/).count).to eq 1
+                      expect(subject.output.scan(/\n    -/).count).to eq 3
+                      expect(subject.output.scan(/\n        -/).count).to eq 2
+                    end
+
+                    it "outputs the parent node with its properties" do
+                      result = subject.output
+
+                      expect(result).to include("##### Fields\n\n")
+                      expect(result).to include("- `sprockets` (`Array`)\n")
+                      expect(result).to include("    - parent\n")
+                      expect(result).to include("    - visible when it is a friday\n")
+                      expect(result).to include("    - `sprocket_name` (`String`)\n")
+                      expect(result).to include("        - whatever\n")
+                      expect(result).to include("        - visible when it is a friday\n\n\n\n")
                     end
                   end
                 end
