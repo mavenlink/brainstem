@@ -36,7 +36,17 @@ require 'brainstem/concerns/presenter_dsl'
 #           via: :title
 #   end
 #
-#   fields :nested_permissions do
+#   fields :members, :array,
+#          if: :user_is_bob,
+#          dynamic: lambda { |project| project.members } do
+#     field :name, :string,
+#           dynamic: lambda { |user| user.username }
+#     field :project_klass, :number,
+#           use_parent_value: false,
+#           dynamic: lambda { |project| project.class }
+#   end
+#
+#   fields :nested_permissions, if: :user_is_bob do
 #     field :something_title, :string, via: :title
 #     field :random, :number, dynamic: lambda { rand }
 #   end

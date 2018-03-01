@@ -6,21 +6,37 @@ module Brainstem
     class BlockField < Field
       attr_reader :configuration
 
-      def initialize(name, type, options)
-        super
-        @configuration = DSL::Configuration.new
+      delegate :to_h, :keys, :has_key?, :each, to: :configuration
+
+      def initialize(name, type, options, parent_field = nil)
+        super(name, type, options)
+        @parent_field = parent_field
+      end
+
+      def configuration
+        @configuration ||= begin
+          if @parent_field && @parent_field.respond_to?(:configuration)
+            DSL::Configuration.new(@parent_field.configuration)
+          else
+            DSL::Configuration.new
+          end
+        end
+      end
+
+      def [](key)
+        configuration[key]
       end
 
       def run_on(model, context, helper_instance = Object.new)
         raise NotImplementedError.new("Override this method in a sub class")
       end
 
-      def self.for(name, type, options)
+      def self.for(name, type, options, parent_field = nil)
         case type.to_s
           when 'array'
-            DSL::ArrayBlockField.new(name, type, options)
+            DSL::ArrayBlockField.new(name, type, options, parent_field)
           when 'hash'
-            DSL::HashBlockField.new(name, type, options)
+            DSL::HashBlockField.new(name, type, options, parent_field)
           else
             raise "Unknown Brainstem Block Field type encountered: #{type}"
         end

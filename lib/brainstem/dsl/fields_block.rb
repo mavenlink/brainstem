@@ -7,7 +7,7 @@ module Brainstem
         end
 
         def fields(name, type = :hash, options = {}, &block)
-          nested_field = DSL::BlockField.for(name, type, smart_merge(block_options, format_options(options)))
+          nested_field = DSL::BlockField.for(name, type, smart_merge(block_options, format_options(options)), configuration[name])
           configuration[name] = nested_field
 
           descend self.class, nested_field.configuration, merge_parent_options(block_options, options), &block
