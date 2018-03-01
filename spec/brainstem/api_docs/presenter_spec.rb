@@ -1,6 +1,7 @@
 require 'spec_helper'
 require 'set'
 require 'ostruct'
+require 'brainstem/presenter'
 require 'brainstem/api_docs/presenter'
 
 module Brainstem
@@ -111,14 +112,25 @@ module Brainstem
 
 
         describe "#valid_fields" do
-          let(:field) { Object.new }
-          before      { stub(field).options { { nodoc: nodoc } } }
+          let(:presenter_class) do
+            Class.new(Brainstem::Presenter) do
+              presents Workspace
+            end
+          end
+
+          subject { described_class.new(atlas, target_class: 'Workspace', const: presenter_class) }
+
+          before do
+            stub(atlas).find_by_class(anything) { nil }
+          end
 
           describe "leafs" do
-            let(:config) { { fields: { a_field: field } } }
-
             context "when nodoc" do
-              let(:nodoc)  { true }
+              before do
+                presenter_class.fields do
+                  field :new_field, :string, dynamic: lambda { "new_field value" }, nodoc: true
+                end
+              end
 
               it "rejects the field" do
                 expect(subject.valid_fields.count).to eq 0
@@ -126,18 +138,43 @@ module Brainstem
             end
 
             context "when not nodoc" do
+              before do
+                presenter_class.fields do
+                  field :new_field, :string, dynamic: lambda { "new_field value" }, nodoc: false
+                  field :new_field2, :string, dynamic: lambda { "new_field2 value" }
+                end
+              end
+
               it "keeps the field" do
-                expect(subject.valid_fields.count).to eq 1
+                expect(subject.valid_fields.keys).to match_array(%w(new_field new_field2))
               end
             end
           end
 
           describe "branches" do
             describe "single nesting" do
-              let(:config) { { fields: { nesting_one: { a_field: field } } } }
+              context "when nested field is nodoc" do
+                before do
+                  presenter_class.fields do
+                    fields :nested_field, :hash, dynamic: lambda { {} }, nodoc: true do
+                      field :sub_field, :string, dynamic: lambda { "sub_field value" }
+                    end
+                  end
+                end
 
-              context "when all nodoc" do
-                let(:nodoc)  { true }
+                it "rejects the nested field and its sub fields" do
+                  expect(subject.valid_fields.count).to eq 0
+                end
+              end
+
+              context "when all sub fields in a nested field are nodoc" do
+                before do
+                  presenter_class.fields do
+                    fields :nested_field, :hash, dynamic: lambda { {} }, nodoc: false do
+                      field :sub_field, :string, dynamic: lambda { "new_field2 value" }, nodoc: true
+                    end
+                  end
+                end
 
                 it "rejects the nested field" do
                   expect(subject.valid_fields.count).to eq 0
@@ -145,30 +182,60 @@ module Brainstem
               end
 
               context "when not all nodoc" do
+                before do
+                  presenter_class.fields do
+                    fields :nested_field, :hash, dynamic: lambda { {} } do
+                      field :sub_field, :string, dynamic: lambda { "new_field2 value" }
+                    end
+                  end
+                end
+
                 it "keeps the nested field" do
-                  expect(subject.valid_fields.count).to eq 1
+                  valid_fields = subject.valid_fields.to_h.with_indifferent_access
+
+                  expect(valid_fields.keys).to eq(%w(nested_field))
+                  expect(valid_fields[:nested_field].keys).to eq(%w(sub_field))
                 end
               end
-
             end
 
             describe "double nesting" do
-              let(:config) { { fields: { nesting_one: { nesting_two: { a_field: field } } } } }
+              context "when the only double nested field is nodoc" do
+                before do
+                  presenter_class.fields do
+                    fields :nested_field, :hash, dynamic: lambda { {} } do
+                      fields :double_nested_field, :hash, dynamic: lambda { {} }, nodoc: true do
+                        field :leaf_field, :string, dynamic: lambda { "leaf value" }
+                      end
+                    end
+                  end
+                end
 
-              context "when all nodoc" do
-                let(:nodoc)  { true }
-
-                it "rejects the nested field" do
+                it "rejects the nested field and its sub fields" do
                   expect(subject.valid_fields.count).to eq 0
                 end
               end
 
               context "when not all nodoc" do
+                before do
+                  presenter_class.fields do
+                    fields :nested_field, :hash, dynamic: lambda { {} } do
+                      fields :double_nested_field, :hash, dynamic: lambda { {} } do
+                        field :leaf_field_1, :string, dynamic: lambda { "leaf_field_1 value" }
+                        field :leaf_field_2, :string, dynamic: lambda { "leaf_field_2 value" }, nodoc: false
+                      end
+                    end
+                  end
+                end
+
                 it "keeps the nested field" do
-                  expect(subject.valid_fields.count).to eq 1
+                  valid_fields = subject.valid_fields.to_h.with_indifferent_access
+
+                  expect(valid_fields.keys).to match_array(%w(nested_field))
+                  expect(valid_fields[:nested_field].keys).to match_array(%w(double_nested_field))
+                  expect(valid_fields[:nested_field][:double_nested_field].keys).to match_array(%w(leaf_field_1 leaf_field_2))
                 end
               end
-
             end
           end
         end
