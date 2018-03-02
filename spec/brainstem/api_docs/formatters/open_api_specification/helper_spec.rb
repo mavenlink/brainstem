@@ -114,6 +114,20 @@ module Brainstem
                 expect(subject.send(:type_and_format, 'decimal')).to eq({ 'type' => 'number', 'format' => 'float' })
               end
             end
+
+            context "when type is array" do
+              context "when item type is not specified" do
+                it "returns type as `array` and item type as `string`" do
+                  expect(subject.send(:type_and_format, 'array')).to eq({ 'type' => 'array', 'items' => 'string' })
+                end
+              end
+
+              context "when item type is specified" do
+                it "returns type as `array` and given item type" do
+                  expect(subject.send(:type_and_format, 'array', 'integer')).to eq({ 'type' => 'array', 'items' => 'integer' })
+                end
+              end
+            end
           end
         end
       end

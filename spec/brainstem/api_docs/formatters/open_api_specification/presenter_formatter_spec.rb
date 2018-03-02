@@ -23,7 +23,6 @@ module Brainstem
             stub(presenter).nodoc?                           { nodoc }
             stub(presenter).target_class                     { presented_class }
             stub(presenter).description                      { lorem }
-            stub(presenter).valid_fields                     { valid_fields }
             stub(presenter).title                            { title }
             stub(presenter).contextual_documentation(:title) { title }
           end
@@ -32,6 +31,7 @@ module Brainstem
             before do
               stub(presenter).format_title!  { title }
               stub(presenter).format_fields! { fake_formatted_fields }
+              stub(presenter).valid_fields   { valid_fields }
             end
 
             context 'when nodoc' do
@@ -81,6 +81,10 @@ module Brainstem
           end
 
           describe '#format_title!' do
+            before do
+              stub(presenter).valid_fields { valid_fields }
+            end
+
             context 'when the presenter has a title' do
               let(:title) { 'Sprockets are cool, I think' }
 
@@ -129,38 +133,28 @@ module Brainstem
           end
 
           describe '#format_fields!' do
+            let(:presenter_class) do
+              Class.new(Brainstem::Presenter) do
+                presents Workspace
+              end
+            end
+            let(:presenter)    { Presenter.new(Object.new, const: presenter_class, target_class: 'Workspace') }
             let(:conditionals) { {} }
-            let(:optional)     { false }
-
-            let(:sprocket_name_long) {
-              OpenStruct.new(
-                name:        :sprocket_name,
-                description: lorem,
-                options:     { via: :name },
-                type:        :string
-              )
-            }
-
-            let(:sprocket_name_short) {
-              OpenStruct.new(
-                name:    :sprocket_name,
-                type:    :string,
-                options: {}
-              )
-            }
-
-            let(:formatted_fields) {}
 
             before do
-              stub(sprocket_name_long).optional?  { optional }
-              stub(sprocket_name_short).optional? { optional }
-              stub(presenter).conditionals        { conditionals }
+              stub(presenter).conditionals { conditionals }
             end
 
             context 'with fields present' do
               describe 'branch node' do
                 context 'with single branch' do
-                  let(:valid_fields) { { sprockets: { sprocket_name: sprocket_name_long } } }
+                  before do
+                    presenter_class.fields do
+                      fields :sprockets do
+                        field :sprocket_name, :string, via: :name, info: 'whatever'
+                      end
+                    end
+                  end
 
                   it 'outputs the name of sub-branch as a property of the parent' do
                     subject.send(:format_fields!)
@@ -170,15 +164,24 @@ module Brainstem
                       'sprockets' => {
                         'type' => 'object',
                         'properties' => {
-                          'sprocket_name' => {'type' => 'string', 'description' => lorem}
+
+                          'sprocket_name' => { 'type' => 'string', 'description' => 'whatever' }
                         }
                       }
                     })
                   end
                 end
 
-                context 'with sub-branch' do
-                  let(:valid_fields) { { sprockets: { sub_sprocket: { sprocket_name: sprocket_name_long } } } }
+                context 'with sub-branch of type hash' do
+                  before do
+                    presenter_class.fields do
+                      fields :sprockets do
+                        fields :sub_sprocket do
+                          field :sprocket_name, :string, via: :name, info: 'whatever'
+                        end
+                      end
+                    end
+                  end
 
                   it 'outputs the name of sub-branches as a properties of the its parent' do
                     subject.send(:format_fields!)
@@ -193,7 +196,7 @@ module Brainstem
                             'type' => 'object',
                             'properties' => {
 
-                              'sprocket_name' => { 'type' => 'string', 'description' => lorem }
+                              'sprocket_name' => { 'type' => 'string', 'description' => 'whatever' }
                             }
                           }
                         }
@@ -201,26 +204,56 @@ module Brainstem
                     })
                   end
                 end
+
+                context 'with sub branch of type array' do
+                  xcontext 'when type of list items is an array'
+
+                  context 'when type of list items is a hash' do
+                    before do
+                      presenter_class.fields do
+                        fields :sprockets, :array, item_type: 'hash', info: 'parent' do
+                          field :sprocket_name, :string, via: :name, info: 'whatever'
+                        end
+                      end
+                    end
+
+                    it 'outputs the name of sub-branches as a properties of the its parent' do
+                      subject.send(:format_fields!)
+
+                      expect(subject.definition).to have_key :properties
+                      expect(subject.definition[:properties]).to eq({
+                        'sprockets' => {
+                          'type' => 'array',
+                          'items' => {
+                            'type' => 'object',
+                            'properties' => {
+
+                              'sprocket_name' => { 'type' => 'string', 'description' => 'whatever' }
+                            }
+                          }
+                        }
+                      })
+                    end
+                  end
+                end
               end
 
               describe 'leaf node' do
-                let(:sprocket_size) {
-                  OpenStruct.new(
-                    name:    :sprocket_size,
-                    type:    :integer,
-                    options: {}
-                  )
-                }
-                let(:valid_fields) { { sprocket_name: sprocket_name_long, sprocket_size: sprocket_size } }
-
                 context 'if it is not conditional' do
+                  before do
+                    presenter_class.fields do
+                      field :sprocket_name, :string, info: 'whatever'
+                      field :sprocket_size, :integer
+                    end
+                  end
+
                   it 'outputs each field as a list item' do
                     subject.send(:format_fields!)
 
                     expect(subject.definition).to have_key :properties
                     expect(subject.definition[:properties]).to eq({
-                      'sprocket_name' => {'type' => 'string', 'description' => lorem},
-                      'sprocket_size' => {'type' => 'integer', 'format' => 'int32'}
+                      'sprocket_name' => { 'type' => 'string', 'description' => 'whatever' },
+                      'sprocket_size' => { 'type' => 'integer', 'format' => 'int32' }
                     })
                   end
 
@@ -228,38 +261,62 @@ module Brainstem
                     let(:formatted_description) { subject.definition[:properties]['sprocket_name']['description'] }
 
                     context 'when true' do
-                      let(:optional) {true}
+                      before do
+                        presenter_class.fields do
+                          field :sprocket_name, :string, info: 'whatever', optional: true
+                          field :sprocket_size, :integer
+                        end
+                      end
 
                       it 'says so' do
                         subject.send(:format_fields!)
 
                         expect(subject.definition).to have_key :properties
-                        expect(formatted_description).to include 'only returned when requested'
+                        expect(formatted_description).to include 'Only returned when requested'
                       end
                     end
 
                     context 'when false' do
+                      before do
+                        presenter_class.fields do
+                          field :sprocket_name, :string, info: 'whatever', optional: false
+                          field :sprocket_size, :integer
+                        end
+                      end
+
                       it 'says nothing' do
                         subject.send(:format_fields!)
 
                         expect(subject.definition).to have_key :properties
-                        expect(formatted_description).to_not include 'only returned when requested'
+                        expect(formatted_description).to_not include 'Only returned when requested'
                       end
                     end
                   end
 
                   describe 'description' do
                     context 'when present' do
+                      before do
+                        presenter_class.fields do
+                          field :sprocket_name, :string, info: 'whatever'
+                          field :sprocket_size, :integer
+                        end
+                      end
+
                       it 'outputs the description' do
                         subject.send(:format_fields!)
 
                         expect(subject.definition).to have_key :properties
-                        expect(subject.definition[:properties]['sprocket_name']['description']).to eq(lorem)
+                        expect(subject.definition[:properties]['sprocket_name']['description']).to eq('whatever')
                       end
                     end
 
                     context 'when absent' do
-                      let(:valid_fields) {{sprocket_name: sprocket_name_short}}
+                      before do
+                        presenter_class.fields do
+                          field :sprocket_name, :string
+                          field :sprocket_size, :integer
+                        end
+                      end
 
                       it 'does not include the description' do
                         subject.send(:format_fields!)
@@ -272,16 +329,13 @@ module Brainstem
                 end
 
                 describe 'if it is conditional' do
-                  let(:sprocket_name_long) {
-                    OpenStruct.new(
-                      name:        :sprocket_name,
-                      description: lorem,
-                      options:     { via: :name, if: [:it_is_a_friday] },
-                      type:        :string
-                    )
-                  }
-
                   let(:formatted_description) {subject.definition[:properties]['sprocket_name']['description']}
+
+                  before do
+                    presenter_class.fields do
+                      field :sprocket_name, :string, info: 'whatever', if: [:it_is_a_friday]
+                    end
+                  end
 
                   context 'if nodoc' do
                     let(:conditionals) {
@@ -298,7 +352,7 @@ module Brainstem
                     it 'does not include the conditional' do
                       subject.send(:format_fields!)
 
-                      expect(formatted_description).not_to include 'visible when'
+                      expect(formatted_description).not_to include 'Visible when'
                     end
                   end
 
@@ -318,7 +372,7 @@ module Brainstem
                       it 'includes the conditional' do
                         subject.send(:format_fields!)
 
-                        expect(formatted_description).to include 'visible when it is a friday'
+                        expect(formatted_description).to include 'Visible when it is a friday.'
                       end
                     end
 
@@ -337,7 +391,7 @@ module Brainstem
                       it 'does not include the conditional' do
                         subject.send(:format_fields!)
 
-                        expect(formatted_description).not_to include 'visible when'
+                        expect(formatted_description).not_to include 'Visible when'
                       end
                     end
                   end

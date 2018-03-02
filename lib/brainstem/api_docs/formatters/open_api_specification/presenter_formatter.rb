@@ -60,10 +60,23 @@ module Brainstem
           def format_field_branch(branch)
             branch.inject(ActiveSupport::HashWithIndifferentAccess.new) do |buffer, (name, field)|
               if nested_field?(field)
-                buffer[name.to_s] = {
-                  type: 'object',
-                  properties: format_field_branch(field.to_h)
-                }.with_indifferent_access
+                buffer[name.to_s] = case field.type
+                  when 'hash'
+                    {
+                      type: 'object',
+                      properties: format_field_branch(field.to_h)
+                    }.with_indifferent_access
+                  when 'array'
+                    {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: format_field_branch(field.to_h)
+                      }
+                    }.with_indifferent_access
+                  else
+                    raise
+                end
               else
                 buffer[name.to_s] = format_field_leaf(field)
               end
@@ -73,11 +86,11 @@ module Brainstem
           end
 
           def nested_field?(field)
-            !field.respond_to?(:options)
+            field.respond_to?(:configuration)
           end
 
           def format_field_leaf(field)
-            field_data = type_and_format(field.type)
+            field_data = type_and_format(field.type, field.options[:item_type])
 
             field_data.merge!(description: format_description_for(field))
             field_data.delete(:description) if field_data[:description].blank?
@@ -88,7 +101,7 @@ module Brainstem
           def format_description_for(field)
             field_description = field.description.to_s
             field_description << format_conditional_description(field.options)
-            field_description << "only returned when requested through the optional_fields param" if field.optional?
+            field_description << "\nOnly returned when requested through the optional_fields param.\n" if field.optional?
             field_description.try(:chomp!)
             field_description
           end
@@ -102,7 +115,7 @@ module Brainstem
               .delete_if(&:empty?)
               .join(' and ')
 
-            conditions.present? ? "\n\nvisible when #{conditions}\n\n" : ''
+            conditions.present? ? "\nVisible when #{conditions}.\n" : ''
           end
         end
       end

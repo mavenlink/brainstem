@@ -11,8 +11,13 @@ module Brainstem
                 presenter.target_class.underscore.singularize.titleize.strip
           end
 
-          def type_and_format(type)
-            TYPE_INFO[type.to_s].dup.with_indifferent_access
+          def type_and_format(type, item_type = nil)
+            case type
+              when 'array'
+                { 'type' => 'array', 'items' => item_type.presence || 'string' }
+              else
+                TYPE_INFO[type.to_s].dup.with_indifferent_access
+            end
           end
 
           TYPE_INFO = {
