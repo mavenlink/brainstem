@@ -15,8 +15,10 @@ module Brainstem
             case type
               when 'array'
                 { 'type' => 'array', 'items' => item_type.presence || 'string' }
+              when 'polymorphic' # TODO: Remove
+                { 'type' => 'string' }
               else
-                TYPE_INFO[type.to_s].dup.with_indifferent_access
+                (result = TYPE_INFO[type.to_s]) ? result.dup.with_indifferent_access : nil
             end
           end
 

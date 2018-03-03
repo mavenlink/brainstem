@@ -128,6 +128,12 @@ module Brainstem
                 end
               end
             end
+
+            context "when type is unknown" do
+              it "returns nil" do
+                expect(subject.send(:type_and_format, 'invalid')).to be_nil
+              end
+            end
           end
         end
       end
