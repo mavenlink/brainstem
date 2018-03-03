@@ -328,7 +328,7 @@ module Brainstem
                   end
                 end
 
-                describe 'if it is conditional' do
+                context 'if it is conditional' do
                   let(:formatted_description) {subject.definition[:properties]['sprocket_name']['description']}
 
                   before do
@@ -394,6 +394,18 @@ module Brainstem
                         expect(formatted_description).not_to include 'Visible when'
                       end
                     end
+                  end
+                end
+
+                context 'when invalid type specified' do
+                  before do
+                    presenter_class.fields do
+                      field :sprocket_name, :invalid
+                    end
+                  end
+
+                  it 'raises an error' do
+                    expect { subject.send(:format_fields!) }.to raise_error(StandardError)
                   end
                 end
               end

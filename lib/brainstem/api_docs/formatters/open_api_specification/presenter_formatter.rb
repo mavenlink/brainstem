@@ -74,8 +74,6 @@ module Brainstem
                         properties: format_field_branch(field.to_h)
                       }
                     }.with_indifferent_access
-                  else
-                    raise
                 end
               else
                 buffer[name.to_s] = format_field_leaf(field)
@@ -91,6 +89,10 @@ module Brainstem
 
           def format_field_leaf(field)
             field_data = type_and_format(field.type, field.options[:item_type])
+
+            unless field_data
+              raise "Unknown Brainstem Field type encountered(#{field.type}) for field #{field.name}"
+            end
 
             field_data.merge!(description: format_description_for(field))
             field_data.delete(:description) if field_data[:description].blank?
