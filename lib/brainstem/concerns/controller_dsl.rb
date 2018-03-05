@@ -150,7 +150,9 @@ module Brainstem
         #
         def valid(field_name, type = nil, options = {})
           valid_params = configuration[brainstem_params_context][:valid_params]
-          valid_params[field_name.to_sym] = format_param_options(type, options)
+
+          procified_field_name = format_field_name(field_name)
+          valid_params[procified_field_name] = format_param_options(type, options)
         end
 
 
@@ -235,10 +237,18 @@ module Brainstem
         #   output in the documentation.
         #
         def title(text, options = { nodoc: false })
-          configuration[brainstem_params_context][:title] = \
-            options.merge(info: text)
+          configuration[brainstem_params_context][:title] = options.merge(info: text)
         end
 
+        #
+        # Converts the field name into a Proc.
+        #
+        # @param [String, Symbol, Proc] text The title to set
+        # @return [Proc]
+        #
+        def format_field_name(field_name)
+          field_name.respond_to?(:call) ? field_name : Proc.new { field_name.to_s }
+        end
 
         def format_param_options(type = nil, options = {})
           options = type if type.is_a?(Hash) && options.empty?
@@ -276,6 +286,26 @@ module Brainstem
       end
 
 
+      def valid_params_tree(requested_context = action_name.to_sym)
+        contextual_key(requested_context, :valid_params)
+          .to_h
+          .inject(ActiveSupport::HashWithIndifferentAccess.new) do |hsh, (field_name_proc, field_config)|
+
+          field_name = field_name_proc.call(self.class)
+          if field_config.has_key?(:root)
+            root_key = field_config[:root]
+            root_key = root_key.call(self.class) if root_key.respond_to?(:call)
+
+            hsh[root_key] ||= {}
+            hsh[root_key][field_name] = field_config
+          else
+            hsh[field_name] = field_config
+          end
+
+          hsh
+        end
+      end
+
       #
       # Lists all valid parameters for the current action. Falls back to the
       # valid parameters for the default context.
@@ -286,12 +316,7 @@ module Brainstem
       # descriptions or sub-hashes.
       #
       def brainstem_valid_params(requested_context = action_name.to_sym, root_param_name = brainstem_model_name)
-        contextual_key(requested_context, :valid_params)
-          .to_h
-          .select do |k, v|
-            root = v[:root].respond_to?(:call) ? v[:root].call(self.class) : v[:root]
-            root.to_s == root_param_name.to_s
-          end
+        valid_params_tree(requested_context)[root_param_name.to_s]
       end
       alias_method :brainstem_valid_params_for, :brainstem_valid_params
 

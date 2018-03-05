@@ -133,11 +133,16 @@ module Brainstem
                 item_type: :integer
             end
 
-            expect(subject.configuration[:_default][:valid_params][:sprocket_ids][:info]).to \
-              eq "sprockets[sprocket_ids] is required"
-            expect(subject.configuration[:_default][:valid_params][:sprocket_ids][:required]).to be_truthy
-            expect(subject.configuration[:_default][:valid_params][:sprocket_ids][:type]).to eq('array')
-            expect(subject.configuration[:_default][:valid_params][:sprocket_ids][:item_type]).to eq('integer')
+            valid_params = subject.configuration[:_default][:valid_params]
+            expect(valid_params.keys.length).to eq(1)
+            expect(valid_params.keys[0]).to be_a(Proc)
+            expect(valid_params.keys[0].call).to eq("sprocket_ids")
+
+            sprocket_ids_config = valid_params[valid_params.keys[0]]
+            expect(sprocket_ids_config[:info]).to eq "sprockets[sprocket_ids] is required"
+            expect(sprocket_ids_config[:required]).to be_truthy
+            expect(sprocket_ids_config[:type]).to eq("array")
+            expect(sprocket_ids_config[:item_type]).to eq("integer")
           end
         end
 
@@ -154,7 +159,10 @@ module Brainstem
               valid :sub_sprockets, :hash, data
             end
 
-            expect(subject.configuration[:_default][:valid_params][:sub_sprockets]).to eq({
+            valid_params = subject.configuration[:_default][:valid_params]
+            expect(valid_params.keys.length).to eq(1)
+            expect(valid_params.keys[0].call).to eq("sub_sprockets")
+            expect(valid_params[valid_params.keys[0]]).to eq({
               "recursive" => true,
               "info"      => "sprockets[sub_sprockets] is recursive and an array",
               "required"  => true,
@@ -174,8 +182,12 @@ module Brainstem
               valid :sprocket_name, required: true
             end
 
-            configuration = subject.configuration[:_default][:valid_params][:sprocket_name]
-            expect(configuration[:type]).to eq('string')
+            valid_params = subject.configuration[:_default][:valid_params]
+            expect(valid_params.keys.length).to eq(1)
+            expect(valid_params.keys[0].call).to eq("sprocket_name")
+
+            configuration = valid_params[valid_params.keys[0]]
+            expect(configuration[:type]).to eq("string")
             expect(configuration[:required]).to be_truthy
           end
         end
@@ -186,10 +198,14 @@ module Brainstem
               valid :sprocket_name, :text
             end
 
-            configuration = subject.configuration[:_default][:valid_params][:sprocket_name]
+            valid_params = subject.configuration[:_default][:valid_params]
+            expect(valid_params.keys.length).to eq(1)
+            expect(valid_params.keys[0].call).to eq("sprocket_name")
+
+            configuration = valid_params[valid_params.keys[0]]
             expect(configuration[:nodoc]).to be_falsey
             expect(configuration[:required]).to be_falsey
-            expect(configuration[:type]).to eq('text')
+            expect(configuration[:type]).to eq("text")
           end
         end
 
@@ -203,10 +219,14 @@ module Brainstem
               valid :sprocket_name
             end
 
-            configuration = subject.configuration[:_default][:valid_params][:sprocket_name]
+            valid_params = subject.configuration[:_default][:valid_params]
+            expect(valid_params.keys.length).to eq(1)
+            expect(valid_params.keys[0].call).to eq("sprocket_name")
+
+            configuration = valid_params[valid_params.keys[0]]
             expect(configuration[:nodoc]).to be_falsey
             expect(configuration[:required]).to be_falsey
-            expect(configuration[:type]).to eq('string')
+            expect(configuration[:type]).to eq("string")
           end
         end
 
@@ -220,10 +240,14 @@ module Brainstem
               valid :sprocket_name, { troll: true }, { required: true }
             end
 
-            configuration = subject.configuration[:_default][:valid_params][:sprocket_name]
+            valid_params = subject.configuration[:_default][:valid_params]
+            expect(valid_params.keys.length).to eq(1)
+            expect(valid_params.keys[0].call).to eq("sprocket_name")
+
+            configuration = valid_params[valid_params.keys[0]]
             expect(configuration[:nodoc]).to be_falsey
             expect(configuration[:required]).to be_truthy
-            expect(configuration[:type]).to eq('string')
+            expect(configuration[:type]).to eq("string")
           end
         end
       end
@@ -358,7 +382,7 @@ module Brainstem
               end
             end
 
-            expect(subject.configuration[:show][:valid_params].keys).to \
+            expect(subject.configuration[:show][:valid_params].keys.map(&:call)).to \
               eq ["param_1", "param_2"]
 
           end
@@ -384,7 +408,7 @@ module Brainstem
           end
 
           %w(index show).each do |meth|
-            expect(subject.configuration[meth.to_sym][:valid_params].keys).to \
+            expect(subject.configuration[meth.to_sym][:valid_params].keys.map(&:call)).to \
               include "param_1"
           end
         end
@@ -397,8 +421,190 @@ module Brainstem
           end
 
           %w(index show).each do |meth|
-            expect(subject.configuration[meth.to_sym][:valid_params].keys).to \
+            expect(subject.configuration[meth.to_sym][:valid_params].keys.map(&:call)).to \
               include "param_1"
+          end
+        end
+      end
+
+      describe "#valid_params_tree" do
+        context "when no root is specified" do
+          it "returns the field names as the top level keys" do
+            stub.any_instance_of(subject).action_name { "show" }
+
+            subject.brainstem_params do
+              actions :show do
+                valid :sprocket_ids, :array,
+                      info: "sprockets[sprocket_ids] is required",
+                      required: true,
+                      item_type: :integer
+
+                valid :widget_id, :integer,
+                      info: "sprockets[widget_id] is not required"
+              end
+            end
+
+            result = subject.new.valid_params_tree
+            expect(result.keys).to match_array(%w(sprocket_ids widget_id))
+
+            sprocket_ids_config = result[:sprocket_ids]
+            expect(sprocket_ids_config).to eq({
+              "info"      => "sprockets[sprocket_ids] is required",
+              "required"  => true,
+              "item_type" => "integer",
+              "nodoc"     => false,
+              "type"      => "array"
+            })
+
+            widget_id_config = result[:widget_id]
+            expect(widget_id_config).to eq({
+              "info"     => "sprockets[widget_id] is not required",
+              "required" => false,
+              "nodoc"    => false,
+              "type"     => "integer"
+            })
+          end
+        end
+
+        context "when root is specified" do
+          let(:brainstem_model_name) { "widget" }
+
+          it "returns the root as a top level key" do
+            stub(subject).brainstem_model_name { brainstem_model_name }
+            stub.any_instance_of(subject).brainstem_model_name { brainstem_model_name }
+            stub.any_instance_of(subject).action_name { "show" }
+
+            subject.brainstem_params do
+              valid :unrelated_root_key, :string,
+                info: "it's unrelated.",
+                required: true
+
+              model_params(brainstem_model_name) do |params|
+                params.valid :sprocket_parent_id, :long,
+                             info: "widget[sprocket_parent_id] is not required"
+              end
+
+              actions :show do
+                model_params(brainstem_model_name) do |params|
+                  params.valid :sprocket_name, :string,
+                               info: "widget[sprocket_name] is required",
+                               required: true
+                end
+              end
+            end
+
+            result = subject.new.valid_params_tree
+            expect(result.keys).to match_array(%w(widget unrelated_root_key))
+            expect(result[:widget].keys).to match_array(%w(sprocket_parent_id sprocket_name))
+
+            sprocket_parent_id_config = result[:widget][:sprocket_parent_id]
+            expect(sprocket_parent_id_config).to eq({
+              "info"     => "widget[sprocket_parent_id] is not required",
+              "required" => false,
+              "nodoc"    => false,
+              "type"     => "long",
+              "root"     => brainstem_model_name
+            })
+
+            sprocket_name_config = result[:widget][:sprocket_name]
+            expect(sprocket_name_config).to eq({
+              "info"     => "widget[sprocket_name] is required",
+              "required" => true,
+              "nodoc"    => false,
+              "type"     => "string",
+              "root"     => brainstem_model_name
+            })
+          end
+        end
+
+        context "when multiple fields share the same name" do
+          let(:brainstem_model_name) { "widget" }
+
+          it "retains config for both fields" do
+            stub(subject).brainstem_model_name { brainstem_model_name }
+            stub.any_instance_of(subject).brainstem_model_name { brainstem_model_name }
+            stub.any_instance_of(subject).action_name { "update" }
+
+            subject.brainstem_params do
+              actions :update do
+                valid :id, :integer,
+                      info: "ID of the widget.",
+                      required: true
+
+                model_params(brainstem_model_name) do |params|
+                  params.valid :id, :integer,
+                               info: "widget[id] is optional"
+                end
+              end
+            end
+
+            result = subject.new.valid_params_tree
+            expect(result.keys).to match_array(%w(widget id))
+            expect(result[:widget].keys).to match_array(%w(id))
+
+            id_param_config = result[:id]
+            expect(id_param_config).to eq({
+              "info"     => "ID of the widget.",
+              "required" => true,
+              "nodoc"    => false,
+              "type"     => "integer"
+            })
+
+            nested_id_param_config = result[:widget][:id]
+            expect(nested_id_param_config).to eq({
+              "info"     => "widget[id] is optional",
+              "required" => false,
+              "nodoc"    => false,
+              "type"     => "integer",
+              "root"     => brainstem_model_name
+            })
+          end
+        end
+
+        # TODO: FIXME. Currently unsupported behavior is wrong
+        xcontext "when multiple roots are specified" do
+          let(:brainstem_model_name) { "widget" }
+
+          it "retains config for both fields" do
+            stub(subject).brainstem_model_name { brainstem_model_name }
+            stub.any_instance_of(subject).brainstem_model_name { brainstem_model_name }
+            stub.any_instance_of(subject).action_name { "update" }
+
+            subject.brainstem_params do
+              actions :update do
+                model_params(brainstem_model_name) do |params|
+                  params.valid :title, :string,
+                               info: "widget[title] is required",
+                               required: true
+
+                  model_params(:sprocket) do |params|
+                    params.valid :name, :string,
+                                 info: "sprockets[name] is optional"
+                  end
+                end
+              end
+            end
+
+            result = subject.new.valid_params_tree
+            expect(result.keys).to match_array(%w(widget))
+            expect(result[:widget].keys).to match_array(%w(title sprocket))
+
+            title_param_config = result[:widget][:title]
+            expect(title_param_config).to eq({
+              "info"     => "ID of the widget.",
+              "required" => true,
+              "nodoc"    => false,
+              "type"     => "integer"
+            })
+
+            nested_id_param_config = result[:widget][:id]
+            expect(nested_id_param_config).to eq({
+              "info"     => "widget[id] is optional",
+              "required" => false,
+              "nodoc"    => false,
+              "type"     => "integer",
+              "root"     => brainstem_model_name
+            })
           end
         end
       end
