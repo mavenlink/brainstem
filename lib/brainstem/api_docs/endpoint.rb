@@ -140,7 +140,7 @@ module Brainstem
             root = evaluate_root_name(field_options[:root])
 
             if root.present?
-              result[root] ||= { type: 'hash', _fields: {} } if root
+              result[root] ||= { type: 'hash', _fields: {} }
               result[root][:_fields][field_name] ||= {}
               result[root][:_fields][field_name].merge!(field_options)
             else
@@ -154,7 +154,7 @@ module Brainstem
 
 
       #
-      # Evalulates root option
+      # Evaluate field name if proc and symbolize it.
       #
       def evaluate_field_name(field_name_or_proc)
         return field_name_or_proc if field_name_or_proc.nil?
