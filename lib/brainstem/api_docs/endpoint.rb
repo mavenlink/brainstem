@@ -148,6 +148,40 @@ module Brainstem
 
 
       #
+      # Returns a hash of all params nested under the specified root or
+      # parent fields along with their type, item type & children.
+      #
+      # @return [Hash{Symbol => Hash}] root keys and their type info, item info & children
+      #   nested under them.
+      #
+      def params_configuration_tree
+        @params_configuration_tree ||= begin
+          valid_params
+            .to_h
+            .deep_dup
+            .with_indifferent_access
+            .inject(ActiveSupport::HashWithIndifferentAccess.new) do |result, (field_name_proc, field_options)|
+
+            next result if field_options[:nodoc]
+
+            field_name = evaluate_field_name(field_name_proc)
+            root = evaluate_root_name(field_options[:root])
+
+            if root.present?
+              result[root] ||= { type: 'hash', _fields: {} } if root
+              result[root][:_fields][field_name] ||= {}
+              result[root][:_fields][field_name].merge!(field_options)
+            else
+              result[field_name] = field_options
+            end
+
+            result
+          end
+        end
+      end
+
+
+      #
       # Evalulates root option
       #
       def evaluate_field_name(field_name_or_proc)
