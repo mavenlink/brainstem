@@ -127,7 +127,7 @@ module Brainstem
         #   method accepting the controller constant and returning one
         #
         def model_params(root = Proc.new { |klass| klass.brainstem_model_name }, &block)
-          with_options({ root: root.is_a?(Symbol) ? root.to_s : root }, &block)
+          with_options(format_root_ancestry_options(root), &block)
         end
 
 
@@ -148,11 +148,25 @@ module Brainstem
         # @option options [String,Symbol] :item_type The data type of the items contained in a field.
         #   Ideally used when the data type of the field is an `array`, `object` or `hash`.
         #
-        def valid(field_name, type = nil, options = {})
+        def valid(field_name, type = nil, options = {}, &block)
           valid_params = configuration[brainstem_params_context][:valid_params]
+          field_config = format_field_configuration(type, options, &block)
+
+          # Inherit `nodoc` attribute from parent
+          parent_key = (options[:ancestors] || []).reverse.first
+          field_config[:nodoc] = true if parent_key && valid_params[parent_key] && valid_params[parent_key][:nodoc]
+
+          # Rollup `required` attribute to ancestors if true
+          if field_config[:required]
+            (options[:ancestors] || []).reverse.each do |ancestor_key|
+              valid_params[ancestor_key][:required] = true if valid_params.has_key?(ancestor_key)
+            end
+          end
 
           procified_field_name = format_field_name(field_name)
-          valid_params[procified_field_name] = format_param_options(type, options)
+          valid_params[procified_field_name] = field_config
+
+          with_options(format_field_ancestry_options(procified_field_name, field_config), &block) if block_given?
         end
 
 
@@ -216,8 +230,7 @@ module Brainstem
         #   be output in the documentation.
         #
         def description(text, options = { nodoc: false })
-          configuration[brainstem_params_context][:description] = \
-            options.merge(info: text)
+          configuration[brainstem_params_context][:description] = options.merge(info: text)
         end
 
 
@@ -246,26 +259,57 @@ module Brainstem
         # @param [String, Symbol, Proc] text The title to set
         # @return [Proc]
         #
-        def format_field_name(field_name)
-          field_name.respond_to?(:call) ? field_name : Proc.new { field_name.to_s }
+        def format_field_name(field_name_or_proc)
+          field_name_or_proc.respond_to?(:call) ? field_name_or_proc : Proc.new { field_name_or_proc.to_s }
+        end
+        alias_method :format_root_name, :format_field_name
+
+
+        #
+        # Formats the ancestry options of the field. Returns a hash with ancestors & root.
+        #
+        def format_root_ancestry_options(root_name)
+          root_proc = format_root_name(root_name)
+          ancestors = [root_proc]
+
+          { root: root_proc, ancestors: ancestors }.with_indifferent_access.reject { |_, v| v.blank? }
         end
 
-        def format_param_options(type = nil, options = {})
+
+        #
+        # Formats the ancestry options of the field. Returns a hash with ancestors & root.
+        #
+        def format_field_ancestry_options(field_name_proc, options = {})
+          ancestors = options[:ancestors].try(:dup) || []
+          ancestors << field_name_proc
+
+          { ancestors: ancestors }.with_indifferent_access.reject { |_, v| v.blank? }
+        end
+
+
+        #
+        # Formats the configuration of the field and returns the default configuration if not specified.
+        #
+        def format_field_configuration(type = nil, options = {}, &block)
           options = type if type.is_a?(Hash) && options.empty?
 
-          options[:type] = sanitize_param_data_type(type)
+          options[:type] = sanitize_param_data_type(type, &block)
           options[:item_type] = options[:item_type].to_s if options.has_key?(:item_type)
-          DEFAULT_PARAM_OPTIONS.merge(options)
+
+          DEFAULT_PARAM_OPTIONS.merge(options).with_indifferent_access
         end
 
         DEFAULT_PARAM_OPTIONS = { nodoc: false, required: false }
         private_constant :DEFAULT_PARAM_OPTIONS
 
 
-        def sanitize_param_data_type(type)
+        #
+        # Returns the type of the param and adds a deprecation warning if not specified.
+        #
+        def sanitize_param_data_type(type, &block)
           if type.is_a?(Hash) || type.blank?
             deprecated_type_warning
-            type = DEFAULT_DATA_TYPE
+            type = block_given? ? DEFAULT_BLOCK_DATA_TYPE : DEFAULT_DATA_TYPE
           end
 
           type.to_s
@@ -274,7 +318,13 @@ module Brainstem
         DEFAULT_DATA_TYPE = 'string'
         private_constant :DEFAULT_DATA_TYPE
 
+        DEFAULT_BLOCK_DATA_TYPE = 'hash'
+        private_constant :DEFAULT_BLOCK_DATA_TYPE
 
+
+        #
+        # Adds deprecation warning if the type argument is not specified when defining a valid param.
+        #
         def deprecated_type_warning
           ActiveSupport::Deprecation.warn(
             'Please specify the `type` of the parameter as the second argument. If not specified, '\
@@ -293,11 +343,11 @@ module Brainstem
 
           field_name = field_name_proc.call(self.class)
           if field_config.has_key?(:root)
-            root_key = field_config[:root]
-            root_key = root_key.call(self.class) if root_key.respond_to?(:call)
+            root_key = field_config[:root].call(self.class)
+            field_config[:root] = root_key
 
             hsh[root_key] ||= {}
-            hsh[root_key][field_name] = field_config
+            hsh[root_key][field_name] = field_config.except(:ancestors)
           else
             hsh[field_name] = field_config
           end
