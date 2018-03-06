@@ -83,24 +83,26 @@ module Brainstem
           # Formats each parameter.
           #
           def format_params!
-            return unless endpoint.root_param_keys.any?
+            return unless endpoint.params_configuration_tree.any?
 
             output << md_h5("Valid Parameters")
             output << md_ul do
-              endpoint.root_param_keys.inject("") do |buff, (root_param_name, child_keys)|
-                if child_keys.nil?
+              endpoint.params_configuration_tree.inject("") do |buff, (param_name, param_config)|
+                children = param_config[:_fields]
+
+                if children.blank?
                   buff += parameter_with_indent_level(
-                    root_param_name,
-                    endpoint.valid_params[root_param_name],
+                    param_name,
+                    param_config,
                     0
                   )
                 else
-                  text = md_inline_code(root_param_name) + "\n"
+                  text = md_inline_code(param_name) + "\n"
 
-                  child_keys.each do |param_name|
+                  children.each do |child_param_name, child_param_config|
                     text += parameter_with_indent_level(
-                      param_name,
-                      endpoint.valid_params[param_name],
+                      child_param_name,
+                      child_param_config,
                       1
                     )
                   end

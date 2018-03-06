@@ -129,17 +129,26 @@ module Brainstem
 
 
             describe "#format_params!" do
-              before do
-                subject.send(:format_params!)
+              let(:const) do
+                Class.new do
+                  def self.brainstem_model_name
+                    :widget
+                  end
+                end
               end
 
+              before do
+                stub(controller).const { const }
+
+                subject.send(:format_params!)
+              end
 
               context "with valid params" do
                 let(:show_config) { {
                   valid_params: {
                     only: { info: "which ids to include", nodoc: nodoc, type: "array", item_type: "integer" },
-                    sprocket_id: { info: "the id of the sprocket", root: "widget", nodoc: nodoc, type: "integer" },
-                    sprocket_child: { recursive: true, legacy: false, info: "it does the thing", root: "widget", type: "string" },
+                    Proc.new { "sprocket_id" } => { info: "the id of the sprocket", root: "widget", nodoc: nodoc, type: "integer" },
+                    Proc.new { "sprocket_child" } => { recursive: true, legacy: false, info: "it does the thing", root: "widget", type: "string" },
                   }
                 } }
 
@@ -196,8 +205,8 @@ module Brainstem
                       let(:show_config) { {
                         valid_params: {
                           only: { info: "which ids to include", nodoc: nodoc },
-                          sprocket_id: { info: "the id of the sprocket", root: "widget", nodoc: nodoc, required: true },
-                          sprocket_child: { recursive: true, legacy: false, info: "it does the thing", root: "widget" },
+                          Proc.new { "sprocket_id" } => { info: "the id of the sprocket", root: "widget", nodoc: nodoc, required: true },
+                          Proc.new { "sprocket_child" } => { recursive: true, legacy: false, info: "it does the thing", root: "widget" },
                         }
                       } }
 
@@ -210,8 +219,8 @@ module Brainstem
                       let(:show_config) { {
                         valid_params: {
                           only: { info: "which ids to include", nodoc: nodoc },
-                          sprocket_id: { info: "the id of the sprocket", root: "widget", nodoc: nodoc, required: false },
-                          sprocket_child: { recursive: true, legacy: false, info: "it does the thing", root: "widget" },
+                          Proc.new { "sprocket_id" } => { info: "the id of the sprocket", root: "widget", nodoc: nodoc, required: false },
+                          Proc.new { "sprocket_child" } => { recursive: true, legacy: false, info: "it does the thing", root: "widget" },
                         }
                       } }
 
@@ -227,7 +236,7 @@ module Brainstem
               context "with only default params" do
                 let(:default_config) { {
                   valid_params: {
-                    sprocket_name: {
+                    Proc.new { "sprocket_name" } => {
                       info: "the name of the sprocket",
                       nodoc: nodoc
                     }
