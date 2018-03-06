@@ -144,9 +144,9 @@ module Brainstem
 
 
         describe "#root_param_keys" do
-          let(:nested_param)      { { title: { nodoc: nodoc, root: :sprocket } } }
-          let(:proc_nested_param) { { title: { nodoc: nodoc, root: Proc.new { |klass| klass.brainstem_model_name } } } }
-          let(:root_param)        { { title: { nodoc: nodoc } } }
+          let(:nested_param)      { { Proc.new { 'title' } => { nodoc: nodoc, root: :sprocket } } }
+          let(:proc_nested_param) { { Proc.new { 'title' } => { nodoc: nodoc, root: Proc.new { |klass| klass.brainstem_model_name } } } }
+          let(:root_param)        { { Proc.new { 'title' } => { nodoc: nodoc } } }
           let(:default_config)    { { valid_params: which_param } }
 
           context "non-nested params" do

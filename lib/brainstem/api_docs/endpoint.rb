@@ -71,7 +71,7 @@ module Brainstem
       def <=>(other)
 
         # Any unordered routes are assigned an index of +ACTION_ORDER.count+.
-        ordered_actions_count = ACTION_ORDER.count
+        ordered_actions_count   = ACTION_ORDER.count
         own_action_priority     = ACTION_ORDER.index(action.to_s)       || ordered_actions_count
         other_action_priority   = ACTION_ORDER.index(other.action.to_s) || ordered_actions_count
 
@@ -130,11 +130,12 @@ module Brainstem
       def root_param_keys
         @root_param_keys ||= begin
           valid_params.to_h
-            .inject({}) do |hsh, (field_name, data)|
+            .inject({}) do |hsh, (field_name_proc, data)|
               next hsh if data[:nodoc]
 
+              field_name = evaluate_field_name(field_name_proc)
               if data.has_key?(:root)
-                key  = data[:root].respond_to?(:call) ? data[:root].call(controller.const) : data[:root]
+                key = evaluate_root_name(data[:root])
                 (hsh[key] ||= []) << field_name
               else
                 hsh[field_name] = nil
@@ -144,6 +145,18 @@ module Brainstem
             end
         end
       end
+
+
+      #
+      # Evalulates root option
+      #
+      def evaluate_field_name(field_name_or_proc)
+        return field_name_or_proc if field_name_or_proc.nil?
+
+        field_name = field_name_or_proc.respond_to?(:call) ? field_name_or_proc.call(controller.const) : field_name_or_proc
+        field_name.to_sym
+      end
+      alias_method :evaluate_root_name, :evaluate_field_name
 
 
       #
