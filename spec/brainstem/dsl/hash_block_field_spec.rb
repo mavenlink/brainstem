@@ -20,12 +20,8 @@ describe Brainstem::DSL::HashBlockField do
       dynamic: -> (model) { "Formatted #{model.type}" },
       use_parent_value: true
     )
-    nested_field.configuration[:secret] = Brainstem::DSL::Field.new(:secret, type,
-      via: :secret_info,
-      use_parent_value: false
-    )
 
-    expect(nested_field.configuration.keys).to eq(%w(type formatted_type secret))
+    expect(nested_field.configuration.keys).to eq(%w(type formatted_type))
   end
 
   describe '#run_on' do
@@ -62,8 +58,24 @@ describe Brainstem::DSL::HashBlockField do
         expect(presented_data['formatted_type']).to eq("Formatted #{lead_user.type}")
       end
 
+      context 'when the evaluated parent value is blank' do
+        before do
+          stub(model).lead_user { nil }
+        end
+
+        it 'returns a hash with the value from the evaluated parent' do
+          expect(nested_field.run_on(model, context)).to eq({})
+        end
+      end
+
       context 'when the sub field doesn\'t use a parent value' do
         before do
+          nested_field.configuration[:secret] = Brainstem::DSL::Field.new(:secret, type,
+            via: :secret_info,
+            use_parent_value: false
+          )
+
+          expect(nested_field.configuration.keys).to eq(%w(type formatted_type secret))
           expect(nested_field.configuration[:secret].options[:use_parent_value]).to be_falsey
         end
 
@@ -71,6 +83,18 @@ describe Brainstem::DSL::HashBlockField do
           presented_data = nested_field.run_on(model, context)
 
           expect(presented_data['secret']).to eq(model.secret_info)
+        end
+
+        context 'when the evaluated parent value is blank' do
+          before do
+            stub(model).lead_user { nil }
+          end
+
+          it 'returns a hash with the value from itself' do
+            presented_data = nested_field.run_on(model, context)
+
+            expect(presented_data['secret']).to eq(model.secret_info)
+          end
         end
       end
     end
@@ -94,6 +118,12 @@ describe Brainstem::DSL::HashBlockField do
 
       context 'when the sub field doesn\'t use a parent value' do
         before do
+          nested_field.configuration[:secret] = Brainstem::DSL::Field.new(:secret, type,
+            via: :secret_info,
+            use_parent_value: false
+          )
+
+          expect(nested_field.configuration.keys).to eq(%w(type formatted_type secret))
           expect(nested_field.configuration[:secret].options[:use_parent_value]).to be_falsey
         end
 
