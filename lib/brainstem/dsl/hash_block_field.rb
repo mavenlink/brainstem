@@ -9,12 +9,11 @@ module Brainstem
         evaluated_model = evaluate_value_on(model, context, helper_instance) if executable?(model)
 
         result = {}
-
         configuration.each do |field_name, field|
           next unless field.presentable?(model, context)
 
           model_for_field = (executable?(model) && use_parent_value?(field)) ? evaluated_model : model
-          result[field_name] = field.run_on(model_for_field, context, context[:helper_instance])
+          result[field_name] = field.run_on(model_for_field, context, context[:helper_instance]) if model_for_field
         end
 
         result
