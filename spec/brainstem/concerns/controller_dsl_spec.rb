@@ -733,7 +733,7 @@ module Brainstem
             result = subject.new.valid_params_tree
             expect(result.keys).to match_array(%w(sprocket_ids widget_id))
 
-            sprocket_ids_config = result[:sprocket_ids]
+            sprocket_ids_config = result[:sprocket_ids][:_config]
             expect(sprocket_ids_config).to eq({
               "info"      => "sprockets[sprocket_ids] is required",
               "required"  => true,
@@ -742,7 +742,7 @@ module Brainstem
               "type"      => "array"
             })
 
-            widget_id_config = result[:widget_id]
+            widget_id_config = result[:widget_id][:_config]
             expect(widget_id_config).to eq({
               "info"     => "sprockets[widget_id] is not required",
               "required" => false,
@@ -783,22 +783,20 @@ module Brainstem
             expect(result.keys).to match_array(%w(widget unrelated_root_key))
             expect(result[:widget].keys).to match_array(%w(sprocket_parent_id sprocket_name))
 
-            sprocket_parent_id_config = result[:widget][:sprocket_parent_id]
+            sprocket_parent_id_config = result[:widget][:sprocket_parent_id][:_config]
             expect(sprocket_parent_id_config).to eq({
               "info"     => "widget[sprocket_parent_id] is not required",
               "required" => false,
               "nodoc"    => false,
-              "type"     => "long",
-              "root"     => brainstem_model_name
+              "type"     => "long"
             })
 
-            sprocket_name_config = result[:widget][:sprocket_name]
+            sprocket_name_config = result[:widget][:sprocket_name][:_config]
             expect(sprocket_name_config).to eq({
               "info"     => "widget[sprocket_name] is required",
               "required" => true,
               "nodoc"    => false,
-              "type"     => "string",
-              "root"     => brainstem_model_name
+              "type"     => "string"
             })
           end
         end
@@ -828,7 +826,7 @@ module Brainstem
             expect(result.keys).to match_array(%w(widget id))
             expect(result[:widget].keys).to match_array(%w(id))
 
-            id_param_config = result[:id]
+            id_param_config = result[:id][:_config]
             expect(id_param_config).to eq({
               "info"     => "ID of the widget.",
               "required" => true,
@@ -836,19 +834,17 @@ module Brainstem
               "type"     => "integer"
             })
 
-            nested_id_param_config = result[:widget][:id]
+            nested_id_param_config = result[:widget][:id][:_config]
             expect(nested_id_param_config).to eq({
               "info"     => "widget[id] is optional",
               "required" => false,
               "nodoc"    => false,
-              "type"     => "integer",
-              "root"     => brainstem_model_name
+              "type"     => "integer"
             })
           end
         end
 
-        # TODO: FIXME. Currently unsupported behavior is wrong
-        xcontext "when multiple roots are specified" do
+        context "when multiple nested params are specified" do
           let(:brainstem_model_name) { "widget" }
 
           it "retains config for both fields" do
@@ -863,9 +859,9 @@ module Brainstem
                                info: "widget[title] is required",
                                required: true
 
-                  model_params(:sprocket) do |params|
-                    params.valid :name, :string,
-                                 info: "sprockets[name] is optional"
+                  params.valid :sprocket, :hash do |nested_params|
+                    nested_params.valid :name, :string,
+                                        info: "sprocket[name] is optional"
                   end
                 end
               end
@@ -875,21 +871,27 @@ module Brainstem
             expect(result.keys).to match_array(%w(widget))
             expect(result[:widget].keys).to match_array(%w(title sprocket))
 
-            title_param_config = result[:widget][:title]
+            title_param_config = result[:widget][:title][:_config]
             expect(title_param_config).to eq({
-              "info"     => "ID of the widget.",
+              "info"     => "widget[title] is required",
               "required" => true,
               "nodoc"    => false,
-              "type"     => "integer"
+              "type"     => "string"
             })
 
-            nested_id_param_config = result[:widget][:id]
-            expect(nested_id_param_config).to eq({
-              "info"     => "widget[id] is optional",
+            sprocket_param_config = result[:widget][:sprocket][:_config]
+            expect(sprocket_param_config).to eq({
               "required" => false,
               "nodoc"    => false,
-              "type"     => "integer",
-              "root"     => brainstem_model_name
+              "type"     => "hash"
+            })
+
+            sprocket_name_param_config = result[:widget][:sprocket][:name][:_config]
+            expect(sprocket_name_param_config).to eq({
+              "info"     => "sprocket[name] is optional",
+              "required" => false,
+              "nodoc"    => false,
+              "type"     => "string"
             })
           end
         end
@@ -940,18 +942,20 @@ module Brainstem
 
           expect(subject.new.brainstem_valid_params).to eq({
             "sprocket_name" => {
-              "info"     => "sprockets[sprocket_name] is required",
-              "root"     => "widget",
-              "required" => true,
-              "type"     => "string",
-              "nodoc"    => false
+              "_config" => {
+                "info"     => "sprockets[sprocket_name] is required",
+                "required" => true,
+                "type"     => "string",
+                "nodoc"    => false
+              }
             },
             "sprocket_parent_id" => {
-              "info"     => "sprockets[sprocket_parent_id] is not required",
-              "root"     => "widget",
-              "type"     => "long",
-              "nodoc"    => false,
-              "required" => false
+              "_config" => {
+                "info"     => "sprockets[sprocket_parent_id] is not required",
+                "type"     => "long",
+                "nodoc"    => false,
+                "required" => false
+              }
             }
           })
         end

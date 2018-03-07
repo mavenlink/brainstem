@@ -342,14 +342,16 @@ module Brainstem
           .inject(ActiveSupport::HashWithIndifferentAccess.new) do |hsh, (field_name_proc, field_config)|
 
           field_name = field_name_proc.call(self.class)
-          if field_config.has_key?(:root)
-            root_key = field_config[:root].call(self.class)
-            field_config[:root] = root_key
+          if field_config.has_key?(:ancestors)
+            ancestors = field_config[:ancestors].map { |ancestor_key| ancestor_key.call(self.class) }
+            parent = ancestors.inject(hsh) do |traversed_hash, ancestor_name|
+              traversed_hash[ancestor_name] ||= {}
+              traversed_hash[ancestor_name]
+            end
 
-            hsh[root_key] ||= {}
-            hsh[root_key][field_name] = field_config.except(:ancestors)
+            parent[field_name] = { :_config => field_config.except(:root, :ancestors) }
           else
-            hsh[field_name] = field_config
+            hsh[field_name] = { :_config => field_config }
           end
 
           hsh
