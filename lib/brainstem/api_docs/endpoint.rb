@@ -132,19 +132,22 @@ module Brainstem
             .to_h
             .deep_dup
             .with_indifferent_access
-            .inject(ActiveSupport::HashWithIndifferentAccess.new) do |result, (field_name_proc, field_options)|
+            .inject(ActiveSupport::HashWithIndifferentAccess.new) do |result, (field_name_proc, field_config)|
 
-            next result if field_options[:nodoc]
+            next result if field_config[:nodoc]
 
             field_name = evaluate_field_name(field_name_proc)
-            root = evaluate_root_name(field_options[:root])
+            if field_config.has_key?(:ancestors)
+              ancestors = field_config[:ancestors].map { |ancestor_key| evaluate_field_name(ancestor_key) }
 
-            if root.present?
-              result[root] ||= { type: 'hash', _fields: {} }
-              result[root][:_fields][field_name] ||= {}
-              result[root][:_fields][field_name].merge!(field_options)
+              parent = ancestors.inject(result) do |traversed_hash, ancestor_name|
+                traversed_hash[ancestor_name] ||= { :_config => { type: 'hash' } }
+                traversed_hash[ancestor_name]
+              end
+
+              parent[field_name] = { :_config => field_config.except(:root, :ancestors) }
             else
-              result[field_name] = field_options
+              result[field_name] = { :_config => field_config }
             end
 
             result
