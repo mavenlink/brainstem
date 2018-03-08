@@ -12,14 +12,15 @@ module Brainstem
           end
 
           def type_and_format(type, item_type = nil)
-            case type
+            result = case type
               when 'array'
-                { 'type' => 'array', 'items' => item_type.presence || 'string' }
+                { 'type' => 'array', 'items' => { 'type' => item_type.presence || 'string' } }
               when 'polymorphic' # TODO: Remove
                 { 'type' => 'string' }
               else
-                (result = TYPE_INFO[type.to_s]) ? result.dup.with_indifferent_access : nil
+                TYPE_INFO[type.to_s]
             end
+            result ? result.dup.with_indifferent_access : nil
           end
 
           TYPE_INFO = {

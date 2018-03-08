@@ -118,13 +118,19 @@ module Brainstem
             context "when type is array" do
               context "when item type is not specified" do
                 it "returns type as `array` and item type as `string`" do
-                  expect(subject.send(:type_and_format, 'array')).to eq({ 'type' => 'array', 'items' => 'string' })
+                  expect(subject.send(:type_and_format, 'array')).to eq({
+                    'type' => 'array',
+                    'items' => { 'type' => 'string' }
+                  })
                 end
               end
 
               context "when item type is specified" do
                 it "returns type as `array` and given item type" do
-                  expect(subject.send(:type_and_format, 'array', 'integer')).to eq({ 'type' => 'array', 'items' => 'integer' })
+                  expect(subject.send(:type_and_format, 'array', 'integer')).to eq({
+                    'type' => 'array',
+                    'items' => { 'type' => 'integer' }
+                  })
                 end
               end
             end
