@@ -118,8 +118,8 @@ module Brainstem
 
           def license_object
             {
-              'name' => 'Apache 2.0',
-              'url'  => 'http://www.apache.org/licenses/LICENSE-2.0.html',
+              'name' => 'MIT',
+              'url'  => 'https://opensource.org/licenses/MIT',
             }
           end
         end
