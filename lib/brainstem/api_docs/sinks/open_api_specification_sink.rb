@@ -1,4 +1,5 @@
 require 'brainstem/api_docs'
+require 'brainstem/api_docs/formatters/open_api_specification/helper'
 require 'brainstem/api_docs/sinks/abstract_sink'
 require 'fileutils'
 require 'forwardable'
@@ -7,6 +8,7 @@ module Brainstem
   module ApiDocs
     module Sinks
       class OpenApiSpecificationSink < AbstractSink
+        include Brainstem::ApiDocs::Formatters::OpenApiSpecification::Helper
         extend Forwardable
 
         def valid_options
@@ -34,9 +36,9 @@ module Brainstem
 
           write_info_object!
           write_presenter_definitions!
+          write_error_definitions!
 
           # TODO:
-          # Error Definitions Formatter
           # Endpoint Formatter
           # Security Formatter
 
@@ -80,6 +82,27 @@ module Brainstem
           end
 
           inject_objects_under_key!(:definitions, presenter_definitions, true)
+        end
+
+        def write_error_definitions!
+          self.output[:definitions].merge!(
+            'Error' => {
+              type: 'object',
+              properties: {
+                type:    type_and_format('string'),
+                message: type_and_format('string')
+              }
+            },
+            'Errors' => {
+              type: 'object',
+              properties: {
+                errors: {
+                  type: 'array',
+                  items: { '$ref' => '#/definitions/Error' }
+                }
+              }
+            }
+          )
         end
 
         #
