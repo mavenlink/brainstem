@@ -25,6 +25,7 @@ module Brainstem
             self.controller      = controller
             self.output          = {}
             self.include_actions = true
+
             super options
           end
 
@@ -50,5 +51,5 @@ module Brainstem
   end
 end
 
-Brainstem::ApiDocs::FORMATTERS[:presenter][:oas] = \
+Brainstem::ApiDocs::FORMATTERS[:controller][:oas] = \
   Brainstem::ApiDocs::Formatters::OpenApiSpecification::ControllerFormatter.method(:call)
