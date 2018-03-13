@@ -12,9 +12,9 @@ module Brainstem
           end
 
           def type_and_format(type, item_type = nil)
-            result = case type
+            result = case type.to_s.downcase
               when 'array'
-                { 'type' => 'array', 'items' => { 'type' => item_type.presence || 'string' } }
+                { 'type' => 'array', 'items' => { 'type' => item_type.presence || 'string' } } # TODO: multi nested
               when 'polymorphic' # TODO: Remove
                 { 'type' => 'string' }
               else
