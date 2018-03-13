@@ -239,7 +239,6 @@ module Brainstem
                         'name' => {
                           'title'       => 'name',
                           'description' => 'name of the task',
-                          'required'    => true,
                           'type'        => 'string'
                         },
                         'subs' => {
@@ -249,7 +248,6 @@ module Brainstem
                           'properties'  => {
                             'name' => {
                               'title'    => 'name',
-                              'required' => true,
                               'type'     => 'string'
                             }
                           }

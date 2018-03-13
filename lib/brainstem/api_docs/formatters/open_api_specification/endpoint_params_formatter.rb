@@ -142,8 +142,7 @@ module Brainstem
 
               buffer[param_name.to_s] = {
                 title:       param_name,
-                description: param_config[:info].to_s.strip,
-                required:    param_config[:required]
+                description: param_config[:info].to_s.strip
               }.merge(branch_schema).reject { |_, v| v.blank? }
 
               buffer
