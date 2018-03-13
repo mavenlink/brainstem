@@ -22,6 +22,7 @@ module Brainstem
           mock(subject).write_info_object!
           mock(subject).write_presenter_definitions!
           mock(subject).write_error_definitions!
+          mock(subject).write_endpoint_definitions!
 
           mock.proxy(subject).write_spec_to_file!
           mock(write_method).call('./specification.yml', anything)
@@ -39,6 +40,7 @@ module Brainstem
           it "writes the data returned from the info formatter" do
             mock(subject).write_presenter_definitions!
             mock(subject).write_error_definitions!
+            mock(subject).write_endpoint_definitions!
 
             mock.proxy(subject).write_info_object!
             mock.proxy
@@ -68,6 +70,7 @@ module Brainstem
             it "writes presenter definitions" do
               mock(subject).write_info_object!
               mock(subject).write_error_definitions!
+              mock(subject).write_endpoint_definitions!
 
               mock.proxy(subject).write_presenter_definitions!
               stub(atlas).presenters.stub!.formatted(:oas) { generated_data }
@@ -111,12 +114,42 @@ module Brainstem
               }.to_yaml
             }
 
-            it "writes presenter definitions" do
+            it "writes error definitions" do
               mock(subject).write_info_object!
+              mock(subject).write_endpoint_definitions!
               mock.proxy(subject).write_presenter_definitions!
 
               mock.proxy(subject).write_error_definitions!
               stub(atlas).presenters.stub!.formatted(:oas) { generated_data }
+              mock(write_method).call('./specification.yml', expected_yaml)
+
+              subject << atlas
+            end
+          end
+
+          context "when generating endpoint definitions" do
+            let(:generated_data) {
+              [
+                { '/widgets'   => { 'get'  => { 'type' => 'object' } } },
+                { '/sprockets' => { 'post' => { 'type' => 'object' } } }
+              ]
+            }
+            let(:expected_yaml) {
+              {
+                'paths' => {
+                  '/sprockets' => { 'post' => { 'type' => 'object' } },
+                  '/widgets'   => { 'get'  => { 'type' => 'object' } }
+                }
+              }.to_yaml
+            }
+
+            it "writes endpoint definitions" do
+              mock(subject).write_info_object!
+              mock(subject).write_error_definitions!
+              mock(subject).write_presenter_definitions!
+              mock.proxy(subject).write_endpoint_definitions!
+
+              stub(atlas).controllers.stub!.formatted(:oas) { generated_data }
               mock(write_method).call('./specification.yml', expected_yaml)
 
               subject << atlas

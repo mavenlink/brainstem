@@ -37,10 +37,11 @@ module Brainstem
           write_info_object!
           write_presenter_definitions!
           write_error_definitions!
+          write_endpoint_definitions!
 
           # TODO:
-          # Endpoint Formatter
           # Security Formatter
+          # Tags Formatter
 
           write_spec_to_file!
         end
@@ -84,6 +85,9 @@ module Brainstem
           inject_objects_under_key!(:definitions, presenter_definitions, true)
         end
 
+        #
+        # Add standard error structure to the definitions of the specification.
+        #
         def write_error_definitions!
           self.output[:definitions].merge!(
             'Error' => {
@@ -103,6 +107,20 @@ module Brainstem
               }
             }
           )
+        end
+
+        #
+        # Use the controller formatters to add endpoint definitions to the specification.
+        #
+        def write_endpoint_definitions!
+          controller_definitions = controllers
+            .formatted(format)
+            .inject({}) do |definitions, path_definition|
+
+            definitions.merge(path_definition)
+          end
+
+          inject_objects_under_key!(:paths, controller_definitions, true)
         end
 
         #
