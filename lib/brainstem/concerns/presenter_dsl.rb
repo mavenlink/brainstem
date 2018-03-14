@@ -114,15 +114,17 @@ module Brainstem
 
 
         #
-        # @overload filter(name, options = {})
+        # @overload filter(name, type, options = {})
         #   @param [Symbol] name The name of the scope that may be applied as a
         #     filter.
+        #   @param [Symbol] type The type of the value that filter holds.
         #   @option options [Object] :default If set, causes this filter to be
         #     applied to every request. If the filter accepts parameters, the
         #     value given here will be passed to the filter when it is applied.
         #   @option options [String] :info Docstring for the filter.
+        #   @option options [Array] :items List of assignable values for the filter.
         #
-        # @overload filter(name, options = {}, &block)
+        # @overload filter(name, type, options = {}, &block)
         #   @param [Symbol] name The filter can be requested using this name.
         #   @yieldparam scope [ActiveRecord::Relation] The scope that the
         #     filter should use as a base.
@@ -131,15 +133,22 @@ module Brainstem
         #   @yieldreturn [ActiveRecord::Relation] A new scope that filters the
         #     scope that was yielded.
         #
-        def filter(name, options = {}, &block)
-          valid_options = %w(default info include_params nodoc)
+        def filter(name, type = DEFAULT_FILTER_DATA_TYPE, options = {}, &block)
+          if type.is_a?(Hash)
+            options = type if options.blank?
+            type = DEFAULT_FILTER_DATA_TYPE
+
+            deprecated_type_warning
+          end
+
+          valid_options = %w(default info include_params nodoc items)
           options.select! { |k, v| valid_options.include?(k.to_s) }
 
           configuration[:filters][name] = options.merge({
-            value: (block_given? ? block : nil)
+            value: (block_given? ? block : nil),
+            type: type.to_s
           })
         end
-
 
         def search(&block)
           configuration[:search] = block
@@ -165,6 +174,19 @@ module Brainstem
           configuration.nonheritable!(:title)
           configuration.nonheritable!(:description)
           configuration.nonheritable!(:nodoc)
+        end
+
+        DEFAULT_FILTER_DATA_TYPE = 'string'
+        private_constant :DEFAULT_FILTER_DATA_TYPE
+
+        def deprecated_type_warning
+          ActiveSupport::Deprecation.warn(
+            'Please specify the `type` of the filter as the second argument. If not specified, '\
+              'it will default to `:string`. This default behavior will be deprecated in the next major '\
+              'version and will need to be explicitly specified. '\
+              'e.g. `filter :status, :string, items: ["Started", "Completed"]`',
+            caller
+          )
         end
       end
     end

@@ -566,21 +566,43 @@ describe Brainstem::Concerns::PresenterDSL do
 
     it "creates an entry in the filters configuration" do
       my_proc = Proc.new { 1 }
-      presenter_class.filter(:foo, :default => true, &my_proc)
+      presenter_class.filter(:foo, :string, :default => true, :items => [:a, :b], &my_proc)
 
-      expect(foo).to eq({ "default" => true, "value" => my_proc })
+      expect(foo).to eq({ "default" => true, "value" => my_proc, "type" => "string", "items" => [:a, :b] })
     end
 
     it "accepts names without blocks" do
-      presenter_class.filter(:foo)
+      presenter_class.filter(:foo, :string, :items => [:a, :b])
       expect(foo[:value]).to be_nil
+      expect(foo[:type]).to eq("string")
+      expect(foo[:items]).to eq([:a, :b])
     end
 
     it "records the info option" do
-      presenter_class.filter(:foo, :info => "This is documented.")
+      presenter_class.filter(:foo, :integer, :info => "This is documented.", :items => [:a, :b])
       expect(foo[:info]).to eq "This is documented."
+      expect(foo[:type]).to eq "integer"
+      expect(foo[:items]).to eq([:a, :b])
     end
 
+    context 'when type is not specified' do
+      before do
+        mock(presenter_class).deprecated_type_warning
+      end
+
+      it "adds a deprecation warning and creates an entry in the filters configuration" do
+        my_proc = Proc.new { 1 }
+        presenter_class.filter(:foo, :default => true, &my_proc)
+
+        expect(foo).to eq({ "default" => true, "value" => my_proc, "type" => "string" })
+      end
+
+      it "adds a deprecation warning and records the info option" do
+        presenter_class.filter(:foo, :info => "This is documented.")
+        expect(foo[:info]).to eq "This is documented."
+        expect(foo[:type]).to eq "string"
+      end
+    end
   end
 
   describe ".search" do
