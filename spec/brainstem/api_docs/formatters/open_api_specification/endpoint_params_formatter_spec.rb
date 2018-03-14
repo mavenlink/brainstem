@@ -10,6 +10,7 @@ module Brainstem
           let(:controller)    { Object.new }
           let(:presenter)     { Object.new }
           let(:atlas)         { Object.new }
+          let(:action)        { 'show' }
           let(:endpoint)      {
             Endpoint.new(
               atlas,
@@ -26,17 +27,39 @@ module Brainstem
 
           before do
             stub(endpoint).presenter { presenter }
+            stub(endpoint).action { action }
           end
 
           describe '#call' do
-            it 'formats path, query and body param for the endpoint' do
-              any_instance_of(described_class) do |instance|
-                mock(instance).format_path_params!
-                mock(instance).format_query_params!
-                mock(instance).format_body_params!
-              end
+            context 'when action is index' do
+              let(:action) { 'index' }
 
-              subject.call
+              it 'formats path, shared, query and body param for the endpoint' do
+                any_instance_of(described_class) do |instance|
+                  mock(instance).format_path_params!
+                  mock(instance).format_query_params!
+                  mock(instance).format_body_params!
+                  mock(instance).format_index_action_params!
+                end
+
+                subject.call
+              end
+            end
+
+            context 'when action is not index' do
+              let(:action) { 'show' }
+
+              it 'formats path, query and body param for the endpoint' do
+                any_instance_of(described_class) do |instance|
+                  mock(instance).format_path_params!
+                  mock(instance).format_query_params!
+                  mock(instance).format_body_params!
+
+                  dont_allow(instance).format_index_action_params!
+                end
+
+                subject.call
+              end
             end
           end
 
@@ -267,6 +290,120 @@ module Brainstem
                         }
                       }
                     },
+                  }
+                ])
+              end
+            end
+
+            describe '#format_index_action_params' do
+              it 'calls pagination, search, only & sort order params' do
+                any_instance_of(described_class) do |instance|
+                  mock(instance).format_pagination_params!
+                  mock(instance).format_search_param!
+                  mock(instance).format_only_param!
+                  mock(instance).format_sort_order_params!
+                end
+
+                subject.send(:format_index_action_params!)
+              end
+            end
+
+            describe '#format_pagination_params!' do
+              it 'adds the page & per_page query params' do
+                subject.send(:format_pagination_params!)
+
+                expect(subject.output).to eq([
+                  {
+                    'in'      => 'query',
+                    'name'    => 'page',
+                    'type'    => 'integer',
+                    'format'  => 'int32',
+                    'default' => 1
+                  },
+                  {
+                    'in'      => 'query',
+                    'name'    => 'per_page',
+                    'type'    => 'integer',
+                    'format'  => 'int32',
+                    'default' => 20,
+                    'maximum' => 200
+                  }
+                ])
+              end
+            end
+
+            describe '#format_search_param!' do
+              before do
+                mock(presenter).searchable? { searchable }
+              end
+
+              context 'when presenter has search config' do
+                let(:searchable) { true }
+
+                it 'adds the search query params' do
+                  subject.send(:format_search_param!)
+
+                  expect(subject.output).to eq([
+                    {
+                      'in'   => 'query',
+                      'name' => 'search',
+                      'type' => 'string'
+                    }
+                  ])
+                end
+              end
+
+              context 'when presenter has no search config' do
+                let(:searchable) { false }
+
+                it 'adds the search query params' do
+                  subject.send(:format_search_param!)
+
+                  expect(subject.output).to eq([])
+                end
+              end
+            end
+
+            describe '#format_only_param!' do
+              it 'adds the only query params' do
+                subject.send(:format_only_param!)
+
+                expect(subject.output).to eq([
+                  {
+                    'in'          => 'query',
+                    'name'        => 'only',
+                    'type'        => 'string',
+                    'description' => 'Allows you to request one or more resources directly by IDs in a comma separated list'
+                  }
+                ])
+              end
+            end
+
+            describe '#format_sort_order_params!' do
+              before do
+                mock(presenter).default_sort_order { 'title:asc' }
+                mock(presenter).valid_sort_orders {
+                  {
+                    'title'         => { info: 'Order by title aphabetically' },
+                    'sprocket_name' => { info: 'Order by sprocket name aphabetically' },
+                  }
+                }
+              end
+
+              it 'adds the sort order as query params' do
+                subject.send(:format_sort_order_params!)
+
+                expect(subject.output).to eq([
+                  {
+                    'in'          => 'query',
+                    'name'        => 'order',
+                    'description' => 'Supply `order` with the name of a valid sort field for the endpoint and a direction',
+                    'type'        => 'array',
+                    'items'       => {
+                      'type'    => 'string',
+                      'default' => 'title:asc',
+                      'enum'    => ['sprocket_name:asc', 'sprocket_name:desc', 'title:asc', 'title:desc']
+                    }
                   }
                 ])
               end

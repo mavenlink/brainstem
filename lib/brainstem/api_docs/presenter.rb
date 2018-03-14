@@ -138,6 +138,11 @@ module Brainstem
       end
 
 
+      def searchable?
+        configuration[:search].present?
+      end
+
+
       def valid_sort_orders
         configuration[:sort_orders].to_h.reject {|k, v| v[:nodoc] }
       end
