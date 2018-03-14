@@ -241,6 +241,66 @@ module Brainstem
         end
 
 
+        describe "#optional_field_names" do
+          let(:presenter_class) do
+            Class.new(Brainstem::Presenter) do
+              presents Workspace
+
+              fields do
+                field :mandatory_field, :string, dynamic: lambda { "new_field value" }
+                field :optional_top_field, :string, dynamic: lambda { "new_field value" }, optional: true
+                field :nodoc_optional_top_field, :string, dynamic: lambda { "new_field value" }, optional: true, nodoc: true
+
+                fields :optional_block_field, :hash, optional: true do
+                  field :leaf_field_1, :string
+                end
+
+                fields :nodoc_optional_block_field, :hash, optional: true, nodoc: true do
+                  field :leaf_field_2, :string
+                end
+
+                fields :nodoc_block_field, :hash, nodoc: true do
+                  field :optional_field_nodoc_block_field, :string, optional: true
+                end
+
+                fields :block_field_with_optional_fields, :hash do
+                  fields :optional_double_nested_field, :hash, optional: true do
+                    field :leaf_field_3, :string
+                  end
+
+                  fields :double_nested_field, :hash do
+                    field :leaf_field_4, :string
+                    field :optional_leaf_field, :string, optional: true
+                    field :nodoc_optional_leaf_field, :string, optional: true, nodoc: true
+                  end
+                end
+              end
+            end
+          end
+
+          subject { described_class.new(atlas, target_class: 'Workspace', const: presenter_class).optional_field_names }
+
+          before do
+            stub(atlas).find_by_class(anything) { nil }
+          end
+
+          it 'includes optional top level fields if nodoc is false' do
+            expect(subject).to include('optional_top_field')
+            expect(subject).to_not include('nodoc_optional_top_field')
+          end
+
+          it 'includes optional block fields if nodoc is false' do
+            expect(subject).to include('optional_block_field', 'optional_double_nested_field')
+            expect(subject).to_not include('nodoc_optional_block_field')
+          end
+
+          it 'includes optional leaf fields of block fields if nodoc is false' do
+            expect(subject).to include('optional_leaf_field')
+            expect(subject).to_not include('nodoc_optional_leaf_field', 'optional_field_nodoc_block_field')
+          end
+        end
+
+
         describe "#valid_filters" do
           let(:info)        { lorem }
           let(:filter)      { { info: info } }

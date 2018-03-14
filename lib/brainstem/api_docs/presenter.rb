@@ -122,6 +122,27 @@ module Brainstem
       end
 
 
+      def optional_field?(field)
+        field.options[:optional]
+      end
+
+
+      def optional_field_names(fields = configuration[:fields], buffer = [])
+        fields.to_h.select do |field_name, field_config|
+          next if invalid_field?(field_config)
+
+          if optional_field?(field_config)
+            buffer << field_name
+          elsif nested_field?(field_config)
+            optional_field_names_in(field_config.configuration, buffer)
+          end
+        end
+
+        buffer
+      end
+      alias_method :optional_field_names_in, :optional_field_names
+
+
       def valid_filters
         configuration[:filters]
           .to_h

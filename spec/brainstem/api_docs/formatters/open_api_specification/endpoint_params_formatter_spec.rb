@@ -34,9 +34,10 @@ module Brainstem
             context 'when action is index' do
               let(:action) { 'index' }
 
-              it 'formats path, shared, query and body param for the endpoint' do
+              it 'formats path, shared, query and body params for the endpoint' do
                 any_instance_of(described_class) do |instance|
                   mock(instance).format_path_params!
+                  mock(instance).format_optional_params!
                   mock(instance).format_query_params!
                   mock(instance).format_body_params!
                   mock(instance).format_index_action_params!
@@ -46,8 +47,25 @@ module Brainstem
               end
             end
 
-            context 'when action is not index' do
+            context 'when action is show' do
               let(:action) { 'show' }
+
+              it 'formats path, optional, query and body params for the endpoint' do
+                any_instance_of(described_class) do |instance|
+                  mock(instance).format_path_params!
+                  mock(instance).format_optional_params!
+                  mock(instance).format_query_params!
+                  mock(instance).format_body_params!
+
+                  dont_allow(instance).format_index_action_params!
+                end
+
+                subject.call
+              end
+            end
+
+            context 'when action is not index' do
+              let(:action) { 'update' }
 
               it 'formats path, query and body param for the endpoint' do
                 any_instance_of(described_class) do |instance|
@@ -56,6 +74,7 @@ module Brainstem
                   mock(instance).format_body_params!
 
                   dont_allow(instance).format_index_action_params!
+                  dont_allow(instance).format_optional_params!
                 end
 
                 subject.call
@@ -361,6 +380,31 @@ module Brainstem
 
                   expect(subject.output).to eq([])
                 end
+              end
+            end
+
+            describe '#format_optional_params!' do
+              let(:optional_fields)  { ['field_1', 'field_2'] }
+
+              before do
+                mock(presenter).optional_field_names { optional_fields }
+              end
+
+              it 'adds the optional fields query param' do
+                subject.send(:format_optional_params!)
+
+                expect(subject.output).to eq([
+                  {
+                    'in'   => 'query',
+                    'name' => 'optional_fields',
+                    'description' => 'Allows you to request one or more optional fields as an array',
+                    'type' => 'array',
+                    'items' => {
+                      'type' => 'string',
+                      'enum' => optional_fields
+                    }
+                  }
+                ])
               end
             end
 

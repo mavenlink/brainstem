@@ -26,6 +26,7 @@ module Brainstem
           def call
             format_path_params!
             format_index_action_params! if endpoint.action == 'index'
+            format_optional_params! if %w(index show).include?(endpoint.action)
 
             # TODO:
             # format_filter_params
@@ -111,6 +112,24 @@ module Brainstem
                   'type'    => 'string',
                   'enum'    => sort_orders,
                   'default' => presenter.default_sort_order
+                }
+              }
+            end
+          end
+
+          def format_optional_params!
+            return unless presenter
+
+            optional_field_names = presenter.optional_field_names
+            if optional_field_names.present?
+              output << {
+                'in'          => 'query',
+                'name'        => 'optional_fields',
+                'description' => 'Allows you to request one or more optional fields as an array',
+                'type'        => 'array',
+                'items'       => {
+                  'type' => 'string',
+                  'enum' => optional_field_names
                 }
               }
             end
