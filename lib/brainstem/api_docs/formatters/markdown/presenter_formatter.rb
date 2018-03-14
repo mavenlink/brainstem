@@ -120,10 +120,18 @@ module Brainstem
               output << md_ul do
                 presenter.valid_filters.inject("") do |buffer, (name, opts)|
                   text = md_inline_code(name)
+                  text << md_inline_type(opts[:type])
 
-                  if opts[:info]
+                  if opts[:info] || opts[:items]
+                    description = opts[:info].to_s
+
+                    if opts[:items].present?
+                      description += "." unless description =~ /\.\s*\z/
+                      description += " Available values: #{opts[:items].join(', ')}."
+                    end
+
                     text << "\n"
-                    text << md_li(opts[:info], 1)
+                    text << md_li(description, 1)
                     text.chomp!
                   end
 
