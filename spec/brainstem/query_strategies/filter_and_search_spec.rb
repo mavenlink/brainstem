@@ -35,7 +35,7 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
         [search_results, search_results.count]
       end
 
-      CheesePresenter.filter(:owned_by) { |scope, user_id| scope.owned_by(user_id.to_i) }
+      CheesePresenter.filter(:owned_by, :integer) { |scope, user_id| scope.owned_by(user_id.to_i) }
       CheesePresenter.sort_order(:id)   { |scope, direction| scope.order("cheeses.id #{direction}") }
     end
 

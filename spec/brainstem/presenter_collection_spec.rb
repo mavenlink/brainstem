@@ -482,8 +482,8 @@ describe Brainstem::PresenterCollection do
 
     describe "filters" do
       before do
-        WorkspacePresenter.filter(:owned_by) { |scope, user_id| scope.owned_by(user_id.to_i) }
-        WorkspacePresenter.filter(:title) { |scope, title| scope.where(:title => title) }
+        WorkspacePresenter.filter(:owned_by, :integer) { |scope, user_id| scope.owned_by(user_id.to_i) }
+        WorkspacePresenter.filter(:title, :string) { |scope, title| scope.where(:title => title) }
       end
 
       it "limits records to those matching given filters" do
@@ -510,7 +510,7 @@ describe Brainstem::PresenterCollection do
       it "converts boolean parameters from strings to booleans" do
         jane_id = jane.id
         bob_id = bob.id
-        WorkspacePresenter.filter(:owned_by_bob) { |scope, boolean| boolean ? scope.where(:user_id => bob_id) : scope.where(:user_id => jane_id) }
+        WorkspacePresenter.filter(:owned_by_bob, :boolean) { |scope, boolean| boolean ? scope.where(:user_id => bob_id) : scope.where(:user_id => jane_id) }
         result = @presenter_collection.presenting("workspaces", :params => { :owned_by_bob => "false" }) { Workspace.where(nil) }
         expect(result['workspaces'].values.find { |workspace| workspace['title'].include?("jane") }).to be
         expect(result['workspaces'].values.find { |workspace| workspace['title'].include?("bob") }).not_to be
@@ -518,7 +518,7 @@ describe Brainstem::PresenterCollection do
 
       it "ensures arguments are strings if they are not arrays" do
         string = nil
-        WorkspacePresenter.filter(:owned_by_bob) do |scope, arg|
+        WorkspacePresenter.filter(:owned_by_bob, :boolean) do |scope, arg|
           string = arg
           scope
         end
@@ -528,7 +528,7 @@ describe Brainstem::PresenterCollection do
 
       it "preserves array arguments" do
         array = nil
-        WorkspacePresenter.filter(:owned_by_bob) do |scope, arg|
+        WorkspacePresenter.filter(:owned_by_bob, :boolean) do |scope, arg|
           array = arg
           scope
         end
@@ -537,7 +537,7 @@ describe Brainstem::PresenterCollection do
       end
 
       it "allows filters to be called with false as an argument" do
-        WorkspacePresenter.filter(:nothing) { |scope, bool| bool ? scope.where(:id => nil) : scope }
+        WorkspacePresenter.filter(:nothing, :boolean) { |scope, bool| bool ? scope.where(:id => nil) : scope }
         result = @presenter_collection.presenting("workspaces", :params => { :nothing => "true" }) { Workspace.where(nil) }
         expect(result['workspaces'].length).to eq(0)
         result = @presenter_collection.presenting("workspaces", :params => { :nothing => "false" }) { Workspace.where(nil) }
@@ -546,7 +546,7 @@ describe Brainstem::PresenterCollection do
 
       it "passes colon separated params through as a string" do
         a, b = nil, nil
-        WorkspacePresenter.filter(:between) { |scope, a_and_b|
+        WorkspacePresenter.filter(:between, :string) { |scope, a_and_b|
           a, b = a_and_b.split(':')
           scope
         }
@@ -564,7 +564,7 @@ describe Brainstem::PresenterCollection do
         end
 
         called = false
-        WorkspacePresenter.filter(:something) { |scope, string|
+        WorkspacePresenter.filter(:something, :string) { |scope, string|
           called = true
           some_method
           scope
@@ -576,7 +576,7 @@ describe Brainstem::PresenterCollection do
 
       context "with defaults" do
         before do
-          WorkspacePresenter.filter(:owner, :default => bob.id) { |scope, id| scope.owned_by(id) }
+          WorkspacePresenter.filter(:owner, :integer, :default => bob.id) { |scope, id| scope.owned_by(id) }
         end
 
         let(:jane) { User.where(:username => "jane").first }
@@ -587,7 +587,7 @@ describe Brainstem::PresenterCollection do
         end
 
         it "allows falsy defaults" do
-          WorkspacePresenter.filter(:include_early_workspaces, :default => false) { |scope, bool| bool ? scope : scope.where("id > 3") }
+          WorkspacePresenter.filter(:include_early_workspaces, :boolean, :default => false) { |scope, bool| bool ? scope : scope.where("id > 3") }
           result = @presenter_collection.presenting("workspaces") { Workspace.unscoped }
           expect(result['workspaces']['2']).not_to be_present
           result = @presenter_collection.presenting("workspaces", :params => { :include_early_workspaces => "true" }) { Workspace.unscoped }
@@ -595,7 +595,7 @@ describe Brainstem::PresenterCollection do
         end
 
         it "allows defaults to be skipped if :apply_default_filters is false" do
-          WorkspacePresenter.filter(:include_early_workspaces, :default => false) { |scope, bool| bool ? scope : scope.where("id > 3") }
+          WorkspacePresenter.filter(:include_early_workspaces, :boolean, :default => false) { |scope, bool| bool ? scope : scope.where("id > 3") }
           result = @presenter_collection.presenting("workspaces", :apply_default_filters => true) { Workspace.unscoped }
           expect(result['workspaces']['2']).not_to be_present
           result = @presenter_collection.presenting("workspaces", :apply_default_filters => false) { Workspace.unscoped }
@@ -603,7 +603,7 @@ describe Brainstem::PresenterCollection do
         end
 
         it "allows defaults set to false to be skipped if params contain :apply_default_filters with a false value" do
-          WorkspacePresenter.filter(:include_early_workspaces, :default => false) { |scope, bool| bool ? scope : scope.where("id > 3") }
+          WorkspacePresenter.filter(:include_early_workspaces, :boolean, :default => false) { |scope, bool| bool ? scope : scope.where("id > 3") }
 
           result = @presenter_collection.presenting("workspaces", :params => { :apply_default_filters => "true" }) { Workspace.unscoped }
           expect(result['workspaces']['2']).not_to be_present
@@ -613,7 +613,7 @@ describe Brainstem::PresenterCollection do
         end
 
         it "allows defaults set to true to be skipped if params contain :apply_default_filters with a false value" do
-          WorkspacePresenter.filter(:include_early_workspaces, :default => true) { |scope, bool| bool ? scope : scope.where("id > 3") }
+          WorkspacePresenter.filter(:include_early_workspaces, :boolean, :default => true) { |scope, bool| bool ? scope : scope.where("id > 3") }
 
           result = @presenter_collection.presenting("workspaces", :params => { :apply_default_filters => "false" }) { Workspace.unscoped }
           expect(result['workspaces']['2']).to be_present
@@ -626,7 +626,7 @@ describe Brainstem::PresenterCollection do
           result = @presenter_collection.presenting("workspaces", :params => { :owner => jane.id.to_s }) { Workspace.unscoped }
           expect(result['workspaces'].keys).to match_array(jane.workspaces.map(&:id).map(&:to_s))
 
-          WorkspacePresenter.filter(:include_early_workspaces, :default => true) { |scope, bool| bool ? scope : scope.where("id > 3") }
+          WorkspacePresenter.filter(:include_early_workspaces, :boolean, :default => true) { |scope, bool| bool ? scope : scope.where("id > 3") }
           result = @presenter_collection.presenting("workspaces", :params => { :include_early_workspaces => "false" }) { Workspace.unscoped }
           expect(result['workspaces']['2']).not_to be_present
         end
@@ -637,7 +637,7 @@ describe Brainstem::PresenterCollection do
         let(:jane) { User.where(:username => "jane").first }
 
         before do
-          WorkspacePresenter.filter(:owned_by, :default => bob.id)
+          WorkspacePresenter.filter(:owned_by, :boolean, :default => bob.id)
         end
 
         it "calls the named scope with default arguments" do
@@ -651,7 +651,7 @@ describe Brainstem::PresenterCollection do
         end
 
         it "can use filters without lambdas in the presenter or model, but behaves strangely when false is given" do
-          WorkspacePresenter.filter(:numeric_description)
+          WorkspacePresenter.filter(:numeric_description, :boolean)
 
           result = @presenter_collection.presenting("workspaces") { Workspace.where(nil) }
           expect(result['workspaces'].keys).to eq(%w[1 2 3 4])
@@ -668,13 +668,13 @@ describe Brainstem::PresenterCollection do
 
       context "with include_params" do
         it "passes the params into the filter block" do
-          WorkspacePresenter.filter(:other_filter) { |scope, opt| scope }
-          WorkspacePresenter.filter(:unused_filter) { |scope, opt| scope }
-          WorkspacePresenter.filter(:other_filter_with_default, default: true) { |scope, opt| scope }
+          WorkspacePresenter.filter(:other_filter, :integer) { |scope, opt| scope }
+          WorkspacePresenter.filter(:unused_filter, :string) { |scope, opt| scope }
+          WorkspacePresenter.filter(:other_filter_with_default, :boolean, default: true) { |scope, opt| scope }
 
           provided_params = nil
 
-          WorkspacePresenter.filter :filter_with_param, :include_params => true do |scope, option, params|
+          WorkspacePresenter.filter :filter_with_param, :string, :include_params => true do |scope, option, params|
             provided_params = params
             scope
           end
@@ -767,7 +767,7 @@ describe Brainstem::PresenterCollection do
 
           describe "passing options to the search block" do
             it "passes the search method, the search string, includes, order, and paging options" do
-              WorkspacePresenter.filter(:owned_by) { |scope| scope }
+              WorkspacePresenter.filter(:owned_by, :integer) { |scope| scope }
               search_args = nil
               WorkspacePresenter.search do |*args|
                 search_args = args
@@ -801,7 +801,7 @@ describe Brainstem::PresenterCollection do
 
             describe "filters" do
               it "passes through the default filters if no filter is requested" do
-                WorkspacePresenter.filter(:owned_by, :default => true) { |scope| scope }
+                WorkspacePresenter.filter(:owned_by, :boolean, :default => true) { |scope| scope }
                 search_options = nil
                 WorkspacePresenter.search do |string, options|
                   search_options = options
@@ -824,7 +824,7 @@ describe Brainstem::PresenterCollection do
               end
 
               it "does not pass through existing non-default filters that are not requested" do
-                WorkspacePresenter.filter(:owned_by) { |scope| scope }
+                WorkspacePresenter.filter(:owned_by, :integer) { |scope| scope }
                 search_options = nil
                 WorkspacePresenter.search do |string, options|
                   search_options = options
@@ -1090,7 +1090,7 @@ describe Brainstem::PresenterCollection do
 
     describe "the count top level key" do
       it "should return the total number of matched records" do
-        WorkspacePresenter.filter(:owned_by) { |scope, user_id| scope.owned_by(user_id.to_i) }
+        WorkspacePresenter.filter(:owned_by, :integer) { |scope, user_id| scope.owned_by(user_id.to_i) }
 
         result = @presenter_collection.presenting("workspaces") { Workspace.where(:id => 1) }
         expect(result['count']).to eq(1)

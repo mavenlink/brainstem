@@ -810,8 +810,8 @@ describe Brainstem::Presenter do
     let(:presenter) { presenter_class.new }
 
     it 'returns only known filters' do
-      presenter_class.filter :owned_by
-      presenter_class.filter(:bar) { |scope| scope }
+      presenter_class.filter :owned_by, :integer
+      presenter_class.filter(:bar, :string) { |scope| scope }
       expect(presenter.extract_filters({ 'foo' => 'hi' })).to eq({})
       expect(presenter.extract_filters({ 'owned_by' => '2' })).to eq({ 'owned_by' => '2' })
       expect(presenter.extract_filters({ 'owned_by' => [2] })).to eq({ 'owned_by' => [2] })
@@ -819,7 +819,7 @@ describe Brainstem::Presenter do
     end
 
     it "converts 'true' and 'false' into true and false" do
-      presenter_class.filter :owned_by
+      presenter_class.filter :owned_by, :boolean
       expect(presenter.extract_filters({ 'owned_by' => 'true' })).to eq({ 'owned_by' => true })
       expect(presenter.extract_filters({ 'owned_by' => 'TRUE' })).to eq({ 'owned_by' => true })
       expect(presenter.extract_filters({ 'owned_by' => 'false' })).to eq({ 'owned_by' => false })
@@ -828,19 +828,19 @@ describe Brainstem::Presenter do
     end
 
     it 'defaults to applying default filters' do
-      presenter_class.filter :owned_by, default: '2'
+      presenter_class.filter :owned_by, :integer, default: '2'
       expect(presenter.extract_filters({ 'owned_by' => '3' })).to eq({ 'owned_by' => '3' })
       expect(presenter.extract_filters({})).to eq({ 'owned_by' => '2' })
     end
 
     it 'will skip default filters when asked' do
-      presenter_class.filter :owned_by, default: '2'
+      presenter_class.filter :owned_by, :integer, default: '2'
       expect(presenter.extract_filters({ 'owned_by' => '3' }, apply_default_filters: false)).to eq({ 'owned_by' => '3' })
       expect(presenter.extract_filters({}, apply_default_filters: false)).to eq({})
     end
 
     it 'ignores nil and blank values' do
-      presenter_class.filter :owned_by
+      presenter_class.filter :owned_by, :integer
       expect(presenter.extract_filters({ 'owned_by' => nil })).to eq({})
       expect(presenter.extract_filters({ 'owned_by' => '' })).to eq({})
     end
@@ -854,8 +854,8 @@ describe Brainstem::Presenter do
     let(:options) { { apply_default_filters: true } }
 
     before do
-      presenter_class.filter :owned_by, default: '2'
-      presenter_class.filter(:bar) { |scope| scope.where(id: 6) }
+      presenter_class.filter :owned_by, :integer, default: '2'
+      presenter_class.filter(:bar, :string) { |scope| scope.where(id: 6) }
       mock(presenter).extract_filters(params, options) { { 'bar' => 'foo', 'owned_by' => '2' } }
     end
 
