@@ -595,7 +595,22 @@ describe Brainstem::Concerns::PresenterDSL do
       expect(foo[:items]).to eq([:a, :b])
     end
 
-    context 'when type is not specified' do
+    context "when filter is of array type" do
+      it "records the item_type option" do
+        presenter_class.filter(:foo, :array, :item_type => :integer)
+        expect(foo[:type]).to eq "array"
+        expect(foo[:item_type]).to eq("integer")
+      end
+
+      it "defaults item_type to string if not specified" do
+        presenter_class.filter(:foo, :array)
+        expect(foo[:type]).to eq "array"
+        expect(foo[:item_type]).to eq("string")
+      end
+    end
+
+
+    context "when type is not specified" do
       before do
         mock(presenter_class).deprecated_type_warning
       end
