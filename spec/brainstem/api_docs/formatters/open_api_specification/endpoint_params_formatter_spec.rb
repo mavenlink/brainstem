@@ -40,7 +40,11 @@ module Brainstem
                   mock(instance).format_optional_params!
                   mock(instance).format_query_params!
                   mock(instance).format_body_params!
-                  mock(instance).format_index_action_params!
+                  mock(instance).format_pagination_params!
+                  mock(instance).format_search_param!
+                  mock(instance).format_only_param!
+                  mock(instance).format_sort_order_params!
+                  mock(instance).format_filter_params!
                 end
 
                 subject.call
@@ -57,7 +61,11 @@ module Brainstem
                   mock(instance).format_query_params!
                   mock(instance).format_body_params!
 
-                  dont_allow(instance).format_index_action_params!
+                  dont_allow(instance).format_pagination_params!
+                  dont_allow(instance).format_search_param!
+                  dont_allow(instance).format_only_param!
+                  dont_allow(instance).format_sort_order_params!
+                  dont_allow(instance).format_filter_params!
                 end
 
                 subject.call
@@ -73,8 +81,12 @@ module Brainstem
                   mock(instance).format_query_params!
                   mock(instance).format_body_params!
 
-                  dont_allow(instance).format_index_action_params!
+                  dont_allow(instance).format_pagination_params!
+                  dont_allow(instance).format_search_param!
+                  dont_allow(instance).format_only_param!
+                  dont_allow(instance).format_sort_order_params!
                   dont_allow(instance).format_optional_params!
+                  dont_allow(instance).format_filter_params!
                 end
 
                 subject.call
@@ -106,7 +118,7 @@ module Brainstem
                       'name'        => 'id',
                       'required'    => true,
                       'type'        => 'integer',
-                      'description' => "the ID of the Model"
+                      'description' => 'the ID of the Model'
                     }
                   ])
                 end
@@ -124,14 +136,14 @@ module Brainstem
                       'name'        => 'sprocket_id',
                       'required'    => true,
                       'type'        => 'integer',
-                      'description' => "the ID of the Sprocket"
+                      'description' => 'the ID of the Sprocket'
                     },
                     {
                       'in'          => 'path',
                       'name'        => 'id',
                       'required'    => true,
                       'type'        => 'integer',
-                      'description' => "the ID of the Model"
+                      'description' => 'the ID of the Model'
                     }
                   ])
                 end
@@ -314,19 +326,6 @@ module Brainstem
               end
             end
 
-            describe '#format_index_action_params' do
-              it 'calls pagination, search, only & sort order params' do
-                any_instance_of(described_class) do |instance|
-                  mock(instance).format_pagination_params!
-                  mock(instance).format_search_param!
-                  mock(instance).format_only_param!
-                  mock(instance).format_sort_order_params!
-                end
-
-                subject.send(:format_index_action_params!)
-              end
-            end
-
             describe '#format_pagination_params!' do
               it 'adds the page & per_page query params' do
                 subject.send(:format_pagination_params!)
@@ -447,6 +446,52 @@ module Brainstem
                       'type'    => 'string',
                       'default' => 'title:asc',
                       'enum'    => ['sprocket_name:asc', 'sprocket_name:desc', 'title:asc', 'title:desc']
+                    }
+                  }
+                ])
+              end
+            end
+
+            describe '#format_filters' do
+              let(:mocked_valid_filters) {
+                {
+                  filter_1: { type: 'string', info: 'Filter by string' },
+                  filter_2: { type: 'boolean', default: false },
+                  filter_3: { type: 'array', item_type: 'string', items: ['Option 1', 'Option 2'], default: 'Option 1' }
+                }
+              }
+
+              before do
+                mock(presenter).valid_filters { mocked_valid_filters }
+              end
+
+              it 'adds filters to the output as query params' do
+                subject.send(:format_filter_params!)
+
+                expect(subject.output).to eq([
+                  {
+                    'in'          => 'query',
+                    'name'        => 'filter_1',
+                    'type'        => 'string',
+                    'description' => 'Filter by string'
+                  },
+                  {
+                    'in'      => 'query',
+                    'name'    => 'filter_2',
+                    'type'    => 'boolean',
+                    'default' => false
+                  },
+                  {
+                    'in'      => 'query',
+                    'name'    => 'filter_3',
+                    'type'    => 'array',
+                    'items'   => {
+                      'type' => 'string',
+                      'enum' => [
+                        'Option 1',
+                        'Option 2'
+                      ],
+                      'default' => 'Option 1'
                     }
                   }
                 ])

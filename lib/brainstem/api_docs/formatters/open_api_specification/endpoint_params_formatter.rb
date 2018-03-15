@@ -25,12 +25,20 @@ module Brainstem
 
           def call
             format_path_params!
-            format_index_action_params! if endpoint.action == 'index'
-            format_optional_params! if %w(index show).include?(endpoint.action)
 
-            # TODO:
-            # format_filter_params
-            # format_include_params
+            if endpoint.action == 'index'
+              format_pagination_params!
+              format_search_param!
+              format_only_param!
+              format_sort_order_params!
+              format_filter_params!
+            end
+
+            if %w(index show).include?(endpoint.action)
+              format_optional_params!
+              # TODO:
+              # format_include_params
+            end
 
             format_query_params!
             format_body_params!
@@ -68,13 +76,6 @@ module Brainstem
 
           def nested_properties(param_config)
             param_config.except(:_config)
-          end
-
-          def format_index_action_params!
-            format_pagination_params!
-            format_search_param!
-            format_only_param!
-            format_sort_order_params!
           end
 
           def format_pagination_params!
@@ -146,6 +147,22 @@ module Brainstem
           def format_query_param(param_name, param_config)
             type_data = type_and_format(param_config[:type], param_config[:item_type])
 
+            if param_config[:type].to_s == 'array'
+              type_data[:items].merge!(
+                {
+                  'type'    => param_config[:item_type],
+                  'enum'    => param_config[:items],
+                  'default' => param_config[:default],
+                }.reject { |_, v| v.nil? }
+              )
+            else
+              type_data.merge!(
+                'default'     => param_config[:default],
+                'minimum'     => param_config[:minimum],
+                'maximum'     => param_config[:maximum]
+              )
+            end
+
             if type_data.nil?
               raise "Unknown Brainstem Param type encountered(#{param_config[:type]}) for param #{param_name}"
             end
@@ -154,11 +171,8 @@ module Brainstem
               'in'          => 'query',
               'name'        => param_name.to_s,
               'required'    => param_config[:required],
-              'description' => param_config[:info].to_s.strip,
-              'default'     => param_config[:default],
-              'minimum'     => param_config[:minimum],
-              'maximum'     => param_config[:maximum],
-            }.merge(type_data).reject { |_, v| v.blank? }
+              'description' => param_config[:info].to_s.strip.presence,
+            }.merge(type_data).reject { |_, v| v.nil? }
           end
 
           def format_body_params!
@@ -166,6 +180,12 @@ module Brainstem
               next if nested_properties(param_config).blank?
 
               output << format_body_param(param_name, param_config)
+            end
+          end
+
+          def format_filter_params!
+            presenter.valid_filters.each do |filter_name, filter_config|
+              output << format_query_param(filter_name, filter_config)
             end
           end
 
