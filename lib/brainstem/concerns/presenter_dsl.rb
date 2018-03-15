@@ -139,14 +139,16 @@ module Brainstem
             type = DEFAULT_FILTER_DATA_TYPE
 
             deprecated_type_warning
+          elsif type.to_s == 'array'
+            options[:item_type] = options[:item_type].to_s.presence || DEFAULT_FILTER_DATA_TYPE
           end
 
-          valid_options = %w(default info include_params nodoc items)
+          valid_options = %w(default info include_params nodoc items item_type)
           options.select! { |k, v| valid_options.include?(k.to_s) }
 
           configuration[:filters][name] = options.merge({
             value: (block_given? ? block : nil),
-            type: type.to_s
+            type: type.to_s,
           })
         end
 
