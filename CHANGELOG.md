@@ -22,11 +22,16 @@
               info: "an array of user ids that can access the post"
   ```
   - Include the type and item type when generating markdown documentation for endpoint params.
-  - Specify the data type of a filter and available values with `items` key in the options hash.
+  - Specify the data type of a filter and available values with `items` key in the options hash. If filter is an array,
+    data type of items can be specified with the `item_type` property in options.
   ```
         filter :status, :string,
                items: ['Started', 'Completed'],
                info: "only returns elements with the given status"
+
+        filter :sprocket_ids, :array,
+               item_type: :integer,
+               info: "returns objects associated with given sprocket Ids"
   ```
   - Add support for generating markdown documentation for the following:
     - when the `required` option is specified on an endpoint param
