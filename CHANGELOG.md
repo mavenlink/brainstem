@@ -21,8 +21,18 @@
               item_type: :string,
               info: "an array of user ids that can access the post"
   ```
-  - Include the type and item type when generating markdown documentation for endpoint params.  
-  - Add support for generating markdown documentation when the `required` option is specified on an endpoint param.
+  - Include the type and item type when generating markdown documentation for endpoint params.
+  - Specify the data type of a filter and available values with `items` key in the options hash.
+  ```
+        filter :status, :string,
+               items: ['Started', 'Completed'],
+               info: "only returns elements with the given status"
+  ```
+  - Add support for generating markdown documentation for the following:
+    - when the `required` option is specified on an endpoint param
+    - when the `type` and `item_type` params are specified on the endpoint param
+    - when the `type` and `item_type` params are specified on a presenter field
+    - when the `type` and `items` params are specified on a presenter filter
 
 + **1.1.1** - _01/15/2017_
   - Add `Brainstem.mysql_use_calc_found_rows` boolean config option to utilize MySQL's [FOUND_ROWS()](https://dev.mysql.com/doc/refman/5.7/en/information-functions.html#function_found-rows) functionality to avoid issuing a new query to calculate the record count, which has the potential to up to double the response time of the endpoint.
