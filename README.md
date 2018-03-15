@@ -50,13 +50,13 @@ module Api
       default_sort_order "updated_at:desc"
 
       # Optional filter that applies a lambda.
-      filter :location_name do |scope, location_name|
+      filter :location_name, :string, items: [:sf, :la] do |scope, location_name|
         scope.joins(:locations).where("locations.name = ?", location_name)
       end
 
       # Filter with an overridable default. This will run on every request,
       # passing in `bool` as `false` unless a user has specified otherwise.
-      filter :include_legacy_widgets, default: false do |scope, bool|
+      filter :include_legacy_widgets, :boolean, default: false do |scope, bool|
         bool ? scope : scope.without_legacy_widgets
       end
 
@@ -860,13 +860,13 @@ Brainstem provides a rich DSL for building presenters.  This section details the
 
   ```ruby
   # Optional filter that applies a lambda.
-  filter :location_name do |scope, location_name|
+  filter :location_name, :string do |scope, location_name|
     scope.joins(:locations).where("locations.name = ?", location_name)
   end
 
   # Filter with an overridable default. This will run on every request,
   # passing in `bool` as `false` unless a user has specified otherwise.
-  filter :include_legacy_widgets, default: false do |scope, bool|
+  filter :include_legacy_widgets, :boolean, default: false do |scope, bool|
     bool ? scope : scope.without_legacy_widgets
   end
   ```
