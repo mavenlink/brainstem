@@ -309,6 +309,8 @@ module Brainstem
       fields.each do |name, field|
         case field
           when DSL::HashBlockField
+            next if field.executable? && !field.presentable?(model, context)
+
             # This preserves backwards compatibility
             # In the case of a hash field, the individual attributes will call presentable
             # If none of the individual attributes are presentable we will receive an empty hash
