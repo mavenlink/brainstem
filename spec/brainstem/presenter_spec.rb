@@ -69,7 +69,6 @@ describe Brainstem::Presenter do
       end
     end
 
-
     describe ".possible_brainstem_keys" do
       let(:presented_class)       { Class.new }
       let(:other_presented_class) { Class.new }
@@ -298,6 +297,71 @@ describe Brainstem::Presenter do
             model.title = 'hello'
             presented_workspace = presenter.group_present([model], [], optional_fields: ['conditional_expensive_title']).first
             expect(presented_workspace).to have_key('conditional_expensive_title')
+          end
+        end
+      end
+
+      describe 'handling nested hash block fields' do
+        let(:presenter_class) do
+          Class.new(Brainstem::Presenter) do
+            presents Workspace
+
+            helper do
+              def current_user
+                'jane'
+              end
+            end
+
+            conditionals do
+              request :user_is_bob, lambda { current_user == 'bob' }, info: 'visible only to bob'
+            end
+
+            fields do
+              fields :participant, :hash, via: :lead_user, if: :user_is_bob  do
+                field :username, :string
+              end
+
+              fields :lead_user do
+                field :username, :string, dynamic: lambda { |workspace| workspace.lead_user.username }
+              end
+            end
+          end
+        end
+        let(:presenter) { presenter_class.new }
+
+        before do
+          stub.any_instance_of(Brainstem::DSL::Field).presentable?(model, anything) { presentable }
+        end
+
+        context 'when field is presentable' do
+          let(:presentable) { true }
+
+          it 'includes the executable hash block field' do
+            presented_workspace = presenter.group_present([model], []).first
+
+            expect(presented_workspace.keys).to include('participant')
+          end
+
+          it 'includes the non executable hash block field' do
+            presented_workspace = presenter.group_present([model], []).first
+
+            expect(presented_workspace.keys).to include('lead_user')
+          end
+        end
+
+        context 'when field is not presentable' do
+          let(:presentable) { false }
+
+          it 'does not include executable hash block fields' do
+            presented_workspace = presenter.group_present([model], []).first
+
+            expect(presented_workspace.keys).to_not include('participant')
+          end
+
+          it 'always includes non-executable hash block fields' do
+            presented_workspace = presenter.group_present([model], []).first
+
+            expect(presented_workspace.keys).to include('lead_user')
           end
         end
       end
