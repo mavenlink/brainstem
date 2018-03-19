@@ -45,7 +45,7 @@ describe Brainstem::DSL::HashBlockField do
       let(:options) { { info: description, via: :lead_user } }
 
       before do
-        expect(nested_field.send(:executable?, model)).to be_truthy
+        expect(nested_field.executable?).to be_truthy
 
         expect(nested_field.configuration[:type].options[:use_parent_value]).to be_nil
         expect(nested_field.configuration[:formatted_type].options[:use_parent_value]).to be_truthy
@@ -103,7 +103,7 @@ describe Brainstem::DSL::HashBlockField do
       let(:name) { :klass }
 
       before do
-        expect(nested_field.send(:executable?, model)).to be_falsey
+        expect(nested_field.executable?).to be_falsey
 
         expect(nested_field.configuration[:type].options[:use_parent_value]).to be_nil
         expect(nested_field.configuration[:formatted_type].options[:use_parent_value]).to be_truthy
@@ -137,7 +137,7 @@ describe Brainstem::DSL::HashBlockField do
   end
 
   describe '#executable' do
-    subject { nested_field.executable?(model) }
+    subject { nested_field.executable? }
 
     context 'when dynamic option is specified' do
       let(:options) { { dynamic: -> { [] } } }
