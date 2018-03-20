@@ -4,6 +4,7 @@ require 'brainstem/api_docs/formatters/abstract_formatter'
 require 'brainstem/api_docs/formatters/open_api_specification/endpoint_params_formatter'
 require 'brainstem/api_docs/formatters/open_api_specification/endpoint_response_formatter'
 require 'brainstem/api_docs/formatters/open_api_specification/helper'
+require 'brainstem/api_docs/formatters/markdown/helper'
 
 #
 # Responsible for formatting each endpoint.
@@ -14,15 +15,18 @@ module Brainstem
       module OpenApiSpecification
         class EndpointFormatter < AbstractFormatter
           include Helper
+          include ::Brainstem::ApiDocs::Formatters::Markdown::Helper
           extend Forwardable
 
           attr_accessor :endpoint,
+                        :presenter,
                         :endpoint_key,
                         :http_method,
                         :output
 
           def initialize(endpoint, options = {})
             self.endpoint     = endpoint
+            self.presenter    = endpoint.presenter
             self.endpoint_key = formatted_url
             self.http_method  = formatted_http_method
             self.output       = { endpoint_key => { http_method => {} } }.with_indifferent_access
@@ -77,9 +81,42 @@ module Brainstem
           #
           # TODO: Maybe add recursive / legacy to the description
           def format_description!
-            if endpoint.description.present?
-              output[endpoint_key][http_method].merge! description: endpoint.description.strip
+            description = endpoint.description.to_s.strip
+            description += "." if description.present? && !(description =~ /\.\s*\z/)
+
+            if http_method != 'delete' && presenter.valid_associations.present?
+              description += format_associations!
             end
+
+            if description.present?
+              output[endpoint_key][http_method].merge! description: description
+            end
+          end
+
+          #
+          # Formats each association.
+          #
+          def format_associations!
+            result = md_h5("Associations")
+            result << "Association Name | Associated Class | Description\n"
+            result << " --------------  |  --------------  |  ----------\n"
+
+            result << presenter.valid_associations.inject("") do |buffer, (_, association)|
+              target_class_name = association.target_class.to_s
+
+              desc = association.description.to_s
+              if association.options && association.options[:restrict_to_only]
+                desc += "." unless desc =~ /\.\s*\z/
+                desc += "  Restricted to queries using the #{md_inline_code("only")} parameter."
+                desc.strip!
+              end
+
+              buffer << md_inline_code(association.name) + " | " + target_class_name + " | " + desc + "\n"
+            end
+
+            result << "\n"
+            result << "Any of these associations can be included in your request by providing the include param, e.g. `include=association1,association2.`"
+            result << "\n"
           end
 
           #
