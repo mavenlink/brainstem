@@ -1,4 +1,5 @@
 require 'brainstem/concerns/inheritable_configuration'
+require 'brainstem/unknown_params'
 require 'active_support/core_ext/object/with_options'
 
 module Brainstem
@@ -380,6 +381,54 @@ module Brainstem
       end
       alias_method :brainstem_valid_params_for, :brainstem_valid_params
 
+      #
+      # Ensures that the parameters passed in are valid.
+      # To force erros on bad paramers set optins[:ignore_unknown_fields] to true,
+      # and pass the desired custom error message
+      #
+      def brainstem_validate_params!(requested_context = action_name.to_sym, root_param_name = brainstem_model_name, options = {})
+        error_params = brainstem_valid_params(requested_context, root_param_name)
+
+        object = options[:object] || params.with_indifferent_access[brainstem_model_name]
+        recursive_message = options[:recursive_key].present? ? " for #{options[:recursive_key]}" : ""
+
+        if !object.is_a?(Hash) || object.keys.length == 0
+          raise ::Brainstem::UnknownParams.new("Missing required parameters#{recursive_message}.")
+        else
+          object = object.with_indifferent_access
+        end
+
+        strange_params = []
+        object.keys.each do |param|
+          info = error_params[param]
+          if info.present?
+            # It might be a valid param
+            if info.is_a?(Hash)
+              if info[:_config][:only] && info[:_config][:only].to_s != requested_context.to_s
+                strange_params << param
+              end
+              if info[:_config][:recursive] && object[param].present?
+                recursive_params = object[param].is_a?(Hash) ? object[param].values : object[param]
+                recursive_params.each do |sub_object|
+                  return false unless brainstem_validate_params!(requested_context, root_param_name, options.merge(object: sub_object, recursive_key: param))
+                end
+              end
+            end
+          else
+            # Definitely not on the list.
+            if options[:ignore_unknown_fields] == 'true'
+              object.delete(param)
+            else
+              strange_params << param
+            end
+          end
+        end
+        if strange_params.length > 0
+          raise ::Brainstem::UnknownParams.new("Unknown params#{recursive_message}: #{strange_params.join(', ')}.")
+        else
+          true
+        end
+      end
 
       #
       # Lists all incoming param keys that will be rewritten to use a different
