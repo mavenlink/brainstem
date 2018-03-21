@@ -2,6 +2,7 @@ require 'active_support/core_ext/hash/except'
 require 'active_support/inflector'
 require 'brainstem/api_docs/formatters/abstract_formatter'
 require 'brainstem/api_docs/formatters/open_api_specification/helper'
+require 'brainstem/api_docs/formatters/markdown/helper'
 
 
 #
@@ -13,14 +14,15 @@ module Brainstem
       module OpenApiSpecification
         class EndpointParamsFormatter < AbstractFormatter
           include Helper
+          include ::Brainstem::ApiDocs::Formatters::Markdown::Helper
 
           attr_reader :output
 
           def initialize(endpoint)
-            @endpoint = endpoint
-            @presenter = endpoint.presenter
-
-            @output = []
+            @endpoint    = endpoint
+            @http_method = format_http_method(endpoint)
+            @presenter   = endpoint.presenter
+            @output      = []
           end
 
           def call
@@ -34,10 +36,9 @@ module Brainstem
               format_filter_params!
             end
 
-            if %w(index show).include?(endpoint.action)
+            if http_method != 'delete'
               format_optional_params!
-              # TODO:
-              # format_include_params
+              format_include_params!
             end
 
             format_query_params!
@@ -51,7 +52,7 @@ module Brainstem
           private
           ################################################################################
 
-          attr_reader :endpoint, :presenter
+          attr_reader :endpoint, :presenter, :http_method
 
           def format_path_params!
             path_params.each do |param|
@@ -84,9 +85,9 @@ module Brainstem
           end
 
           def format_search_param!
-            if presenter && presenter.searchable?
-              output << format_query_param(:search, type: 'string')
-            end
+            return if presenter.nil? || !presenter.searchable?
+
+            output << format_query_param(:search, type: 'string')
           end
 
           def format_only_param!
@@ -97,43 +98,46 @@ module Brainstem
           end
 
           def format_sort_order_params!
-            return unless presenter
+            return if presenter.nil? || (valid_sort_orders = presenter.valid_sort_orders).empty?
 
-            sort_orders = presenter.valid_sort_orders.map { |sort_name, _|
+            sort_orders = valid_sort_orders.map { |sort_name, _|
               ["#{sort_name}:asc", "#{sort_name}:desc"]
             }.flatten.sort
 
-            if sort_orders.present?
-              output << {
-                'in'          => 'query',
-                'name'        => 'order',
-                'description' => 'Supply `order` with the name of a valid sort field for the endpoint and a direction',
-                'type'        => 'array',
-                'items'       => {
-                  'type'    => 'string',
-                  'enum'    => sort_orders,
-                  'default' => presenter.default_sort_order
-                }
-              }
-            end
+            output << format_query_param('order',
+              info:      'Supply `order` with the name of a valid sort field for the endpoint and a direction',
+              type:      'array',
+              item_type: 'string',
+              items:     sort_orders,
+              default:   presenter.default_sort_order
+            )
           end
 
           def format_optional_params!
-            return unless presenter
+            return if presenter.nil? || (optional_field_names = presenter.optional_field_names).empty?
 
-            optional_field_names = presenter.optional_field_names
-            if optional_field_names.present?
-              output << {
-                'in'          => 'query',
-                'name'        => 'optional_fields',
-                'description' => 'Allows you to request one or more optional fields as an array',
-                'type'        => 'array',
-                'items'       => {
-                  'type' => 'string',
-                  'enum' => optional_field_names
-                }
-              }
-            end
+            output << format_query_param('optional_fields',
+              info:      'Allows you to request one or more optional fields as an array',
+              type:      'array',
+              item_type: 'string',
+              items:     optional_field_names
+            )
+          end
+
+          def format_include_params!
+            return if presenter.nil? || presenter.valid_associations.empty?
+
+            output << format_query_param('include',
+              type: 'string',
+              info: include_params_description
+            )
+          end
+
+          def include_params_description
+            result = "Any of below associations can be included in your request by providing the include"\
+                     "param, e.g. `include=association1,association2.`\n"
+            result << md_associations_table(presenter, associations_as_link: false)
+            result
           end
 
           def format_query_params!

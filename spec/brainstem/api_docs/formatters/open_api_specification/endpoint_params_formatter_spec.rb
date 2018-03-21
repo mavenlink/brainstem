@@ -11,11 +11,12 @@ module Brainstem
           let(:presenter)     { Object.new }
           let(:atlas)         { Object.new }
           let(:action)        { 'show' }
+          let(:http_methods)  { %w(GET) }
           let(:endpoint)      {
             Endpoint.new(
               atlas,
               {
-                http_methods: %w(get post),
+                http_methods: http_methods,
                 path:         '/widgets(.:format)'
               }.merge(endpoint_args)
             )
@@ -31,49 +32,56 @@ module Brainstem
           end
 
           describe '#call' do
-            context 'when action is index' do
-              let(:action) { 'index' }
+            context 'when request type is get' do
+              let(:http_methods)  { %w(GET) }
 
-              it 'formats path, shared, query and body params for the endpoint' do
-                any_instance_of(described_class) do |instance|
-                  mock(instance).format_path_params!
-                  mock(instance).format_optional_params!
-                  mock(instance).format_query_params!
-                  mock(instance).format_body_params!
-                  mock(instance).format_pagination_params!
-                  mock(instance).format_search_param!
-                  mock(instance).format_only_param!
-                  mock(instance).format_sort_order_params!
-                  mock(instance).format_filter_params!
+              context 'when action is index' do
+                let(:action) { 'index' }
+
+                it 'formats path, shared, query and body params for the endpoint' do
+                  any_instance_of(described_class) do |instance|
+                    mock(instance).format_path_params!
+                    mock(instance).format_optional_params!
+                    mock(instance).format_include_params!
+                    mock(instance).format_query_params!
+                    mock(instance).format_body_params!
+                    mock(instance).format_pagination_params!
+                    mock(instance).format_search_param!
+                    mock(instance).format_only_param!
+                    mock(instance).format_sort_order_params!
+                    mock(instance).format_filter_params!
+                  end
+
+                  subject.call
                 end
+              end
 
-                subject.call
+              context 'when action is show' do
+                let(:action) { 'show' }
+
+                it 'formats path, optional, query and body params for the endpoint' do
+                  any_instance_of(described_class) do |instance|
+                    mock(instance).format_path_params!
+                    mock(instance).format_optional_params!
+                    mock(instance).format_include_params!
+                    mock(instance).format_query_params!
+                    mock(instance).format_body_params!
+
+                    dont_allow(instance).format_pagination_params!
+                    dont_allow(instance).format_search_param!
+                    dont_allow(instance).format_only_param!
+                    dont_allow(instance).format_sort_order_params!
+                    dont_allow(instance).format_filter_params!
+                  end
+
+                  subject.call
+                end
               end
             end
 
-            context 'when action is show' do
-              let(:action) { 'show' }
-
-              it 'formats path, optional, query and body params for the endpoint' do
-                any_instance_of(described_class) do |instance|
-                  mock(instance).format_path_params!
-                  mock(instance).format_optional_params!
-                  mock(instance).format_query_params!
-                  mock(instance).format_body_params!
-
-                  dont_allow(instance).format_pagination_params!
-                  dont_allow(instance).format_search_param!
-                  dont_allow(instance).format_only_param!
-                  dont_allow(instance).format_sort_order_params!
-                  dont_allow(instance).format_filter_params!
-                end
-
-                subject.call
-              end
-            end
-
-            context 'when action is not index' do
-              let(:action) { 'update' }
+            context 'when request type is `delete`' do
+              let(:http_methods) { %w(DELETE) }
+              let(:action)       { 'destroy' }
 
               it 'formats path, query and body param for the endpoint' do
                 any_instance_of(described_class) do |instance|
@@ -86,6 +94,30 @@ module Brainstem
                   dont_allow(instance).format_only_param!
                   dont_allow(instance).format_sort_order_params!
                   dont_allow(instance).format_optional_params!
+                  dont_allow(instance).format_include_params!
+                  dont_allow(instance).format_filter_params!
+                end
+
+                subject.call
+              end
+            end
+
+            context 'when request type is not delete' do
+              let(:http_methods) { %w(PATCH) }
+              let(:action)       { 'update' }
+
+              it 'formats path, query and body param for the endpoint' do
+                any_instance_of(described_class) do |instance|
+                  mock(instance).format_optional_params!
+                  mock(instance).format_include_params!
+                  mock(instance).format_path_params!
+                  mock(instance).format_query_params!
+                  mock(instance).format_body_params!
+
+                  dont_allow(instance).format_pagination_params!
+                  dont_allow(instance).format_search_param!
+                  dont_allow(instance).format_only_param!
+                  dont_allow(instance).format_sort_order_params!
                   dont_allow(instance).format_filter_params!
                 end
 
@@ -404,6 +436,44 @@ module Brainstem
                     }
                   }
                 ])
+              end
+            end
+
+            describe '#format_include_params!' do
+              let(:valid_associations) {
+                {
+                  'association_1' => OpenStruct.new(
+                    name:         'association_1',
+                    target_class: 'association_1_class',
+                    description:  'association_1 description'
+                  ),
+                  'association_2' => OpenStruct.new(
+                    name:         'association_2',
+                    target_class: 'association_2_class',
+                    description:  'association_2 description',
+                  )
+                }
+              }
+
+              before do
+                stub(presenter).valid_associations { valid_associations }
+              end
+
+              it 'adds the include filter as a query param' do
+                subject.send(:format_include_params!)
+
+                expect(subject.output.length).to eq(1)
+
+                param_def = subject.output[0]
+                expect(param_def.except('description')).to eq(
+                  'name' => 'include',
+                  'in'   => 'query',
+                  'type' => 'string',
+                )
+                expect(param_def['description']).to include('e.g. `include=association1,association2.`')
+                expect(param_def['description']).to include('Association Name | Associated Class | Description')
+                expect(param_def['description']).to include('`association_1` | association_1_class | association_1 description')
+                expect(param_def['description']).to include('`association_2` | association_2_class | association_2 description')
               end
             end
 
