@@ -171,32 +171,7 @@ module Brainstem
 
 
           def format_associations!
-            if presenter.valid_associations.any?
-              output << md_h5("Associations")
-
-              output << "Association Name | Associated Class | Description\n"
-              output << " --------------  |  --------------  |  ----------\n"
-
-              output << presenter.valid_associations.inject("") do |buffer, (_, association)|
-                link = presenter.link_for_association(association)
-                if link
-                  link = md_a(association.target_class, link)
-                else
-                  link = association.target_class.to_s
-                end
-
-                desc = association.description.to_s
-                if association.options && association.options[:restrict_to_only]
-                  desc += "." unless desc =~ /\.\s*\z/
-                  desc += "  Restricted to queries using the #{md_inline_code("only")} parameter."
-                  desc.strip!
-                end
-
-                buffer << md_inline_code(association.name) + " | " + link + " | " + desc + "\n"
-              end
-
-              output << "\n"
-            end
+            output << md_associations_table(presenter, associations_as_link: true)
           end
         end
       end

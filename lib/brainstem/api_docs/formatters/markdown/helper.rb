@@ -78,6 +78,35 @@ module Brainstem
             text += "<#{item_type.to_s.capitalize}>" if item_type.present?
             " (#{md_inline_code(text)})"
           end
+
+
+          def md_associations_table(presenter, options = {})
+            return "" if presenter.valid_associations.empty?
+
+            output = md_h5("Associations")
+            output << "Association Name | Associated Class | Description\n"
+            output << " --------------  |  --------------  |  ----------\n"
+
+            output << presenter.valid_associations.inject("") do |buffer, (_, association)|
+              if options[:associations_as_link] && (link = presenter.link_for_association(association))
+                link = md_a(association.target_class, link)
+              else
+                link = association.target_class.to_s
+              end
+
+              desc = association.description.to_s
+              if association.options && association.options[:restrict_to_only]
+                desc += "." unless desc =~ /\.\s*\z/
+                desc += "  Restricted to queries using the #{md_inline_code("only")} parameter."
+                desc.strip!
+              end
+
+              buffer << md_inline_code(association.name) + " | " + link + " | " + desc + "\n"
+            end
+
+            output << "\n"
+            output
+          end
         end
       end
     end

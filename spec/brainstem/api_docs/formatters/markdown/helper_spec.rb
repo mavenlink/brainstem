@@ -112,6 +112,53 @@ module Brainstem
               end
             end
           end
+
+
+          describe "#md_associations_table" do
+            let(:presenter) { Object.new }
+
+            before do
+              stub(presenter).valid_associations { valid_associations }
+            end
+
+            context "when presenter has valid associations" do
+              let(:valid_associations) {
+                {
+                  'association_1' => OpenStruct.new(
+                    name:         'association_1',
+                    target_class: 'association_1_class',
+                    description:  'association_1 description'
+                  ),
+                  'association_2' => OpenStruct.new(
+                    name:         'association_2',
+                    target_class: 'association_2_class',
+                    description:  'association_2 description',
+                    options:      { restrict_to_only: true }
+                  )
+                }
+              }
+
+              it "adds them to the description" do
+                result = subject.md_associations_table(presenter)
+
+                expect(result).to include("Associations")
+                expect(result).to include("Association Name | Associated Class | Description\n")
+                expect(result).to include(" --------------  |  --------------  |  ----------\n")
+                expect(result).to include("`association_1` | association_1_class | association_1 description\n")
+
+                association_2_desc = "association_2 description.  Restricted to queries using the `only` parameter."
+                expect(result).to include("`association_2` | association_2_class | #{association_2_desc}\n")
+              end
+            end
+
+            context "when presenter has no valid associations" do
+              let(:valid_associations) { {} }
+
+              it "adds them to the description" do
+                expect(subject.md_associations_table(presenter)).to eq("")
+              end
+            end
+          end
         end
       end
     end
