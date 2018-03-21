@@ -36,6 +36,14 @@ module Brainstem
             end
           end
 
+          describe "format_http_method" do
+            let(:endpoint) { OpenStruct.new(http_methods: %w(PATCH PUT)) }
+
+            it "returns the first downcased http method" do
+              expect(subject.format_http_method(endpoint)).to eq("patch")
+            end
+          end
+
           describe "type_and_format" do
             context "when type is 'string'" do
               it "returns the correct type and format" do

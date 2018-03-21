@@ -11,6 +11,10 @@ module Brainstem
                 presenter.target_class.underscore.singularize.titleize.strip
           end
 
+          def format_http_method(endpoint)
+            endpoint.http_methods.first.downcase
+          end
+
           def type_and_format(type, item_type = nil)
             result = case type.to_s.downcase
               when 'array'
