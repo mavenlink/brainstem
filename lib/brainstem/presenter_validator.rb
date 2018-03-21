@@ -36,7 +36,7 @@ module Brainstem
       fields.each do |name, field|
         case field
           when DSL::HashBlockField
-            fields_exist(field) if presenter_class.presents.any? { |klass| !field.executable?(klass.new) }
+            fields_exist(field) if presenter_class.presents.any? { !field.executable? }
           when DSL::Field
             method_name = field.method_name
             if method_name && presenter_class.presents.any? { |klass| !klass.new.respond_to?(method_name) }
@@ -71,7 +71,7 @@ module Brainstem
                 errors.add(:fields, "'#{name}' is not valid because one or more of the specified conditionals does not exist")
               end
             end
-            conditionals_exist(field) if presenter_class.presents.any? { |klass| !field.executable?(klass.new) }
+            conditionals_exist(field) if presenter_class.presents.any? { |klass| !field.executable? }
           when DSL::Field
             if field.options[:if].present?
               if Array.wrap(field.options[:if]).any? { |conditional| presenter_class.configuration[:conditionals][conditional].nil? }
