@@ -17,16 +17,16 @@ module Brainstem
           attr_reader :output
 
           def initialize(endpoint)
-            @endpoint   = endpoint
-            @presenter  = endpoint.presenter
-            @model_name = presenter_title(presenter)
-
-            @output = ActiveSupport::HashWithIndifferentAccess.new
+            @endpoint    = endpoint
+            @http_method = format_http_method(endpoint)
+            @presenter   = endpoint.presenter
+            @model_name  = presenter_title(presenter)
+            @output      = ActiveSupport::HashWithIndifferentAccess.new
           end
 
           def call
-            if endpoint.action == 'destroy'
-              format_destroy_response!
+            if http_method == 'delete'
+              format_delete_response!
             else
               format_schema_response!
             end
@@ -42,24 +42,23 @@ module Brainstem
 
           attr_reader :endpoint,
                       :presenter,
-                      :model_name
+                      :model_name,
+                      :http_method
 
-          def format_destroy_response!
+          def format_delete_response!
             output.merge! '204' => { description: success_response_description }
           end
 
           def success_response_description
-            case endpoint.action
-              when 'index'
-                "A list of #{model_name.pluralize} have been retrieved"
-              when 'show'
-                "#{model_name} has been retrieved"
-              when 'update'
+            case http_method
+              when 'post'
+                "#{model_name} has been created"
+              when 'put', 'patch'
                 "#{model_name} has been updated"
-              when 'destroy'
+              when 'delete'
                 "#{model_name} has been deleted"
               else
-                "A <string,MetaData> map of #{model_name.pluralize}"
+                "A list of #{model_name.pluralize} have been retrieved"
             end
           end
 

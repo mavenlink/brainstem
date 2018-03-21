@@ -11,6 +11,7 @@ module Brainstem
           let(:presenter)     { Object.new }
           let(:atlas)         { Object.new }
           let(:action)        { 'show' }
+          let(:http_methods)  { %w(GET) }
           let(:endpoint)      {
             Endpoint.new(
               atlas,
@@ -25,15 +26,16 @@ module Brainstem
             stub(presenter).contextual_documentation(:title) { 'Widget' }
             stub(endpoint).presenter { presenter }
             stub(endpoint).action { action }
+            stub(endpoint).http_methods { http_methods }
           end
 
           describe '#call' do
-            context 'when action is destroy' do
-              let(:action) { 'destroy' }
+            context 'when delete request' do
+              let(:http_methods) { %w(DELETE) }
 
               it 'formats the delete response and error response' do
                 any_instance_of(described_class) do |instance|
-                  mock(instance).format_destroy_response!
+                  mock(instance).format_delete_response!
                   mock(instance).format_error_responses!
 
                   dont_allow(instance).format_schema_response!
@@ -43,15 +45,15 @@ module Brainstem
               end
             end
 
-            context 'when action is not destroy' do
-              let(:action) { 'show' }
+            context 'when request is not delete' do
+              let(:http_methods) { %w(GET) }
 
               it 'formats the schema response and error response' do
                 any_instance_of(described_class) do |instance|
                   mock(instance).format_schema_response!
                   mock(instance).format_error_responses!
 
-                  dont_allow(instance).format_destroy_response!
+                  dont_allow(instance).format_delete_response!
                 end
 
                 subject.call
@@ -64,42 +66,42 @@ module Brainstem
             describe '#success_response_description' do
               subject { described_class.new(endpoint).send(:success_response_description) }
 
-              context 'when action is index' do
-                let(:action) { 'index' }
+              context 'when `GET` request' do
+                let(:http_methods) { %w(GET) }
 
                 it { is_expected.to eq('A list of Widgets have been retrieved') }
               end
 
-              context 'when action is show' do
-                let(:action) { 'show' }
+              context 'when `POST` request' do
+                let(:http_methods) { %w(POST) }
 
-                it { is_expected.to eq('Widget has been retrieved') }
+                it { is_expected.to eq('Widget has been created') }
               end
 
-              context 'when action is update' do
-                let(:action) { 'update' }
+              context 'when `PUT` request' do
+                let(:http_methods) { %w(PUT) }
 
                 it { is_expected.to eq('Widget has been updated') }
               end
 
-              context 'when action is destroy' do
-                let(:action) { 'destroy' }
+              context 'when `PATCH` request' do
+                let(:http_methods) { %w(PATCH) }
+
+                it { is_expected.to eq('Widget has been updated') }
+              end
+
+              context 'when `DELETE` request' do
+                let(:http_methods) { %w(DELETE) }
 
                 it { is_expected.to eq('Widget has been deleted') }
               end
-
-              context 'when any other action' do
-                let(:action) { 'update_all' }
-
-                it { is_expected.to eq('A <string,MetaData> map of Widgets') }
-              end
             end
 
-            describe '#format_destroy_response!' do
-              let(:action) { 'destroy' }
+            describe '#format_delete_response!' do
+              let(:http_methods) { %w(DELETE) }
 
               it 'returns the structure response for a destroy action' do
-                subject.send(:format_destroy_response!)
+                subject.send(:format_delete_response!)
 
                 expect(subject.output).to eq('204' => { 'description' => 'Widget has been deleted' })
               end
@@ -115,7 +117,7 @@ module Brainstem
                 subject.send(:format_schema_response!)
 
                 expect(subject.output).to eq('200' => {
-                  'description' => 'Widget has been retrieved',
+                  'description' => 'A list of Widgets have been retrieved',
                   'schema' => {
                     'type' => 'object',
                     'properties' => {
