@@ -42,7 +42,6 @@ module Brainstem
 
           # TODO:
           # Security Formatter
-          # Tags Formatter
 
           write_spec_to_file!
         end
