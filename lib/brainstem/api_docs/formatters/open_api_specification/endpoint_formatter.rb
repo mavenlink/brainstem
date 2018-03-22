@@ -50,6 +50,24 @@ module Brainstem
 
           delegate :controller => :endpoint
 
+          ################################################################################
+          # Methods to override
+          ################################################################################
+
+          #
+          # Format the endpoint summary
+          #
+          def summary
+            endpoint.title
+          end
+
+          #
+          # Format the endpoint description
+          #
+          def description
+            endpoint.description
+          end
+
           #
           # Formats the actual URI
           #
@@ -59,12 +77,16 @@ module Brainstem
               .gsub(/(:(?<param>\w+))/, '{\k<param>}')
           end
 
+          ################################################################################
+          # Avoid overridding
+          ################################################################################
+
           #
           # Formats the summary as given, falling back to the humanized action
           # name.
           #
           def format_summary!
-            output[endpoint_key][http_method].merge! summary: endpoint.title.to_s.strip
+            output[endpoint_key][http_method].merge! summary: summary.to_s.strip
           end
 
           #
@@ -72,12 +94,12 @@ module Brainstem
           #
           # TODO: Maybe add recursive / legacy to the description
           def format_description!
-            return if endpoint.description.blank?
+            return if description.blank?
 
-            description = endpoint.description.to_s.strip
-            description += "." unless description =~ /\.\s*\z/
+            desc = description.to_s.strip
+            desc += "." unless desc =~ /\.\s*\z/
 
-            output[endpoint_key][http_method].merge! description: description
+            output[endpoint_key][http_method].merge! description: desc
           end
 
           #
