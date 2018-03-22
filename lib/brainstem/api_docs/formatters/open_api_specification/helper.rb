@@ -15,6 +15,12 @@ module Brainstem
             endpoint.http_methods.first.downcase
           end
 
+          def format_tag_name(name)
+            return name if name.blank?
+
+            name.underscore.titleize.strip
+          end
+
           def type_and_format(type, item_type = nil)
             result = case type.to_s.downcase
               when 'array'

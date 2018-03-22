@@ -23,6 +23,7 @@ module Brainstem
           mock(subject).write_presenter_definitions!
           mock(subject).write_error_definitions!
           mock(subject).write_endpoint_definitions!
+          mock(subject).write_tag_definitions!
 
           mock.proxy(subject).write_spec_to_file!
           mock(write_method).call('./specification.yml', anything)
@@ -41,6 +42,7 @@ module Brainstem
             mock(subject).write_presenter_definitions!
             mock(subject).write_error_definitions!
             mock(subject).write_endpoint_definitions!
+            mock(subject).write_tag_definitions!
 
             mock.proxy(subject).write_info_object!
             mock.proxy
@@ -71,6 +73,7 @@ module Brainstem
               mock(subject).write_info_object!
               mock(subject).write_error_definitions!
               mock(subject).write_endpoint_definitions!
+              mock(subject).write_tag_definitions!
 
               mock.proxy(subject).write_presenter_definitions!
               stub(atlas).presenters.stub!.formatted(:oas) { generated_data }
@@ -117,9 +120,11 @@ module Brainstem
             it "writes error definitions" do
               mock(subject).write_info_object!
               mock(subject).write_endpoint_definitions!
-              mock.proxy(subject).write_presenter_definitions!
+              mock(subject).write_tag_definitions!
 
+              mock.proxy(subject).write_presenter_definitions!
               mock.proxy(subject).write_error_definitions!
+
               stub(atlas).presenters.stub!.formatted(:oas) { generated_data }
               mock(write_method).call('./specification.yml', expected_yaml)
 
@@ -147,9 +152,74 @@ module Brainstem
               mock(subject).write_info_object!
               mock(subject).write_error_definitions!
               mock(subject).write_presenter_definitions!
+              mock(subject).write_tag_definitions!
               mock.proxy(subject).write_endpoint_definitions!
 
               stub(atlas).controllers.stub!.formatted(:oas) { generated_data }
+              mock(write_method).call('./specification.yml', expected_yaml)
+
+              subject << atlas
+            end
+          end
+
+          context "when generating tag definitions" do
+            let(:documentable_controller_Z) {
+              OpenStruct.new(
+                name:        'controller_Z',
+                description: 'controller_Z desc',
+                endpoints:   OpenStruct.new(only_documentable: [1, 2])
+              )
+            }
+            let(:documentable_controller_A) {
+              OpenStruct.new(
+                name:        'controller_A',
+                description: 'controller_A desc',
+                endpoints:   OpenStruct.new(only_documentable: [1, 2])
+              )
+            }
+            let(:nodoc_controller) {
+              OpenStruct.new(
+                name:        'controller_nodoc',
+                description: 'controller_nodoc desc',
+                endpoints:   OpenStruct.new(only_documentable: [1, 2])
+              )
+            }
+            let(:no_endpoint_controller) {
+              OpenStruct.new(
+                name:        'controller_no_endpoint',
+                description: 'controller_no_endpoint desc',
+                endpoints:   OpenStruct.new(only_documentable: [])
+              )
+            }
+            let(:controllers) {
+              [
+                documentable_controller_Z,
+                documentable_controller_A,
+                nodoc_controller,
+                no_endpoint_controller
+              ]
+            }
+            let(:expected_yaml) {
+              {
+                'tags' => [
+                  { 'name' => 'Controller A', 'description' => 'controller_A desc' },
+                  { 'name' => 'Controller Z', 'description' => 'controller_Z desc' }
+                ]
+              }.to_yaml
+            }
+
+            before do
+              stub(nodoc_controller).nodoc? { true }
+            end
+
+            it "writes endpoint definitions" do
+              mock(subject).write_info_object!
+              mock(subject).write_error_definitions!
+              mock(subject).write_presenter_definitions!
+              mock(subject).write_endpoint_definitions!
+
+              mock.proxy(subject).write_tag_definitions!
+              stub(atlas).controllers { controllers }
               mock(write_method).call('./specification.yml', expected_yaml)
 
               subject << atlas

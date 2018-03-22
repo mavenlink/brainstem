@@ -36,6 +36,24 @@ module Brainstem
             end
           end
 
+          describe "format_tag_name" do
+            context "when name is given" do
+              let(:title) { "awesome_sauce" }
+
+              it "returns the formatted name" do
+                expect(subject.format_tag_name(title)).to eq("Awesome Sauce")
+              end
+            end
+
+            context "when name is nil" do
+              let(:title) { nil }
+
+              it "returns nil" do
+                expect(subject.format_tag_name(title)).to be_nil
+              end
+            end
+          end
+
           describe "format_http_method" do
             let(:endpoint) { OpenStruct.new(http_methods: %w(PATCH PUT)) }
 

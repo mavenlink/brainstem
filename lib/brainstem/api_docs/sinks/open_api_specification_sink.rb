@@ -38,6 +38,7 @@ module Brainstem
           write_presenter_definitions!
           write_error_definitions!
           write_endpoint_definitions!
+          write_tag_definitions!
 
           # TODO:
           # Security Formatter
@@ -121,6 +122,26 @@ module Brainstem
           end
 
           inject_objects_under_key!(:paths, controller_definitions, true)
+        end
+
+        #
+        # Use the controllers names as tag defintions
+        #
+        def write_tag_definitions!
+          self.output[:tags] = controllers
+            .select { |controller| !controller.nodoc? && controller.endpoints.only_documentable.any? }
+            .sort_by(&:name)
+            .map { |controller| format_tag_data(controller) }
+        end
+
+        #
+        # Returns formatted tag object for a given controller.
+        #
+        def format_tag_data(controller)
+          {
+            name: format_tag_name(controller.name),
+            description: controller.description
+          }.reject { |_, v| v.blank? }
         end
 
         #

@@ -37,6 +37,7 @@ module Brainstem
 
             format_summary!
             format_description!
+            format_tags!
             format_parameters!
             format_response!
 
@@ -100,6 +101,13 @@ module Brainstem
             desc += "." unless desc =~ /\.\s*\z/
 
             output[endpoint_key][http_method].merge! description: desc
+          end
+
+          #
+          # Adds the tags for the given endpoint.
+          #
+          def format_tags!
+            output[endpoint_key][http_method].merge! tags: [format_tag_name(endpoint.controller.name)]
           end
 
           #

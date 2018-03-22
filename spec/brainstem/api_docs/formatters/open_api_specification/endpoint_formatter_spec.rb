@@ -44,6 +44,7 @@ module Brainstem
                   dont_allow(instance).format_description!
                   dont_allow(instance).format_parameters!
                   dont_allow(instance).format_response!
+                  dont_allow(instance).format_tags!
                 end
               end
 
@@ -61,6 +62,7 @@ module Brainstem
                   dont_allow(instance).format_description!
                   dont_allow(instance).format_parameters!
                   dont_allow(instance).format_response!
+                  dont_allow(instance).format_tags!
                 end
               end
 
@@ -76,6 +78,7 @@ module Brainstem
                   mock(instance).format_description!
                   mock(instance).format_parameters!
                   mock(instance).format_response!
+                  mock(instance).format_tags!
                 end
 
                 subject.call
@@ -128,6 +131,19 @@ module Brainstem
                 stub(endpoint).title { lorem }
                 subject.send(:format_summary!)
                 expect(subject.output['/widgets']['get']['summary']).to eq(lorem)
+              end
+            end
+
+            describe "#format_tags!" do
+              let(:controller_name) { "awesome_sauce" }
+
+              before do
+                stub(controller).name { controller_name }
+              end
+
+              it "sets the title in the output" do
+                subject.send(:format_tags!)
+                expect(subject.output['/widgets']['get']['tags']).to eq(['Awesome Sauce'])
               end
             end
 
