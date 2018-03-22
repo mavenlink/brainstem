@@ -451,6 +451,7 @@ module Brainstem
                     name:         'association_2',
                     target_class: 'association_2_class',
                     description:  'association_2 description',
+                    options:      { restrict_to_only: true }
                   )
                 }
               }
@@ -471,9 +472,9 @@ module Brainstem
                   'type' => 'string',
                 )
                 expect(param_def['description']).to include('e.g. `include=association1,association2.`')
-                expect(param_def['description']).to include('Association Name | Associated Class | Description')
-                expect(param_def['description']).to include('`association_1` | association_1_class | association_1 description')
-                expect(param_def['description']).to include('`association_2` | association_2_class | association_2 description')
+                expect(param_def['description']).to include('`association_1` (association_1_class) - association_1 description')
+                association_2_desc = 'association_2 description.  Restricted to queries using the `only` parameter.'
+                expect(param_def['description']).to include("`association_2` (association_2_class) - #{association_2_desc}")
               end
             end
 

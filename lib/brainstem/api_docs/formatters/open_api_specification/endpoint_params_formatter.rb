@@ -134,9 +134,26 @@ module Brainstem
           end
 
           def include_params_description
-            result = "Any of below associations can be included in your request by providing the include"\
+            result = "Any of the below associations can be included in your request by providing the `include` "\
                      "param, e.g. `include=association1,association2.`\n"
-            result << md_associations_table(presenter, associations_as_link: false)
+
+            presenter.valid_associations
+              .sort_by { |_, association| association.name }
+              .each do |_, association|
+
+              text = md_inline_code(association.name)
+              text += " (#{ association.target_class.to_s })"
+
+              desc = association.description.to_s
+              if association.options && association.options[:restrict_to_only]
+                desc += "." unless desc =~ /\.\s*\z/
+                desc += "  Restricted to queries using the #{md_inline_code("only")} parameter."
+                desc.strip!
+              end
+
+              result << md_li(text + (desc.present? ? " - #{desc}" : ''))
+            end
+
             result
           end
 
