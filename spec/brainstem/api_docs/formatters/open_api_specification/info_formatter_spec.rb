@@ -26,7 +26,6 @@ module Brainstem
           describe 'format_swagger_object!' do
             before do
               mock.proxy(subject).host
-              mock.proxy(subject).base_path
               mock.proxy(subject).schemes
               mock.proxy(subject).consumes
               mock.proxy(subject).produces

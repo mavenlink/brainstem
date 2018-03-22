@@ -76,6 +76,7 @@ module Brainstem
             endpoint.path
               .gsub('(.:format)', '')
               .gsub(/(:(?<param>\w+))/, '{\k<param>}')
+              .gsub(Brainstem::ApiDocs.base_path, '')
           end
 
           ################################################################################

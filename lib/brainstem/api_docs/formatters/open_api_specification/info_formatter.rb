@@ -48,7 +48,7 @@ module Brainstem
             {
               'swagger'  => '2.0',
               'host'     => host,
-              'basePath' => base_path,
+              'basePath' => Brainstem::ApiDocs.base_path,
               'schemes'  => schemes,
               'consumes' => consumes,
               'produces' => produces
@@ -74,10 +74,6 @@ module Brainstem
 
           def host
             'petstore.swagger.io'
-          end
-
-          def base_path
-            '/v2'
           end
 
           def schemes

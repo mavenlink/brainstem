@@ -16,7 +16,7 @@ module Brainstem
               {
                 controller:   controller,
                 http_methods: %w(get post),
-                path:         '/widgets(.:format)'
+                path:         '/v2/widgets(.:format)'
               }.merge(endpoint_args)
             )
           }
