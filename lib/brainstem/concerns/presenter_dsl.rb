@@ -52,6 +52,13 @@ module Brainstem
           configuration[:nodoc] = true
         end
 
+        #
+        # Temporary implementation to track controllers that have been documented.
+        #
+        def documented!
+          configuration[:documented] = true
+        end
+
         # Declare a helper module or block whose methods will be available in dynamic fields and associations.
         def helper(mod = nil, &block)
           if mod

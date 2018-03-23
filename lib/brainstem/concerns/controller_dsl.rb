@@ -55,6 +55,14 @@ module Brainstem
 
 
         #
+        # Temporary implementation to track controllers that have been documented.
+        #
+        def documented!
+          configuration[brainstem_params_context][:documented] = true
+        end
+
+
+        #
         # Specifies that the scope should not be documented. Setting this on
         # the default context will force the controller to be undocumented,
         # whereas setting it within an action context will force that action to
