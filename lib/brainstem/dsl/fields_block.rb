@@ -18,6 +18,11 @@ module Brainstem
             opts.merge!(if: if_clause) if if_clause.present?
           end
         end
+
+        def format_options(options)
+          options[:item_type] = options[:item_type].to_s if options.has_key?(:item_type)
+          super
+        end
       end
     end
   end

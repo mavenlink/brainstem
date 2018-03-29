@@ -27,7 +27,7 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency "rr"
   gem.add_development_dependency "rspec", "~> 3.5"
   gem.add_development_dependency "sqlite3"
-  gem.add_development_dependency "mysql2"
+  gem.add_development_dependency "mysql2", "0.4.10"
   gem.add_development_dependency "database_cleaner"
   gem.add_development_dependency "yard"
   gem.add_development_dependency "pry"

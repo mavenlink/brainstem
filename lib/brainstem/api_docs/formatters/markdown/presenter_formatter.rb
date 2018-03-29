@@ -62,7 +62,7 @@ module Brainstem
 
           def format_field_leaf(field, indent_level)
             text = md_inline_code(field.name.to_s)
-            text << " (#{md_inline_code(field.type.to_s.capitalize)})"
+            text << md_inline_type(field.type, field.options[:item_type])
 
             text << "\n"
             text << md_li(field.description, indent_level + 1) if field.description
@@ -120,10 +120,18 @@ module Brainstem
               output << md_ul do
                 presenter.valid_filters.inject("") do |buffer, (name, opts)|
                   text = md_inline_code(name)
+                  text << md_inline_type(opts[:type])
 
-                  if opts[:info]
+                  if opts[:info] || opts[:items]
+                    description = opts[:info].to_s
+
+                    if opts[:items].present?
+                      description += "." unless description =~ /\.\s*\z/
+                      description += " Available values: #{opts[:items].join(', ')}."
+                    end
+
                     text << "\n"
-                    text << md_li(opts[:info], 1)
+                    text << md_li(description, 1)
                     text.chomp!
                   end
 

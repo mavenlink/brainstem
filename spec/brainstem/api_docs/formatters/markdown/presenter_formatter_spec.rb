@@ -221,6 +221,25 @@ module Brainstem
                         end
                       end
                     end
+
+                    describe "when field has an item type" do
+                      let(:sprocket_ids) { OpenStruct.new(
+                          name:        :sprocket_ids,
+                          description: lorem,
+                          type:        :array,
+                          options:     { item_type: :integer }
+                        )
+                      }
+                      let(:valid_fields) { { sprocket_ids: sprocket_ids } }
+
+                      before do
+                        stub(sprocket_ids).optional? { optional }
+                      end
+
+                      it "outputs each field's type along with the sub item type" do
+                        expect(subject.output).to include "`sprocket_ids` (`Array<Integer>`)"
+                      end
+                    end
                   end
 
 
@@ -303,8 +322,9 @@ module Brainstem
                 let(:valid_filters) {
                   {
                     "published" => {
+                      type:  "string",
                       value: Proc.new { nil },
-                      info: "limits to published"
+                      info:  "limits to published"
                     }
                   }
                 }
@@ -315,8 +335,27 @@ module Brainstem
 
                 it "lists them" do
                   expect(subject.output.scan(/\n-/).count).to eq 1
-                  expect(subject.output).to include "`published`"
+                  expect(subject.output).to include "`published` (`String`)"
                   expect(subject.output).to include "    - limits to published"
+                end
+
+                context "when items specified" do
+                  let(:valid_filters) {
+                    {
+                      "published" => {
+                        type:  "string",
+                        value: Proc.new { nil },
+                        info:  "limits to published",
+                        items: ["fizz", "buzz"]
+                      }
+                    }
+                  }
+
+                  it "lists them with items" do
+                    expect(subject.output.scan(/\n-/).count).to eq 1
+                    expect(subject.output).to include "`published` (`String`)"
+                    expect(subject.output).to include "    - limits to published. Available values: fizz, buzz."
+                  end
                 end
               end
 

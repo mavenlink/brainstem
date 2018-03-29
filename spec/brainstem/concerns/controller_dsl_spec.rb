@@ -107,18 +107,18 @@ module Brainstem
         end
 
         it "evaluates the block given to it" do
-          mock(subject).valid(:thing, root: "widgets")
+          mock(subject).valid(:thing, :string, root: "widgets")
 
           subject.model_params :widgets do |param|
-            param.valid :thing
+            param.valid :thing, :string
           end
         end
 
         it "merges options" do
-          mock(subject).valid(:thing, root: "widgets", nodoc: true)
+          mock(subject).valid(:thing, :integer, root: "widgets", nodoc: true, required: true)
 
           subject.model_params :widgets do |param|
-            param.valid :thing, nodoc: true
+            param.valid :thing, :integer, nodoc: true, required: true
           end
         end
       end
@@ -127,29 +127,103 @@ module Brainstem
         context "when given a name and an options hash" do
           it "appends to the valid params hash" do
             subject.brainstem_params do
-              valid :sprocket_name,
-                info: "sprockets[sprocket_name] is required"
+              valid :sprocket_ids, :array,
+                info: "sprockets[sprocket_ids] is required",
+                required: true,
+                item_type: :integer
             end
 
-            expect(subject.configuration[:_default][:valid_params][:sprocket_name][:info]).to \
-              eq "sprockets[sprocket_name] is required"
+            expect(subject.configuration[:_default][:valid_params][:sprocket_ids][:info]).to \
+              eq "sprockets[sprocket_ids] is required"
+            expect(subject.configuration[:_default][:valid_params][:sprocket_ids][:required]).to be_truthy
+            expect(subject.configuration[:_default][:valid_params][:sprocket_ids][:type]).to eq('array')
+            expect(subject.configuration[:_default][:valid_params][:sprocket_ids][:item_type]).to eq('integer')
           end
         end
 
-        context "when given a name and an options hash" do
+        context "when given a name and an HWIA options hash" do
           it "appends to the valid params hash" do
-            # This is HWIA, so all keys are stringified
+            # This is Hash With Indifferent Access, so all keys are stringified
             data = {
               "recursive" => true,
-              "info" => "sprockets[sub_sprockets] is recursive and an array"
+              "info"      => "sprockets[sub_sprockets] is recursive and an array",
+              "required"  => true
             }
 
             subject.brainstem_params do
-              valid :sub_sprockets, data
+              valid :sub_sprockets, :hash, data
             end
 
-            expect(subject.configuration[:_default][:valid_params][:sub_sprockets]).to \
-              eq data
+            expect(subject.configuration[:_default][:valid_params][:sub_sprockets]).to eq({
+              "recursive" => true,
+              "info"      => "sprockets[sub_sprockets] is recursive and an array",
+              "required"  => true,
+              "type"      => "hash",
+              "nodoc"     => false
+            })
+          end
+        end
+
+        context "when no type is provided" do
+          before do
+            mock(subject).deprecated_type_warning
+          end
+
+          it "defaults to type string" do
+            subject.brainstem_params do
+              valid :sprocket_name, required: true
+            end
+
+            configuration = subject.configuration[:_default][:valid_params][:sprocket_name]
+            expect(configuration[:type]).to eq('string')
+            expect(configuration[:required]).to be_truthy
+          end
+        end
+
+        context "when no options are provided" do
+          it "sets default options for the param" do
+            subject.brainstem_params do
+              valid :sprocket_name, :text
+            end
+
+            configuration = subject.configuration[:_default][:valid_params][:sprocket_name]
+            expect(configuration[:nodoc]).to be_falsey
+            expect(configuration[:required]).to be_falsey
+            expect(configuration[:type]).to eq('text')
+          end
+        end
+
+        context "when no type and options are provided" do
+          before do
+            mock(subject).deprecated_type_warning
+          end
+
+          it "defaults type to string and sets default options for the param" do
+            subject.brainstem_params do
+              valid :sprocket_name
+            end
+
+            configuration = subject.configuration[:_default][:valid_params][:sprocket_name]
+            expect(configuration[:nodoc]).to be_falsey
+            expect(configuration[:required]).to be_falsey
+            expect(configuration[:type]).to eq('string')
+          end
+        end
+
+        context "when type and options are hashes" do
+          before do
+            mock(subject).deprecated_type_warning
+          end
+
+          it "ignores the type and defaults to string" do
+            subject.brainstem_params do
+              valid :sprocket_name, { troll: true }, { required: true }
+            end
+
+            configuration = subject.configuration[:_default][:valid_params][:sprocket_name]
+            expect(configuration[:nodoc]).to be_falsey
+            expect(configuration[:required]).to be_truthy
+            expect(configuration[:type]).to eq('string')
           end
         end
       end
@@ -276,11 +350,11 @@ module Brainstem
           it "uses the existing context" do
             subject.brainstem_params do
               action_context :show do
-                valid :param_1, info: "something"
+                valid :param_1, :integer, info: "something"
               end
 
               action_context :show do
-                valid :param_2, info: "something else"
+                valid :param_2, :string, info: "something else"
               end
             end
 
@@ -297,7 +371,7 @@ module Brainstem
 
           subject.brainstem_params do
             actions [:show, :index] do
-              valid :param_1, info: "something"
+              valid :param_1, :integer, info: "something"
             end
           end
         end
@@ -305,7 +379,7 @@ module Brainstem
         it "allows passing an array" do
           subject.brainstem_params do
             actions [:show, :index] do
-              valid :param_1, info: "something"
+              valid :param_1, :string, info: "something"
             end
           end
 
@@ -318,7 +392,7 @@ module Brainstem
         it "allows passing multiple symbols" do
           subject.brainstem_params do
             actions :show, :index do
-              valid :param_1, "something"
+              valid :param_1, :integer, info: "something"
             end
           end
 
@@ -337,18 +411,20 @@ module Brainstem
           stub.any_instance_of(subject).brainstem_model_name { brainstem_model_name }
 
           subject.brainstem_params do
-            valid :unrelated_root_key,
-              info: "it's unrelated."
+            valid :unrelated_root_key, :string,
+              info: "it's unrelated.",
+              required: true
 
             model_params(brainstem_model_name) do |params|
-              params.valid :sprocket_parent_id,
-                info: "sprockets[sprocket_parent_id] is required"
+              params.valid :sprocket_parent_id, :long,
+                info: "sprockets[sprocket_parent_id] is not required"
             end
 
             actions :show do
               model_params(brainstem_model_name) do |params|
-                params.valid :sprocket_name,
-                  info: "sprockets[sprocket_name] is required"
+                params.valid :sprocket_name, :string,
+                  info: "sprockets[sprocket_name] is required",
+                  required: true
               end
             end
           end
@@ -359,7 +435,7 @@ module Brainstem
 
           subject.brainstem_params do
             model_params Proc.new { |k| k.arbitrary_method } do |params|
-              params.valid :nested_key, info: "it's nested!"
+              params.valid :nested_key, :hash, info: "it's nested!"
             end
           end
 
@@ -371,8 +447,20 @@ module Brainstem
           stub.any_instance_of(subject).action_name { "show" }
 
           expect(subject.new.brainstem_valid_params).to eq({
-            "sprocket_name" => { "info" => "sprockets[sprocket_name] is required", "root" => "widget" },
-            "sprocket_parent_id" => { "info" => "sprockets[sprocket_parent_id] is required", "root" => "widget" }
+            "sprocket_name" => {
+              "info"     => "sprockets[sprocket_name] is required",
+              "root"     => "widget",
+              "required" => true,
+              "type"     => "string",
+              "nodoc"    => false
+            },
+            "sprocket_parent_id" => {
+              "info"     => "sprockets[sprocket_parent_id] is not required",
+              "root"     => "widget",
+              "type"     => "long",
+              "nodoc"    => false,
+              "required" => false
+            }
           })
         end
 

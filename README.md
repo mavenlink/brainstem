@@ -50,13 +50,13 @@ module Api
       default_sort_order "updated_at:desc"
 
       # Optional filter that applies a lambda.
-      filter :location_name do |scope, location_name|
+      filter :location_name, :string, items: [:sf, :la] do |scope, location_name|
         scope.joins(:locations).where("locations.name = ?", location_name)
       end
 
       # Filter with an overridable default. This will run on every request,
       # passing in `bool` as `false` unless a user has specified otherwise.
-      filter :include_legacy_widgets, default: false do |scope, bool|
+      filter :include_legacy_widgets, :boolean, default: false do |scope, bool|
         bool ? scope : scope.without_legacy_widgets
       end
 
@@ -66,11 +66,21 @@ module Api
 
       # Specify the fields to be present in the returned JSON.
       fields do
-        field :name, :string, info: "the Widget's name"
-        field :legacy, :boolean, info: "true for legacy Widgets, false otherwise", via: :legacy?
-        field :longform_description, :string, info: "feature-length description of this Widget", optional: true
-        field :updated_at, :datetime, info: "the time of this Widget's last update"
-        field :created_at, :datetime, info: "the time at which this Widget was created"
+        field :name, :string,
+              info: "the Widget's name"
+        field :legacy, :boolean,
+              info: "true for legacy Widgets, false otherwise",
+              via: :legacy?
+        field :longform_description, :string,
+              info: "feature-length description of this Widget",
+              optional: true
+        field :aliases, :array,
+              item_type: :string,
+              info: "the differnt aliases for the widget"
+        field :updated_at, :datetime,
+              info: "the time of this Widget's last update"
+        field :created_at, :datetime,
+              info: "the time at which this Widget was created"
       end
 
       # Associations can be included by providing include=association_name in the URL.
@@ -78,8 +88,10 @@ module Api
       # columns on the model, otherwise the user must explicitly request associations
       # to avoid unnecessary loads.
       associations do
-        association :features, Feature, info: "features associated with this Widget"
-        association :location, Location, info: "the location of this Widget"
+        association :features, Feature,
+                    info: "features associated with this Widget"
+        association :location, Location,
+                    info: "the location of this Widget"
       end
     end
   end
@@ -447,11 +459,14 @@ class PostsPresenter < Brainstem::Presenter
   MARKDOWN
 
   associations do
-    association :author, User, info: "the author of the post"
+    association :author, User,
+                info: "the author of the post"
 
     # Temporarily disable documenting this relationship as we revamp the
     # editorial system:
-    association :editor, User, info: "the editor of the post", nodoc: true
+    association :editor, User,
+                info: "the editor of the post",
+                nodoc: true
   end
 end
 ```
@@ -489,17 +504,19 @@ context, and it will keep the documentation isolated to that specific action:
 
 ```ruby
 brainstem_params do
-  valid :global_controller_param,
-    info: "A trivial example of a param that applies to all actions."
+  valid :global_controller_param, :string,
+        info: "A trivial example of a param that applies to all actions."
 
   actions :index do
     # This adds a `blog_id` param to just the `index` action.
-    valid :blog_id, info: "The id of the blog to which this post belongs"
+    valid :blog_id, :integer,
+          info: "The id of the blog to which this post belongs"
   end
 
   actions :create, :update do
     # This will add an `id` param to both `create` and `update` actions.
-    valid :id, info: "The id of the blog post"
+    valid :id, :integer,
+          info: "The id of the blog post"
   end
 end
 ```
@@ -575,20 +592,37 @@ class BlogPostsController < ApiController
   brainstem_params do
 
     # Add an `:category_id` param to all actions in this controller / children:
-    valid :category_id, info: "(required) the category's ID"
+    valid :category_id, :integer,
+          info: "(required) the category's ID"
 
     # Do not document this additional field.
-    valid :lang,
-      info: "(optional) the language of the requested post",
-      nodoc: true
+    valid :lang, :string,
+          info: "(optional) the language of the requested post",
+          nodoc: true
+
 
     actions :show do
       # Declare a nested param under the `brainstem_model_name` root key,
       # i.e. `params[:blog_post][:id]`):
       model_params do |post|
-        post.valid :id, info: "(required) the id of the post"
+        post.valid :id, :integer,
+                   info: "the id of the post", required: true
       end
     end
+
+
+    actions :create do
+      model_params :post do |params|
+        params.valid :message, :string,
+                     info: "the id of the post",
+                     required: true
+
+        params.valid :viewable_by, :array,          
+                     item_type: :integer,
+                     info: "an array of user ids that can access the post"
+      end
+    end
+
 
     actions :share do
       # Declare a nested param with an explicit root key:, i.e. `params[:share][...]`
@@ -826,13 +860,13 @@ Brainstem provides a rich DSL for building presenters.  This section details the
 
   ```ruby
   # Optional filter that applies a lambda.
-  filter :location_name do |scope, location_name|
+  filter :location_name, :string do |scope, location_name|
     scope.joins(:locations).where("locations.name = ?", location_name)
   end
 
   # Filter with an overridable default. This will run on every request,
   # passing in `bool` as `false` unless a user has specified otherwise.
-  filter :include_legacy_widgets, default: false do |scope, bool|
+  filter :include_legacy_widgets, :boolean, default: false do |scope, bool|
     bool ? scope : scope.without_legacy_widgets
   end
   ```
@@ -892,6 +926,9 @@ Brainstem provides a rich DSL for building presenters.  This section details the
     field :dynamic_name, :string,
           info: "a formatted name for this Widget",
           dynamic: lambda { |widget| "This Widget's name is #{widget.name}" }
+    field :aliases, :array,
+          item_type: :string,
+          info: "the differnt aliases for the widget"
     field :longform_description, :string,
           info: "feature-length description of this Widget",
           optional: true
@@ -946,12 +983,12 @@ the `lookup` will be used.
   ```ruby
   associations do
     association :current_user_groups, Group,
-      info: "the Groups for the current user",
-      lookup: lambda { |models|
-        Group.where(subject_id: models.map(&:id)
-          .where(user_id: current_user.id)
-          .group_by { |group| group.subject_id }
-      }
+                info: "the Groups for the current user",
+                lookup: lambda { |models|
+                  Group.where(subject_id: models.map(&:id)
+                    .where(user_id: current_user.id)
+                    .group_by { |group| group.subject_id }
+                }
   end
   ```
 
@@ -963,15 +1000,15 @@ the `lookup` will be used.
   ```ruby
   fields do
     field :current_user_post_count, Post,
-      info: "count of Posts the current_user has for this model",
-      lookup: lambda { |models|
-        lookup = Post.where(subject_id: models.map(&:id)
-          .where(user_id: current_user.id)
-          .group_by { |post| post.subject_id }
+          info: "count of Posts the current_user has for this model",
+          lookup: lambda { |models|
+            lookup = Post.where(subject_id: models.map(&:id)
+              .where(user_id: current_user.id)
+              .group_by { |post| post.subject_id }
 
-        lookup
-       },
-       lookup_fetch: lambda { |lookup, model| lookup[model.id] }
+            lookup
+          },
+          lookup_fetch: lambda { |lookup, model| lookup[model.id] }
   end
   ```
 

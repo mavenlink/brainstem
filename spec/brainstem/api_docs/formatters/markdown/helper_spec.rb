@@ -93,6 +93,25 @@ module Brainstem
               expect(subject.md_a("text", "link.md")).to eq "[text](link.md)"
             end
           end
+
+
+          describe "#md_inline_type" do
+            it "renders the code between single backticks" do
+              expect(subject.md_inline_type("string")).to eq " (`String`)"
+            end
+
+            context "when type is blank" do
+              it "returns an empty string" do
+                expect(subject.md_inline_type("")).to eq ""
+              end
+            end
+
+            context "when item type is specified" do
+              it "renders the code between single backticks" do
+                expect(subject.md_inline_type("array", "integer")).to eq " (`Array<Integer>`)"
+              end
+            end
+          end
         end
       end
     end

@@ -21,15 +21,21 @@ require 'brainstem/concerns/presenter_dsl'
 #   field :description, :string
 #   field :updated_at, :datetime
 #   field :dynamic_title, :string, dynamic: lambda { |model| model.title }
-#   field :secret, :string, 'a secret, via secret_info',
+#   field :secret, :string,
+#         info: 'a secret, via secret_info',
 #         via: :secret_info,
 #         if: [:user_is_bob, :title_is_hello]
+#
+#   field :member_ids, :array,
+#         item_type: :integer,
+#         dynamic: lambda { |model| model.members.pluck(:id) }
 #
 #   with_options if: :user_is_bob do
 #     field :bob_title, :string,
 #           info: 'another name for the title, only for Bob',
 #           via: :title
 #   end
+#
 #   fields :nested_permissions do
 #     field :something_title, :string, via: :title
 #     field :random, :number, dynamic: lambda { rand }
@@ -118,7 +124,6 @@ describe Brainstem::Concerns::PresenterDSL do
     end
   end
 
-
   # sort_order :created_at, ".created_at"
   describe 'the sort_order block' do
     let(:value)   { "widgets.created_at" }
@@ -158,7 +163,6 @@ describe Brainstem::Concerns::PresenterDSL do
       end
     end
   end
-
 
   describe 'the conditional block' do
     before do
@@ -218,11 +222,16 @@ describe Brainstem::Concerns::PresenterDSL do
               via: :secret_info,
               if: [:user_is_bob, :title_is_hello]
 
+        field :member_ids, :array,
+              item_type: :integer,
+              dynamic: lambda { |model| model.members.pluck(:id) }
+
         with_options if: :user_is_bob do
           field :bob_title, :string,
                 info: 'another name for the title, only for Bob',
                 via: :title
         end
+
         fields :nested_permissions do
           field :something_title, :string, via: :title
           field :random, :number, dynamic: lambda { rand }
@@ -231,16 +240,25 @@ describe Brainstem::Concerns::PresenterDSL do
     end
 
     it 'is stored in the configuration' do
-      expect(presenter_class.configuration[:fields].keys).to match_array %w[updated_at dynamic_title secret bob_title nested_permissions]
-      expect(presenter_class.configuration[:fields][:updated_at].type).to eq :datetime
+      expect(presenter_class.configuration[:fields].keys)
+        .to match_array %w[updated_at dynamic_title secret member_ids bob_title nested_permissions]
+
+      expect(presenter_class.configuration[:fields][:updated_at].type).to eq 'datetime'
       expect(presenter_class.configuration[:fields][:updated_at].description).to be_nil
-      expect(presenter_class.configuration[:fields][:dynamic_title].type).to eq :string
+
+      expect(presenter_class.configuration[:fields][:dynamic_title].type).to eq 'string'
       expect(presenter_class.configuration[:fields][:dynamic_title].description).to be_nil
       expect(presenter_class.configuration[:fields][:dynamic_title].options[:dynamic]).to be_a(Proc)
-      expect(presenter_class.configuration[:fields][:secret].type).to eq :string
+
+      expect(presenter_class.configuration[:fields][:secret].type).to eq 'string'
       expect(presenter_class.configuration[:fields][:secret].description).to be_nil
       expect(presenter_class.configuration[:fields][:secret].options).to eq({ via: :secret_info, if: [:user_is_bob, :title_is_hello] })
-      expect(presenter_class.configuration[:fields][:bob_title].type).to eq :string
+
+      expect(presenter_class.configuration[:fields][:member_ids].type).to eq 'array'
+      expect(presenter_class.configuration[:fields][:member_ids].options[:item_type]).to eq 'integer'
+      expect(presenter_class.configuration[:fields][:member_ids].options[:dynamic]).to be_a(Proc)
+
+      expect(presenter_class.configuration[:fields][:bob_title].type).to eq 'string'
       expect(presenter_class.configuration[:fields][:bob_title].description).to eq 'another name for the title, only for Bob'
       expect(presenter_class.configuration[:fields][:bob_title].options).to eq(
         via: :title,
@@ -250,7 +268,7 @@ describe Brainstem::Concerns::PresenterDSL do
     end
 
     it 'handles nesting' do
-      expect(presenter_class.configuration[:fields][:nested_permissions][:something_title].type).to eq :string
+      expect(presenter_class.configuration[:fields][:nested_permissions][:something_title].type).to eq 'string'
       expect(presenter_class.configuration[:fields][:nested_permissions][:something_title].options[:via]).to eq :title
       expect(presenter_class.configuration[:fields][:nested_permissions][:random].options[:dynamic]).to be_a(Proc)
     end
@@ -263,11 +281,17 @@ describe Brainstem::Concerns::PresenterDSL do
           field :updated_at, :datetime, info: 'this time I have a description and condition'
         end
       end
-      expect(presenter_class.configuration[:fields].keys).to match_array %w[updated_at dynamic_title secret bob_title nested_permissions]
-      expect(subclass.configuration[:fields].keys).to match_array %w[updated_at dynamic_title secret bob_title title nested_permissions]
+
+      expect(presenter_class.configuration[:fields].keys).
+        to match_array %w[updated_at dynamic_title secret member_ids bob_title nested_permissions]
+      expect(subclass.configuration[:fields].keys).
+        to match_array %w[updated_at dynamic_title secret member_ids bob_title title nested_permissions]
+
       expect(presenter_class.configuration[:fields][:updated_at].description).to be_nil
       expect(presenter_class.configuration[:fields][:updated_at].options).to eq({})
-      expect(subclass.configuration[:fields][:updated_at].description).to eq 'this time I have a description and condition'
+
+      expect(subclass.configuration[:fields][:updated_at].description).
+        to eq 'this time I have a description and condition'
       expect(subclass.configuration[:fields][:updated_at].options).to eq(
         if: [:some_condition, :some_other_condition],
         info: 'this time I have a description and condition'
@@ -320,18 +344,21 @@ describe Brainstem::Concerns::PresenterDSL do
           field :something, :string, via: :title
         end
       end
-      expect(presenter_class.configuration[:fields].keys).to match_array %w[updated_at dynamic_title secret bob_title nested_permissions]
-      expect(subclass.configuration[:fields].keys).to match_array %w[updated_at dynamic_title secret bob_title nested_permissions new_nested_permissions]
 
-      expect(presenter_class.configuration[:fields][:nested_permissions][:something_title].type).to eq :string
-      expect(presenter_class.configuration[:fields][:nested_permissions][:random].type).to eq :number
+      expect(presenter_class.configuration[:fields].keys)
+        .to match_array %w[updated_at dynamic_title secret member_ids bob_title nested_permissions]
+      expect(subclass.configuration[:fields].keys)
+        .to match_array %w[updated_at dynamic_title secret member_ids bob_title nested_permissions new_nested_permissions]
+
+      expect(presenter_class.configuration[:fields][:nested_permissions][:something_title].type).to eq 'string'
+      expect(presenter_class.configuration[:fields][:nested_permissions][:random].type).to eq 'number'
       expect(presenter_class.configuration[:fields][:nested_permissions][:new]).to be_nil
       expect(presenter_class.configuration[:fields][:nested_permissions][:deeper]).to be_nil
       expect(presenter_class.configuration[:fields][:new_nested_permissions]).to be_nil
 
-      expect(subclass.configuration[:fields][:nested_permissions][:something_title].type).to eq :number # changed this
-      expect(subclass.configuration[:fields][:nested_permissions][:random].type).to eq :number
-      expect(subclass.configuration[:fields][:nested_permissions][:new].type).to eq :string
+      expect(subclass.configuration[:fields][:nested_permissions][:something_title].type).to eq 'number' # changed this
+      expect(subclass.configuration[:fields][:nested_permissions][:random].type).to eq 'number'
+      expect(subclass.configuration[:fields][:nested_permissions][:new].type).to eq 'string'
       expect(subclass.configuration[:fields][:nested_permissions][:deeper][:something]).to be_present
       expect(subclass.configuration[:fields][:new_nested_permissions]).to be_present
     end
@@ -345,7 +372,7 @@ describe Brainstem::Concerns::PresenterDSL do
 
       it "is stored in the configuration correctly" do
         expect(presenter_class.configuration[:fields].keys).to include('synced_at')
-        expect(presenter_class.configuration[:fields][:synced_at].type).to eq :datetime
+        expect(presenter_class.configuration[:fields][:synced_at].type).to eq 'datetime'
         expect(presenter_class.configuration[:fields][:synced_at].description).to eq 'Last time the object was synced'
       end
     end
@@ -539,21 +566,58 @@ describe Brainstem::Concerns::PresenterDSL do
 
     it "creates an entry in the filters configuration" do
       my_proc = Proc.new { 1 }
-      presenter_class.filter(:foo, :default => true, &my_proc)
+      presenter_class.filter(:foo, :string, :default => true, :items => [:a, :b], &my_proc)
 
-      expect(foo).to eq({ "default" => true, "value" => my_proc })
+      expect(foo).to eq({ "default" => true, "value" => my_proc, "type" => "string", "items" => [:a, :b] })
     end
 
     it "accepts names without blocks" do
-      presenter_class.filter(:foo)
+      presenter_class.filter(:foo, :string, :items => [:a, :b])
       expect(foo[:value]).to be_nil
+      expect(foo[:type]).to eq("string")
+      expect(foo[:items]).to eq([:a, :b])
     end
 
     it "records the info option" do
-      presenter_class.filter(:foo, :info => "This is documented.")
+      presenter_class.filter(:foo, :integer, :info => "This is documented.", :items => [:a, :b])
       expect(foo[:info]).to eq "This is documented."
+      expect(foo[:type]).to eq "integer"
+      expect(foo[:items]).to eq([:a, :b])
     end
 
+    context "when filter is of array type" do
+      it "records the item_type option" do
+        presenter_class.filter(:foo, :array, :item_type => :integer)
+        expect(foo[:type]).to eq "array"
+        expect(foo[:item_type]).to eq("integer")
+      end
+
+      it "defaults item_type to string if not specified" do
+        presenter_class.filter(:foo, :array)
+        expect(foo[:type]).to eq "array"
+        expect(foo[:item_type]).to eq("string")
+      end
+    end
+
+
+    context "when type is not specified" do
+      before do
+        mock(presenter_class).deprecated_type_warning
+      end
+
+      it "adds a deprecation warning and creates an entry in the filters configuration" do
+        my_proc = Proc.new { 1 }
+        presenter_class.filter(:foo, :default => true, &my_proc)
+
+        expect(foo).to eq({ "default" => true, "value" => my_proc, "type" => "string" })
+      end
+
+      it "adds a deprecation warning and records the info option" do
+        presenter_class.filter(:foo, :info => "This is documented.")
+        expect(foo[:info]).to eq "This is documented."
+        expect(foo[:type]).to eq "string"
+      end
+    end
   end
 
   describe ".search" do

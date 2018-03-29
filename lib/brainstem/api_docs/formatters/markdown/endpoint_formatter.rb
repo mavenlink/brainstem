@@ -120,11 +120,16 @@ module Brainstem
           #
           # @param [String] name the param name
           # @param [Hash] options information pertinent to the param
+          # @option [Boolean] options :required
           # @option [Boolean] options :legacy
           # @option [Boolean] options :recursive
           # @option [String,Symbol] options :only Deprecated: use +actions+
           #   block instead
           # @option [String] options :info the doc string for the param
+          # @option [String] options :type The type of the field.
+          #   e.g. string, integer, boolean, array, hash
+          # @option [String] options :item_type The type of the items in the field.
+          #   Ideally used when the type of the field is an array or hash.
           # @param [Integer] indent how many levels the output should be
           #   indented from normal
           #
@@ -132,10 +137,12 @@ module Brainstem
             options = options.dup
             text    = md_inline_code(title)
 
+            text += md_inline_type(options.delete(:type), options.delete(:item_type)) if options.has_key?(:type)
             text += " - #{options.delete(:info)}" if options.has_key?(:info)
 
             if options.keys.any?
               text += "\n"
+              text += md_li("Required: #{options[:required].to_s}",   indent + 1) if options.has_key?(:required) && options[:required]
               text += md_li("Legacy: #{options[:legacy].to_s}",       indent + 1) if options.has_key?(:legacy)
               text += md_li("Recursive: #{options[:recursive].to_s}", indent + 1) if options.has_key?(:recursive)
               text.chomp!

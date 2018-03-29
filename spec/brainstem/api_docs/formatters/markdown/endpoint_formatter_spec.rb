@@ -137,9 +137,9 @@ module Brainstem
               context "with valid params" do
                 let(:show_config) { {
                   valid_params: {
-                    only: { info: "which ids to include", nodoc: nodoc },
-                    sprocket_id: { info: "the id of the sprocket", root: "widget", nodoc: nodoc },
-                    sprocket_child: { recursive: true, legacy: false, info: "it does the thing", root: "widget" },
+                    only: { info: "which ids to include", nodoc: nodoc, type: "array", item_type: "integer" },
+                    sprocket_id: { info: "the id of the sprocket", root: "widget", nodoc: nodoc, type: "integer" },
+                    sprocket_child: { recursive: true, legacy: false, info: "it does the thing", root: "widget", type: "string" },
                   }
                 } }
 
@@ -169,12 +169,18 @@ module Brainstem
 
                   context "for non-root params" do
                     it "outputs sub params under a list item" do
-                      expect(subject.output).to include "- `widget`\n    - `sprocket_id` - the id of the sprocket\n    - `sprocket_child`"
+                      expect(subject.output).to include "- `widget`\n    - `sprocket_id` (`Integer`) - the id of the sprocket\n    - `sprocket_child` (`String`)"
+                    end
+                  end
+
+                  context "for params with type array" do
+                    it "outputs item type along with the field type" do
+                      expect(subject.output).to include "- `only` (`Array<Integer>`) - which ids to include\n"
                     end
                   end
 
                   it "includes the info on a hash key" do
-                    expect(subject.output).to include "`sprocket_child` - it does the thing"
+                    expect(subject.output).to include "`sprocket_child` (`String`) - it does the thing"
                   end
 
                   it "includes the recursivity if specified" do
@@ -183,6 +189,36 @@ module Brainstem
 
                   it "includes the legacy status if specified" do
                     expect(subject.output).to include "Legacy: false"
+                  end
+
+                  context "when required option is specified" do
+                    context "when required is true" do
+                      let(:show_config) { {
+                        valid_params: {
+                          only: { info: "which ids to include", nodoc: nodoc },
+                          sprocket_id: { info: "the id of the sprocket", root: "widget", nodoc: nodoc, required: true },
+                          sprocket_child: { recursive: true, legacy: false, info: "it does the thing", root: "widget" },
+                        }
+                      } }
+
+                      it "includes if required" do
+                        expect(subject.output).to include "Required: true"
+                      end
+                    end
+
+                    context "when required is false" do
+                      let(:show_config) { {
+                        valid_params: {
+                          only: { info: "which ids to include", nodoc: nodoc },
+                          sprocket_id: { info: "the id of the sprocket", root: "widget", nodoc: nodoc, required: false },
+                          sprocket_child: { recursive: true, legacy: false, info: "it does the thing", root: "widget" },
+                        }
+                      } }
+
+                      it "includes if required" do
+                        expect(subject.output).to_not include "Required"
+                      end
+                    end
                   end
                 end
               end
@@ -212,6 +248,7 @@ module Brainstem
                   end
                 end
               end
+
 
               context "with no valid params" do
                 it "outputs nothing" do

@@ -136,16 +136,21 @@ module Brainstem
         # the info sent with it.
         #
         # @param [Symbol] field_name the name of the param
+        # @param [String,Symbol] type the data type of the field. If not specified, will default to `string`.
         # @param [Hash] options
         # @option options [String] :info the documentation for the param
         # @option options [String,Symbol] :root if this is a nested param,
         #   under which param should it be nested?
         # @option options [Boolean] :nodoc should this param appear in the
         #   documentation?
+        # @option options [Boolean] :required if the param is required for
+        #   the endpoint
+        # @option options [String,Symbol] :item_type The data type of the items contained in a field.
+        #   Ideally used when the data type of the field is an `array`, `object` or `hash`.
         #
-        def valid(field_name, options = { nodoc: false })
+        def valid(field_name, type = nil, options = {})
           valid_params = configuration[brainstem_params_context][:valid_params]
-          valid_params[field_name.to_sym] = options
+          valid_params[field_name.to_sym] = format_param_options(type, options)
         end
 
 
@@ -233,6 +238,41 @@ module Brainstem
           configuration[brainstem_params_context][:title] = \
             options.merge(info: text)
         end
+
+
+        def format_param_options(type = nil, options = {})
+          options = type if type.is_a?(Hash) && options.empty?
+
+          options[:type] = sanitize_param_data_type(type)
+          options[:item_type] = options[:item_type].to_s if options.has_key?(:item_type)
+          DEFAULT_PARAM_OPTIONS.merge(options)
+        end
+
+        DEFAULT_PARAM_OPTIONS = { nodoc: false, required: false }
+        private_constant :DEFAULT_PARAM_OPTIONS
+
+
+        def sanitize_param_data_type(type)
+          if type.is_a?(Hash) || type.blank?
+            deprecated_type_warning
+            type = DEFAULT_DATA_TYPE
+          end
+
+          type.to_s
+        end
+
+        DEFAULT_DATA_TYPE = 'string'
+        private_constant :DEFAULT_DATA_TYPE
+
+
+        def deprecated_type_warning
+          ActiveSupport::Deprecation.warn(
+            'Please specify the `type` of the parameter as the second argument. If not specified, '\
+              'it will default to `:string`. This default behavior will be deprecated in the next major '\
+              'version and will need to be explicitly specified. e.g. `post.valid :message, :text, required: true`',
+            caller
+          )
+        end
       end
 
 
@@ -293,7 +333,6 @@ module Brainstem
           configuration[DEFAULT_BRAINSTEM_PARAMS_CONTEXT][key.to_sym]
         end
       end
-
       private :contextual_key
     end
   end
