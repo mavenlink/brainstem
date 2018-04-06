@@ -646,12 +646,29 @@ class BlogPostsController < ApiController
     actions :create do
       model_params :post do |params|
         params.valid :message, :string,
-                     info: "the id of the post",
+                     info: "the message of the post",
                      required: true
 
         params.valid :viewable_by, :array,          
                      item_type: :integer,
                      info: "an array of user ids that can access the post"
+
+        # Declare a nested param with an explicit root key:, i.e. `params[:rating][...]`
+        model_params :rating do |rating_param|
+          rating_param.valid :stars, :integer,
+                             info: "the rating of the post"
+        end
+
+        # Declare nested array params with an explicit key:, i.e. `params[:replies][0][...]`
+        params.valid :replies, :array,
+                     item_type: :hash,
+                     info: "an array of reply params that can be created along with the post" do |reply_params|
+          reply_params.valid :message, :string,
+                             info: "the message of the post"
+          reply_params.valid :replier_id, :integer,
+                             info: "the ID of the user"
+          ...
+        end
       end
     end
 
