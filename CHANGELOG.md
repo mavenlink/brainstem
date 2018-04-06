@@ -1,5 +1,11 @@
 # Changelog
 
++ **1.4.0** - _04/27/2018_
+  - Add the capability to validate params based on documented parameters on endpoints. Invoking
+    `brainstem_validate_params!` raises an error if unknown parameters are encountered.
+  - Add the capability to sanitize params based on documented parameters on endpoints. Invoking
+    `brainstem_sanitize_params` returns sanitized params while excluding unknown parameters.
+
 + **1.3.0** - _04/12/2018_
   - Add the capability to nest fields under executable parent blocks where the nested fields are evaluated
     with the resultant value of the parent field.
