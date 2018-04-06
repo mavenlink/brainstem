@@ -1,22 +1,58 @@
 # Changelog
 
-+ **1.2.0** - _02/14/2018_
++ **1.3.0** - _04/12/2018_
+  - Add the capability to nest fields under executable parent blocks where the nested fields are evaluated
+    with the resultant value of the parent field.
+    ```ruby
+        fields :tags, :array,
+               info: "The tags for the given category",
+               dynamic: -> (widget) { widget.tags } do |tag|
+
+          tag.field :name, :string,
+                    info: "Name of the assigned tag"
+        end
+    ```
+  - Add support for nested parameters on an endpoint.
+    ```ruby
+        model_params :post do |param|
+          ...
+
+          param.valid :message, :string, ...
+
+          param.model_params :rating do |rating_param|
+            ...
+
+
+            rating_param.valid :stars, :integer, ...
+          end
+
+          params.valid :replies, :array, item_type: :hash, ... do |reply_params|
+            reply_params.valid :message, :string,
+                               info: "the message of the post"
+
+            ...
+          end
+        end
+    ```
+  - Support generation of markdown documentation for the nested block fields and nested parameters.
+
++ **1.2.0** - _03/29/2018_
   - Add the capability to indicate an endpoint param is required with the `required` key in the options hash.
-  ```
+  ```ruby
         params.valid :message, :text,
                      required: true,
                      info: "the message of the post"
   ```
   - Add support for specifying the type of an endpoint param. For an endpoint param that has type `Array`,
     type of list items can be specified using `item_type` key in the options hash.
-  ```
+  ```ruby
         params.valid :viewable_by, :array,
                      item_type: :integer,
                      info: "an array of user ids that can access the post"
   ```
   - Add support for specifying the data type of an item for a presenter field using `item_type` key in the
     options hash when the field is of type `Array`.
-  ```
+  ```ruby
         field :aliases, :array,
               item_type: :string,
               info: "an array of user ids that can access the post"
@@ -24,7 +60,7 @@
   - Include the type and item type when generating markdown documentation for endpoint params.
   - Specify the data type of a filter and available values with `items` key in the options hash. If filter is an array,
     data type of items can be specified with the `item_type` property in options.
-  ```
+  ```ruby
         filter :status, :string,
                items: ['Started', 'Completed'],
                info: "only returns elements with the given status"
