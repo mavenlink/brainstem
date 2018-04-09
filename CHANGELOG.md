@@ -12,6 +12,7 @@
                     info: "Name of the assigned tag"
         end
     ```
+  - Fixed issue with nested fields being unable to have the same name as top level fields. 
   - Support generation of markdown documentation for the nested block fields.
 
 + **1.2.0** - _03/29/2018_
