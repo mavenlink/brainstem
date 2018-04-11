@@ -82,25 +82,26 @@ module Api
         field :created_at, :datetime,
               info: "the time at which this Widget was created"
 
-        # Fields can be nested under non-executable parent fields where the nested fields
+        # Fields can be nested under non-evaluable parent fields where the nested fields
         # are evaluated with the presented model.
         fields :permissions, :hash do |permissions_field|
 
-          # Since the permissions parent field is not executable, the can_edit? method is
-          # evaluated with the presented widget model.
+          # Since the permissions parent field is not evaluable, the can_edit? method is
+          # evaluated with the presented Widget model.
           permissions_field.field :can_edit, :boolean,
                                   via: :can_edit?,
                                   info: "Indicates if the user can edit the widget"
         end
 
-        # Specify nested fields within an executable parent block field. A parent block field
-        # is executable only if one of the following options :via, :dynamic or :lookup are specified.
+        # Specify nested fields within an evaluable parent block field. A parent block field
+        # is evaluable only if one of the following options :via, :dynamic or :lookup is specified.
         # The nested fields are evaluated with the value of the parent.
         fields :tags, :array,
+               item_type: :hash,
                info: "The tags for the given category",
                dynamic: -> (widget) { widget.tags } do |tag|
 
-          # The name method will be called on each tag model returned by the the parent block.
+          # The name method will be evaluated with each tag model returned by the the parent block.
           tag.field :name, :string,
                     info: "Name of the assigned tag"
         end
@@ -109,7 +110,7 @@ module Api
                via: :primary_category,
                info: "The primary category of the widget" do |category|
 
-          # The title method will be called on category model.
+          # The title method will be evaluated with each category model returned by the parent block.
           category.field :title, :string,
                          info: "The title of the category"
         end

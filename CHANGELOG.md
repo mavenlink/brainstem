@@ -1,8 +1,8 @@
 # Changelog
 
 + **1.3.0** - _04/12/2018_
-  - Add the capability to nest fields under executable parent blocks where the nested fields are evaluated
-    with the resultant value of the parent field.
+  - Add the capability to nest fields under evaluable parent blocks where the nested fields are evaluated
+    with the resulting value of the parent field.
     ```ruby
         fields :tags, :array,
                info: "The tags for the given category",
@@ -22,11 +22,12 @@
           param.model_params :rating do |rating_param|
             ...
 
-
             rating_param.valid :stars, :integer, ...
           end
 
-          params.valid :replies, :array, item_type: :hash, ... do |reply_params|
+          params.valid :replies, :array,
+                       item_type: :hash, ... do |reply_params|
+
             reply_params.valid :message, :string,
                                info: "the message of the post"
 
@@ -34,7 +35,7 @@
           end
         end
     ```
-  - Fixed issue with nested fields being unable to have the same name as top level fields. 
+  - Fix issue with nested fields being unable to have the same name as top level fields. 
   - Support generation of markdown documentation for the nested block fields and nested parameters.
 
 + **1.2.0** - _03/29/2018_
