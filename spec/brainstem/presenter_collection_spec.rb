@@ -1220,7 +1220,7 @@ describe Brainstem::PresenterCollection do
 
     describe "for! method" do
       it "raises if there is no presenter for the given class" do
-        expect{ Brainstem.presenter_collection("v1").for!(String) }.to raise_error(ArgumentError)
+        expect { Brainstem.presenter_collection("v1").for!(String) }.to raise_error(ArgumentError)
       end
     end
 
@@ -1245,7 +1245,7 @@ describe Brainstem::PresenterCollection do
       end
 
       it "raises if there is no presenter for the given class" do
-        expect{ Brainstem.presenter_collection("v1").brainstem_key_for!(String) }.to raise_error(ArgumentError)
+        expect { Brainstem.presenter_collection("v1").brainstem_key_for!(String) }.to raise_error(ArgumentError)
       end
     end
   end

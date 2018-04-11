@@ -1,5 +1,5 @@
 require 'brainstem/concerns/inheritable_configuration'
-require 'brainstem/unknown_params'
+require 'brainstem/params_validator'
 require 'active_support/core_ext/object/with_options'
 
 module Brainstem
@@ -371,7 +371,8 @@ module Brainstem
       # Lists all valid parameters for the current action. Falls back to the
       # valid parameters for the default context.
       #
-      # @params [Symbol] requested_context the context which to look up.
+      # @params [String, Symbol] (Optional) requested_context the context which to look up.
+      # @params [String, Symbol] (Optional) root_param_name the param name of the model being changed.
       #
       # @return [Hash{String => String, Hash] a hash of pairs of param names and
       # descriptions or sub-hashes.
@@ -382,52 +383,46 @@ module Brainstem
       alias_method :brainstem_valid_params_for, :brainstem_valid_params
 
       #
-      # Ensures that the parameters passed in are valid.
-      # To force erros on bad paramers set optins[:ignore_unknown_fields] to true,
-      # and pass the desired custom error message
+      # Ensures that the parameters passed through to the action are valid.
       #
-      def brainstem_validate_params!(requested_context = action_name.to_sym, root_param_name = brainstem_model_name, options = {})
-        error_params = brainstem_valid_params(requested_context, root_param_name)
+      # It raises Brainstem::UnknownParams.new(message, unknown_params) error,
+      # when params are missing or unknown params are encountered
+      #
+      # @params [String, Symbol] (Optional) requested_context the context which to look up.
+      # @params [String, Symbol] (Optional) root_param_name the param name of the model being changed.
+      #
+      def brainstem_validate_params!(requested_context = action_name.to_sym, root_param_name = brainstem_model_name)
+        input_params            = params.with_indifferent_access[brainstem_model_name]
+        brainstem_params_config = brainstem_valid_params(requested_context, root_param_name)
 
-        object = options[:object] || params.with_indifferent_access[brainstem_model_name]
-        recursive_message = options[:recursive_key].present? ? " for #{options[:recursive_key]}" : ""
+        Brainstem::ParamsValidator.validate!(
+          requested_context,
+          input_params,
+          brainstem_params_config
+        ).present?
+      end
 
-        if !object.is_a?(Hash) || object.keys.length == 0
-          raise ::Brainstem::UnknownParams.new("Missing required parameters#{recursive_message}.")
-        else
-          object = object.with_indifferent_access
-        end
+      #
+      # Ensures that known / documented parameters are passed through to the action.
+      #
+      # It raises Brainstem::UnknownParams.new(message, unknown_params) error,
+      # when params are empty or not a Hash.
+      #
+      # @params [String, Symbol] (Optional) requested_context the context which to look up.
+      # @params [String, Symbol] (Optional) root_param_name the param name of the model being changed.
+      #
+      # @return [Hash{String => String, Hash] a hash of pairs of param names and descriptions or sub-hashes.
+      #
+      def brainstem_ignore_unknown_params!(requested_context = action_name.to_sym, root_param_name = brainstem_model_name)
+        input_params            = params.with_indifferent_access[brainstem_model_name]
+        brainstem_params_config = brainstem_valid_params(requested_context, root_param_name)
 
-        strange_params = []
-        object.keys.each do |param|
-          info = error_params[param]
-          if info.present?
-            # It might be a valid param
-            if info.is_a?(Hash)
-              if info[:_config][:only] && info[:_config][:only].to_s != requested_context.to_s
-                strange_params << param
-              end
-              if info[:_config][:recursive] && object[param].present?
-                recursive_params = object[param].is_a?(Hash) ? object[param].values : object[param]
-                recursive_params.each do |sub_object|
-                  return false unless brainstem_validate_params!(requested_context, root_param_name, options.merge(object: sub_object, recursive_key: param))
-                end
-              end
-            end
-          else
-            # Definitely not on the list.
-            if options[:ignore_unknown_fields] == 'true'
-              object.delete(param)
-            else
-              strange_params << param
-            end
-          end
-        end
-        if strange_params.length > 0
-          raise ::Brainstem::UnknownParams.new("Unknown params#{recursive_message}: #{strange_params.join(', ')}.")
-        else
-          true
-        end
+        Brainstem::ParamsValidator.validate!(
+          requested_context,
+          input_params,
+          brainstem_params_config,
+          ignore_unknown_fields: true
+        )
       end
 
       #
