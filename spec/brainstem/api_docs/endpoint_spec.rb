@@ -143,65 +143,398 @@ module Brainstem
         end
 
 
-        describe "#root_param_keys" do
-          let(:nested_param)      { { title: { nodoc: nodoc, root: :sprocket } } }
-          let(:proc_nested_param) { { title: { nodoc: nodoc, root: Proc.new { |klass| klass.brainstem_model_name } } } }
-          let(:root_param)        { { title: { nodoc: nodoc } } }
-          let(:default_config)    { { valid_params: which_param } }
+        describe "#params_configuration_tree" do
+          let(:default_config) { { valid_params: which_param } }
 
           context "non-nested params" do
+            let(:root_param)  { { Proc.new { 'title' } => { nodoc: nodoc, type: 'string' } } }
             let(:which_param) { root_param }
 
             context "when nodoc" do
               let(:nodoc) { true }
 
               it "rejects the key" do
-                expect(subject.root_param_keys).to be_empty
+                expect(subject.params_configuration_tree).to be_empty
               end
             end
 
             context "when not nodoc" do
+              let(:nodoc) { false }
+
               it "lists it as a root param" do
-                expect(subject.root_param_keys).to have_key(:title)
+                expect(subject.params_configuration_tree).to eq(
+                  {
+                    title: {
+                      _config: { nodoc: nodoc, type: 'string' }
+                    }
+                  }.with_indifferent_access
+                )
+              end
+
+              context "when param has an item" do
+                let(:which_param) { { only: { nodoc: nodoc, type: 'array', item: 'integer' } } }
+
+                it "lists it as a root param" do
+                  expect(subject.params_configuration_tree).to eq(
+                    {
+                      only: {
+                        _config: { nodoc: nodoc, type: 'array', item: 'integer' }
+                      }
+                    }.with_indifferent_access
+                  )
+                end
               end
             end
           end
 
-
           context "nested params" do
+            let(:root_proc) { Proc.new { 'sprocket' } }
+            let(:nested_param) {
+              { Proc.new { 'title' } => { nodoc: nodoc, type: 'string', root: root_proc, ancestors: [root_proc] } }
+            }
             let(:which_param) { nested_param }
 
             context "when nodoc" do
               let(:nodoc) { true }
 
               it "rejects the key" do
-                expect(subject.root_param_keys).to be_empty
+                expect(subject.params_configuration_tree).to be_empty
               end
             end
 
             context "when not nodoc" do
               it "lists it as a nested param" do
-                expect(subject.root_param_keys).to eq({ sprocket: [ :title ] })
+                expect(subject.params_configuration_tree).to eq(
+                  {
+                    sprocket: {
+                      _config: {
+                        type: 'hash',
+                      },
+                      title: {
+                        _config: {
+                          nodoc: nodoc,
+                          type: 'string'
+                        }
+                      }
+                    }
+                  }.with_indifferent_access
+                )
+              end
+
+              context "when nested param has an item" do
+                let(:which_param) {
+                  {
+                    Proc.new { 'ids' } => { nodoc: nodoc, type: 'array', item: 'integer', root: root_proc, ancestors: [root_proc] }
+                  }
+                }
+
+                it "lists it as a nested param" do
+                  expect(subject.params_configuration_tree).to eq(
+                    {
+                      sprocket: {
+                        _config: {
+                          type: 'hash'
+                        },
+                        ids: {
+                          _config: {
+                            nodoc: nodoc,
+                            type: 'array',
+                            item: 'integer'
+                          }
+                        }
+                      }
+                    }.with_indifferent_access
+                  )
+                end
               end
             end
           end
 
-
           context "proc nested params" do
-            let(:which_param) { proc_nested_param }
+            let!(:root_proc)        { Proc.new { |klass| klass.brainstem_model_name } }
+            let(:proc_nested_param) {
+              { Proc.new { 'title' } => { nodoc: nodoc, type: 'string', root: root_proc, ancestors: [root_proc] } }
+            }
+            let(:which_param)       { proc_nested_param }
 
             context "when nodoc" do
               let(:nodoc) { true }
 
               it "rejects the key" do
-                expect(subject.root_param_keys).to be_empty
+                expect(subject.params_configuration_tree).to be_empty
               end
             end
 
             context "when not nodoc" do
               it "evaluates the proc in the controller's context and lists it as a nested param" do
                 mock.proxy(const).brainstem_model_name
-                expect(subject.root_param_keys).to eq({ widget: [ :title ] })
+
+                result = subject.params_configuration_tree
+                expect(result.keys).to eq(%w(widget))
+
+                children_of_the_root = result[:widget].except(:_config)
+                expect(children_of_the_root.keys).to eq(%w(title))
+
+                title_param = children_of_the_root[:title][:_config]
+                expect(title_param.keys).to eq(%w(nodoc type))
+                expect(title_param[:nodoc]).to eq(nodoc)
+                expect(title_param[:type]).to eq('string')
+              end
+            end
+          end
+
+          context "multi nested params" do
+            let(:project_proc)   { Proc.new { 'project' } }
+            let(:id_proc)        { Proc.new { 'id' } }
+            let(:task_proc)      { Proc.new { 'task' } }
+            let(:title_proc)     { Proc.new { 'title' } }
+            let(:checklist_proc) { Proc.new { 'checklist' } }
+            let(:name_proc)      { Proc.new { 'name' } }
+
+            context "has a root & ancestors" do
+              let(:which_param) {
+                {
+                  id_proc => {
+                    type: 'integer'
+                  },
+                  task_proc => {
+                    type: 'hash',
+                    root: project_proc,
+                    ancestors: [project_proc]
+                  },
+                  title_proc => {
+                    type: 'string',
+                    ancestors: [project_proc, task_proc]
+                  },
+                  checklist_proc => {
+                    type: 'array',
+                    item: 'hash',
+                    ancestors: [project_proc, task_proc]
+                  },
+                  name_proc => {
+                    type: 'string',
+                    ancestors: [project_proc, task_proc, checklist_proc]
+                  }
+                }
+              }
+
+              context "when a leaf param has no doc" do
+                before do
+                  which_param[name_proc][:nodoc] = true
+                end
+
+                it "rejects the key" do
+                  expect(subject.params_configuration_tree).to eq(
+                    {
+                      id: {
+                        _config: {
+                          type: 'integer',
+                        }
+                      },
+                      project: {
+                        _config: {
+                          type: 'hash',
+                        },
+                        task: {
+                          _config: {
+                            type: 'hash',
+                          },
+                          title: {
+                            _config: {
+                              type: 'string'
+                            }
+                          },
+                          checklist: {
+                            _config: {
+                              type: 'array',
+                              item: 'hash',
+                            }
+                          },
+                        },
+                      },
+                    }.with_indifferent_access
+                  )
+                end
+              end
+
+              context "when nodoc on a parent param" do
+                before do
+                  which_param[checklist_proc][:nodoc] = true
+                  which_param[name_proc][:nodoc] = true # This will be inherited from the parent when the param is defined.
+                end
+
+                it "rejects the parent key and its children" do
+                  expect(subject.params_configuration_tree).to eq(
+                    {
+                      id: {
+                        _config: {
+                          type: 'integer'
+                        }
+                      },
+                      project: {
+                        _config: {
+                          type: 'hash'
+                        },
+                        task: {
+                          _config: {
+                            type: 'hash',
+                          },
+                          title: {
+                            _config: {
+                              type: 'string'
+                            }
+                          },
+                        },
+                      },
+                    }.with_indifferent_access
+                  )
+                end
+              end
+
+              context "when not nodoc" do
+                it "evaluates the proc in the controller's context and lists it as a nested param" do
+                  expect(subject.params_configuration_tree).to eq(
+                    {
+                      id: {
+                        _config: {
+                          type: 'integer'
+                        }
+                      },
+                      project: {
+                        _config: {
+                          type: 'hash',
+                        },
+                        task: {
+                          _config: {
+                            type: 'hash',
+                          },
+                          title: {
+                            _config: {
+                              type: 'string'
+                            }
+                          },
+                          checklist: {
+                            _config: {
+                              type: 'array',
+                              item: 'hash'
+                            },
+                            name: {
+                              _config: {
+                                type: 'string'
+                              }
+                            },
+                          },
+                        },
+                      },
+                    }.with_indifferent_access
+                  )
+                end
+              end
+            end
+
+            context "has only ancestors" do
+              let(:which_param) {
+                {
+                  task_proc => {
+                    type: 'hash',
+                  },
+                  title_proc => {
+                    type: 'string',
+                    ancestors: [task_proc]
+                  },
+                  checklist_proc => {
+                    type: 'array',
+                    item: 'hash',
+                    ancestors: [task_proc]
+                  },
+                  name_proc => {
+                    type: 'string',
+                    ancestors: [task_proc, checklist_proc]
+                  }
+                }
+              }
+
+              context "when a leaf param has no doc" do
+                before do
+                  which_param[name_proc][:nodoc] = true
+                end
+
+                it "rejects the key" do
+                  expect(subject.params_configuration_tree).to eq(
+                    {
+                      task: {
+                        _config: {
+                          type: 'hash'
+                        },
+                        title: {
+                          _config: {
+                            type: 'string'
+                          }
+                        },
+                        checklist: {
+                          _config: {
+                            type: 'array',
+                            item: 'hash'
+                          }
+                        },
+                      },
+                    }.with_indifferent_access
+                  )
+                end
+              end
+
+              context "when parent param has nodoc" do
+                before do
+                  which_param[checklist_proc][:nodoc] = true
+                  which_param[name_proc][:nodoc] = true # This will be inherited from the parent when the param is defined.
+                end
+
+                it "rejects the parent key and its children" do
+                  expect(subject.params_configuration_tree).to eq(
+                    {
+                      task: {
+                        _config: {
+                          type: 'hash'
+                        },
+                        title: {
+                          _config: {
+                            type: 'string'
+                          }
+                        }
+                      }
+                    }.with_indifferent_access
+                  )
+                end
+              end
+
+              context "when not nodoc" do
+                it "evaluates the proc in the controller's context and lists it as a nested param" do
+                  expect(subject.params_configuration_tree).to eq(
+                    {
+                      task: {
+                        _config: {
+                          type: 'hash'
+                        },
+                        title: {
+                          _config: {
+                            type: 'string'
+                          }
+                        },
+                        checklist: {
+                          _config: {
+                            type: 'array',
+                            item: 'hash',
+                          },
+                          name: {
+                            _config: {
+                              type: 'string',
+                            }
+                          },
+                        },
+                      },
+                    }.with_indifferent_access
+                  )
+                end
               end
             end
           end

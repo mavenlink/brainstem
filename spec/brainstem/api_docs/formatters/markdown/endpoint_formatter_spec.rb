@@ -129,19 +129,40 @@ module Brainstem
 
 
             describe "#format_params!" do
+              let(:const) do
+                Class.new do
+                  def self.brainstem_model_name
+                    :widget
+                  end
+                end
+              end
+
               before do
+                stub(controller).const { const }
+
                 subject.send(:format_params!)
               end
 
-
               context "with valid params" do
-                let(:show_config) { {
-                  valid_params: {
-                    only: { info: "which ids to include", nodoc: nodoc, type: "array", item_type: "integer" },
-                    sprocket_id: { info: "the id of the sprocket", root: "widget", nodoc: nodoc, type: "integer" },
-                    sprocket_child: { recursive: true, legacy: false, info: "it does the thing", root: "widget", type: "string" },
+                let(:root_proc) { Proc.new { "widget" } }
+                let(:sprocket_id_proc) { Proc.new { "sprocket_id" } }
+                let(:sprocket_child_proc) { Proc.new { "sprocket_child" } }
+                let(:default_show_config) {
+                  {
+                    valid_params: {
+                      only: {
+                        info: "which ids to include", nodoc: nodoc, type: "array", item_type: "integer"
+                      },
+                      sprocket_id_proc => {
+                        info: "the id of the sprocket", root: root_proc, ancestors: [root_proc], nodoc: nodoc, type: "integer"
+                      },
+                      sprocket_child_proc => {
+                        recursive: true, legacy: false, info: "it does the thing", root: root_proc, ancestors: [root_proc], type: "string"
+                      },
+                    }
                   }
-                } }
+                }
+                let(:show_config) { default_show_config }
 
                 context "when nodoc" do
                   let(:nodoc) { true }
@@ -169,7 +190,7 @@ module Brainstem
 
                   context "for non-root params" do
                     it "outputs sub params under a list item" do
-                      expect(subject.output).to include "- `widget`\n    - `sprocket_id` (`Integer`) - the id of the sprocket\n    - `sprocket_child` (`String`)"
+                      expect(subject.output).to include "- `widget` (`Hash`)\n    - `sprocket_id` (`Integer`) - the id of the sprocket\n    - `sprocket_child` (`String`)"
                     end
                   end
 
@@ -192,14 +213,14 @@ module Brainstem
                   end
 
                   context "when required option is specified" do
+                    let(:show_config) {
+                      default_show_config.tap do |config|
+                        config[:valid_params][sprocket_id_proc][:required] = required
+                      end
+                    }
+
                     context "when required is true" do
-                      let(:show_config) { {
-                        valid_params: {
-                          only: { info: "which ids to include", nodoc: nodoc },
-                          sprocket_id: { info: "the id of the sprocket", root: "widget", nodoc: nodoc, required: true },
-                          sprocket_child: { recursive: true, legacy: false, info: "it does the thing", root: "widget" },
-                        }
-                      } }
+                      let(:required) { true }
 
                       it "includes if required" do
                         expect(subject.output).to include "Required: true"
@@ -207,27 +228,65 @@ module Brainstem
                     end
 
                     context "when required is false" do
-                      let(:show_config) { {
-                        valid_params: {
-                          only: { info: "which ids to include", nodoc: nodoc },
-                          sprocket_id: { info: "the id of the sprocket", root: "widget", nodoc: nodoc, required: false },
-                          sprocket_child: { recursive: true, legacy: false, info: "it does the thing", root: "widget" },
-                        }
-                      } }
+                      let(:required) { false }
 
                       it "includes if required" do
                         expect(subject.output).to_not include "Required"
                       end
                     end
                   end
+
+                  context "with multiple levels of nested params" do
+                    let(:sprocket_template_proc) { Proc.new { "sprocket_template" } }
+                    let(:sprocket_template_json_proc) { Proc.new { "sprocket_template_json" } }
+                    let(:sprocket_template_title_proc) { Proc.new { "sprocket_template_title" } }
+                    let(:multi_nested_params) {
+                      {
+                        sprocket_template_proc => {
+                          info: "the template for the sprocket",
+                          type: "hash",
+                          root: root_proc,
+                          ancestors: [root_proc]
+                        },
+                        sprocket_template_json_proc => {
+                          info: "the json blob of the sprocket template",
+                          type: "string",
+                          ancestors: [root_proc, sprocket_template_proc]
+                        },
+                        sprocket_template_title_proc => {
+                          info: "the title of the sprocket template",
+                          type: "string",
+                          ancestors: [root_proc, sprocket_template_proc]
+                        }
+                      }
+                    }
+                    let(:show_config) {
+                      default_show_config.tap do |config|
+                        config[:valid_params].merge!(multi_nested_params)
+                      end
+                    }
+
+                    it "outputs sub params under a list item" do
+                      output = subject.output
+                      expect(output).to include("##### Valid Parameters\n\n")
+                      expect(output).to include("- `only` (`Array<Integer>`) - which ids to include\n")
+                      expect(output).to include("- `widget` (`Hash`)\n")
+                      expect(output).to include("    - `sprocket_id` (`Integer`) - the id of the sprocket\n")
+                      expect(output).to include("    - `sprocket_child` (`String`) - it does the thing\n")
+                      expect(output).to include("        - Legacy: false\n")
+                      expect(output).to include("        - Recursive: true\n")
+                      expect(output).to include("    - `sprocket_template` (`Hash`) - the template for the sprocket\n")
+                      expect(output).to include("        - `sprocket_template_json` (`String`) - the json blob of the sprocket template\n")
+                      expect(output).to include("        - `sprocket_template_title` (`String`) - the title of the sprocket template\n\n\n")
+                    end
+                  end
                 end
               end
-
 
               context "with only default params" do
                 let(:default_config) { {
                   valid_params: {
-                    sprocket_name: {
+                    Proc.new { "sprocket_name" } => {
                       info: "the name of the sprocket",
                       nodoc: nodoc
                     }
@@ -249,15 +308,12 @@ module Brainstem
                 end
               end
 
-
               context "with no valid params" do
                 it "outputs nothing" do
                   expect(subject.output).to eq ""
                 end
               end
-
             end
-
 
             describe "#format_presents!" do
               let(:presenter) { Object.new }

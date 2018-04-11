@@ -12,8 +12,30 @@
                     info: "Name of the assigned tag"
         end
     ```
+  - Add support for nested parameters on an endpoint.
+    ```ruby
+        model_params :post do |param|
+          ...
+
+          param.valid :message, :string, ...
+
+          param.model_params :rating do |rating_param|
+            ...
+
+
+            rating_param.valid :stars, :integer, ...
+          end
+
+          params.valid :replies, :array, item_type: :hash, ... do |reply_params|
+            reply_params.valid :message, :string,
+                               info: "the message of the post"
+
+            ...
+          end
+        end
+    ```
   - Fixed issue with nested fields being unable to have the same name as top level fields. 
-  - Support generation of markdown documentation for the nested block fields.
+  - Support generation of markdown documentation for the nested block fields and nested parameters.
 
 + **1.2.0** - _03/29/2018_
   - Add the capability to indicate an endpoint param is required with the `required` key in the options hash.
