@@ -105,12 +105,8 @@ module Brainstem
 
 
       def valid_fields(fields = configuration[:fields])
-        fields.to_h.reject do |k, v|
-          if nested_field?(v)
-            valid_fields_in(v).none?
-          else
-            invalid_field?(v)
-          end
+        fields.to_h.reject do |_, field|
+          invalid_field?(field) || (nested_field?(field) && valid_fields_in(field).none?)
         end
       end
       alias_method :valid_fields_in, :valid_fields
@@ -122,7 +118,7 @@ module Brainstem
 
 
       def nested_field?(field)
-        !field.respond_to?(:options)
+        field.respond_to?(:configuration)
       end
 
 

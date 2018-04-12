@@ -51,10 +51,15 @@ end
 
 class User < ActiveRecord::Base
   has_many :workspaces
+
+  def type
+    self.class.name
+  end
 end
 
 class Task < ActiveRecord::Base
   belongs_to :workspace
+  belongs_to :parent, :class_name => "Task"
   has_many :sub_tasks, :foreign_key => :parent_id, :class_name => "Task"
   has_many :posts
 
@@ -75,12 +80,20 @@ class Workspace < ActiveRecord::Base
     "this is secret!"
   end
 
+  def members
+    [user]
+  end
+
   def lead_user
     user
   end
 
   def missing_user
     nil
+  end
+
+  def type
+    self.class.name
   end
 end
 

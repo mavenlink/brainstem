@@ -78,8 +78,8 @@ module Brainstem
       #   keys
       #
       def nonheritable!(key)
-        key = key.to_s
-        self.nonheritable_keys << key unless self.nonheritable_keys.include?(key)
+        formatted_key = format_key(key)
+        self.nonheritable_keys << formatted_key unless self.nonheritable_keys.include?(formatted_key)
       end
 
 
@@ -104,7 +104,7 @@ module Brainstem
       # @return [Hash] the hash, less nonheritable pairs.
       #
       def pairs_visible_to_children
-        to_h.select {|k, v| keys_visible_to_children.include?(k.to_s) }
+        to_h.select {|k, v| keys_visible_to_children.include?(format_key(k)) }
       end
 
 
@@ -150,7 +150,7 @@ module Brainstem
       # @param [Symbol,String] key the key to check for nonheritability.
       #
       def key_nonheritable_in_parent?(*key)
-        parent_nonheritable_keys.include?(key.first.to_s)
+        parent_nonheritable_keys.include?(format_key(key.first))
       end
 
 
@@ -164,7 +164,7 @@ module Brainstem
       # @param [Symbol,String] key the key to check for heritability.
       #
       def key_inheritable_in_parent?(*key)
-        !key_nonheritable_in_parent?(key.first.to_s)
+        !key_nonheritable_in_parent?(format_key(key.first))
       end
 
 
@@ -256,6 +256,14 @@ module Brainstem
             @parent_configuration[key]
           end
         end
+      end
+
+      # @api private
+      #
+      # Stringifies key if key is not a Proc.
+      #
+      def format_key(key)
+        key.respond_to?(:call) ? key : key.to_s
       end
 
       # An Array-like object that provides `push`, `concat`, `each`, `empty?`, and `to_a` methods that act the combination

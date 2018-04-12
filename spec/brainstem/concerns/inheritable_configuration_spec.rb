@@ -49,12 +49,14 @@ describe Brainstem::Concerns::InheritableConfiguration do
     end
 
     describe '#keys and #to_h' do
-      let(:subclass) { Class.new(parent_class) }
+      let(:subclass)    { Class.new(parent_class) }
       let(:subsubclass) { Class.new(subclass) }
+      let!(:proc_key)   { Proc.new {} }
 
       before do
         parent_class.configuration['1'] = :a
         parent_class.configuration['2'] = :b
+        parent_class.configuration[proc_key] = :foo
 
         subclass.configuration['2'] = :c
         subclass.configuration['3'] = :d
@@ -64,12 +66,9 @@ describe Brainstem::Concerns::InheritableConfiguration do
       end
 
       it "returns the union of this class's keys with any parent keys" do
-        expect(parent_class.configuration.keys).to eq ['1', '2']
-        expect(parent_class.configuration.to_h).to eq({ '1' => :a, '2' => :b })
-        expect(subclass.configuration.keys).to eq ['1', '2', '3']
-        expect(subclass.configuration.to_h).to eq({ '1' => :a, '2' => :c, '3' => :d })
-        expect(subsubclass.configuration.keys).to eq ['1', '2', '3', '4']
-        expect(subsubclass.configuration.to_h).to eq({ '1' => :a, '2' => :c, '3' => :e, '4' => :f })
+        expect(parent_class.configuration.to_h).to eq({ '1' => :a, '2' => :b, proc_key => :foo })
+        expect(subclass.configuration.to_h).to eq({ '1' => :a, '2' => :c, '3' => :d, proc_key => :foo })
+        expect(subsubclass.configuration.to_h).to eq({ '1' => :a, '2' => :c, '3' => :e, '4' => :f, proc_key => :foo })
 
         # it doesn't mutate storage
         subclass.configuration.to_h['1'] = :new
@@ -82,14 +81,19 @@ describe Brainstem::Concerns::InheritableConfiguration do
         expect(parent_class.configuration['1']).to eq :a
         expect(parent_class.configuration['2']).to eq :b
         expect(parent_class.configuration['3']).to be_nil
+        expect(parent_class.configuration[proc_key]).to eq :foo
+
         expect(subclass.configuration['1']).to eq :a
         expect(subclass.configuration['2']).to eq :c
         expect(subclass.configuration['3']).to eq :d
         expect(subclass.configuration['4']).to be_nil
+        expect(subclass.configuration[proc_key]).to eq :foo
+
         expect(subsubclass.configuration['1']).to eq :a
         expect(subsubclass.configuration['2']).to eq :c
         expect(subsubclass.configuration['3']).to eq :e
         expect(subsubclass.configuration['4']).to eq :f
+        expect(subsubclass.configuration[proc_key]).to eq :foo
       end
 
       it "does not return nonheritable keys in the parent" do
@@ -97,8 +101,12 @@ describe Brainstem::Concerns::InheritableConfiguration do
         parent_class.configuration['nonheritable'] = "why yes, I am nonheritable"
         expect(subclass.configuration.keys).not_to include 'nonheritable'
 
-        expect(subclass.configuration.to_h.keys).not_to include 'nonheritable'
-        expect(subclass.configuration.has_key?('nonheritable')).to eq false
+        parent_class.configuration.nonheritable! proc_key
+        parent_class.configuration[proc_key] = "Not Inheritable!"
+        expect(subclass.configuration.keys).not_to include proc_key
+
+        expect(subclass.configuration.to_h.keys).not_to include proc_key
+        expect(subclass.configuration.has_key?(proc_key)).to eq false
       end
     end
 
@@ -297,6 +305,21 @@ describe Brainstem::Concerns::InheritableConfiguration do
         parent_class.configuration.nonheritable! :nonheritable
         parent_class.configuration.nonheritable! :nonheritable
         expect(parent_class.configuration.nonheritable_keys.to_a).to eq ["nonheritable"]
+      end
+
+      context "when key is a proc" do
+        let!(:proc_key) { Proc.new {} }
+
+        it "adds the key to the nonheritable attributes list" do
+          parent_class.configuration.nonheritable! proc_key
+          expect(parent_class.configuration.nonheritable_keys.to_a).to eq [proc_key]
+        end
+
+        it "dedupes" do
+          parent_class.configuration.nonheritable! proc_key
+          parent_class.configuration.nonheritable! proc_key
+          expect(parent_class.configuration.nonheritable_keys.to_a).to eq [proc_key]
+        end
       end
     end
   end

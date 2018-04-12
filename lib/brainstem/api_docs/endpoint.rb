@@ -71,7 +71,7 @@ module Brainstem
       def <=>(other)
 
         # Any unordered routes are assigned an index of +ACTION_ORDER.count+.
-        ordered_actions_count = ACTION_ORDER.count
+        ordered_actions_count   = ACTION_ORDER.count
         own_action_priority     = ACTION_ORDER.index(action.to_s)       || ordered_actions_count
         other_action_priority   = ACTION_ORDER.index(other.action.to_s) || ordered_actions_count
 
@@ -120,30 +120,52 @@ module Brainstem
 
 
       #
-      # Returns a hash of all root-level params with values of an array of
-      # the parameters nested underneath, or +nil+ in the event they are
-      # root-level non-nested params.
+      # Returns a hash of all params nested under the specified root or
+      # parent fields along with their type, item type & children.
       #
-      # @return [Hash{Symbol => Array,NilClass}] root keys and the keys
-      #   nested under them, or nil if not a nested param.
+      # @return [Hash{Symbol => Hash}] root keys and their type info, item info & children
+      #   nested under them.
       #
-      def root_param_keys
-        @root_param_keys ||= begin
-          valid_params.to_h
-            .inject({}) do |hsh, (field_name, data)|
-              next hsh if data[:nodoc]
+      def params_configuration_tree
+        @params_configuration_tree ||= begin
+          valid_params
+            .to_h
+            .deep_dup
+            .with_indifferent_access
+            .inject(ActiveSupport::HashWithIndifferentAccess.new) do |result, (field_name_proc, field_config)|
 
-              if data.has_key?(:root)
-                key  = data[:root].respond_to?(:call) ? data[:root].call(controller.const) : data[:root]
-                (hsh[key] ||= []) << field_name
-              else
-                hsh[field_name] = nil
+            next result if field_config[:nodoc]
+
+            field_name = evaluate_field_name(field_name_proc)
+            if field_config.has_key?(:ancestors)
+              ancestors = field_config[:ancestors].map { |ancestor_key| evaluate_field_name(ancestor_key) }
+
+              parent = ancestors.inject(result) do |traversed_hash, ancestor_name|
+                traversed_hash[ancestor_name] ||= { :_config => { type: 'hash' } }
+                traversed_hash[ancestor_name]
               end
 
-              hsh
+              parent[field_name] = { :_config => field_config.except(:root, :ancestors) }
+            else
+              result[field_name] = { :_config => field_config }
             end
+
+            result
+          end
         end
       end
+
+
+      #
+      # Evaluate field name if proc and symbolize it.
+      #
+      def evaluate_field_name(field_name_or_proc)
+        return field_name_or_proc if field_name_or_proc.nil?
+
+        field_name = field_name_or_proc.respond_to?(:call) ? field_name_or_proc.call(controller.const) : field_name_or_proc
+        field_name.to_sym
+      end
+      alias_method :evaluate_root_name, :evaluate_field_name
 
 
       #

@@ -52,14 +52,35 @@ describe Brainstem::DSL::Field do
   describe '#run_on' do
     let(:context) { { } }
 
+    it 'calls `evaluate_value_on`' do
+      mock(field).evaluate_value_on.with(model, context, anything)
+
+      field.run_on(model, context)
+    end
+
+    context 'when helper instance is specified' do
+      let(:helper_instance) { Object.new }
+
+      it 'calls `evaluate_value_on` with the given helper instance' do
+        mock(field).evaluate_value_on.with(model, context, helper_instance)
+
+        field.run_on(model, context, helper_instance)
+      end
+    end
+  end
+
+  describe '#evaluate_value_on' do
+    let(:context) { { } }
+    let(:helper_instance) { Object.new }
+
     context 'on :dynamic fields' do
       let(:options) { { dynamic: lambda { some_instance_method } } }
 
       it 'calls the :dynamic lambda in the context of the given instance' do
         do_not_allow(model).title
-        instance = Object.new
-        mock(instance).some_instance_method
-        field.run_on(model, context, instance)
+        mock(helper_instance).some_instance_method
+
+        field.evaluate_value_on(model, context, helper_instance)
       end
     end
 
@@ -79,22 +100,22 @@ describe Brainstem::DSL::Field do
       context 'The first model is ran' do
         it 'builds lookup cache and returns the value for the first model' do
           expect(context[:lookup][:fields][name.to_s]).to eq(nil)
-          instance = Object.new
-          mock(instance).some_instance_method
-          expect(field.run_on(first_model, context, instance)).to eq("Ben's Project")
+          mock(helper_instance).some_instance_method
+
+          expect(field.evaluate_value_on(first_model, context, helper_instance)).to eq("Ben's Project")
           expect(context[:lookup][:fields][name.to_s]).to eq({ first_model.id => "Ben's Project", second_model.id => "Nate's Project" })
         end
       end
 
       context 'The second model is ran after the first' do
         it 'returns the value from the lookup cache and does not run the lookup' do
-          instance = Object.new
-          mock(instance).some_instance_method
-          field.run_on(first_model, context, instance)
+          mock(helper_instance).some_instance_method
+
+          field.evaluate_value_on(first_model, context, helper_instance)
           expect(context[:lookup][:fields][name.to_s]).to eq({ first_model.id => "Ben's Project", second_model.id => "Nate's Project" })
 
-          mock(instance).some_instance_method.never
-          expect(field.run_on(second_model, context, instance)).to eq("Nate's Project")
+          mock(helper_instance).some_instance_method.never
+          expect(field.evaluate_value_on(second_model, context, helper_instance)).to eq("Nate's Project")
         end
       end
 
@@ -104,7 +125,7 @@ describe Brainstem::DSL::Field do
 
           it 'should raise error explaining the default lookup fetch relies on [] to access the model\'s value from the lookup' do
             expect {
-              field.run_on(first_model, context)
+              field.evaluate_value_on(first_model, context)
             }.to raise_error(StandardError, 'Brainstem expects the return result of the `lookup` to be a Hash since it must respond to [] in order to access the model\'s assocation(s). Default: lookup_fetch: lambda { |lookup, model| lookup[model.id] }`')
           end
         end
@@ -119,10 +140,10 @@ describe Brainstem::DSL::Field do
         }
 
         it 'does not use the dynamic lambda' do
-          instance = Object.new
-          mock(instance).dynamic_instance_method.never
-          mock(instance).lookup_instance_method
-          expect(field.run_on(first_model, context, instance)).to eq "Ben's Project"
+          mock(helper_instance).dynamic_instance_method.never
+          mock(helper_instance).lookup_instance_method
+
+          expect(field.evaluate_value_on(first_model, context, helper_instance)).to eq "Ben's Project"
         end
       end
 
@@ -137,9 +158,9 @@ describe Brainstem::DSL::Field do
         it 'returns the value from the lookup using the lookup_fetch lambda' do
           context[:lookup][:fields][name.to_s] = {}
           context[:lookup][:fields][name.to_s][first_model.id] = "Ben's stubbed out Project"
-          instance = Object.new
-          mock(instance).some_instance_method
-          expect(field.run_on(first_model, context, instance)).to eq("Ben's stubbed out Project")
+          mock(helper_instance).some_instance_method
+
+          expect(field.evaluate_value_on(first_model, context, helper_instance)).to eq("Ben's stubbed out Project")
         end
       end
     end
@@ -148,7 +169,52 @@ describe Brainstem::DSL::Field do
       it 'calls method_name on the model' do
         mock(model).foo
         mock(field).method_name { 'foo' }
-        field.run_on(model, context)
+
+        field.evaluate_value_on(model, context)
+      end
+    end
+  end
+
+  describe '#presentable?' do
+    let(:given_context) {
+      {
+        optional_fields: 'optional field',
+        conditionals: 'conditionals',
+        helper_instance: 'helper instance',
+        conditional_cache: 'conditional cache'
+      }
+    }
+    let(:optioned) { false }
+    let(:conditionals_match) { false }
+
+    before do
+      mock(field).optioned?.with(given_context[:optional_fields]) { optioned }
+      stub(field).conditionals_match?.with(
+        model,
+        given_context[:conditionals],
+        given_context[:helper_instance],
+        given_context[:conditional_cache]
+      ) { conditionals_match }
+    end
+
+    it 'calls `optioned?` by passing in the optional fields from the context' do
+      expect(field.presentable?(model, given_context)).to be_falsey
+    end
+
+    context 'when field is not optional' do
+      let(:optioned) { true }
+
+      it 'calls `conditionals_match?` with conditionals, helper instance and conditional cache from the context' do
+        expect(field.presentable?(model, given_context)).to be_falsey
+      end
+    end
+
+    context 'when field is not optional and conditionals match' do
+      let(:optioned) { true }
+      let(:conditionals_match) { true }
+
+      it 'returns true' do
+        expect(field.presentable?(model, given_context)).to be_truthy
       end
     end
   end

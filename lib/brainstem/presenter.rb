@@ -308,15 +308,19 @@ module Brainstem
     def present_fields(model, context, fields, result = {})
       fields.each do |name, field|
         case field
-          when DSL::Field
-            if field.conditionals_match?(model, context[:conditionals], context[:helper_instance], context[:conditional_cache]) && field.optioned?(context[:optional_fields])
+          when DSL::HashBlockField
+            next if field.executable? && !field.presentable?(model, context)
+
+            # This preserves backwards compatibility
+            # In the case of a hash field, the individual attributes will call presentable
+            # If none of the individual attributes are presentable we will receive an empty hash
+            result[name] = field.run_on(model, context, context[:helper_instance])
+          when DSL::ArrayBlockField, DSL::Field
+            if field.presentable?(model, context)
               result[name] = field.run_on(model, context, context[:helper_instance])
             end
-          when DSL::Configuration
-            result[name] ||= {}
-            present_fields(model, context, field, result[name])
           else
-            raise "Unknown Brianstem Field type encountered: #{field}"
+            raise "Unknown Brainstem Field type encountered: #{field}"
         end
       end
       result

@@ -38,7 +38,12 @@ module Brainstem
         options[:optional]
       end
 
+      # Please override in sub classes to compute value of field with the given arguments.
       def run_on(model, context, helper_instance = Object.new)
+        evaluate_value_on(model, context, helper_instance)
+      end
+
+      def evaluate_value_on(model, context, helper_instance = Object.new)
         if options[:lookup]
           run_on_with_lookup(model, context, helper_instance)
         elsif options[:dynamic]
@@ -51,6 +56,15 @@ module Brainstem
         else
           model.send(method_name)
         end
+      end
+
+      def presentable?(model, context)
+        optioned?(context[:optional_fields]) && conditionals_match?(
+          model,
+          context[:conditionals],
+          context[:helper_instance],
+          context[:conditional_cache]
+        )
       end
 
       def conditionals_match?(model, presenter_conditionals, helper_instance = Object.new, conditional_cache = { model: {}, request: {} })

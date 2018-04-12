@@ -6,11 +6,24 @@ module Brainstem
           configuration[name] = DSL::Field.new(name, type, smart_merge(block_options, format_options(options)))
         end
 
-        def fields(name, &block)
-          descend FieldsBlock, configuration.nest!(name), &block
+        def fields(name, type = :hash, options = {}, &block)
+          nested_field = DSL::BlockField.for(name, type, smart_merge(block_options, format_options(options)), configuration[name])
+          configuration[name] = nested_field
+
+          descend self.class, nested_field.configuration, merge_parent_options(block_options, options), &block
         end
 
         private
+
+        NON_INHERITABLE_FIELD_OPTIONS = [:dynamic, :via, :lookup, :lookup_fetch, :info, :type, :item_type]
+        private_constant :NON_INHERITABLE_FIELD_OPTIONS
+
+        def merge_parent_options(block_options, parent_options)
+          inheritable_options = parent_options.except(*NON_INHERITABLE_FIELD_OPTIONS)
+          inheritable_options[:use_parent_value] = true unless inheritable_options.has_key?(:use_parent_value)
+
+          block_options.deep_dup.merge(inheritable_options)
+        end
 
         def smart_merge(block_options, options)
           if_clause = ([block_options[:if]] + [options[:if]]).flatten(2).compact.uniq

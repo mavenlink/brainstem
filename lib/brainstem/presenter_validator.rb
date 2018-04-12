@@ -33,15 +33,17 @@ module Brainstem
     end
 
     def fields_exist(fields = presenter_class.configuration[:fields])
-      fields.each do |name, field_or_fields|
-        case field_or_fields
+      fields.each do |name, field|
+        case field
+          when DSL::HashBlockField
+            fields_exist(field) if presenter_class.presents.any? { !field.executable? }
           when DSL::Field
-            method_name = field_or_fields.method_name
+            method_name = field.method_name
             if method_name && presenter_class.presents.any? { |klass| !klass.new.respond_to?(method_name) }
               errors.add(:fields, "'#{name}' is not valid because not all presented classes respond to '#{method_name}'")
             end
-          when DSL::Configuration
-            fields_exist(field_or_fields)
+          else
+            errors.add(:fields, "'#{name}' is an unknown Brainstem field type")
         end
       end
     end
@@ -61,16 +63,23 @@ module Brainstem
     end
 
     def conditionals_exist(fields = presenter_class.configuration[:fields])
-      fields.each do |name, field_or_fields|
-        case field_or_fields
-          when DSL::Field
-            if field_or_fields.options[:if].present?
-              if Array.wrap(field_or_fields.options[:if]).any? { |conditional| presenter_class.configuration[:conditionals][conditional].nil? }
+      fields.each do |name, field|
+        case field
+          when DSL::HashBlockField
+            if field.options[:if].present?
+              if Array.wrap(field.options[:if]).any? { |conditional| presenter_class.configuration[:conditionals][conditional].nil? }
                 errors.add(:fields, "'#{name}' is not valid because one or more of the specified conditionals does not exist")
               end
             end
-          when DSL::Configuration
-            conditionals_exist(field_or_fields)
+            conditionals_exist(field) if presenter_class.presents.any? { |klass| !field.executable? }
+          when DSL::Field
+            if field.options[:if].present?
+              if Array.wrap(field.options[:if]).any? { |conditional| presenter_class.configuration[:conditionals][conditional].nil? }
+                errors.add(:fields, "'#{name}' is not valid because one or more of the specified conditionals does not exist")
+              end
+            end
+          else
+            errors.add(:fields, "'#{name}' is an unknown Brainstem field type")
         end
       end
     end

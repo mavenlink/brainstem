@@ -1,6 +1,8 @@
 require 'brainstem/concerns/inheritable_configuration'
 require 'brainstem/dsl/association'
 require 'brainstem/dsl/field'
+require 'brainstem/dsl/array_block_field'
+require 'brainstem/dsl/hash_block_field'
 require 'brainstem/dsl/conditional'
 
 require 'brainstem/dsl/base_block'
@@ -48,6 +50,13 @@ module Brainstem
 
         def nodoc!
           configuration[:nodoc] = true
+        end
+
+        #
+        # Temporary implementation to track controllers that have been documented.
+        #
+        def documented!
+          configuration[:documented] = true
         end
 
         # Declare a helper module or block whose methods will be available in dynamic fields and associations.

@@ -85,9 +85,9 @@ module Brainstem
           def format_field_branch(branch, indent_level = 0)
             branch.inject("") do |buffer, (name, field)|
               if nested_field?(field)
-                sub_fields = md_inline_code(name.to_s) + "\n"
+                sub_fields = format_field_leaf(field, indent_level) + "\n"
                 sub_fields << format_field_branch(field.to_h, indent_level + 1)
-                buffer     += md_li(sub_fields, indent_level)
+                buffer += md_li(sub_fields, indent_level)
               else
                 buffer += md_li(format_field_leaf(field, indent_level), indent_level)
               end
@@ -96,7 +96,7 @@ module Brainstem
 
 
           def nested_field?(field)
-            !field.respond_to?(:options)
+            field.respond_to?(:configuration)
           end
 
 

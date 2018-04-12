@@ -69,7 +69,6 @@ describe Brainstem::Presenter do
       end
     end
 
-
     describe ".possible_brainstem_keys" do
       let(:presented_class)       { Class.new }
       let(:other_presented_class) { Class.new }
@@ -298,6 +297,231 @@ describe Brainstem::Presenter do
             model.title = 'hello'
             presented_workspace = presenter.group_present([model], [], optional_fields: ['conditional_expensive_title']).first
             expect(presented_workspace).to have_key('conditional_expensive_title')
+          end
+        end
+      end
+
+      describe 'handling nested hash block fields' do
+        let(:presenter_class) do
+          Class.new(Brainstem::Presenter) do
+            presents Workspace
+
+            helper do
+              def current_user
+                'jane'
+              end
+            end
+
+            conditionals do
+              request :user_is_bob, lambda { current_user == 'bob' }, info: 'visible only to bob'
+            end
+
+            fields do
+              fields :participant, :hash, via: :lead_user, if: :user_is_bob  do
+                field :username, :string
+              end
+
+              fields :lead_user do
+                field :username, :string, dynamic: lambda { |workspace| workspace.lead_user.username }
+              end
+            end
+          end
+        end
+        let(:presenter) { presenter_class.new }
+
+        before do
+          stub.any_instance_of(Brainstem::DSL::Field).presentable?(model, anything) { presentable }
+        end
+
+        context 'when field is presentable' do
+          let(:presentable) { true }
+
+          it 'includes the executable hash block field' do
+            presented_workspace = presenter.group_present([model], []).first
+
+            expect(presented_workspace.keys).to include('participant')
+          end
+
+          it 'includes the non executable hash block field' do
+            presented_workspace = presenter.group_present([model], []).first
+
+            expect(presented_workspace.keys).to include('lead_user')
+          end
+        end
+
+        context 'when field is not presentable' do
+          let(:presentable) { false }
+
+          it 'does not include executable hash block fields' do
+            presented_workspace = presenter.group_present([model], []).first
+
+            expect(presented_workspace.keys).to_not include('participant')
+          end
+
+          it 'always includes non-executable hash block fields' do
+            presented_workspace = presenter.group_present([model], []).first
+
+            expect(presented_workspace.keys).to include('lead_user')
+          end
+        end
+      end
+
+      describe 'handling of nested array fields' do
+        let(:array_values) { [OpenStruct.new(name: 1), OpenStruct.new(name: 2)] }
+        let(:presenter_class) do
+          Class.new(Brainstem::Presenter) do
+            presents Workspace
+
+            fields do
+              fields :participants, :array, via: :members do
+                field :username, :string
+              end
+
+              fields :accessible_by, :array, dynamic: -> { [OpenStruct.new(name: 1), OpenStruct.new(name: 2)] } do
+                field :name, :string
+                field :full_name, :string, via: :name
+                field :formatted_name, :string, dynamic: -> (model) { model.name * 2 }
+              end
+            end
+          end
+        end
+        let(:presenter) { presenter_class.new }
+
+        context 'when dynamic option is specified' do
+          def extract_values(fields, field_name, nested_field_name)
+            fields[field_name].map { |data| data[nested_field_name] }
+          end
+
+          it 'calls named methods' do
+            fields = presenter.group_present([model]).first
+
+            expect(fields).to have_key('accessible_by')
+            expect(extract_values(fields, 'accessible_by', 'name')).to eq([1, 2])
+          end
+
+          it 'can call methods with :via' do
+            fields = presenter.group_present([model]).first
+
+            expect(fields).to have_key('accessible_by')
+            expect(extract_values(fields, 'accessible_by', 'full_name')).to eq([1, 2])
+          end
+
+          it 'can call a dynamic lambda' do
+            fields = presenter.group_present([model]).first
+
+            expect(fields).to have_key('accessible_by')
+            expect(extract_values(fields, 'accessible_by', 'formatted_name')).to eq([2, 4])
+          end
+        end
+
+        context 'when via option is specified' do
+          let(:participants) { [model.user] }
+          let(:presented_field_data) { participants.map { |user| { 'username' => user.username } } }
+
+          it 'returns an array of hashes with the specified field' do
+            fields = presenter.group_present([model]).first
+
+            expect(fields).to have_key('participants')
+            expect(fields['participants']).to eq(presented_field_data)
+          end
+        end
+
+        describe 'when nested fields specify not using the parent value' do
+          let(:presenter_class) do
+            Class.new(Brainstem::Presenter) do
+              presents Workspace
+
+              fields do
+                fields :tasks, :array, via: :tasks do
+                  field :name, :string
+                  field :secret, :string,
+                        info: 'a secret, via secret_info',
+                        via: :secret_info,
+                        use_parent_value: false
+                end
+              end
+            end
+          end
+          let(:tasks) { Task.where(workspace_id: model.id).order(:id).to_a }
+          let(:presented_field_data) { tasks.map { |task| { 'name' => task.name, 'secret' => model.secret_info } } }
+
+          it 'returns an array of hashes while using the correct model to evaluate the properties' do
+            fields = presenter.group_present([model]).first
+
+            expect(fields).to have_key('tasks')
+            expect(fields['tasks']).to eq(presented_field_data)
+          end
+        end
+
+        describe 'handling of conditional fields' do
+          let(:presenter_class) do
+            Class.new(Brainstem::Presenter) do
+              presents Workspace
+
+              helper do
+                def current_user
+                  'jane'
+                end
+              end
+
+              conditionals do
+                model   :title_is_hello, lambda { |model| model.title == 'hello' }, info: 'visible when the title is hello'
+                request :user_is_bob, lambda { current_user == 'bob' }, info: 'visible only to bob'
+              end
+
+              fields do
+                with_options if: :user_is_bob do
+                  fields :tasks, :array, dynamic: lambda { |workspace| workspace.tasks.to_a } do
+                    field :name, :string
+                  end
+                end
+
+                fields :members, :array, via: :members, if: :title_is_hello do
+                  field :hello_title, :string,
+                        info: 'the title, when hello',
+                        dynamic: lambda { 'title is hello' }
+
+                  field :foo, :string,
+                        info: 'a secret, via secret_info',
+                        dynamic: lambda { 'foo' },
+                        if: [:user_is_bob]
+                end
+              end
+            end
+          end
+
+          it 'does not return conditional fields when their :if conditionals do not match' do
+            fields = presenter.group_present([model]).first
+
+            expect(fields).to_not have_key('tasks')
+            expect(fields).to_not have_key('members')
+          end
+
+          it 'returns conditional fields when their :if matches' do
+            model.title = 'hello'
+
+            fields = presenter.group_present([model]).first
+
+            expect(fields).to_not have_key('tasks')
+            expect(fields).to have_key('members')
+            expect(fields['members'][0]).to_not have_key('foo')
+            expect(fields['members'][0]['hello_title']).to eq 'title is hello'
+          end
+
+          it 'returns fields with the :if option only when all of the conditionals in that :if are true' do
+            model.title = 'hello'
+            presenter.class.helper do
+              def current_user
+                'bob'
+              end
+            end
+
+            fields = presenter.group_present([model]).first
+
+            expect(fields).to have_key('tasks')
+            expect(fields).to have_key('members')
+            expect(fields['members'][0]['foo']).to eq('foo')
+            expect(fields['members'][0]['hello_title']).to eq('title is hello')
           end
         end
       end
