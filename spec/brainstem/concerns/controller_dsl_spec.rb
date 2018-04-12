@@ -1017,7 +1017,7 @@ module Brainstem
             it "returns false and says params are missing" do
               expect {
                 subject.new.brainstem_validate_params!(:update, brainstem_model_name)
-              }.to raise_error(Brainstem::UnknownParams)
+              }.to raise_error(Brainstem::ValidationError)
             end
           end
 
@@ -1027,7 +1027,7 @@ module Brainstem
             it "returns false and says params are missing" do
               expect {
                 subject.new.brainstem_validate_params!(:update, brainstem_model_name)
-              }.to raise_error(Brainstem::UnknownParams)
+              }.to raise_error(Brainstem::ValidationError)
             end
           end
 
@@ -1037,7 +1037,7 @@ module Brainstem
             it "returns false and says params are missing" do
               expect {
                 subject.new.brainstem_validate_params!(:update, brainstem_model_name)
-              }.to raise_error(Brainstem::UnknownParams)
+              }.to raise_error(Brainstem::ValidationError)
             end
           end
         end
@@ -1048,77 +1048,7 @@ module Brainstem
           it "lists unknown params" do
             expect {
               subject.new.brainstem_validate_params!(:update, brainstem_model_name)
-            }.to raise_error(Brainstem::UnknownParams, "Unknown params encountered")
-          end
-        end
-      end
-
-      describe "#brainstem_ignore_unknown_params!" do
-        let(:brainstem_model_name) { "widget" }
-        let(:input_params) { { widget: { sprocket_parent_id: 5, sprocket_name: 'gears' } } }
-
-        before do
-          stub(subject).brainstem_model_name { brainstem_model_name }
-          stub.any_instance_of(subject).brainstem_model_name { brainstem_model_name }
-          stub.any_instance_of(subject).params { input_params }
-
-          subject.brainstem_params do
-            actions :update do
-              model_params(brainstem_model_name) do |params|
-                params.valid :sprocket_parent_id, :long,
-                  info: "sprockets[sprocket_parent_id] is not required"
-
-                params.valid :sprocket_name, :string,
-                  info: "sprockets[sprocket_name] is required",
-                  required: true
-              end
-            end
-          end
-        end
-
-        it "returns sanitized params if params are OK" do
-          expect(subject.new.brainstem_ignore_unknown_params!(:update, brainstem_model_name)).
-            to eq(input_params[:widget].with_indifferent_access)
-        end
-
-        context "when parameters are in an invalid format" do
-          context "with an empty hash" do
-            let(:input_params)  { {} }
-
-            it "returns the empty hash" do
-              expect {
-                subject.new.brainstem_ignore_unknown_params!(:update, brainstem_model_name)
-              }.to raise_error(Brainstem::UnknownParams)
-            end
-          end
-
-          context "with a non-hash object" do
-            let(:input_params) { { widget: [{ foo: "bar" }] } }
-
-            it "returns the object" do
-              expect {
-                subject.new.brainstem_ignore_unknown_params!(:update, brainstem_model_name)
-              }.to raise_error(Brainstem::UnknownParams)
-            end
-          end
-
-          context "with nil" do
-            let(:input_params) { { widget: nil } }
-
-            it "returns false and says params are missing" do
-              expect {
-                subject.new.brainstem_validate_params!(:update, brainstem_model_name)
-              }.to raise_error(Brainstem::UnknownParams)
-            end
-          end
-        end
-
-        context "when unknown params are present" do
-          let(:input_params) { { widget: { sprocket_parent_id: 5, sprocket_name: 'gears', my_cool_param: "something" } } }
-
-          it "returns the params without the unknown keys" do
-            expect(subject.new.brainstem_ignore_unknown_params!(:update, brainstem_model_name))
-              .to eq({ sprocket_parent_id: 5, sprocket_name: 'gears' }.with_indifferent_access)
+            }.to raise_error(Brainstem::ValidationError)
           end
         end
       end

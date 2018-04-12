@@ -403,29 +403,6 @@ module Brainstem
       end
 
       #
-      # Ensures that known / documented parameters are passed through to the action.
-      #
-      # It raises Brainstem::UnknownParams.new(message, unknown_params) error,
-      # when params are empty or not a Hash.
-      #
-      # @params [String, Symbol] (Optional) requested_context the context which to look up.
-      # @params [String, Symbol] (Optional) root_param_name the param name of the model being changed.
-      #
-      # @return [Hash{String => String, Hash] a hash of pairs of param names and descriptions or sub-hashes.
-      #
-      def brainstem_ignore_unknown_params!(requested_context = action_name.to_sym, root_param_name = brainstem_model_name)
-        input_params            = params.with_indifferent_access[brainstem_model_name]
-        brainstem_params_config = brainstem_valid_params(requested_context, root_param_name)
-
-        Brainstem::ParamsValidator.validate!(
-          requested_context,
-          input_params,
-          brainstem_params_config,
-          ignore_unknown_fields: true
-        )
-      end
-
-      #
       # Lists all incoming param keys that will be rewritten to use a different
       # name for internal usage for the current action.
       #
