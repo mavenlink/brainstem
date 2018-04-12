@@ -112,6 +112,43 @@ describe Brainstem::ParamsValidator do
         end
       end
     end
+
+    context "when multi nested attributes are valid" do
+      let(:valid_params_config) do
+        {
+          full_name: { :_config => { type: 'string' } },
+
+          permissions: {
+            :_config => { type: 'hash' },
+            can_edit: { :_config => { type: 'boolean' } },
+          },
+
+          skills: {
+            :_config => { type: 'array', item_type: 'hash' },
+            name: { :_config => { type: 'string' } },
+            category: {
+              :_config => { type: 'hash' },
+
+              name: { :_config => { type: 'string' } }
+            }
+          }
+        }
+      end
+      let(:input_params) {
+        {
+          full_name: 'Buzz Killington',
+          permissions: { can_edit: true },
+          skills: [
+            { name: 'Ruby', category: { name: 'Programming' } },
+            { name: 'Karate', category: { name: 'Self Defense' } }
+          ]
+        }
+      }
+
+      it "returns the input params" do
+        expect(subject.validate!).to eq(input_params)
+      end
+    end
   end
 
   context "when input parameters are invalid" do
@@ -286,6 +323,107 @@ describe Brainstem::ParamsValidator do
 
           it "raises an error" do
             expect { subject.validate! }.to raise_error(Brainstem::UnknownParams)
+          end
+        end
+      end
+
+      context "when multi nested attributes are invalid" do
+        let(:restrict_to_actions) { [] }
+        let(:valid_params_config) do
+          {
+            full_name: { :_config => { type: 'string' } },
+
+            permissions: {
+              :_config => { type: 'hash', only: restrict_to_actions },
+
+              can_edit: { :_config => { type: 'boolean' } },
+            },
+
+            skills: {
+              :_config => { type: 'array', item_type: 'hash' },
+
+              name: { :_config => { type: 'string', only: restrict_to_actions } },
+              category: {
+                :_config => { type: 'hash' },
+
+                name: { :_config => { type: 'string' } }
+              }
+            }
+          }
+        end
+        let(:input_params) { { sprocket_parent_id: 5, sprocket_name: 'gears' } }
+
+        context "when params are supplied to the wrong action" do
+          let(:action) { :create }
+          let(:restrict_to_actions) { [:update] }
+          let(:input_params) {
+            {
+              full_name: 'Buzz Killington',
+              permissions: { can_edit: true },
+              skills: [
+                { name: 'Ruby', category: { name: 'Programming' } },
+                { name: 'Kaarate', category: { name: 'Self Defense' } }
+              ]
+            }
+          }
+
+          it "raises an error" do
+            expect { subject.validate! }.to raise_error(Brainstem::UnknownParams)
+          end
+        end
+
+        context "when params are supplied to the wrong action" do
+          let(:action) { :create }
+          let(:restrict_to_actions) { [:update] }
+          let(:input_params) {
+            {
+              full_name: 'Buzz Killington',
+              permissions: { can_edit: true },
+              skills: [
+                { name: 'Ruby', category: { name: 'Programming' } },
+                { name: 'Kaarate', category: { name: 'Self Defense' } }
+              ]
+            }
+          }
+
+          it "raises an error" do
+            expect { subject.validate! }.to raise_error(Brainstem::UnknownParams)
+          end
+        end
+
+        context "when unknown params are present" do
+          context "when present in a hash" do
+            let(:input_params) {
+              {
+                full_name: 'Buzz Killington',
+                permissions: { can_edit: true, invalid: 'blah' },
+                skills: [
+                  { name: 'Ruby', category: { name: 'Programming' } },
+                  { name: 'Kaarate', category: { name: 'Self Defense' } }
+                ]
+              }
+            }
+
+            it "raises an error" do
+              expect { subject.validate! }.to raise_error(Brainstem::UnknownParams)
+            end
+          end
+
+          context "when present in a hash" do
+            let(:input_params) {
+              {
+                full_name: 'Buzz Killington',
+                permissions: { can_edit: true },
+                skills: [
+                  { name: 'Ruby', category: { invalid: 'blah' } },
+                  { name: 'Kaarate', category: { name: 'Self Defense' } }
+                ]
+              }
+            }
+
+            it "raises an error" do
+              expect { subject.validate! }.to raise_error(Brainstem::UnknownParams)
+            end
           end
         end
       end

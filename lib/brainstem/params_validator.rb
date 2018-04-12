@@ -20,21 +20,25 @@ module Brainstem
 
     def validate!
       @input_params.each do |param_key, param_value|
-        param = @valid_params_config[param_key]
+        param_data = @valid_params_config[param_key]
 
-        if param.blank?
+        if param_data.blank?
           @unknown_params << param_key
           next
         end
 
-        param_config = param[:_config]
+        param_config = param_data[:_config]
         if param_config[:only].present? && !param_config[:only].map(&:to_s).include?(@action_name)
           @unknown_params << param_key
 
         elsif param_config[:recursive].to_s == 'true'
-          next if param_value.blank?
+          next if param_value.blank? # Doubts
 
-          @sanitized_params[param_key] = validate_recursive_params!(param_config[:type], param_key, param_value)
+          @sanitized_params[param_key] = validate_recursive_params!(param_key, param_data, param_value)
+        elsif parent_param?(param_data)
+          # next if param_value.blank? # Doubts
+
+          @sanitized_params[param_key] = validate_nested_params!(param_key, param_data, param_value)
         else
           @sanitized_params[param_key] = param_value
         end
@@ -45,19 +49,33 @@ module Brainstem
 
     private
 
-    def validate_recursive_params!(param_type, param_key, param_value)
-      if param_type == 'hash'
-        validate_recursive_param(param_key, param_value)
+    def parent_param?(param_data)
+      param_data.except(:_config).keys.present?
+    end
+
+    def validate_recursive_params!(parent_param_key, parent_param_config, value)
+      if parent_param_config[:_config][:type] == 'hash'
+        validate_nested_param(parent_param_key, value, @valid_params_config)
       else
-        param_value.each_with_index.map { |value, index| validate_recursive_param(param_key, value, index) }
+        value.map { |value| validate_nested_param(parent_param_key, value, @valid_params_config) }
       end
     end
 
-    def validate_recursive_param(param_key, param_value, index = nil)
+    def validate_nested_params!(parent_param_key, parent_param_config, value)
+      valid_nested_params = parent_param_config.except(:_config)
+
+      if parent_param_config[:_config][:type] == 'hash'
+        validate_nested_param(parent_param_key, value, valid_nested_params)
+      else
+        value.map { |value| validate_nested_param(parent_param_key, value, valid_nested_params) }
+      end
+    end
+
+    def validate_nested_param(parent_param_key, value, valid_params)
       begin
-        result = self.class.validate!(@action_name, param_value, @valid_params_config, @options)
+        result = self.class.validate!(@action_name, value, valid_params, @options)
       rescue Brainstem::UnknownParams => e
-        @unknown_params << { param_key => e.unknown_params }
+        @unknown_params << { parent_param_key => e.unknown_params }
       end
 
       result
