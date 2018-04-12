@@ -385,7 +385,7 @@ module Brainstem
       #
       # Ensures that the parameters passed through to the action are valid.
       #
-      # It raises Brainstem::UnknownParams.new(message, unknown_params) error,
+      # It raises Brainstem::ValidatorError.new(message, unknown_params, malformed_params) error,
       # when params are missing or unknown params are encountered
       #
       # @params [String, Symbol] (Optional) requested_context the context which to look up.
@@ -395,11 +395,7 @@ module Brainstem
         input_params            = params.with_indifferent_access[brainstem_model_name]
         brainstem_params_config = brainstem_valid_params(requested_context, root_param_name)
 
-        Brainstem::ParamsValidator.validate!(
-          requested_context,
-          input_params,
-          brainstem_params_config
-        ).present?
+        Brainstem::ParamsValidator.validate!(requested_context, input_params, brainstem_params_config)
       end
 
       #
