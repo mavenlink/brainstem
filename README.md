@@ -81,6 +81,39 @@ module Api
               info: "the time of this Widget's last update"
         field :created_at, :datetime,
               info: "the time at which this Widget was created"
+
+        # Fields can be nested under non-evaluable parent fields where the nested fields
+        # are evaluated with the presented model.
+        fields :permissions, :hash do |permissions_field|
+
+          # Since the permissions parent field is not evaluable, the can_edit? method is
+          # evaluated with the presented Widget model.
+          permissions_field.field :can_edit, :boolean,
+                                  via: :can_edit?,
+                                  info: "Indicates if the user can edit the widget"
+        end
+
+        # Specify nested fields within an evaluable parent block field. A parent block field
+        # is evaluable only if one of the following options :via, :dynamic or :lookup is specified.
+        # The nested fields are evaluated with the value of the parent.
+        fields :tags, :array,
+               item_type: :hash,
+               info: "The tags for the given category",
+               dynamic: -> (widget) { widget.tags } do |tag|
+
+          # The name method will be evaluated with each tag model returned by the the parent block.
+          tag.field :name, :string,
+                    info: "Name of the assigned tag"
+        end
+
+        fields :primary_category, :hash,
+               via: :primary_category,
+               info: "The primary category of the widget" do |category|
+
+          # The title method will be evaluated with each category model returned by the parent block.
+          category.field :title, :string,
+                         info: "The title of the category"
+        end
       end
 
       # Associations can be included by providing include=association_name in the URL.
@@ -614,12 +647,29 @@ class BlogPostsController < ApiController
     actions :create do
       model_params :post do |params|
         params.valid :message, :string,
-                     info: "the id of the post",
+                     info: "the message of the post",
                      required: true
 
         params.valid :viewable_by, :array,          
                      item_type: :integer,
                      info: "an array of user ids that can access the post"
+
+        # Declare a nested param with an explicit root key:, i.e. `params[:rating][...]`
+        model_params :rating do |rating_param|
+          rating_param.valid :stars, :integer,
+                             info: "the rating of the post"
+        end
+
+        # Declare nested array params with an explicit key:, i.e. `params[:replies][0][...]`
+        params.valid :replies, :array,
+                     item_type: :hash,
+                     info: "an array of reply params that can be created along with the post" do |reply_params|
+          reply_params.valid :message, :string,
+                             info: "the message of the post"
+          reply_params.valid :replier_id, :integer,
+                             info: "the ID of the user"
+          ...
+        end
       end
     end
 
@@ -936,6 +986,16 @@ Brainstem provides a rich DSL for building presenters.  This section details the
     # Fields can be nested
     fields :permissions do
       field :access_level, :integer
+    end
+
+    # Fields can be nested under executable parent blocks.
+    # Sub fields are evaluated with the value of the parent block.
+    fields :tags, :array,
+           info: "The tags for the given category",
+           dynamic: -> (widget) { widget.tags } do |tag|
+
+      tag.field :name, :string,
+                info: "Name of the assigned tag"
     end
   end
   ```
