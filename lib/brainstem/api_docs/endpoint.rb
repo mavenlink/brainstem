@@ -119,6 +119,11 @@ module Brainstem
       end
 
 
+      def custom_response
+        @custom_response ||= action_configuration[:custom_response]
+      end
+
+
       #
       # Returns a hash of all params nested under the specified root or
       # parent fields along with their type, item type & children.
@@ -155,6 +160,48 @@ module Brainstem
         end
       end
 
+      #
+      # Returns a hash of all fields for a custom response nested under the specified
+      # parent fields along with their type, item type & children.
+      #
+      # @return [Hash{Symbol => Hash}] root keys and their type info, item info & children
+      #   nested under them.
+      #
+      def custom_response_configuration_tree
+        return {} unless custom_response.present?
+
+        @custom_response_configuration ||= begin
+          custom_response_fields = custom_response
+                                    .to_h
+                                    .deep_dup
+                                    .with_indifferent_access
+          custom_config_tree = ActiveSupport::HashWithIndifferentAccess.new
+          custom_config_tree[:_config] = custom_response_fields[:_config]
+
+          custom_response_fields
+            .except(:_config)
+            .inject(custom_config_tree) do |result, (field_name_proc, field_config)|
+
+            next result if field_config[:nodoc]
+
+            field_name = evaluate_field_name(field_name_proc)
+            if field_config.has_key?(:ancestors)
+              ancestors = field_config[:ancestors].map { |ancestor_key| evaluate_field_name(ancestor_key) }
+
+              parent = ancestors.inject(result) do |traversed_hash, ancestor_name|
+                traversed_hash[ancestor_name] ||= { :_config => { type: 'hash' } }
+                traversed_hash[ancestor_name]
+              end
+
+              parent[field_name] = { :_config => field_config.except(:root, :ancestors) }
+            else
+              result[field_name] = { :_config => field_config }
+            end
+
+            result
+          end
+        end
+      end
 
       #
       # Evaluate field name if proc and symbolize it.

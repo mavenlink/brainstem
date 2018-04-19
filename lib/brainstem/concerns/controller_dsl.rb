@@ -156,25 +156,25 @@ module Brainstem
         # @option options [String,Symbol] :item_type The data type of the items contained in a field.
         #   Ideally used when the data type of the field is an `array`, `object` or `hash`.
         #
-        def valid(field_name, type = nil, options = {}, &block)
+        def valid(name, type = nil, options = {}, &block)
           valid_params = configuration[brainstem_params_context][:valid_params]
-          field_config = format_field_configuration(type, options, &block)
+          param_config = format_param_configuration(type, options, &block)
 
           # Inherit `nodoc` attribute from parent
           parent_key = (options[:ancestors] || []).reverse.first
-          field_config[:nodoc] = true if parent_key && valid_params[parent_key] && valid_params[parent_key][:nodoc]
+          param_config[:nodoc] = true if parent_key && valid_params[parent_key] && valid_params[parent_key][:nodoc]
 
           # Rollup `required` attribute to ancestors if true
-          if field_config[:required]
+          if param_config[:required]
             (options[:ancestors] || []).reverse.each do |ancestor_key|
               valid_params[ancestor_key][:required] = true if valid_params.has_key?(ancestor_key)
             end
           end
 
-          procified_field_name = format_field_name(field_name)
-          valid_params[procified_field_name] = field_config
+          formatted_name = convert_to_proc(name)
+          valid_params[formatted_name] = param_config
 
-          with_options(format_field_ancestry_options(procified_field_name, field_config), &block) if block_given?
+          with_options(format_ancestry_options(formatted_name, param_config), &block) if block_given?
         end
 
 
@@ -198,6 +198,68 @@ module Brainstem
         end
         alias_method :transforms, :transform
 
+
+        #
+        # Allows defining a custom response structure for an action.
+        #
+        # @param [Symbol] type the data type of the response.
+        # @param [Hash] options
+        # @option options [String] :info the documentation for the param
+        # @option options [Boolean] :nodoc should this block appear in the documentation?
+        # @option options [String,Symbol] :item_type The data type of the items contained in a field.
+        #   Ideally used when the data type of the response is an `array`.
+        #
+        def response(type, options = {}, &block)
+          configuration[brainstem_params_context].nest! :custom_response
+          custom_response = configuration[brainstem_params_context][:custom_response]
+
+          custom_response[:_config] = format_response_field_configuration(
+            brainstem_params_context,
+            type,
+            options.except(:nodoc),
+            &block
+          )
+          class_eval(&block) if block_given?
+        end
+
+        #
+        # Allows defining a field block for a custom response
+        #
+        # @param [Symbol] name the name of the field block of the response.
+        # @param [Symbol] type the data type of the response.
+        # @param [Hash] options
+        # @option options [String] :info the documentation for the param
+        # @option options [String,Symbol] :item_type The data type of the items contained in a field.
+        #   Ideally used when the data type of the response is an `array`.
+        #
+        def fields(name, type, options = {}, &block)
+          custom_response = configuration[brainstem_params_context][:custom_response]
+          raise "`fields` must be nested under a response block" if custom_response.nil?
+
+          formatted_name = convert_to_proc(name)
+          field_block_config = format_response_field_configuration(brainstem_params_context, type, options, &block)
+
+          custom_response[formatted_name] = field_block_config
+          with_options(format_ancestry_options(formatted_name, field_block_config), &block)
+        end
+
+        #
+        # Allows defining a field either under a field block or the custom response block.
+        #
+        # @param [Symbol] name the name of the field of the response.
+        # @param [Symbol] type the data type of the response.
+        # @param [Hash] options
+        # @option options [String] :info the documentation for the param
+        # @option options [String,Symbol] :item_type The data type of the items contained in a field.
+        #   Ideally used when the data type of the response is an `array`.
+        #
+        def field(name, type, options = {})
+          custom_response = configuration[brainstem_params_context][:custom_response]
+          raise "`fields` must be nested under a response block" if custom_response.nil?
+
+          formatted_name = convert_to_proc(name)
+          custom_response[formatted_name] = format_response_field_configuration(brainstem_params_context, type, options)
+        end
 
         #
         # Specifies which presenter is used for the controller / action.
@@ -267,10 +329,10 @@ module Brainstem
         # @param [String, Symbol, Proc] text The title to set
         # @return [Proc]
         #
-        def format_field_name(field_name_or_proc)
+        def convert_to_proc(field_name_or_proc)
           field_name_or_proc.respond_to?(:call) ? field_name_or_proc : Proc.new { field_name_or_proc.to_s }
         end
-        alias_method :format_root_name, :format_field_name
+        alias_method :format_root_name, :convert_to_proc
 
 
         #
@@ -285,9 +347,9 @@ module Brainstem
 
 
         #
-        # Formats the ancestry options of the field. Returns a hash with ancestors & root.
+        # Formats the ancestry options of the field. Returns a hash with ancestors.
         #
-        def format_field_ancestry_options(field_name_proc, options = {})
+        def format_ancestry_options(field_name_proc, options = {})
           ancestors = options[:ancestors].try(:dup) || []
           ancestors << field_name_proc
 
@@ -296,9 +358,9 @@ module Brainstem
 
 
         #
-        # Formats the configuration of the field and returns the default configuration if not specified.
+        # Formats the configuration of the param and returns the default configuration if not specified.
         #
-        def format_field_configuration(type = nil, options = {}, &block)
+        def format_param_configuration(type = nil, options = {}, &block)
           options = type if type.is_a?(Hash) && options.empty?
 
           options[:type] = sanitize_param_data_type(type, &block)
@@ -340,6 +402,31 @@ module Brainstem
               'version and will need to be explicitly specified. e.g. `post.valid :message, :text, required: true`',
             caller
           )
+        end
+
+        #
+        # Formats the configuration of the response block & field.
+        #
+        def format_response_field_configuration(params_context, type, options = {}, &block)
+          config = options.with_indifferent_access
+          config[:type] = type.to_s
+
+          # Inherit `nodoc` attribute from parent
+          parent_field_key = (config[:ancestors] || []).reverse.first
+          custom_response = configuration[params_context][:custom_response]
+          if parent_field_key && custom_response[parent_field_key] && custom_response[parent_field_key][:nodoc]
+            config[:nodoc] = true
+          else
+            config[:nodoc] ||= false
+          end
+
+          if config[:type] == 'array' && config[:item_type].nil?
+            config[:item_type] = block_given? ? 'hash' : 'string'
+          elsif config[:type] == 'array'
+            config[:item_type] = config[:item_type].to_s
+          end
+
+          config
         end
       end
 
