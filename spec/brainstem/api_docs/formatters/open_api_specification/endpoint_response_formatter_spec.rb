@@ -26,6 +26,7 @@ module Brainstem
             stub(presenter).contextual_documentation(:title) { 'Widget' }
             stub(endpoint).presenter { presenter }
             stub(endpoint).action { action }
+            stub(endpoint).custom_response_configuration_tree { {} }
             stub(endpoint).http_methods { http_methods }
           end
 
@@ -164,6 +165,162 @@ module Brainstem
                   '404' => { 'description' => 'Page Not Found',         'schema' => { '$ref' => '#/definitions/Errors' }  },
                   '503' => { 'description' => 'Service is unavailable', 'schema' => { '$ref' => '#/definitions/Errors' }  }
                 )
+              end
+            end
+
+            describe '#format_custom_response!' do
+              context 'when the response is a hash' do
+                before do
+                  stub(endpoint).custom_response_configuration_tree {
+                    {
+                      '_config' => {
+                        'type' => 'hash',
+                      },
+                      'widget_name' => {
+                        '_config' => {
+                          'type' => 'string',
+                          'info' => 'the name of the widget',
+                          'nodoc' => false
+                        },
+                      },
+                      'widget_permission' => {
+                        '_config' => {
+                          'type' => 'hash',
+                          'info' => 'the permissions of the widget',
+                          'nodoc' => false
+                        },
+                        'can_edit' => {
+                          '_config' => {
+                            'type' => 'boolean',
+                            'info' => 'can edit the widget',
+                            'nodoc' => false
+                          },
+                        }
+                      },
+                    }.with_indifferent_access
+                  }
+                end
+
+                it 'returns the response structure' do
+                  subject.send(:format_custom_response!)
+
+                  expect(subject.output).to eq('200' => {
+                    'description' => 'A list of Widgets have been retrieved',
+                    'schema' => {
+                      'type' => 'object',
+                      'properties' => {
+                        'widget_name' => {
+                          'type' => 'string',
+                          'description' => 'the name of the widget'
+                        },
+                        'widget_permission' => {
+                          'type' => 'object',
+                          'description' => 'the permissions of the widget',
+                          'properties' => {
+                            'can_edit' => {
+                              'type' => 'boolean',
+                              'description' => 'can edit the widget'
+                            }
+                          }
+                        }
+                      }
+                    }
+                  })
+                end
+              end
+
+              context 'when the response is an array' do
+                before do
+                  stub(endpoint).custom_response_configuration_tree {
+                    {
+                      '_config' => {
+                        'type' => 'array',
+                        'item_type' => 'hash',
+                      },
+                      'widget_name' => {
+                        '_config' => {
+                          'type' => 'string',
+                          'info' => 'the name of the widget',
+                          'nodoc' => false
+                        },
+                      },
+                      'widget_permissions' => {
+                        '_config' => {
+                          'type' => 'array',
+                          'item_type' => 'hash',
+                          'info' => 'the permissions of the widget',
+                          'nodoc' => false
+                        },
+                        'can_edit' => {
+                          '_config' => {
+                            'type' => 'boolean',
+                            'info' => 'can edit the widget',
+                            'nodoc' => false
+                          },
+                        }
+                      },
+                    }.with_indifferent_access
+                  }
+                end
+
+                it 'returns the response structure' do
+                  subject.send(:format_custom_response!)
+
+                  expect(subject.output).to eq('200' => {
+                    'description' => 'A list of Widgets have been retrieved',
+                    'schema' => {
+                      'type' => 'array',
+                      'items' => {
+                        'type' => 'object',
+                        'properties' => {
+                          'widget_name' => {
+                            'type' => 'string',
+                            'description' => 'the name of the widget'
+                          },
+                          'widget_permissions' => {
+                            'type' => 'array',
+                            'description' => 'the permissions of the widget',
+                            'items' => {
+                              'type' => 'object',
+                              'properties' => {
+                                'can_edit' => {
+                                  'type' => 'boolean',
+                                  'description' => 'can edit the widget'
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  })
+                end
+              end
+
+              context 'when the response is not a hash or array' do
+                before do
+                  stub(endpoint).custom_response_configuration_tree {
+                    {
+                      '_config' => {
+                        'type' => 'boolean',
+                        'info' => 'whether the widget exists',
+                        'nodoc' => false
+                      },
+                    }.with_indifferent_access
+                  }
+                end
+
+                it 'returns the response structure' do
+                  subject.send(:format_custom_response!)
+
+                  expect(subject.output).to eq('200' => {
+                    'description' => 'A list of Widgets have been retrieved',
+                    'schema' => {
+                      'type' => 'boolean',
+                      'description' => 'whether the widget exists'
+                    }
+                  })
+                end
               end
             end
           end

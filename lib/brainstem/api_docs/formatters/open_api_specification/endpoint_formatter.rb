@@ -33,7 +33,7 @@ module Brainstem
           end
 
           def call
-            return {} if endpoint.nodoc? || endpoint.presenter.nil?
+            return {} if endpoint.nodoc?
 
             format_summary!
             format_description!
