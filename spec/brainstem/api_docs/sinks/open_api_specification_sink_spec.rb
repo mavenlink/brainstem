@@ -1,6 +1,7 @@
 require 'spec_helper'
 require 'brainstem/api_docs/sinks/open_api_specification_sink'
 require 'brainstem/api_docs/formatters/open_api_specification/info_formatter'
+require 'brainstem/api_docs/formatters/open_api_specification/security_definitions_formatter'
 
 module Brainstem
   module ApiDocs
@@ -24,6 +25,7 @@ module Brainstem
           mock(subject).write_error_definitions!
           mock(subject).write_endpoint_definitions!
           mock(subject).write_tag_definitions!
+          mock(subject).write_security_definitions!
 
           mock.proxy(subject).write_spec_to_file!
           mock(write_method).call('./specification.yml', anything)
@@ -43,6 +45,7 @@ module Brainstem
             mock(subject).write_error_definitions!
             mock(subject).write_endpoint_definitions!
             mock(subject).write_tag_definitions!
+            mock(subject).write_security_definitions!
 
             mock.proxy(subject).write_info_object!
             mock.proxy
@@ -74,6 +77,7 @@ module Brainstem
               mock(subject).write_error_definitions!
               mock(subject).write_endpoint_definitions!
               mock(subject).write_tag_definitions!
+              mock(subject).write_security_definitions!
 
               mock.proxy(subject).write_presenter_definitions!
               stub(atlas).presenters.stub!.formatted(:oas) { generated_data }
@@ -121,6 +125,7 @@ module Brainstem
               mock(subject).write_info_object!
               mock(subject).write_endpoint_definitions!
               mock(subject).write_tag_definitions!
+              mock(subject).write_security_definitions!
 
               mock.proxy(subject).write_presenter_definitions!
               mock.proxy(subject).write_error_definitions!
@@ -153,6 +158,7 @@ module Brainstem
               mock(subject).write_error_definitions!
               mock(subject).write_presenter_definitions!
               mock(subject).write_tag_definitions!
+              mock(subject).write_security_definitions!
               mock.proxy(subject).write_endpoint_definitions!
 
               stub(atlas).controllers.stub!.formatted(:oas) { generated_data }
@@ -217,9 +223,47 @@ module Brainstem
               mock(subject).write_error_definitions!
               mock(subject).write_presenter_definitions!
               mock(subject).write_endpoint_definitions!
+              mock(subject).write_security_definitions!
 
               mock.proxy(subject).write_tag_definitions!
               stub(atlas).controllers { controllers }
+              mock(write_method).call('./specification.yml', expected_yaml)
+
+              subject << atlas
+            end
+          end
+
+          context "when generating security definitions" do
+            let(:expected_yaml) {
+              {
+                'securityDefinitions' => {
+                  'api_key' => {
+                    'type' => 'apiKey',
+                    'name' => 'api_key',
+                    'in'   => 'header'
+                  },
+                  'petstore_auth' => {
+                    'type'             => 'oauth2',
+                    'authorizationUrl' => 'http://petstore.swagger.io/oauth/dialog',
+                    'flow'             => 'implicit',
+                    'scopes'           => {
+                      'write:pets' => 'modify pets in your account',
+                      'read:pets'  => 'read your pets'
+                    }
+                  }
+                }
+              }.to_yaml
+            }
+
+            it "writes endpoint definitions" do
+              mock(subject).write_info_object!
+              mock(subject).write_error_definitions!
+              mock(subject).write_presenter_definitions!
+              mock(subject).write_tag_definitions!
+              mock(subject).write_endpoint_definitions!
+
+              mock.proxy(subject).write_security_definitions!
+              stub(atlas).controllers.stub!.formatted(:oas) { generated_data }
               mock(write_method).call('./specification.yml', expected_yaml)
 
               subject << atlas
