@@ -154,7 +154,18 @@ module Brainstem
           # Formats the data model for the action.
           #
           def format_presents!
-            if endpoint.presenter
+            if endpoint.custom_response.present?
+              response_configuration_tree = endpoint.custom_response_configuration_tree
+              response_structure_config = response_configuration_tree[:_config]
+
+              output << md_p(format_custom_response_message(response_structure_config))
+              output << md_ul do
+                response_configuration_tree.except(:_config).inject("") do |buff, (param_name, param_config)|
+                  buff << format_param_tree!("", param_name, param_config)
+                  buff
+                end
+              end
+            elsif endpoint.presenter
               output << md_h5("Data Model")
 
               link = md_a(endpoint.presenter_title, endpoint.relative_presenter_path_from_controller(:markdown))
@@ -162,6 +173,24 @@ module Brainstem
                 md_li(link)
               end
             end
+          end
+
+          def format_custom_response_message(response_config)
+            result = "The resulting JSON is "
+            result << case response_config[:type]
+              when "array"
+                if response_config[:item_type] == "hash"
+                  "an array of hashes with the following properties"
+                else
+                  "an array of #{response_config[:item_type].pluralize}"
+                end
+              when "hash"
+                "a hash with the following properties"
+              else
+                "a #{response_config[:type]}"
+            end
+
+            result
           end
         end
       end

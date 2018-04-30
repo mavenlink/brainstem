@@ -713,6 +713,253 @@ module Brainstem
         end
       end
 
+      describe ".response" do
+        context "when block given" do
+          it "sets the custom_response configuration" do
+            subject.brainstem_params do
+              actions :show do
+                response :array do |response_param|
+                  response_param.field :blah, :string
+                end
+              end
+            end
+
+            configuration = subject.configuration[:show][:custom_response]
+            expect(configuration).to be_present
+            expect(configuration[:_config]).to eq({
+              type: 'array',
+              item_type: 'hash',
+              nodoc: false,
+            }.with_indifferent_access)
+          end
+        end
+
+        context "when block not given" do
+          it "sets the custom_response configuration" do
+            subject.brainstem_params do
+              actions :show do
+                response :array
+              end
+            end
+
+            configuration = subject.configuration[:show][:custom_response]
+            expect(configuration).to be_present
+            expect(configuration[:_config]).to eq({
+              type: 'array',
+              item_type: 'string',
+              nodoc: false,
+            }.with_indifferent_access)
+          end
+        end
+      end
+
+      describe ".fields" do
+        context "when used outside of the response block" do
+          it "raises an error" do
+            expect {
+              subject.brainstem_params do
+                actions :show do
+                  fields :contacts, :array do
+                    field :full_name, :string
+                  end
+                end
+              end
+            }.to raise_error(StandardError)
+          end
+        end
+
+        context "when used within the response block" do
+          context "when type is hash" do
+            it "adds the field block to custom_response configuration" do
+              subject.brainstem_params do
+                actions :show do
+                  response :hash do
+                    fields :contact, :hash do
+                      field :full_name, :string
+                    end
+                  end
+                end
+              end
+
+              configuration = subject.configuration[:show][:custom_response]
+              param_keys = configuration.keys
+
+              expect(param_keys[1].call).to eq('contact')
+              expect(configuration[param_keys[1]]).to eq({
+                type: 'hash',
+                nodoc: false,
+              }.with_indifferent_access)
+
+              expect(param_keys[2].call).to eq('full_name')
+              expect(configuration[param_keys[2]]).to eq({
+                type: 'string',
+                nodoc: false,
+                ancestors: [param_keys[1]]
+              }.with_indifferent_access)
+            end
+          end
+
+          context "when type is array" do
+            it "adds the field block to custom_response configuration" do
+              subject.brainstem_params do
+                actions :show do
+                  response :hash do
+                    fields :contacts, :array do
+                      field :full_name, :string
+                    end
+                  end
+                end
+              end
+
+              configuration = subject.configuration[:show][:custom_response]
+              param_keys = configuration.keys
+
+              expect(param_keys[1].call).to eq('contacts')
+              expect(configuration[param_keys[1]]).to eq({
+                type: 'array',
+                item_type: 'hash',
+                nodoc: false,
+              }.with_indifferent_access)
+
+              expect(param_keys[2].call).to eq('full_name')
+              expect(configuration[param_keys[2]]).to eq({
+                type: 'string',
+                nodoc: false,
+                ancestors: [param_keys[1]]
+              }.with_indifferent_access)
+            end
+          end
+
+          context "when multi nested" do
+            it "adds the field block to custom_response configuration" do
+              subject.brainstem_params do
+                actions :show do
+                  response :hash do
+                    fields :contact, :hash, nodoc: true do
+                      fields :details, :hash do
+                        field :full_name, :string
+                      end
+                    end
+                  end
+                end
+              end
+
+              configuration = subject.configuration[:show][:custom_response]
+              param_keys = configuration.keys
+
+              expect(param_keys[1].call).to eq('contact')
+              expect(configuration[param_keys[1]]).to eq({
+                type: 'hash',
+                nodoc: true,
+              }.with_indifferent_access)
+
+              expect(param_keys[2].call).to eq('details')
+              expect(configuration[param_keys[2]]).to eq({
+                type: 'hash',
+                nodoc: true,
+                ancestors: [param_keys[1]]
+              }.with_indifferent_access)
+
+              expect(param_keys[3].call).to eq('full_name')
+              expect(configuration[param_keys[3]]).to eq({
+                type: 'string',
+                nodoc: true,
+                ancestors: [param_keys[1], param_keys[2]]
+              }.with_indifferent_access)
+            end
+          end
+        end
+      end
+
+      describe ".field" do
+        context "when used outside of the response block" do
+          it "raises an error" do
+            expect {
+              subject.brainstem_params do
+                actions :show do
+                  field :full_name, :string
+                end
+              end
+            }.to raise_error(StandardError)
+          end
+        end
+
+        context "when used within the response block" do
+          context "when type is array" do
+            it "adds the field block to custom_response configuration" do
+              subject.brainstem_params do
+                actions :show do
+                  response :hash do
+                    field :names, :array
+                  end
+                end
+              end
+
+              configuration = subject.configuration[:show][:custom_response]
+              param_keys = configuration.keys
+
+              expect(param_keys[1].call).to eq('names')
+              expect(configuration[param_keys[1]]).to eq({
+                type: 'array',
+                item_type: 'string',
+                nodoc: false,
+              }.with_indifferent_access)
+            end
+          end
+
+          context "when type is not array" do
+            it "adds the field block to custom_response configuration" do
+              subject.brainstem_params do
+                actions :show do
+                  response :hash do
+                    field :full_name, :string
+                  end
+                end
+              end
+
+              configuration = subject.configuration[:show][:custom_response]
+              param_keys = configuration.keys
+
+              expect(param_keys[1].call).to eq('full_name')
+              expect(configuration[param_keys[1]]).to eq({
+                type: 'string',
+                nodoc: false,
+              }.with_indifferent_access)
+            end
+          end
+
+          context "when nested under parent field" do
+            it "inherits the nodoc attribute" do
+              subject.brainstem_params do
+                actions :show do
+                  response :hash do
+                    fields :contact, :hash, nodoc: true do
+                      field :full_name, :string
+                    end
+                  end
+                end
+              end
+
+              configuration = subject.configuration[:show][:custom_response]
+              param_keys = configuration.keys
+
+              expect(param_keys[1].call).to eq('contact')
+              expect(configuration[param_keys[1]]).to eq({
+                type: 'hash',
+                nodoc: true,
+              }.with_indifferent_access)
+
+              expect(param_keys[2].call).to eq('full_name')
+              expect(configuration[param_keys[2]]).to eq({
+                type: 'string',
+                nodoc: true,
+                ancestors: [param_keys[1]]
+              }.with_indifferent_access)
+            end
+          end
+        end
+      end
+
       describe "#valid_params_tree" do
         context "when no root is specified" do
           it "returns the field names as the top level keys" do

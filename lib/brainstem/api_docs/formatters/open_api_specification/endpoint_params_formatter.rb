@@ -205,6 +205,8 @@ module Brainstem
           end
 
           def format_filter_params!
+            return if presenter.nil?
+
             presenter.valid_filters.each do |filter_name, filter_config|
               output << format_query_param(filter_name, filter_config)
             end
