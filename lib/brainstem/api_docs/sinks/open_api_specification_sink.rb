@@ -39,9 +39,7 @@ module Brainstem
           write_error_definitions!
           write_endpoint_definitions!
           write_tag_definitions!
-
-          # TODO:
-          # Security Formatter
+          write_security_definitions!
 
           write_spec_to_file!
         end
@@ -141,6 +139,15 @@ module Brainstem
             name: format_tag_name(controller.name),
             description: controller.description
           }.reject { |_, v| v.blank? }
+        end
+
+        #
+        # Use the Security Definitions formatter to get the security definitions & scopes.
+        #
+        def write_security_definitions!
+          self.output.merge!(
+            ::Brainstem::ApiDocs::FORMATTERS[:security][format].call
+          )
         end
 
         #

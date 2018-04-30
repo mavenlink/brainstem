@@ -146,7 +146,8 @@ module Brainstem
       # Formatter for Open Api Specifications
       info:      {},
       response:  {},
-      parameter: {}
+      parameter: {},
+      security:  {},
     }
   end
 end
