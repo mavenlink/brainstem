@@ -31,10 +31,10 @@ module Brainstem
               before do
                 mock(endpoint_collection).only_documentable { [endpoint_1, endpoint_2, endpoint_3, endpoint_4] }
 
-                mock(endpoint_1).formatted_as(:oas) { { "/sprockets" => { "get" => { info: "Get all sprockets" } } } }
-                mock(endpoint_2).formatted_as(:oas) { { "/sprockets" => { "post" => { info: "Create a sprocket" } } } }
-                mock(endpoint_3).formatted_as(:oas) { { "/sprockets/{id}" => { "patch" => { info: "Update a sprocket" } } } }
-                mock(endpoint_4).formatted_as(:oas) { {} }
+                mock(endpoint_1).formatted_as(:oas_v2) { { "/sprockets" => { "get" => { info: "Get all sprockets" } } } }
+                mock(endpoint_2).formatted_as(:oas_v2) { { "/sprockets" => { "post" => { info: "Create a sprocket" } } } }
+                mock(endpoint_3).formatted_as(:oas_v2) { { "/sprockets/{id}" => { "patch" => { info: "Update a sprocket" } } } }
+                mock(endpoint_4).formatted_as(:oas_v2) { {} }
               end
 
               it "joins each documentable endpoint" do

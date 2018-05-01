@@ -175,7 +175,7 @@ module Brainstem
               let(:formatted_params) { { 'params_for_endpoint' => true } }
 
               it "calls EndpointParamsFormatter" do
-                mock(Brainstem::ApiDocs::Formatters::OpenApiSpecification::EndpointParamsFormatter)
+                mock(Brainstem::ApiDocs::FORMATTERS[:parameters][:oas_v2])
                   .call(endpoint) { formatted_params }
                 subject.send(:format_parameters!)
 
@@ -186,8 +186,8 @@ module Brainstem
             describe "#format_response!" do
               let(:formatted_response) { { 'response_for_endpoint' => true } }
 
-              it "calls EndpointParamsFormatter" do
-                mock(Brainstem::ApiDocs::Formatters::OpenApiSpecification::EndpointResponseFormatter)
+              it "calls EndpointResponseFormatter" do
+                mock(Brainstem::ApiDocs::FORMATTERS[:response][:oas_v2])
                   .call(endpoint) { formatted_response }
                 subject.send(:format_response!)
 

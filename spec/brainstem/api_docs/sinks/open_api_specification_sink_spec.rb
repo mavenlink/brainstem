@@ -80,7 +80,7 @@ module Brainstem
               mock(subject).write_security_definitions!
 
               mock.proxy(subject).write_presenter_definitions!
-              stub(atlas).presenters.stub!.formatted(:oas) { generated_data }
+              stub(atlas).presenters.stub!.formatted(:oas_v2) { generated_data }
               mock(write_method).call('./specification.yml', expected_yaml)
 
               subject << atlas
@@ -130,7 +130,7 @@ module Brainstem
               mock.proxy(subject).write_presenter_definitions!
               mock.proxy(subject).write_error_definitions!
 
-              stub(atlas).presenters.stub!.formatted(:oas) { generated_data }
+              stub(atlas).presenters.stub!.formatted(:oas_v2) { generated_data }
               mock(write_method).call('./specification.yml', expected_yaml)
 
               subject << atlas
@@ -161,7 +161,7 @@ module Brainstem
               mock(subject).write_security_definitions!
               mock.proxy(subject).write_endpoint_definitions!
 
-              stub(atlas).controllers.stub!.formatted(:oas) { generated_data }
+              stub(atlas).controllers.stub!.formatted(:oas_v2) { generated_data }
               mock(write_method).call('./specification.yml', expected_yaml)
 
               subject << atlas
@@ -263,7 +263,7 @@ module Brainstem
               mock(subject).write_endpoint_definitions!
 
               mock.proxy(subject).write_security_definitions!
-              stub(atlas).controllers.stub!.formatted(:oas) { generated_data }
+              stub(atlas).controllers.stub!.formatted(:oas_v2) { generated_data }
               mock(write_method).call('./specification.yml', expected_yaml)
 
               subject << atlas

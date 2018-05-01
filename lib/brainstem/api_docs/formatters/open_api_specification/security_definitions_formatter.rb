@@ -97,5 +97,5 @@ module Brainstem
 end
 
 
-Brainstem::ApiDocs::FORMATTERS[:security][:oas] = \
+Brainstem::ApiDocs::FORMATTERS[:security][:oas_v2] = \
   Brainstem::ApiDocs::Formatters::OpenApiSpecification::SecurityDefinitionsFormatter.method(:call)

@@ -115,14 +115,18 @@ module Brainstem
           # Formats each parameter.
           #
           def format_parameters!
-            output[endpoint_key][http_method].merge! parameters: EndpointParamsFormatter.call(endpoint)
+            output[endpoint_key][http_method].merge!(
+              parameters: ::Brainstem::ApiDocs::FORMATTERS[:parameters][:oas_v2].call(endpoint)
+            )
           end
 
           #
           # Formats the response.
           #
           def format_response!
-            output[endpoint_key][http_method].merge! responses: EndpointResponseFormatter.call(endpoint)
+            output[endpoint_key][http_method].merge!(
+              responses: ::Brainstem::ApiDocs::FORMATTERS[:response][:oas_v2].call(endpoint)
+            )
           end
         end
       end
@@ -131,5 +135,5 @@ module Brainstem
 end
 
 
-Brainstem::ApiDocs::FORMATTERS[:endpoint][:oas] = \
+Brainstem::ApiDocs::FORMATTERS[:endpoint][:oas_v2] = \
   Brainstem::ApiDocs::Formatters::OpenApiSpecification::EndpointFormatter.method(:call)

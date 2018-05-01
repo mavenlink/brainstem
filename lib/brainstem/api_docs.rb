@@ -144,10 +144,10 @@ module Brainstem
       presenter:   {},
 
       # Formatter for Open Api Specifications
-      info:      {},
-      response:  {},
-      parameter: {},
-      security:  {},
+      info:       {},
+      response:   {},
+      parameters: {},
+      security:   {},
     }
   end
 end

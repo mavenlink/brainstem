@@ -56,8 +56,8 @@ module Brainstem
               context "if include actions" do
                 let(:options) { { include_actions: true } }
 
-                it "calls formatted_as with :oas on the sorted endpoints in the controller" do
-                  stub(controller).valid_sorted_endpoints.stub!.formatted_as(:oas) { { index: true } }
+                it "calls formatted_as with :oas_v2 on the sorted endpoints in the controller" do
+                  stub(controller).valid_sorted_endpoints.stub!.formatted_as(:oas_v2) { { index: true } }
                   subject.send(:format_actions!)
                 end
               end

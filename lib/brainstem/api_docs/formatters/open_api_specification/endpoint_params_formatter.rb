@@ -266,3 +266,8 @@ module Brainstem
     end
   end
 end
+
+
+Brainstem::ApiDocs::FORMATTERS[:parameters][:oas_v2] = \
+  Brainstem::ApiDocs::Formatters::OpenApiSpecification::EndpointParamsFormatter.method(:call)
+

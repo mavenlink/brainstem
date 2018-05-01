@@ -125,5 +125,5 @@ module Brainstem
 end
 
 
-Brainstem::ApiDocs::FORMATTERS[:info][:oas] = \
+Brainstem::ApiDocs::FORMATTERS[:info][:oas_v2] = \
   Brainstem::ApiDocs::Formatters::OpenApiSpecification::InfoFormatter.method(:call)

@@ -43,7 +43,7 @@ module Brainstem
           def format_actions!
             return unless include_actions?
 
-            controller.valid_sorted_endpoints.formatted_as(:oas)
+            controller.valid_sorted_endpoints.formatted_as(:oas_v2)
           end
         end
       end
@@ -51,5 +51,5 @@ module Brainstem
   end
 end
 
-Brainstem::ApiDocs::FORMATTERS[:controller][:oas] = \
+Brainstem::ApiDocs::FORMATTERS[:controller][:oas_v2] = \
   Brainstem::ApiDocs::Formatters::OpenApiSpecification::ControllerFormatter.method(:call)

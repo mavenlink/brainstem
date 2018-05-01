@@ -42,7 +42,7 @@ module Brainstem
 
           def format_endpoints!
             documentable_endpoints.each do |endpoint|
-              formatted_endpoint = endpoint.formatted_as(:oas)
+              formatted_endpoint = endpoint.formatted_as(:oas_v2)
               next if formatted_endpoint.blank?
 
               if (common_keys = output.keys & formatted_endpoint.keys).present?
@@ -62,5 +62,5 @@ module Brainstem
   end
 end
 
-Brainstem::ApiDocs::FORMATTERS[:endpoint_collection][:oas] = \
+Brainstem::ApiDocs::FORMATTERS[:endpoint_collection][:oas_v2] = \
   Brainstem::ApiDocs::Formatters::OpenApiSpecification::EndpointCollectionFormatter.method(:call)

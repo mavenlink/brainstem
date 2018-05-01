@@ -31,7 +31,7 @@ module Brainstem
 
         def <<(atlas)
           self.atlas  = atlas
-          self.format = :oas
+          self.format = :oas_v2
           self.output = ActiveSupport::HashWithIndifferentAccess.new
 
           write_info_object!
