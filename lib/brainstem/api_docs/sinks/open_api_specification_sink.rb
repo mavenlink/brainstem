@@ -14,8 +14,9 @@ module Brainstem
         def valid_options
           super | [
             :api_version,
+            :format,
             :write_method,
-            :write_path
+            :write_path,
           ]
         end
 
@@ -31,7 +32,6 @@ module Brainstem
 
         def <<(atlas)
           self.atlas  = atlas
-          self.format = :oas_v2
           self.output = ActiveSupport::HashWithIndifferentAccess.new
 
           write_info_object!

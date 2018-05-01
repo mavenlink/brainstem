@@ -12,6 +12,7 @@ module Brainstem
         let(:options)      {
           {
             api_version:  '2.0.0',
+            format:       :oas_v2,
             write_method: write_method,
             write_path:   './'
           }
