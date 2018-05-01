@@ -31,6 +31,14 @@ module Brainstem
             expect(subject.options[:sink][:method].call).to be_a \
               Brainstem::ApiDocs::Sinks::ControllerPresenterMultifileSink
           end
+
+          context "when format is Open Api Specification" do
+            let(:args) { %w(--open-api-specification=2 --multifile-presenters-and-controllers) }
+
+            it "raises an error" do
+              expect { subject }.to raise_error(NotImplementedError)
+            end
+          end
         end
 
         context "when --output-dir" do
@@ -74,12 +82,23 @@ module Brainstem
         end
 
         context "when --open-api-specification" do
-          let(:args) { %w(--open-api-specification) }
+          context "when the correct version is specified" do
+            let(:args) { %w(--open-api-specification=2) }
 
-          it "sets sink to a OpenApiSpecificationSink" do
-            expect(subject.options).to have_key :sink
-            expect(subject.options[:sink][:method].call).to be_a \
-              Brainstem::ApiDocs::Sinks::OpenApiSpecificationSink
+            it "sets sink to OpenApiSpecificationSink and format to oas_v2" do
+              expect(subject.options).to have_key :sink
+              expect(subject.options[:sink][:options][:format]).to eq(:oas_v2)
+              expect(subject.options[:sink][:method].call).to be_a \
+                Brainstem::ApiDocs::Sinks::OpenApiSpecificationSink
+            end
+          end
+
+          context "when the incorrect version is specified" do
+            let(:args) { %w(--open-api-specification=3) }
+
+            it "raises a Not Implemented Error" do
+              expect { subject }.to raise_error(NotImplementedError)
+            end
           end
         end
       end

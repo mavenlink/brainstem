@@ -120,12 +120,6 @@ module Brainstem
         OptionParser.new do |opts|
           opts.banner = "Usage: generate [options]"
 
-          opts.on('-m', '--multifile-presenters-and-controllers',
-                  'dumps presenters and controllers to separate files (default)') do |o|
-            options[:sink][:method] = \
-              Brainstem::ApiDocs::Sinks::ControllerPresenterMultifileSink.method(:new)
-          end
-
 
           opts.on('--host-env-file=PATH', "path to host app's entry file") do |o|
             options[:builder][:args_for_introspector][:rails_environment_file] = o
@@ -163,16 +157,33 @@ module Brainstem
             options[:sink][:options][:format] = :markdown
           end
 
-
-          opts.on('--open-api-specification',
-                  'dumps an Open Api Specification for presenters and controllers in a single file') do
+          # Future proofing for different Open Api Specification versions.
+          opts.on('--open-api-specification=VERSION',
+                  'dumps an Open Api Specification for presenters and controllers in a single file') do |oas_version|
+            case oas_version.to_i
+              when 2
+                options[:sink][:options][:format] = :oas_v2
+              else
+                raise NotImplementedError.new("Open Api Specification v2 is the only supported version currently")
+            end
             options[:sink][:method] = Brainstem::ApiDocs::Sinks::OpenApiSpecificationSink.method(:new)
           end
 
 
           opts.on('--api-version=API_VERSION',
-                  'sets the version of the generated documentation') do |o|
-            options[:sink][:options][:api_version] = o
+                  'sets the version of the generated documentation') do |api_version|
+            options[:sink][:options][:api_version] = api_version
+          end
+
+
+          opts.on('-m', '--multifile-presenters-and-controllers',
+            'dumps presenters and controllers to separate files (default)') do |o|
+            if options[:sink][:options][:format] == :oas_v2
+              raise NotImplementedError.new("Multi File support for Open Api Specification is not supported yet")
+            else
+              options[:sink][:method] = \
+                Brainstem::ApiDocs::Sinks::ControllerPresenterMultifileSink.method(:new)
+            end
           end
         end
       end
