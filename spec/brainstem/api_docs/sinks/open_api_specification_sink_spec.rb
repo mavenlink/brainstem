@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'brainstem/api_docs/sinks/open_api_specification_sink'
-require 'brainstem/api_docs/formatters/open_api_specification/info_formatter'
-require 'brainstem/api_docs/formatters/open_api_specification/security_definitions_formatter'
+require 'brainstem/api_docs/formatters/open_api_specification/version_2/info_formatter'
+require 'brainstem/api_docs/formatters/open_api_specification/version_2/security_definitions_formatter'
 
 module Brainstem
   module ApiDocs
@@ -50,7 +50,7 @@ module Brainstem
 
             mock.proxy(subject).write_info_object!
             mock.proxy
-              .any_instance_of(Brainstem::ApiDocs::Formatters::OpenApiSpecification::InfoFormatter)
+              .any_instance_of(Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::InfoFormatter)
               .call { generated_data }
             mock(write_method).call('./specification.yml', generated_data.to_yaml)
 
