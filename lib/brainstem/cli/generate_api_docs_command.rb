@@ -164,7 +164,9 @@ module Brainstem
               when 2
                 options[:sink][:options][:format] = :oas_v2
               else
-                raise NotImplementedError.new("Open Api Specification v2 is the only supported version currently")
+                raise NotImplementedError.new(
+                  "Please specify the version of Open Api Specification to be generated e.g. --open-api-specification=2"
+                )
             end
             options[:sink][:method] = Brainstem::ApiDocs::Sinks::OpenApiSpecificationSink.method(:new)
           end
