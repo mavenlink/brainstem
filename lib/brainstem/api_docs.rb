@@ -71,6 +71,11 @@ module Brainstem
       presenter_filename_pattern
     end
 
+    #
+    # Defines the base path for the given API.
+    #
+    config_accessor(:base_path) { "/v2" }
+
 
     #
     # Defines the extension that should be used for output files.
@@ -138,6 +143,11 @@ module Brainstem
       endpoint:    {},
       presenter:   {},
 
+      # Formatter for Open Api Specifications
+      info:      {},
+      response:  {},
+      parameter: {},
+      security:  {},
     }
   end
 end

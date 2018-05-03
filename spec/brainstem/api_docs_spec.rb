@@ -13,8 +13,8 @@ module Brainstem
         end
       end
 
-
       %w(
+        base_path
         controller_filename_pattern
         presenter_filename_pattern
         controller_filename_link_pattern
@@ -52,7 +52,5 @@ module Brainstem
           to eq(Brainstem::ApiDocs.public_send("presenter_filename_pattern"))
       end
     end
-
-
   end
 end

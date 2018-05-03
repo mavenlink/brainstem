@@ -41,6 +41,14 @@ module Brainstem
           end
         end
 
+        context "when --api-version" do
+          let(:args) { %w(--api-version=2.0.0 ) }
+
+          it "sets the api version option of the sink" do
+            expect(subject.options[:sink][:options][:api_version]).to eq '2.0.0'
+          end
+        end
+
         context "when --controller-matches" do
           let(:matches) { subject.options[:builder][:args_for_atlas][:controller_matches] }
 
@@ -62,6 +70,16 @@ module Brainstem
             it "allows additional specification and merges the arguments" do
               expect(matches).to include Regexp.new('workspaces', 'i')
             end
+          end
+        end
+
+        context "when --open-api-specification" do
+          let(:args) { %w(--open-api-specification) }
+
+          it "sets sink to a OpenApiSpecificationSink" do
+            expect(subject.options).to have_key :sink
+            expect(subject.options[:sink][:method].call).to be_a \
+              Brainstem::ApiDocs::Sinks::OpenApiSpecificationSink
           end
         end
       end
