@@ -176,6 +176,24 @@ module Brainstem
 
 
         #
+        # Returns a proc that will return the application or engine to get routes from.
+        #
+        # @return [Proc] Proc that returns the Rails application or an engine
+        #
+        def base_application_proc
+          @base_application_proc ||= Proc.new { Rails.application }
+        end
+
+
+        #
+        # Allows for the specification for an alternate base application
+        #
+        # @param [Proc] Proc that returns the Rails application or an engine
+        #
+        attr_writer :base_application_proc
+
+
+        #
         # Returns the proc that is called to format and retrieve routes.
         # The proc's return must be an array of hashes that contains the
         # following keys:
@@ -188,7 +206,7 @@ module Brainstem
         #
         def routes_method
           @routes_method ||= Proc.new do
-            Rails.application.routes.routes.map do |route|
+            base_application_proc.call.routes.routes.map do |route|
               next unless route.defaults.has_key?(:controller) &&
                 controller_const = "#{route.defaults[:controller]}_controller"
                   .classify

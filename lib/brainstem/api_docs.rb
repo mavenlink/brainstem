@@ -107,6 +107,18 @@ module Brainstem
       "::ApplicationController"
     end
 
+    #
+    # Defines the application or engine that all routes will be fetched from.
+    #
+    # Is a proc because most relevant classes are not loaded until much
+    # later.
+    #
+    # @see Brainstem::ApiDocs::RailsIntrospector#base_application_proc=
+    #
+    config_accessor(:base_application_proc) do
+      Proc.new { Rails.application }
+    end
+
 
     #
     # If associations on a presenter have no description, i.e. no documentation,
