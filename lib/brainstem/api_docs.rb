@@ -101,7 +101,7 @@ module Brainstem
     # Is a string because most relevant classes are not loaded until much
     # later.
     #
-    # @see Brainstem::ApiDocs::RailsIntrospector#base_presenter_class=
+    # @see Brainstem::ApiDocs::RailsIntrospector#base_controller_class=
     #
     config_accessor(:base_controller_class) do
       "::ApplicationController"
