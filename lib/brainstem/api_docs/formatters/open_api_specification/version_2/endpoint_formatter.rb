@@ -1,8 +1,8 @@
 require 'active_support/core_ext/hash/except'
 require 'forwardable'
 require 'brainstem/api_docs/formatters/abstract_formatter'
-require 'brainstem/api_docs/formatters/open_api_specification/version_2/endpoint_params_formatter'
-require 'brainstem/api_docs/formatters/open_api_specification/version_2/endpoint_response_formatter'
+require 'brainstem/api_docs/formatters/open_api_specification/version_2/endpoint/param_definitions_formatter'
+require 'brainstem/api_docs/formatters/open_api_specification/version_2/endpoint/response_definitions_formatter'
 require 'brainstem/api_docs/formatters/open_api_specification/helper'
 
 #

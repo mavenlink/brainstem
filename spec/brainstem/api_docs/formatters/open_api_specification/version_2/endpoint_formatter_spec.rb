@@ -12,7 +12,7 @@ module Brainstem
             let(:presenter)     { Object.new }
             let(:atlas)         { Object.new }
             let(:endpoint)      {
-              Endpoint.new(
+              ::Brainstem::ApiDocs::Endpoint.new(
                 atlas,
                 {
                   controller:   controller,
