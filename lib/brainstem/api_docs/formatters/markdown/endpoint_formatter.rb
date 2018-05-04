@@ -14,11 +14,9 @@ module Brainstem
           include Helper
           extend Forwardable
 
-
           ################################################################################
           # Public API
           ################################################################################
-
 
           def initialize(endpoint, options = {})
             self.endpoint = endpoint
@@ -27,10 +25,8 @@ module Brainstem
             super options
           end
 
-
           attr_accessor :endpoint,
                         :output
-
 
           def call
             return output if endpoint.nodoc?
@@ -44,13 +40,11 @@ module Brainstem
             output
           end
 
-
           ################################################################################
           private
           ################################################################################
 
           delegate :controller => :endpoint
-
 
           #
           # Formats the title as given, falling back to the humanized action
@@ -60,14 +54,12 @@ module Brainstem
             output << md_h4(endpoint.title)
           end
 
-
           #
           # Formats the description if given.
           #
           def format_description!
             output << md_p(endpoint.description) unless endpoint.description.empty?
           end
-
 
           #
           # Formats the actual URI and stated HTTP methods.
@@ -77,7 +69,6 @@ module Brainstem
             path = endpoint.path.gsub('(.:format)', '.json')
             output << md_code("#{http_methods} #{path}")
           end
-
 
           #
           # Formats each parameter.
@@ -149,7 +140,6 @@ module Brainstem
             md_li(text, indent)
           end
 
-
           #
           # Formats the data model for the action.
           #
@@ -197,7 +187,6 @@ module Brainstem
     end
   end
 end
-
 
 Brainstem::ApiDocs::FORMATTERS[:endpoint][:markdown] = \
   Brainstem::ApiDocs::Formatters::Markdown::EndpointFormatter.method(:call)

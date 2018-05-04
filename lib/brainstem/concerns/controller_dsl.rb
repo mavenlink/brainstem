@@ -13,7 +13,6 @@ module Brainstem
         reset_configuration!
       end
 
-
       module ClassMethods
         def reset_configuration!
           configuration.nest! :_default
@@ -24,7 +23,6 @@ module Brainstem
             default.nonheritable! :description
           end
         end
-
 
         #
         # In order to correctly scope the DSL, we must have a context under
@@ -42,7 +40,6 @@ module Brainstem
         #
         attr_accessor :brainstem_params_context
 
-
         #
         # Container method that sets up base scoping for the configuration.
         #
@@ -52,14 +49,12 @@ module Brainstem
           self.brainstem_params_context = nil
         end
 
-
         #
         # Temporary implementation to track controllers that have been documented.
         #
         def documented!
           configuration[brainstem_params_context][:documented] = true
         end
-
 
         #
         # Specifies that the scope should not be documented. Setting this on
@@ -70,7 +65,6 @@ module Brainstem
         def nodoc!
           configuration[brainstem_params_context][:nodoc] = true
         end
-
 
         #
         # Changes context to a specific action context. Allows specification
@@ -105,7 +99,6 @@ module Brainstem
 
         private :action_context
 
-
         #
         # Invokes +action+ for each symbol in the argument list. Used to
         # specify shared configuration.
@@ -113,7 +106,6 @@ module Brainstem
         def actions(*axns, &block)
           axns.flatten.each { |name| action_context name, &block }
         end
-
 
         #
         # Allows the bulk specification of +:root+ options. Useful for
@@ -137,7 +129,6 @@ module Brainstem
         def model_params(root = Proc.new { |klass| klass.brainstem_model_name }, &block)
           with_options(format_root_ancestry_options(root), &block)
         end
-
 
         #
         # Adds a param to the list of valid params, storing
@@ -177,7 +168,6 @@ module Brainstem
           with_options(format_ancestry_options(formatted_name, param_config), &block) if block_given?
         end
 
-
         #
         # Adds a transform to the list of transforms. Used to rename incoming
         # params to their internal names for usage.
@@ -197,7 +187,6 @@ module Brainstem
           end
         end
         alias_method :transforms, :transform
-
 
         #
         # Allows defining a custom response structure for an action.
@@ -286,7 +275,6 @@ module Brainstem
             options.merge(target_class: target_class)
         end
 
-
         #
         # Specifies a low-level description of a particular context, usually
         # (but not exclusively) reserved for methods.
@@ -302,7 +290,6 @@ module Brainstem
         def description(text, options = { nodoc: false })
           configuration[brainstem_params_context][:description] = options.merge(info: text)
         end
-
 
         #
         # Specifies a title to be used in the description of a class. Can also
@@ -334,7 +321,6 @@ module Brainstem
         end
         alias_method :format_root_name, :convert_to_proc
 
-
         #
         # Formats the ancestry options of the field. Returns a hash with ancestors & root.
         #
@@ -345,7 +331,6 @@ module Brainstem
           { root: root_proc, ancestors: ancestors }.with_indifferent_access.reject { |_, v| v.blank? }
         end
 
-
         #
         # Formats the ancestry options of the field. Returns a hash with ancestors.
         #
@@ -355,7 +340,6 @@ module Brainstem
 
           { ancestors: ancestors }.with_indifferent_access.reject { |_, v| v.blank? }
         end
-
 
         #
         # Formats the configuration of the param and returns the default configuration if not specified.
@@ -371,7 +355,6 @@ module Brainstem
 
         DEFAULT_PARAM_OPTIONS = { nodoc: false, required: false }
         private_constant :DEFAULT_PARAM_OPTIONS
-
 
         #
         # Returns the type of the param and adds a deprecation warning if not specified.
@@ -390,7 +373,6 @@ module Brainstem
 
         DEFAULT_BLOCK_DATA_TYPE = 'hash'
         private_constant :DEFAULT_BLOCK_DATA_TYPE
-
 
         #
         # Adds deprecation warning if the type argument is not specified when defining a valid param.
@@ -430,7 +412,6 @@ module Brainstem
         end
       end
 
-
       def valid_params_tree(requested_context = action_name.to_sym)
         contextual_key(requested_context, :valid_params)
           .to_h
@@ -467,7 +448,6 @@ module Brainstem
       end
       alias_method :brainstem_valid_params_for, :brainstem_valid_params
 
-
       #
       # Lists all incoming param keys that will be rewritten to use a different
       # name for internal usage for the current action.
@@ -487,7 +467,6 @@ module Brainstem
         end
       end
       alias_method :transforms_for, :transforms
-
 
       #
       # Retrieves a specific key in a given context, or if that doesn't exist,

@@ -16,7 +16,6 @@ module Brainstem
           RailsIntrospector.send(:new, default_args)
         end
 
-
         context "when cannot find the environment file" do
           describe "#load_environment!" do
             subject { described_klass.send(:new) }
@@ -83,7 +82,6 @@ module Brainstem
               )
             end
 
-
             it "allows the specification of a custom base_presenter_class" do
               expect(subject.send(:base_presenter_class).to_s)
                 .to eq "::FakeBasePresenter"
@@ -104,7 +102,6 @@ module Brainstem
                 default_args.merge(base_controller_class: "::FakeBaseController")
               )
             end
-
 
             it "allows the specification of a custom base_controller_class" do
               expect(subject.send(:base_controller_class).to_s)

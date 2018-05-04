@@ -609,7 +609,6 @@ describe Brainstem::Concerns::PresenterDSL do
       end
     end
 
-
     context "when type is not specified" do
       before do
         mock(presenter_class).deprecated_type_warning

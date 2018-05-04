@@ -17,13 +17,11 @@ module Brainstem
           end
         end
 
-
         describe "#call" do
           it "is not implemented" do
             expect { subject.call }.to raise_error NotImplementedError
           end
         end
-
       end
     end
   end

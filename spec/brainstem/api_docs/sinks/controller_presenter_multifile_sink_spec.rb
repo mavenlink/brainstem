@@ -33,12 +33,10 @@ module Brainstem
           end
         end
 
-
         context "presenters" do
           before do
             stub(subject).write_controller_files
           end
-
 
           it "writes each presenter to its own file" do
             stub(atlas).presenters

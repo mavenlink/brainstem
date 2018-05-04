@@ -33,7 +33,6 @@ module Brainstem
         end
       end
 
-
       describe "#create_from_target_class" do
         let(:pclm) { Object.new }
         let(:options) { { presenter_constant_lookup_method: pclm } }
@@ -65,7 +64,6 @@ module Brainstem
           end
         end
       end
-
 
       describe "#create_from_presenter_collection" do
         let(:const) { Class.new }

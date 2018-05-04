@@ -21,7 +21,6 @@ module Brainstem
               end
             end
 
-
             describe "formatting" do
               describe "#format_endpoints!" do
                 let(:endpoint_1) { Object.new }

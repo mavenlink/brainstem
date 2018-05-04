@@ -21,7 +21,6 @@ module Brainstem
         end
       end
 
-
       describe "configured fields" do
         let(:lorem)  { "lorem ipsum dolor sit amet" }
         let(:const)  { Object.new }
@@ -37,7 +36,6 @@ module Brainstem
             constant.possible_brainstem_keys { Set.new(%w(lorem ipsum)) }
           end
         end
-
 
         describe "#nodoc?" do
           let(:config) { { nodoc: nodoc } }
@@ -57,7 +55,6 @@ module Brainstem
           end
         end
 
-
         describe "#title" do
           let(:config) { { title: { info: lorem, nodoc: nodoc } } }
 
@@ -76,13 +73,11 @@ module Brainstem
           end
         end
 
-
         describe "#brainstem_keys" do
           it "retrieves from the constant, array-izes, and sorts" do
             expect(subject.brainstem_keys).to eq [ "ipsum", "lorem" ]
           end
         end
-
 
         describe "#description" do
           context "with description" do
@@ -109,7 +104,6 @@ module Brainstem
             end
           end
         end
-
 
         describe "#valid_fields" do
           let(:presenter_class) do
@@ -240,7 +234,6 @@ module Brainstem
           end
         end
 
-
         describe "#optional_field_names" do
           let(:presenter_class) do
             Class.new(Brainstem::Presenter) do
@@ -300,7 +293,6 @@ module Brainstem
           end
         end
 
-
         describe "#valid_filters" do
           let(:info)        { lorem }
           let(:filter)      { { info: info } }
@@ -326,7 +318,6 @@ module Brainstem
             end
           end
         end
-
 
         describe "#documentable_filter?" do
           let(:info)   { lorem }
@@ -369,7 +360,6 @@ module Brainstem
           end
         end
 
-
         describe "#valid_sort_orders" do
           let(:config) { { sort_orders: { title: { nodoc: true }, date: {} } } }
 
@@ -378,7 +368,6 @@ module Brainstem
             expect(subject.valid_sort_orders).not_to have_key(:title)
           end
         end
-
 
         describe "#valid_associations" do
           let(:info)        { lorem }
@@ -405,7 +394,6 @@ module Brainstem
             end
           end
         end
-
 
         describe "#documentable_association?" do
           let(:desc)        { lorem }
@@ -448,7 +436,6 @@ module Brainstem
           end
         end
 
-
         describe "#conditionals" do
           let(:config) { { conditionals: { thing: :other_thing } } }
 
@@ -465,7 +452,6 @@ module Brainstem
           end
         end
 
-
         describe "#default_sort_field" do
           context "when has default sort order" do
             let(:config) { { default_sort_order: "alphabetical:asc" } }
@@ -481,7 +467,6 @@ module Brainstem
             end
           end
         end
-
 
         describe "#default_sort_direction" do
           context "when has default sort order" do
@@ -545,7 +530,6 @@ module Brainstem
         end
       end
 
-
       describe "#suggested_filename" do
         before do
           stub(target_class).to_s { "Abc" }
@@ -563,7 +547,6 @@ module Brainstem
           expect(instance.suggested_filename(:xyz)).to eq "presenters/abc.xyz"
         end
       end
-
 
       describe "#suggested_filename_link" do
         before do
@@ -583,7 +566,6 @@ module Brainstem
         end
       end
 
-
       describe "#relative_path_to_presenter" do
         let(:presenter) {
           mock!
@@ -597,7 +579,6 @@ module Brainstem
             eq "sprocket_widget"
         end
       end
-
 
       describe "#link_for_association" do
         let(:presenter)    { Object.new }
@@ -637,7 +618,6 @@ module Brainstem
           end
         end
       end
-
 
       it_behaves_like "formattable"
       it_behaves_like "atlas taker"

@@ -26,7 +26,6 @@ module Brainstem
       @presents
     end
 
-
     #
     # Returns the set of possible brainstem keys for the classes presented.
     #
@@ -38,7 +37,6 @@ module Brainstem
         Set.new(presents.map(&presenter_collection.method(:brainstem_key_for!)))
       end
     end
-
 
     # Return the second-to-last module in the name of this presenter, which Brainstem considers to be the 'namespace'.
     # E.g., Api::V1::FooPresenter has a namespace of "V1".
@@ -410,11 +408,9 @@ module Brainstem
       end
     end
 
-
     def self.presenter_collection
       Brainstem.presenter_collection(namespace)
     end
-
 
     # @api protected
     # Find the global presenter collection for our namespace.

@@ -49,7 +49,6 @@ module Brainstem
         end
       end
 
-
       describe "#find_presenter_from_target_class" do
         let(:klass)             { Class.new }
         let(:presenter_const)   { Class.new }

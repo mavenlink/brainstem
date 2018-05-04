@@ -4,7 +4,6 @@ require 'brainstem/api_docs/formatters/abstract_formatter'
 require 'brainstem/api_docs/formatters/open_api_specification/helper'
 require 'brainstem/api_docs/formatters/markdown/helper'
 
-
 #
 # Responsible for formatting each endpoint.
 #
@@ -48,7 +47,6 @@ module Brainstem
 
                 output
               end
-
 
               ################################################################################
               private
@@ -270,7 +268,6 @@ module Brainstem
     end
   end
 end
-
 
 Brainstem::ApiDocs::FORMATTERS[:parameters][:oas_v2] = \
   Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::Endpoint::ParamDefinitionsFormatter.method(:call)

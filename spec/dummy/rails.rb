@@ -7,7 +7,6 @@ silence_warnings do
   FakeRailsRoute            = Struct.new(:name, :path, :defaults, :constraints)
 end
 
-
 class Rails
   def self.application
     @application ||= begin
@@ -38,7 +37,6 @@ class Rails
     end
   end
 end
-
 
 class FakeBasePresenter; end
 class FakeDescendantPresenter < FakeBasePresenter; end

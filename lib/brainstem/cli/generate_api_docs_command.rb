@@ -24,18 +24,15 @@ module Brainstem
   module CLI
     class GenerateApiDocsCommand < AbstractCommand
 
-
       def call
         ensure_sink_specified!
         construct_builder!
         present_atlas!
       end
 
-
       def default_sink_method
         Brainstem::ApiDocs::Sinks::ControllerPresenterMultifileSink.method(:new)
       end
-
 
       def default_options
         {
@@ -54,9 +51,7 @@ module Brainstem
         }
       end
 
-
       attr_accessor :builder
-
 
       #########################################################################
       private
@@ -69,14 +64,12 @@ module Brainstem
         @builder = Brainstem::ApiDocs::Builder.new(builder_options)
       end
 
-
       #
       # Hands the atlas over to the sink.
       #
       def present_atlas!
         sink_method.call(sink_options) << builder.atlas
       end
-
 
       #
       # Raises an error unless the user specified a destination for the output.
@@ -85,14 +78,12 @@ module Brainstem
         raise Brainstem::ApiDocs::NoSinkSpecifiedException unless sink_method
       end
 
-
       #
       # Utility method for retrieving the sink.
       #
       def sink_method
         @sink_method ||= options[:sink][:method]
       end
-
 
       #
       # Utility method for retrieving builder options.
@@ -101,14 +92,12 @@ module Brainstem
         @builder_options ||= options[:builder]
       end
 
-
       #
       # Utility method for retrieving sink options.
       #
       def sink_options
         @sink_options ||= options[:sink][:options]
       end
-
 
       #
       # Defines the option parser for this command.
@@ -120,27 +109,22 @@ module Brainstem
         OptionParser.new do |opts|
           opts.banner = "Usage: generate [options]"
 
-
           opts.on('--host-env-file=PATH', "path to host app's entry file") do |o|
             options[:builder][:args_for_introspector][:rails_environment_file] = o
           end
-
 
           opts.on('-o RELATIVE_DIR', '--output-dir=RELATIVE_DIR',
                   'specifies directory which to output if relevant') do |o|
             options[:sink][:options][:write_path] = o
           end
 
-
           opts.on('--base-presenter-class=CLASS', "which class to look up presenters on") do |o|
             options[:builder][:args_for_introspector][:base_presenter_class] = o
           end
 
-
           opts.on('--base-controller-class=CLASS', "which class to look up controllers on") do |o|
             options[:builder][:args_for_introspector][:base_controller_class] = o
           end
-
 
           opts.on('--controller-matches=MATCH',
                   'a case-sensitive regexp used to winnow the list of '\
@@ -151,7 +135,6 @@ module Brainstem
             matcher = Regexp.new(o.gsub(/(\A\/)|(\/\z)/, ''), 'i')
             options[:builder][:args_for_atlas][:controller_matches].push(matcher)
           end
-
 
           opts.on('--markdown', 'use markdown format') do |o|
             options[:sink][:options][:format] = :markdown
@@ -171,12 +154,10 @@ module Brainstem
             options[:sink][:method] = Brainstem::ApiDocs::Sinks::OpenApiSpecificationSink.method(:new)
           end
 
-
           opts.on('--api-version=API_VERSION',
                   'sets the version of the generated documentation') do |api_version|
             options[:sink][:options][:api_version] = api_version
           end
-
 
           opts.on('-m', '--multifile-presenters-and-controllers',
             'dumps presenters and controllers to separate files (default)') do |o|

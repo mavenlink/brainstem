@@ -34,11 +34,9 @@ module Brainstem
               output.merge!(presenter.target_class => definition.reject {|_, v| v.blank?})
             end
 
-
             #####################################################################
             private
             #####################################################################
-
 
             def format_title!
               definition.merge! title: presenter_title(presenter)

@@ -44,11 +44,9 @@ module Brainstem
           write_spec_to_file!
         end
 
-
         #######################################################################
         private
         #######################################################################
-
 
         DEFAULT_API_VERSION = '1.0.0'
         private_constant :DEFAULT_API_VERSION

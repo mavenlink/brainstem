@@ -24,11 +24,9 @@ module Brainstem
               output
             end
 
-
             #####################################################################
             private
             #####################################################################
-
 
             def format_basic_auth_definitions!
               add_security_definition(basic_auth_definitions)
@@ -58,7 +56,6 @@ module Brainstem
             #####################################################################
             # Override with custom values                                       #
             #####################################################################
-
 
             def basic_auth_definitions
               {}
@@ -97,7 +94,6 @@ module Brainstem
     end
   end
 end
-
 
 Brainstem::ApiDocs::FORMATTERS[:security][:oas_v2] = \
   Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::SecurityDefinitionsFormatter.method(:call)

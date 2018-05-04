@@ -15,7 +15,6 @@ module Brainstem
         end
       end
 
-
       describe "#add_endpoint" do
         let(:endpoint) { Object.new }
 
@@ -25,7 +24,6 @@ module Brainstem
           expect(subject.endpoints.count).to eq 1
         end
       end
-
 
       describe "derived fields" do
         let(:lorem)          { "lorem ipsum dolor sit amet" }
@@ -45,7 +43,6 @@ module Brainstem
             constant.to_s { "Api::V1::ClassName" }
           end
         end
-
 
         describe "configuration helpers" do
           describe "#contextual_documentation" do
@@ -93,7 +90,6 @@ module Brainstem
             end
           end
 
-
           describe "#default_configuration" do
             let(:default_config) { { title: nil } }
 
@@ -102,7 +98,6 @@ module Brainstem
             end
           end
         end
-
 
         describe "#nodoc?" do
           let(:default_config) { { nodoc: nodoc } }
@@ -121,7 +116,6 @@ module Brainstem
             end
           end
         end
-
 
         describe "#title" do
           context "when present" do
@@ -148,7 +142,6 @@ module Brainstem
             end
           end
         end
-
 
         describe "#description" do
           context "when present" do
@@ -177,7 +170,6 @@ module Brainstem
         end
       end
 
-
       describe "#suggested_filename" do
         let(:const)          { Object.new }
 
@@ -186,7 +178,6 @@ module Brainstem
             constant.to_s { "Api::V1::ClassName" }
           end
         end
-
 
         it "gsubs namespace, filename and extension" do
           instance = described_class.new(atlas,
@@ -202,7 +193,6 @@ module Brainstem
         end
       end
 
-
       describe "#suggested_filename_link" do
         it "gsubs filename and extension" do
 
@@ -216,7 +206,6 @@ module Brainstem
           expect(instance.suggested_filename_link(:xyz)).to eq "controllers/abc_controller.xyz.foo"
         end
       end
-
 
       it_behaves_like "formattable"
       it_behaves_like "atlas taker"

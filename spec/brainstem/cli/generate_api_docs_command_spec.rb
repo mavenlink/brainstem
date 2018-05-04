@@ -103,7 +103,6 @@ module Brainstem
         end
       end
 
-
       describe "execution" do
         context "when no sink provided" do
           before do

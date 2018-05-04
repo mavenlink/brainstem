@@ -6,7 +6,6 @@ module Brainstem
       class AbstractSink
         include Concerns::Optional
 
-
         #
         # Primary method for putting the atlas into the sink.
         #
@@ -16,11 +15,9 @@ module Brainstem
           raise NotImplementedError
         end
 
-
         #######################################################################$
         private
         ########################################################################
-
 
         #
         # Whitelist of options which can be set on an instance.
@@ -30,7 +27,6 @@ module Brainstem
         def valid_options
           []
         end
-
       end
     end
   end

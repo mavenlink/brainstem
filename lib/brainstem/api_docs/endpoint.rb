@@ -27,13 +27,11 @@ module Brainstem
         ]
       end
 
-
       def initialize(atlas, options = {})
         self.atlas = atlas
         super options
         yield self if block_given?
       end
-
 
       attr_accessor :path,
                     :http_methods,
@@ -42,7 +40,6 @@ module Brainstem
                     :action,
                     :atlas
 
-
       #
       # Pretty prints each endpoint.
       #
@@ -50,14 +47,12 @@ module Brainstem
         "#{http_methods.join(" / ")} #{path}"
       end
 
-
       #
       # Merges http methods (for de-duping Rails' routes).
       #
       def merge_http_methods!(methods)
         self.http_methods |= methods
       end
-
 
       #
       # Sorts this endpoint in comparison to other endpoints.
@@ -91,7 +86,6 @@ module Brainstem
         end
       end
 
-
       ################################################################################
       # Derived fields
       ################################################################################
@@ -103,26 +97,21 @@ module Brainstem
         action_configuration[:nodoc]
       end
 
-
       def title
         @title ||= contextual_documentation(:title) || action.to_s.humanize
       end
-
 
       def description
         @description ||= contextual_documentation(:description) || ""
       end
 
-
       def valid_params
         @valid_params ||= key_with_default_fallback(:valid_params)
       end
 
-
       def custom_response
         @custom_response ||= action_configuration[:custom_response]
       end
-
 
       #
       # Returns a hash of all params nested under the specified root or
@@ -214,14 +203,12 @@ module Brainstem
       end
       alias_method :evaluate_root_name, :evaluate_field_name
 
-
       #
       # Retrieves the +presents+ settings.
       #
       def valid_presents
         key_with_default_fallback(:presents) || {}
       end
-
 
       #
       # Used to retrieve this endpoint's presenter constant.
@@ -232,12 +219,10 @@ module Brainstem
           valid_presents[:target_class]
       end
 
-
       #
       # Stores the +ApiDocs::Presenter+ object associated with this endpoint.
       #
       attr_accessor :presenter
-
 
       ################################################################################
       # Configuration Helpers
@@ -249,7 +234,6 @@ module Brainstem
       delegate :configuration => :controller
       delegate :find_by_class => :atlas
 
-
       #
       # Helper for retrieving action-specific configuration from the controller.
       #
@@ -257,14 +241,12 @@ module Brainstem
         configuration[action] || {}
       end
 
-
       #
       # Retrieves default action context from the controller.
       #
       def default_configuration
         configuration[:_default] || {}
       end
-
 
       #
       # Returns a key if it exists and is documentable
@@ -275,16 +257,13 @@ module Brainstem
           action_configuration[key][:info]
       end
 
-
       def key_with_default_fallback(key)
         action_configuration[key] || default_configuration[key]
       end
 
-
       def presenter_title
         presenter && presenter.title
       end
-
 
       #
       # Returns the relative path from this endpoint's controller to this

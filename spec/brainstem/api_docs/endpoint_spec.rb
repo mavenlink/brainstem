@@ -9,14 +9,12 @@ module Brainstem
       let(:options) { {} }
       subject       { described_class.new(atlas, options) }
 
-
       describe "#initialize" do
         it "yields self if given a block" do
           block = Proc.new { |s| s.path = "bork bork" }
           expect(described_class.new(atlas, &block).path).to eq "bork bork"
         end
       end
-
 
       describe "#merge_http_methods!" do
         let(:options) { { http_methods: %w(GET) } }
@@ -28,7 +26,6 @@ module Brainstem
           expect(subject.http_methods).to eq %w(GET POST PATCH)
         end
       end
-
 
       describe "configured fields" do
         let(:const) do
@@ -61,7 +58,6 @@ module Brainstem
           stub(controller).const { const }
         end
 
-
         describe "#nodoc?" do
           let(:show_config) { { nodoc: nodoc } }
 
@@ -79,7 +75,6 @@ module Brainstem
             end
           end
         end
-
 
         describe "#title" do
           context "when present" do
@@ -107,7 +102,6 @@ module Brainstem
           end
         end
 
-
         describe "#description" do
           context "when present" do
             let(:show_config) { { description: { info: lorem, nodoc: nodoc } } }
@@ -134,14 +128,12 @@ module Brainstem
           end
         end
 
-
         describe "#valid_params" do
           it "returns the valid_params key from action or default" do
             mock(subject).key_with_default_fallback(:valid_params)
             subject.valid_params
           end
         end
-
 
         describe "#params_configuration_tree" do
           let(:default_config) { { valid_params: which_param } }
@@ -540,14 +532,12 @@ module Brainstem
           end
         end
 
-
         describe "#valid_presents" do
           it "returns the presents key from action or default" do
             mock(subject).key_with_default_fallback(:presents)
             subject.valid_presents
           end
         end
-
 
         describe "#contextual_documentation" do
           let(:show_config) { { title: { info: info, nodoc: nodoc } } }
@@ -594,7 +584,6 @@ module Brainstem
           end
         end
 
-
         describe "#key_with_default_fallback" do
           let(:default_config) { { info: "default" } }
 
@@ -613,7 +602,6 @@ module Brainstem
           end
         end
       end
-
 
       describe "#sort" do
         actions = %w(index show create update delete articuno zapdos moltres)
@@ -637,7 +625,6 @@ module Brainstem
         end
       end
 
-
       describe "#presenter_title" do
         let(:presenter) { mock!.title.returns(lorem).subject }
         let(:options)   { { presenter: presenter } }
@@ -646,7 +633,6 @@ module Brainstem
           expect(subject.presenter_title).to eq lorem
         end
       end
-
 
       describe "#relative_presenter_path_from_controller" do
         let(:presenter) {

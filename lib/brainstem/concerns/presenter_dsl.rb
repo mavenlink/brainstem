@@ -10,7 +10,6 @@ require 'brainstem/dsl/conditionals_block'
 require 'brainstem/dsl/fields_block'
 require 'brainstem/dsl/associations_block'
 
-
 require 'active_support/core_ext/array/extract_options'
 
 module Brainstem
@@ -70,7 +69,6 @@ module Brainstem
           end
         end
 
-
         # @overload default_sort_order(sort_string)
         #   Sets a default sort order.
         #   @param [String] sort_string The sort order to apply by default
@@ -85,7 +83,6 @@ module Brainstem
           configuration[:default_sort_order] = sort_string if sort_string
           configuration[:default_sort_order]
         end
-
 
         #
         # @overload sort_order(name, order, options)
@@ -120,7 +117,6 @@ module Brainstem
             value: (block_given? ? block : order)
           })
         end
-
 
         #
         # @overload filter(name, type, options = {})

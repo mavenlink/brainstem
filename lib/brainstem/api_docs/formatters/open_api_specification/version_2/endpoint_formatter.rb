@@ -45,7 +45,6 @@ module Brainstem
               output
             end
 
-
             ################################################################################
             private
             ################################################################################
@@ -135,7 +134,6 @@ module Brainstem
     end
   end
 end
-
 
 Brainstem::ApiDocs::FORMATTERS[:endpoint][:oas_v2] = \
   Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::EndpointFormatter.method(:call)

@@ -23,23 +23,19 @@ module Brainstem
             super options
           end
 
-
           attr_accessor :endpoint_collection,
                         :zero_text,
                         :output
 
-
           def valid_options
             super | [ :zero_text ]
           end
-
 
           def call
             format_endpoints!
             format_zero_text! if output.empty?
             output
           end
-
 
           #####################################################################
           private
@@ -52,11 +48,9 @@ module Brainstem
               .reject(&:empty?)
           end
 
-
           def format_endpoints!
             output << all_formatted_endpoints.join(md_hr)
           end
-
 
           def format_zero_text!
             output << zero_text
@@ -66,7 +60,6 @@ module Brainstem
     end
   end
 end
-
 
 
 Brainstem::ApiDocs::FORMATTERS[:endpoint_collection][:markdown] = \

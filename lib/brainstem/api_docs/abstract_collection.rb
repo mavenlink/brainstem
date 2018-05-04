@@ -19,18 +19,15 @@ module Brainstem
         new(atlas).tap {|n| members.flatten.each { |m| n << m } }
       end
 
-
       def initialize(atlas, options = {})
         self.atlas   = atlas
         self.members = []
         super options
       end
 
-
       attr_accessor :atlas
 
       delegate :find_by_class => :atlas
-
 
       #
       # Handy accessor for extracting the last member of the collection.
@@ -39,14 +36,12 @@ module Brainstem
         members[-1]
       end
 
-
       #
       # Appends a pre-existing object to the collection.
       #
       def <<(*objects)
         members.push(*objects.flatten)
       end
-
 
       #
       # Iterates over each controller in the collection.
@@ -55,7 +50,6 @@ module Brainstem
         members.each(&block)
       end
 
-
       #
       # Returns a map of each member formatted as specified.
       #
@@ -63,7 +57,6 @@ module Brainstem
         map { |member| member.formatted_as(format, options) }
           .reject(&:empty?)
       end
-
 
       #
       # Returns a list of each member's filename.
@@ -74,7 +67,6 @@ module Brainstem
       def filenames(format)
         formatted_with_filename(format).map { |arr| arr[1] }
       end
-
 
       #
       # Returns a map of each formatted member and its suggested filename.
@@ -87,23 +79,19 @@ module Brainstem
           .reject { |(buffer, _)| buffer.empty? }
       end
 
-
       def each_formatted_with_filename(format, options = {}, &block)
         formatted_with_filename(format, options)
           .each { |args| block.call(*args) }
       end
-
 
       def each_formatted(format, options = {}, &block)
         formatted(format, options)
           .each { |args| block.call(*args) }
       end
 
-
       def each_filename(format, &block)
         filenames(format).each { |args| block.call(*args) }
       end
-
 
 
       #########################################################################

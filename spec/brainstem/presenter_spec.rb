@@ -840,7 +840,6 @@ describe Brainstem::Presenter do
         end
       end
 
-
       it "preloads associations when they are full model-level associations" do
         preloader_should_receive("tasks" => [], "user" => [])
         presenter.group_present(Workspace.order('id desc'), %w[tasks user lead_user tasks_with_lambda])

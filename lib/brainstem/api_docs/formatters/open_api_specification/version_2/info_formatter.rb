@@ -31,11 +31,9 @@ module Brainstem
               output
             end
 
-
             #####################################################################
             private
             #####################################################################
-
 
             def format_swagger_object!
               output.merge!( swagger_object )
@@ -67,11 +65,9 @@ module Brainstem
               }.with_indifferent_access.reject { |_, v| v.blank? }
             end
 
-
             #####################################################################
             # Override with custom values                                       #
             #####################################################################
-
 
             def host
               'petstore.swagger.io'
@@ -125,7 +121,6 @@ module Brainstem
     end
   end
 end
-
 
 Brainstem::ApiDocs::FORMATTERS[:info][:oas_v2] = \
   Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::InfoFormatter.method(:call)

@@ -17,13 +17,11 @@ module Brainstem
             ]
           end
 
-
           attr_accessor :controller,
                         :include_actions,
                         :output
 
           alias_method :include_actions?, :include_actions
-
 
           def initialize(controller, options = {})
             self.controller      = controller
@@ -32,7 +30,6 @@ module Brainstem
             super options
           end
 
-
           def call
             return output if controller.nodoc?
             format_title!
@@ -40,21 +37,17 @@ module Brainstem
             format_actions!
           end
 
-
           #####################################################################
           private
           #####################################################################
-
 
           def format_title!
             output << md_h2(controller.title)
           end
 
-
           def format_description!
             output << md_p(controller.description) unless controller.description.empty?
           end
-
 
           def format_actions!
             return unless include_actions?
@@ -70,7 +63,6 @@ module Brainstem
     end
   end
 end
-
 
 Brainstem::ApiDocs::FORMATTERS[:controller][:markdown] = \
   Brainstem::ApiDocs::Formatters::Markdown::ControllerFormatter.method(:call)

@@ -8,7 +8,6 @@ Workspace.create!(:id => 4, :user_id => 1, :title => "bob workspace 4", :descrip
 Workspace.create!(:id => 5, :user_id => 2, :title => "jane workspace 1", :description => "c")
 Workspace.create!(:id => 6, :user_id => 2, :title => "jane workspace 2", :description => "3")
 
-
 Cheese.create!(id: 1, user_id: 1, flavor: 'colby jack' )
 Cheese.create!(id: 2, user_id: 1, flavor: 'swiss' )
 Cheese.create!(id: 3, user_id: 1, flavor: 'cheese curds' )

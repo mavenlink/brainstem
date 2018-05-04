@@ -79,7 +79,6 @@ module Brainstem
               end
             end
 
-
             describe "#format_description!" do
               context "when present" do
                 before do
@@ -107,7 +106,6 @@ module Brainstem
               end
             end
 
-
             describe "#format_endpoint!" do
               let(:endpoint_args) { { http_methods: %w(get post), path: "/widgets(.:format)" } }
 
@@ -127,7 +125,6 @@ module Brainstem
                 expect(subject.output).to include "/widgets"
               end
             end
-
 
             describe "#format_params!" do
               let(:const) do

@@ -8,7 +8,6 @@ describe Brainstem::Preloader do
   let(:args)          { [ models, preloads, reflections ] }
   let!(:preloader)    { Brainstem::Preloader.new(*args) }
 
-
   describe ".preload" do
     it "creates a new instance, passing args and calls it" do
       preloader = mock(Object.new).call
@@ -16,7 +15,6 @@ describe Brainstem::Preloader do
       Brainstem::Preloader.preload(*args)
     end
   end
-
 
   describe "#call" do
     it "cleans" do
@@ -30,7 +28,6 @@ describe Brainstem::Preloader do
     end
   end
 
-
   describe "#clean!" do
     it "dedupes the associations" do
       mock(preloader).dedupe!
@@ -42,7 +39,6 @@ describe Brainstem::Preloader do
       preloader.send(:clean!)
     end
   end
-
 
   describe "#dedupe!" do
     before do
@@ -67,7 +63,6 @@ describe Brainstem::Preloader do
       end
     end
 
-
     describe "combination" do
       let(:preloads) { [
         { :workspaces => :other_things },
@@ -86,7 +81,6 @@ describe Brainstem::Preloader do
       end
     end
   end
-
 
   describe "#remove_unreflected_preloads!" do
     before do
@@ -115,7 +109,6 @@ describe Brainstem::Preloader do
       end
     end
   end
-
 
   describe "#preload!" do
     let(:preload_method) { Object.new }

@@ -12,7 +12,6 @@ module Brainstem
     class Resolver
       include Brainstem::Concerns::Optional
 
-
       def valid_options
         [
           :presenter_constant_lookup_method,
@@ -24,10 +23,8 @@ module Brainstem
         super options
       end
 
-
       attr_accessor :atlas,
                     :presenter_constant_lookup_method
-
 
       def find_by_class(klass)
         if klass == :polymorphic
@@ -36,7 +33,6 @@ module Brainstem
           find_presenter_from_target_class(klass)
         end
       end
-
 
       #########################################################################
       private
@@ -49,7 +45,6 @@ module Brainstem
         nil
       end
 
-
       #
       # Converts a class into a presenter constant. Raises an error
       # if not found.
@@ -57,7 +52,6 @@ module Brainstem
       def presenter_target_class_to_const(target_class)
         presenter_constant_lookup_method.call(target_class.to_s)
       end
-
 
       #
       # A callable method by which presenter constants can be looked up from
