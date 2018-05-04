@@ -9,7 +9,7 @@ module Brainstem
           File.expand_path('../../../../../spec/dummy/rails.rb', __FILE__)
         end
 
-        let(:default_args)    { { rails_environment_file: dummy_environment_file } }
+        let(:default_args) { { rails_environment_file: dummy_environment_file } }
 
         subject do
           described_class.send(:new, default_args)
