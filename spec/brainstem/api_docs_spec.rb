@@ -26,16 +26,16 @@ module Brainstem
       ).each do |meth|
         describe meth do
           before do
-            @original = Brainstem::ApiDocs.public_send(meth)
+            @original = described_class.public_send(meth)
           end
 
           after do
-            Brainstem::ApiDocs.public_send("#{meth}=", @original)
+            described_class.public_send("#{meth}=", @original)
           end
 
           it "can be set and read" do
-            Brainstem::ApiDocs.public_send("#{meth}=", lorem)
-            expect(Brainstem::ApiDocs.public_send(meth)).to eq lorem
+            described_class.public_send("#{meth}=", lorem)
+            expect(described_class.public_send(meth)).to eq lorem
           end
         end
       end
@@ -43,11 +43,11 @@ module Brainstem
 
     describe "filename link patterns" do
       it 'defaults to the filename pattern' do
-        expect(Brainstem::ApiDocs.public_send("controller_filename_link_pattern")).
-          to eq(Brainstem::ApiDocs.public_send("controller_filename_pattern"))
+        expect(described_class.public_send("controller_filename_link_pattern")).
+          to eq(described_class.public_send("controller_filename_pattern"))
 
-        expect(Brainstem::ApiDocs.public_send("presenter_filename_link_pattern")).
-          to eq(Brainstem::ApiDocs.public_send("presenter_filename_pattern"))
+        expect(described_class.public_send("presenter_filename_link_pattern")).
+          to eq(described_class.public_send("presenter_filename_pattern"))
       end
     end
   end

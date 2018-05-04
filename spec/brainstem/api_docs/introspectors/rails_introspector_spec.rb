@@ -12,7 +12,7 @@ module Brainstem
         let(:default_args)    { { rails_environment_file: dummy_environment_file } }
 
         subject do
-          RailsIntrospector.send(:new, default_args)
+          described_class.send(:new, default_args)
         end
 
         context "when cannot find the environment file" do
