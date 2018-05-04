@@ -70,6 +70,7 @@ module Brainstem
             :rails_environment_file,
             :base_presenter_class,
             :base_controller_class,
+            :base_application_proc
           ]
         end
 
