@@ -101,10 +101,22 @@ module Brainstem
     # Is a string because most relevant classes are not loaded until much
     # later.
     #
-    # @see Brainstem::ApiDocs::RailsIntrospector#base_presenter_class=
+    # @see Brainstem::ApiDocs::RailsIntrospector#base_controller_class=
     #
     config_accessor(:base_controller_class) do
       "::ApplicationController"
+    end
+
+    #
+    # Defines the application or engine that all routes will be fetched from.
+    #
+    # Is a proc because most relevant classes are not loaded until much
+    # later.
+    #
+    # @see Brainstem::ApiDocs::RailsIntrospector#base_application_proc=
+    #
+    config_accessor(:base_application_proc) do
+      Proc.new { Rails.application }
     end
 
 
