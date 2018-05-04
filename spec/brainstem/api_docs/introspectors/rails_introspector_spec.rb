@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'brainstem/api_docs/introspectors/rails_introspector'
+require_relative '../../../support/fake_rails_routing'
 
 module Brainstem
   module ApiDocs
@@ -157,6 +158,38 @@ module Brainstem
 
               it "transforms the HTTP method regexp into a list of verbs" do
                 expect(subject.routes.first[:http_methods]).to eq %w(GET POST)
+              end
+            end
+
+            context "with an alternate base application or engine provided" do
+              let(:base_application_proc) { Proc.new { FakeRailsApplication.new(true, routes) } }
+              let(:routes) { FakeRailsRoutesObject.new([route_1, route_2]) }
+              let(:route_1) {
+                FakeRailsRoute.new(
+                  "fake_descendant",
+                  FakeRailsRoutePathObject.new(spec: '/fake_route_1'),
+                  { controller: "fake_descendant", action: "show" },
+                  { :request_method => /^GET$/ }
+                )
+              }
+              let(:route_2) {
+                FakeRailsRoute.new(
+                  "fake_descendant",
+                  FakeRailsRoutePathObject.new(spec: '/fake_route_2'),
+                  { controller: "fake_descendant", action: "show" },
+                  { :request_method => /^GET$/ }
+                )
+              }
+
+              subject do
+                described_class.with_loaded_environment(default_args.merge({ base_application_proc: base_application_proc }))
+              end
+
+              it "recognizes the configured application or engine's routes" do
+                expect(subject.routes.map { |route| route[:path] }).to match_array([
+                  { spec: "/fake_route_1" }.to_s,
+                  { spec: "/fake_route_2" }.to_s
+                ])
               end
             end
           end
