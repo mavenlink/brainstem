@@ -75,6 +75,8 @@ module Brainstem
                           properties: format_field_branch(field.to_h)
                         }
                       }.with_indifferent_access
+                    else
+                      raise "Unknown Brainstem Field type encountered(#{field.type}) for field #{name}"
                   end
                 else
                   buffer[name.to_s] = format_field_leaf(field)
