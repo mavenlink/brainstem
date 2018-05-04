@@ -1,6 +1,5 @@
 require 'spec_helper'
 require 'brainstem/api_docs/introspectors/rails_introspector'
-require_relative '../../../support/fake_rails_routing'
 
 module Brainstem
   module ApiDocs
