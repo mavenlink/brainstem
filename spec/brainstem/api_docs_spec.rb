@@ -5,14 +5,12 @@ module Brainstem
   describe ApiDocs do
     let(:lorem) { "lorem ipsum dolor sit amet" }
 
-
     describe "configuration" do
       describe "formatters" do
         it "has a formatters constant" do
           expect(Brainstem::ApiDocs::FORMATTERS).to be_a(Hash)
         end
       end
-
 
       %w(
         controller_filename_pattern
@@ -52,7 +50,5 @@ module Brainstem
           to eq(Brainstem::ApiDocs.public_send("presenter_filename_pattern"))
       end
     end
-
-
   end
 end

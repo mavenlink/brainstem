@@ -15,7 +15,6 @@ module Brainstem
           RailsIntrospector.send(:new, default_args)
         end
 
-
         context "when cannot find the environment file" do
           describe "#load_environment!" do
             subject { described_class.send(:new) }
@@ -159,7 +158,6 @@ module Brainstem
               it "transforms the HTTP method regexp into a list of verbs" do
                 expect(subject.routes.first[:http_methods]).to eq %w(GET POST)
               end
-
             end
           end
         end
