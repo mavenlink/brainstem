@@ -101,6 +101,58 @@ module Brainstem
         end
       end
 
+      describe ".tag" do
+        it "sets the tag for the context" do
+          subject.brainstem_params do
+            tag "TagName"
+          end
+
+          expect(subject.configuration[:_default][:tag]).to eq "TagName"
+        end
+
+        context "when used in an action" do
+          it "raises and error" do
+            expect {
+              subject.brainstem_params do
+                actions :show do
+                  tag "TagName"
+                end
+              end
+            }.to raise_error(StandardError)
+          end
+        end
+      end
+
+      describe ".tag_groups" do
+        it "sets the tag groups" do
+          subject.brainstem_params do
+            tag_groups "Group Tag 1"
+          end
+
+          expect(subject.configuration[:_default][:tag_groups]).to eq ["Group Tag 1"]
+        end
+
+        it "sets the tag groups when an array is given" do
+          subject.brainstem_params do
+            tag_groups ["Group Tag 1", "Group Tag 2"]
+          end
+
+          expect(subject.configuration[:_default][:tag_groups]).to eq ["Group Tag 1", "Group Tag 2"]
+        end
+
+        context "when used in an action" do
+          it "raises and error" do
+            expect {
+              subject.brainstem_params do
+                actions :show do
+                  tag_groups ["Group Tag 1", "Group Tag 2"]
+                end
+              end
+            }.to raise_error(StandardError)
+          end
+        end
+      end
+
       describe ".model_params" do
         let(:root_proc) { Proc.new {} }
 
@@ -957,6 +1009,81 @@ module Brainstem
               }.with_indifferent_access)
             end
           end
+        end
+      end
+
+      describe ".operation_id" do
+        it "sets the operation_id for the context" do
+          subject.brainstem_params do
+            actions :show do
+              operation_id "getPetByID"
+            end
+          end
+
+          expect(subject.configuration[:show][:operation_id]).to eq("getPetByID")
+        end
+
+        context "when defined on the default context" do
+          it "raises an error" do
+            expect {
+              subject.brainstem_params do
+                operation_id :blah
+              end
+            }.to raise_error(StandardError)
+          end
+        end
+      end
+
+      describe ".consumes" do
+        it "sets the title for the context" do
+          subject.brainstem_params do
+            consumes "application/xml"
+
+            actions :show do
+              consumes ["application/x-www-form-urlencoded"]
+            end
+          end
+
+          expect(subject.configuration[:_default][:consumes]).to \
+            eq ["application/xml"]
+
+          expect(subject.configuration[:show][:consumes]).to \
+            eq ["application/x-www-form-urlencoded"]
+        end
+      end
+
+      describe ".produces" do
+        it "sets the title for the context" do
+          subject.brainstem_params do
+            produces "application/xml"
+
+            actions :show do
+              produces ["application/x-www-form-urlencoded"]
+            end
+          end
+
+          expect(subject.configuration[:_default][:produces]).to \
+            eq ["application/xml"]
+
+          expect(subject.configuration[:show][:produces]).to \
+            eq ["application/x-www-form-urlencoded"]
+        end
+      end
+
+      describe ".security" do
+        it "sets the title for the context" do
+          subject.brainstem_params do
+            security []
+
+            actions :show do
+              security({"petstore_auth" => [ "write:pets", "read:pets" ]})
+            end
+          end
+
+          expect(subject.configuration[:_default][:security]).to eq []
+          expect(subject.configuration[:show][:security]).to eq([
+            { "petstore_auth" => [ "write:pets", "read:pets" ] }
+          ])
         end
       end
 

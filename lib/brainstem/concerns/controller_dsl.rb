@@ -21,6 +21,8 @@ module Brainstem
             default.nest! :transforms
             default.nonheritable! :title
             default.nonheritable! :description
+            default.nonheritable! :tag
+            default.nonheritable! :tag_groups
           end
         end
 
@@ -67,37 +69,96 @@ module Brainstem
         end
 
         #
-        # Changes context to a specific action context. Allows specification
-        # of per-action configuration.
+        # Specifies which presenter is used for the controller / action.
+        # By default, expects presentation on all methods, and falls back to the
+        # class derived from +brainstem_model_name+ if a name is not
+        # given.
         #
-        # Instead of using this method, it's advised simply to use +actions+
-        # with a single method name. While marked as private, since it is
-        # usually used within a +class_eval+ block thanks to
-        # +brainstem_params+, this has little effect.
+        # Setting the +:nodoc+ option marks this presenter as 'internal use only',
+        # and causes formatters to display this as not indicated.
         #
-        # Originally, this method was named +action+ for parity with the plural
-        # version. However, this conflicts in multiple ways with Rails, so it
-        # has been renamed.
+        # @param [Class] target_class the target class of the presenter (i.e
+        #   the model it presents)
+        # @param [Hash] options options to record with the presenter
+        # @option [Boolean] options :nodoc whether this presenter should not
+        #   be output in the documentation.
         #
-        # @private
         #
-        # @param [Symbol] name the name of the context
-        # @param [Proc] block the proc to be evaluated in the context
-        #
-        def action_context(name, &block)
-          new_context = name.to_sym
-          old_context = self.brainstem_params_context
-          self.brainstem_params_context = new_context
+        def presents(target_class = :default, options = { nodoc: false })
+          raise "`presents` must be a class (in #{self.to_s})" \
+            unless target_class.is_a?(Class) || target_class == :default || target_class.nil?
 
-          self.configuration[new_context] ||= Brainstem::DSL::Configuration.new(
-            self.configuration[DEFAULT_BRAINSTEM_PARAMS_CONTEXT]
-          )
-
-          class_eval(&block)
-          self.brainstem_params_context = old_context
+          target_class = brainstem_model_class if target_class == :default
+          configuration[brainstem_params_context][:presents] = \
+            options.merge(target_class: target_class)
         end
 
-        private :action_context
+        #
+        # Specifies a title to be used in the description of a class. Can also
+        # be used for method section titles.
+        #
+        # Setting the +:nodoc+ option marks this title as 'internal use only',
+        # and causes formatters to fall back to the controller constant or to
+        # the action name as appropriate. If you are trying to set the entire
+        # controller or action as nondocumentable, instead, use the discrete
+        # +.nodoc!+ method in the desired context without a block.
+        #
+        # @param [String] text The title to set
+        # @param [Hash] options options to record with the title
+        # @option [Boolean] options :nodoc whether this title should not be
+        #   output in the documentation.
+        #
+        def title(text, options = { nodoc: false })
+          configuration[brainstem_params_context][:title] = options.merge(info: text)
+        end
+
+        #
+        # Specifies a low-level description of a particular context, usually
+        # (but not exclusively) reserved for methods.
+        #
+        # Setting the +:nodoc+ option marks this description as 'internal use
+        # only', and causes formatters not to display a description.
+        #
+        # @param [String] text The description to set
+        # @param [Hash] options options to record with the description
+        # @option [Boolean] options :nodoc whether this description should not
+        #   be output in the documentation.
+        #
+        def description(text, options = { nodoc: false })
+          configuration[brainstem_params_context][:description] = options.merge(info: text)
+        end
+
+        ####################################################
+        # Used only for Open Api Specification generation. #
+        ####################################################
+        #
+        # Specifies the tag name to be used in tagging a class.
+        #
+        # @param [String] tag_name The name of the tag.
+        #
+        def tag(tag_name)
+          unless brainstem_params_context == DEFAULT_BRAINSTEM_PARAMS_CONTEXT
+            raise "`tag` is not endpoint specific and is defined on the controller"
+          end
+
+          configuration[brainstem_params_context][:tag] = tag_name
+        end
+
+        ####################################################
+        # Used only for Open Api Specification generation. #
+        ####################################################
+        #
+        # Specifies an array of tag names to group the class under. Used for the x-tags OAS vendor extension.
+        #
+        # @param [Array<String>] tag_group_names Array of tag group names
+        #
+        def tag_groups(*tag_group_names)
+          unless brainstem_params_context == DEFAULT_BRAINSTEM_PARAMS_CONTEXT
+            raise "`tag_groups` is not endpoint specific and is defined on the controller"
+          end
+
+          configuration[brainstem_params_context][:tag_groups] = tag_group_names.flatten
+        end
 
         #
         # Invokes +action+ for each symbol in the argument list. Used to
@@ -169,26 +230,6 @@ module Brainstem
         end
 
         #
-        # Adds a transform to the list of transforms. Used to rename incoming
-        # params to their internal names for usage.
-        #
-        # @example
-        #
-        #     brainstem_params do
-        #       transform :param_from_frontend => :param_for_backend
-        #     end
-        #
-        # @param [Hash] transformations An old_param => new_param mapping.
-        #
-        def transform(transformations)
-          transformations.each_pair do |k, v|
-            transforms = configuration[brainstem_params_context][:transforms]
-            transforms[k.to_sym] = v.to_sym
-          end
-        end
-        alias_method :transforms, :transform
-
-        #
         # Allows defining a custom response structure for an action.
         #
         # @param [Symbol] type the data type of the response.
@@ -250,65 +291,115 @@ module Brainstem
           custom_response[formatted_name] = format_response_field_configuration(brainstem_params_context, type, options)
         end
 
+        ####################################################
+        # Used only for Open Api Specification generation. #
+        ####################################################
         #
-        # Specifies which presenter is used for the controller / action.
-        # By default, expects presentation on all methods, and falls back to the
-        # class derived from +brainstem_model_name+ if a name is not
-        # given.
+        # Unique string used to identify the operation. The id MUST be unique among all operations
+        # described in the API. Tools and libraries MAY use the operationId to uniquely identify an
+        # operation, therefore, it is recommended to follow common programming naming conventions.
         #
-        # Setting the +:nodoc+ option marks this presenter as 'internal use only',
-        # and causes formatters to display this as not indicated.
+        # @param [String] unique_id
         #
-        # @param [Class] target_class the target class of the presenter (i.e
-        #   the model it presents)
-        # @param [Hash] options options to record with the presenter
-        # @option [Boolean] options :nodoc whether this presenter should not
-        #   be output in the documentation.
-        #
-        #
-        def presents(target_class = :default, options = { nodoc: false })
-          raise "`presents` must be a class (in #{self.to_s})" \
-            unless target_class.is_a?(Class) || target_class == :default || target_class.nil?
+        def operation_id(unique_id)
+          if brainstem_params_context == DEFAULT_BRAINSTEM_PARAMS_CONTEXT
+            raise "`operation_id` is endpoint specific and cannot be defined on the controller"
+          end
 
-          target_class = brainstem_model_class if target_class == :default
-          configuration[brainstem_params_context][:presents] = \
-            options.merge(target_class: target_class)
+          configuration[brainstem_params_context][:operation_id] = unique_id
+        end
+
+        ####################################################
+        # Used only for Open Api Specification generation. #
+        ####################################################
+        #
+        # A list of MIME types the endpoints can consume. This overrides the default consumes definition
+        # on the Info object in the Open Api Specification.
+        #
+        # @param [Array<String>] mime_types Array of mime types
+        #
+        def consumes(*mime_types)
+          configuration[brainstem_params_context][:consumes] = mime_types.flatten
+        end
+
+        ####################################################
+        # Used only for Open Api Specification generation. #
+        ####################################################
+        #
+        # A list of MIME types the endpoints can produce. This overrides the default produces definition
+        # on the Info object in the Open Api Specification.
+        #
+        # @param [Array<String>] mime_types Array of mime types
+        #
+        def produces(*mime_types)
+          configuration[brainstem_params_context][:produces] = mime_types.flatten
+        end
+
+        ####################################################
+        # Used only for Open Api Specification generation. #
+        ####################################################
+        #
+        # A declaration of which security schemes are applied for this operation. The list of values
+        # describes alternative security schemes that can be used. This definition overrides any declared
+        # top-level security. To remove a top-level security declaration, an empty array can be used.
+        #
+        # @param [Array<Hash>] tag_group_names Array of tag group names
+        #
+        def security(*schemes)
+          configuration[brainstem_params_context][:security] = schemes.flatten
         end
 
         #
-        # Specifies a low-level description of a particular context, usually
-        # (but not exclusively) reserved for methods.
+        # Adds a transform to the list of transforms. Used to rename incoming
+        # params to their internal names for usage.
         #
-        # Setting the +:nodoc+ option marks this description as 'internal use
-        # only', and causes formatters not to display a description.
+        # @example
         #
-        # @param [String] text The description to set
-        # @param [Hash] options options to record with the description
-        # @option [Boolean] options :nodoc whether this description should not
-        #   be output in the documentation.
+        #     brainstem_params do
+        #       transform :param_from_frontend => :param_for_backend
+        #     end
         #
-        def description(text, options = { nodoc: false })
-          configuration[brainstem_params_context][:description] = options.merge(info: text)
+        # @param [Hash] transformations An old_param => new_param mapping.
+        #
+        def transform(transformations)
+          transformations.each_pair do |k, v|
+            transforms = configuration[brainstem_params_context][:transforms]
+            transforms[k.to_sym] = v.to_sym
+          end
         end
+        alias_method :transforms, :transform
 
         #
-        # Specifies a title to be used in the description of a class. Can also
-        # be used for method section titles.
+        # Changes context to a specific action context. Allows specification
+        # of per-action configuration.
         #
-        # Setting the +:nodoc+ option marks this title as 'internal use only',
-        # and causes formatters to fall back to the controller constant or to
-        # the action name as appropriate. If you are trying to set the entire
-        # controller or action as nondocumentable, instead, use the discrete
-        # +.nodoc!+ method in the desired context without a block.
+        # Instead of using this method, it's advised simply to use +actions+
+        # with a single method name. While marked as private, since it is
+        # usually used within a +class_eval+ block thanks to
+        # +brainstem_params+, this has little effect.
         #
-        # @param [String] text The title to set
-        # @param [Hash] options options to record with the title
-        # @option [Boolean] options :nodoc whether this title should not be
-        #   output in the documentation.
+        # Originally, this method was named +action+ for parity with the plural
+        # version. However, this conflicts in multiple ways with Rails, so it
+        # has been renamed.
         #
-        def title(text, options = { nodoc: false })
-          configuration[brainstem_params_context][:title] = options.merge(info: text)
+        # @private
+        #
+        # @param [Symbol] name the name of the context
+        # @param [Proc] block the proc to be evaluated in the context
+        #
+        def action_context(name, &block)
+          new_context = name.to_sym
+          old_context = self.brainstem_params_context
+          self.brainstem_params_context = new_context
+
+          self.configuration[new_context] ||= Brainstem::DSL::Configuration.new(
+            self.configuration[DEFAULT_BRAINSTEM_PARAMS_CONTEXT]
+          )
+
+          class_eval(&block)
+          self.brainstem_params_context = old_context
         end
+        private :action_context
 
         #
         # Converts the field name into a Proc.
