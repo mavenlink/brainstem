@@ -21,12 +21,19 @@ module Brainstem
             name.underscore.titleize.strip
           end
 
+          def format_description(description)
+            return if description.blank?
+
+            desc = description.to_s.strip.capitalize
+            desc += "." unless desc =~ /\.\s*\z/
+            desc
+          end
+
+          # TODO: multi nested
           def type_and_format(type, item_type = nil)
             result = case type.to_s.downcase
               when 'array'
-                { 'type' => 'array', 'items' => { 'type' => item_type.presence || 'string' } } # TODO: multi nested
-              when 'polymorphic' # TODO: Remove
-                { 'type' => 'string' }
+                { 'type' => 'array', 'items' => { 'type' => item_type.presence || 'string' } }
               else
                 TYPE_INFO[type.to_s]
             end
@@ -34,19 +41,19 @@ module Brainstem
           end
 
           TYPE_INFO = {
-              'string'       => { 'type' => 'string'                           },
-              'boolean'      => { 'type' => 'boolean'                          },
-              'integer'      => { 'type' => 'integer', 'format' => 'int32'	   },
-              'long'         => { 'type' => 'integer', 'format' => 'int64'	   },
-              'float'        => { 'type' => 'number',  'format' => 'float'     },
-              'double'       => { 'type' => 'number',  'format' => 'double'    },
-              'byte'         => { 'type' => 'string',  'format' => 'byte'      },
-              'binary'       => { 'type' => 'string',  'format' => 'binary'    },
-              'date'         => { 'type' => 'string',  'format' => 'date'      },
-              'datetime'     => { 'type' => 'string',  'format' => 'date-time' },
-              'password'     => { 'type' => 'string',  'format' => 'password'  },
-              'id'           => { 'type' => 'integer', 'format' => 'int32'	   },
-              'decimal'      => { 'type' => 'number',  'format' => 'float'     },
+            'string'       => { 'type' => 'string'                           },
+            'boolean'      => { 'type' => 'boolean'                          },
+            'integer'      => { 'type' => 'integer', 'format' => 'int32'	   },
+            'long'         => { 'type' => 'integer', 'format' => 'int64'	   },
+            'float'        => { 'type' => 'number',  'format' => 'float'     },
+            'double'       => { 'type' => 'number',  'format' => 'double'    },
+            'byte'         => { 'type' => 'string',  'format' => 'byte'      },
+            'binary'       => { 'type' => 'string',  'format' => 'binary'    },
+            'date'         => { 'type' => 'string',  'format' => 'date'      },
+            'datetime'     => { 'type' => 'string',  'format' => 'date-time' },
+            'password'     => { 'type' => 'string',  'format' => 'password'  },
+            'id'           => { 'type' => 'integer', 'format' => 'int32'	   },
+            'decimal'      => { 'type' => 'number',  'format' => 'float'     },
           }
           private_constant :TYPE_INFO
         end

@@ -14,6 +14,7 @@ module Brainstem
         def valid_options
           super | [
             :api_version,
+            :ignore_tagging,
             :format,
             :write_method,
             :write_path,
@@ -26,6 +27,7 @@ module Brainstem
         attr_accessor :api_version,
                       :atlas,
                       :format,
+                      :ignore_tagging,
                       :output
 
         delegate [:controllers, :presenters] => :atlas
@@ -123,20 +125,9 @@ module Brainstem
         # Use the controllers names as tag defintions
         #
         def write_tag_definitions!
-          self.output[:tags] = controllers
-            .select { |controller| !controller.nodoc? && controller.endpoints.only_documentable.any? }
-            .sort_by(&:name)
-            .map { |controller| format_tag_data(controller) }
-        end
-
-        #
-        # Returns formatted tag object for a given controller.
-        #
-        def format_tag_data(controller)
-          {
-            name: format_tag_name(controller.name),
-            description: controller.description
-          }.reject { |_, v| v.blank? }
+          self.output.merge!(
+            ::Brainstem::ApiDocs::FORMATTERS[:tags][format].call(controllers, ignore_tagging: self.ignore_tagging)
+          )
         end
 
         #

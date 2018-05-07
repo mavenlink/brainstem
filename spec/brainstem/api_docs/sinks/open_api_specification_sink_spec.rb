@@ -2,6 +2,7 @@ require 'spec_helper'
 require 'brainstem/api_docs/sinks/open_api_specification_sink'
 require 'brainstem/api_docs/formatters/open_api_specification/version_2/info_formatter'
 require 'brainstem/api_docs/formatters/open_api_specification/version_2/security_definitions_formatter'
+require 'brainstem/api_docs/formatters/open_api_specification/version_2/tags_formatter'
 
 module Brainstem
   module ApiDocs
@@ -174,50 +175,38 @@ module Brainstem
               OpenStruct.new(
                 name:        'controller_Z',
                 description: 'controller_Z desc',
-                endpoints:   OpenStruct.new(only_documentable: [1, 2])
+                endpoints:   OpenStruct.new(only_documentable: [1, 2]),
+                tag:         'Tag Z',
+                tag_groups:  ['Group Z'],
               )
             }
             let(:documentable_controller_A) {
               OpenStruct.new(
                 name:        'controller_A',
                 description: 'controller_A desc',
-                endpoints:   OpenStruct.new(only_documentable: [1, 2])
-              )
-            }
-            let(:nodoc_controller) {
-              OpenStruct.new(
-                name:        'controller_nodoc',
-                description: 'controller_nodoc desc',
-                endpoints:   OpenStruct.new(only_documentable: [1, 2])
-              )
-            }
-            let(:no_endpoint_controller) {
-              OpenStruct.new(
-                name:        'controller_no_endpoint',
-                description: 'controller_no_endpoint desc',
-                endpoints:   OpenStruct.new(only_documentable: [])
+                endpoints:   OpenStruct.new(only_documentable: [1, 2]),
+                tag:         'Tag A',
+                tag_groups:  ['Group Z', 'Group A'],
               )
             }
             let(:controllers) {
               [
                 documentable_controller_Z,
                 documentable_controller_A,
-                nodoc_controller,
-                no_endpoint_controller
               ]
             }
             let(:expected_yaml) {
               {
                 'tags' => [
-                  { 'name' => 'Controller A', 'description' => 'controller_A desc' },
-                  { 'name' => 'Controller Z', 'description' => 'controller_Z desc' }
-                ]
+                  { 'name' => 'Tag A', 'description' => 'controller_A desc' },
+                  { 'name' => 'Tag Z', 'description' => 'controller_Z desc' }
+                ],
+                'x-tagGroups' => [
+                  { 'name' => 'Group A', 'tags' => ['Tag A'] },
+                  { 'name' => 'Group Z', 'tags' => ['Tag A', 'Tag Z'] }
+                ],
               }.to_yaml
             }
-
-            before do
-              stub(nodoc_controller).nodoc? { true }
-            end
 
             it "writes endpoint definitions" do
               mock(subject).write_info_object!

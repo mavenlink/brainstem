@@ -54,6 +54,24 @@ module Brainstem
             end
           end
 
+          describe "format_description" do
+            context "when description is given" do
+              let(:description) { "  lorem ipsum dolor sit amet  " }
+
+              it "returns the formatted description" do
+                expect(subject.format_description(description)).to eq("Lorem ipsum dolor sit amet.")
+              end
+            end
+
+            context "when description is nil" do
+              let(:description) { "" }
+
+              it "returns nil" do
+                expect(subject.format_description(description)).to be_nil
+              end
+            end
+          end
+
           describe "format_http_method" do
             let(:endpoint) { OpenStruct.new(http_methods: %w(PATCH PUT)) }
 

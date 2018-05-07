@@ -138,6 +138,7 @@ module Brainstem
       response:   {},
       parameters: {},
       security:   {},
+      tags:       {},
     }
   end
 end

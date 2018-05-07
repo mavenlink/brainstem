@@ -140,6 +140,22 @@ module Brainstem
             options[:sink][:options][:format] = :markdown
           end
 
+          opts.on('-m', '--multifile-presenters-and-controllers',
+            'dumps presenters and controllers to separate files (default)') do |o|
+            if options[:sink][:options][:format] == :oas_v2
+              raise NotImplementedError.new("Multi File support for Open Api Specification is not supported yet")
+            else
+              options[:sink][:method] = \
+                Brainstem::ApiDocs::Sinks::ControllerPresenterMultifileSink.method(:new)
+            end
+          end
+
+          #########################################################
+          #                                                       #
+          # Open Api Specification generation specific commands:  #
+          #                                                       #
+          #########################################################
+
           # Future proofing for different Open Api Specification versions.
           opts.on('--open-api-specification=VERSION',
                   'dumps an Open Api Specification for presenters and controllers in a single file') do |oas_version|
@@ -159,14 +175,9 @@ module Brainstem
             options[:sink][:options][:api_version] = api_version
           end
 
-          opts.on('-m', '--multifile-presenters-and-controllers',
-            'dumps presenters and controllers to separate files (default)') do |o|
-            if options[:sink][:options][:format] == :oas_v2
-              raise NotImplementedError.new("Multi File support for Open Api Specification is not supported yet")
-            else
-              options[:sink][:method] = \
-                Brainstem::ApiDocs::Sinks::ControllerPresenterMultifileSink.method(:new)
-            end
+          opts.on('--ignore-tagging',
+                  'does not add the tag definitions in the Open Api Specification') do |api_version|
+            options[:sink][:options][:ignore_tagging] = true
           end
         end
       end
