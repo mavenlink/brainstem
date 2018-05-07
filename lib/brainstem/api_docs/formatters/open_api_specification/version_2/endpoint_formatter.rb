@@ -37,7 +37,8 @@ module Brainstem
               return {} if endpoint.nodoc?
 
               format_summary!
-              format_description!
+              format_optional_info!
+              format_security!
               format_tags!
               format_parameters!
               format_response!
@@ -92,23 +93,45 @@ module Brainstem
             end
 
             #
-            # Formats the description if given.
+            # Adds the following properties.
+            #   - description
+            #   - operation_id
+            #   - consumes
+            #   - produces
+            #   - schemes
+            #   - external_docs
+            #   - deprecated
             #
-            # TODO: Maybe add recursive / legacy to the description
-            def format_description!
-              return if description.blank?
+            def format_optional_info!
+              info = {
+                description:    format_description(endpoint.description),
+                operation_id:   endpoint.operation_id,
+                consumes:       endpoint.consumes,
+                produces:       endpoint.produces,
+                schemes:        endpoint.schemes,
+                external_docs:  endpoint.external_docs,
+                deprecated:     endpoint.deprecated,
+              }.reject { |_,v| v.blank? }
 
-              desc = description.to_s.strip
-              desc += "." unless desc =~ /\.\s*\z/
+              output[endpoint_key][http_method].merge!(info)
+            end
 
-              output[endpoint_key][http_method].merge! description: desc
+            #
+            # Adds the security schemes for the given endpoint.
+            #
+            def format_security!
+              return if endpoint.security.nil?
+
+              output[endpoint_key][http_method].merge! security: endpoint.security
             end
 
             #
             # Adds the tags for the given endpoint.
             #
             def format_tags!
-              output[endpoint_key][http_method].merge! tags: [format_tag_name(endpoint.controller.name)]
+              tag_name = endpoint.controller.tag || format_tag_name(endpoint.controller.name)
+
+              output[endpoint_key][http_method].merge! tags: [tag_name]
             end
 
             #
