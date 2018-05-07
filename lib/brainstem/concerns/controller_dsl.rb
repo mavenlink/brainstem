@@ -343,10 +343,51 @@ module Brainstem
         # describes alternative security schemes that can be used. This definition overrides any declared
         # top-level security. To remove a top-level security declaration, an empty array can be used.
         #
-        # @param [Array<Hash>] tag_group_names Array of tag group names
+        # @param [Array<Hash>] schemes Array of security schemes applicable to the endpoint
         #
         def security(*schemes)
           configuration[brainstem_params_context][:security] = schemes.flatten
+        end
+
+        ####################################################
+        # Used only for Open Api Specification generation. #
+        ####################################################
+        #
+        # Additional external documentation for this operation.
+        # e.g {
+        #       "description": "Find more info here",
+        #       "url": "https://swagger.io"
+        #     }
+        #
+        # @param [Hash] doc_config Hash with the `description` & `url` properties of the external documentation.
+        #
+        def external_doc(doc_config)
+          configuration[brainstem_params_context][:external_doc] = doc_config
+        end
+
+        ####################################################
+        # Used only for Open Api Specification generation. #
+        ####################################################
+        #
+        # The transfer protocol for the operation. Values MUST be from the list: "http", "https", "ws", "wss".
+        # The value overrides the default schemes definition in the Info Object.
+        #
+        # @param [Hash] schemes Array of schemes applicable to the endpoint
+        #
+        def schemes(*schemes)
+          configuration[brainstem_params_context][:schemes] = schemes.flatten
+        end
+
+        ####################################################
+        # Used only for Open Api Specification generation. #
+        ####################################################
+        #
+        # Declares this operation to be deprecated. Usage of the declared operation should be refrained.
+        #
+        # @param [Hash] schemes Array of schemes applicable to the endpoint
+        #
+        def deprecated(deprecated)
+          configuration[brainstem_params_context][:deprecated] = deprecated
         end
 
         #

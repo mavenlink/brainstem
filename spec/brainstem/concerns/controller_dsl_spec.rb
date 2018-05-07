@@ -1035,7 +1035,7 @@ module Brainstem
       end
 
       describe ".consumes" do
-        it "sets the title for the context" do
+        it "sets the consumes property for the context" do
           subject.brainstem_params do
             consumes "application/xml"
 
@@ -1053,7 +1053,7 @@ module Brainstem
       end
 
       describe ".produces" do
-        it "sets the title for the context" do
+        it "sets the produces property for the context" do
           subject.brainstem_params do
             produces "application/xml"
 
@@ -1071,7 +1071,7 @@ module Brainstem
       end
 
       describe ".security" do
-        it "sets the title for the context" do
+        it "sets the security configuration for the context" do
           subject.brainstem_params do
             security []
 
@@ -1084,6 +1084,49 @@ module Brainstem
           expect(subject.configuration[:show][:security]).to eq([
             { "petstore_auth" => [ "write:pets", "read:pets" ] }
           ])
+        end
+      end
+
+      describe ".external_doc" do
+        it "sets the external_doc for the context" do
+          subject.brainstem_params do
+            actions :show do
+              external_doc description: 'External Doc',
+                           url: 'www.blah.com'
+            end
+          end
+
+          expect(subject.configuration[:show][:external_doc]).to eq(
+            'description' => 'External Doc',
+            'url' => 'www.blah.com'
+          )
+        end
+      end
+
+      describe ".schemes" do
+        it "sets the schemes property for the context" do
+          subject.brainstem_params do
+            schemes "https"
+
+            actions :show do
+              schemes ["http"]
+            end
+          end
+
+          expect(subject.configuration[:_default][:schemes]).to eq ["https"]
+          expect(subject.configuration[:show][:schemes]).to eq ["http"]
+        end
+      end
+
+      describe ".deprecated" do
+        it "sets the deprecated property for the context" do
+          subject.brainstem_params do
+            actions :show do
+              deprecated true
+            end
+          end
+
+          expect(subject.configuration[:show][:deprecated]).to eq true
         end
       end
 
