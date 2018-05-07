@@ -59,13 +59,13 @@ module Brainstem
               def success_response_description
                 case http_method
                   when 'post'
-                    "#{model_name} has been created"
+                    "#{model_name} has been created."
                   when 'put', 'patch'
-                    "#{model_name} has been updated"
+                    "#{model_name} has been updated."
                   when 'delete'
-                    "#{model_name} has been deleted"
+                    "#{model_name} has been deleted."
                   else
-                    "A list of #{model_name.pluralize} have been retrieved"
+                    "A list of #{model_name.pluralize} have been retrieved."
                 end
               end
 
@@ -150,7 +150,7 @@ module Brainstem
                   raise "Unknown Brainstem Field type encountered(#{field_config[:type]}) for field #{field_config[:name]}"
                 end
 
-                field_data.merge!(description: field_config[:info]) if field_config[:info].present?
+                field_data.merge!(description: format_description(field_config[:info])) if field_config[:info].present?
                 field_data
               end
 
@@ -159,13 +159,13 @@ module Brainstem
                   when 'hash'
                     {
                       type: 'object',
-                      description: field_config[:info],
+                      description: format_description(field_config[:info]),
                       properties: format_response_branches(field_branches)
                     }
                   when 'array'
                     {
                       type: 'array',
-                      description: field_config[:info],
+                      description: format_description(field_config[:info]),
                       items: {
                         type: 'object',
                         properties: format_response_branches(field_branches)

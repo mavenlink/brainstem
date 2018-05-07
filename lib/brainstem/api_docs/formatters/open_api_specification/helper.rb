@@ -22,11 +22,17 @@ module Brainstem
           end
 
           def format_description(description)
-            return if description.blank?
+            return '' if description.blank?
 
-            desc = description.to_s.strip.capitalize
+            desc = description.to_s.strip.tap { |desc| desc[0] = desc[0].upcase }
             desc += "." unless desc =~ /\.\s*\z/
             desc
+          end
+
+          def uncapitalize(description)
+            return '' if description.blank?
+
+            description.strip.tap { |desc| desc[0] = desc[0].downcase }
           end
 
           # TODO: multi nested

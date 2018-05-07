@@ -72,31 +72,31 @@ module Brainstem
                   context 'when `GET` request' do
                     let(:http_methods) { %w(GET) }
 
-                    it { is_expected.to eq('A list of Widgets have been retrieved') }
+                    it { is_expected.to eq('A list of Widgets have been retrieved.') }
                   end
 
                   context 'when `POST` request' do
                     let(:http_methods) { %w(POST) }
 
-                    it { is_expected.to eq('Widget has been created') }
+                    it { is_expected.to eq('Widget has been created.') }
                   end
 
                   context 'when `PUT` request' do
                     let(:http_methods) { %w(PUT) }
 
-                    it { is_expected.to eq('Widget has been updated') }
+                    it { is_expected.to eq('Widget has been updated.') }
                   end
 
                   context 'when `PATCH` request' do
                     let(:http_methods) { %w(PATCH) }
 
-                    it { is_expected.to eq('Widget has been updated') }
+                    it { is_expected.to eq('Widget has been updated.') }
                   end
 
                   context 'when `DELETE` request' do
                     let(:http_methods) { %w(DELETE) }
 
-                    it { is_expected.to eq('Widget has been deleted') }
+                    it { is_expected.to eq('Widget has been deleted.') }
                   end
                 end
 
@@ -106,7 +106,7 @@ module Brainstem
                   it 'returns the structure response for a destroy action' do
                     subject.send(:format_delete_response!)
 
-                    expect(subject.output).to eq('204' => { 'description' => 'Widget has been deleted' })
+                    expect(subject.output).to eq('204' => { 'description' => 'Widget has been deleted.' })
                   end
                 end
 
@@ -120,7 +120,7 @@ module Brainstem
                     subject.send(:format_schema_response!)
 
                     expect(subject.output).to eq('200' => {
-                      'description' => 'A list of Widgets have been retrieved',
+                      'description' => 'A list of Widgets have been retrieved.',
                       'schema' => {
                         'type' => 'object',
                         'properties' => {
@@ -181,20 +181,20 @@ module Brainstem
                           'widget_name' => {
                             '_config' => {
                               'type' => 'string',
-                              'info' => 'the name of the widget',
+                              'info' => 'The name of the widget.',
                               'nodoc' => false
                             },
                           },
                           'widget_permission' => {
                             '_config' => {
                               'type' => 'hash',
-                              'info' => 'the permissions of the widget',
+                              'info' => 'The permissions of the widget.',
                               'nodoc' => false
                             },
                             'can_edit' => {
                               '_config' => {
                                 'type' => 'boolean',
-                                'info' => 'can edit the widget',
+                                'info' => 'Can edit the widget.',
                                 'nodoc' => false
                               },
                             }
@@ -207,21 +207,21 @@ module Brainstem
                       subject.send(:format_custom_response!)
 
                       expect(subject.output).to eq('200' => {
-                        'description' => 'A list of Widgets have been retrieved',
+                        'description' => 'A list of Widgets have been retrieved.',
                         'schema' => {
                           'type' => 'object',
                           'properties' => {
                             'widget_name' => {
                               'type' => 'string',
-                              'description' => 'the name of the widget'
+                              'description' => 'The name of the widget.'
                             },
                             'widget_permission' => {
                               'type' => 'object',
-                              'description' => 'the permissions of the widget',
+                              'description' => 'The permissions of the widget.',
                               'properties' => {
                                 'can_edit' => {
                                   'type' => 'boolean',
-                                  'description' => 'can edit the widget'
+                                  'description' => 'Can edit the widget.'
                                 }
                               }
                             }
@@ -242,7 +242,7 @@ module Brainstem
                           'widget_name' => {
                             '_config' => {
                               'type' => 'string',
-                              'info' => 'the name of the widget',
+                              'info' => 'The name of the widget.',
                               'nodoc' => false
                             },
                           },
@@ -250,13 +250,13 @@ module Brainstem
                             '_config' => {
                               'type' => 'array',
                               'item_type' => 'hash',
-                              'info' => 'the permissions of the widget',
+                              'info' => 'The permissions of the widget.',
                               'nodoc' => false
                             },
                             'can_edit' => {
                               '_config' => {
                                 'type' => 'boolean',
-                                'info' => 'can edit the widget',
+                                'info' => 'Can edit the widget.',
                                 'nodoc' => false
                               },
                             }
@@ -269,7 +269,7 @@ module Brainstem
                       subject.send(:format_custom_response!)
 
                       expect(subject.output).to eq('200' => {
-                        'description' => 'A list of Widgets have been retrieved',
+                        'description' => 'A list of Widgets have been retrieved.',
                         'schema' => {
                           'type' => 'array',
                           'items' => {
@@ -277,17 +277,17 @@ module Brainstem
                             'properties' => {
                               'widget_name' => {
                                 'type' => 'string',
-                                'description' => 'the name of the widget'
+                                'description' => 'The name of the widget.'
                               },
                               'widget_permissions' => {
                                 'type' => 'array',
-                                'description' => 'the permissions of the widget',
+                                'description' => 'The permissions of the widget.',
                                 'items' => {
                                   'type' => 'object',
                                   'properties' => {
                                     'can_edit' => {
                                       'type' => 'boolean',
-                                      'description' => 'can edit the widget'
+                                      'description' => 'Can edit the widget.'
                                     }
                                   }
                                 }
@@ -316,10 +316,10 @@ module Brainstem
                       subject.send(:format_custom_response!)
 
                       expect(subject.output).to eq('200' => {
-                        'description' => 'A list of Widgets have been retrieved',
+                        'description' => 'A list of Widgets have been retrieved.',
                         'schema' => {
                           'type' => 'boolean',
-                          'description' => 'whether the widget exists'
+                          'description' => 'Whether the widget exists.'
                         }
                       })
                     end

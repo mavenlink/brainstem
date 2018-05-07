@@ -74,7 +74,7 @@ module Brainstem
                   expect(subject.output.keys).to eq([presented_class])
                   expect(subject.output[presented_class].keys).to eq(%w(title description type properties))
                   expect(subject.output[presented_class]['title']).to eq(title)
-                  expect(subject.output[presented_class]['description']).to eq(lorem)
+                  expect(subject.output[presented_class]['description']).to eq("#{lorem}.")
                   expect(subject.output[presented_class]['type']).to eq('object')
                   expect(subject.output[presented_class]['properties']).to eq(fake_formatted_fields)
                 end
@@ -117,12 +117,12 @@ module Brainstem
                   subject.send(:format_description!)
 
                   expect(subject.definition).to have_key(:description)
-                  expect(subject.definition[:description]).to eq 'way over here'
+                  expect(subject.definition[:description]).to eq 'Way over here.'
                 end
               end
 
               context 'when the presenter does not have a description' do
-                let(:lorem) {nil}
+                let(:lorem) { nil }
 
                 it 'returns an empy string' do
                   subject.send(:format_description!)
@@ -152,7 +152,7 @@ module Brainstem
                     before do
                       presenter_class.fields do
                         fields :sprockets do
-                          field :sprocket_name, :string, via: :name, info: 'whatever'
+                          field :sprocket_name, :string, via: :name, info: 'Whatever.'
                         end
                       end
                     end
@@ -166,7 +166,7 @@ module Brainstem
                           'type' => 'object',
                           'properties' => {
 
-                            'sprocket_name' => { 'type' => 'string', 'description' => 'whatever' }
+                            'sprocket_name' => { 'type' => 'string', 'description' => 'Whatever.' }
                           }
                         }
                       })
@@ -178,7 +178,7 @@ module Brainstem
                       presenter_class.fields do
                         fields :sprockets do
                           fields :sub_sprocket do
-                            field :sprocket_name, :string, via: :name, info: 'whatever'
+                            field :sprocket_name, :string, via: :name, info: 'Whatever.'
                           end
                         end
                       end
@@ -197,7 +197,7 @@ module Brainstem
                               'type' => 'object',
                               'properties' => {
 
-                                'sprocket_name' => { 'type' => 'string', 'description' => 'whatever' }
+                                'sprocket_name' => { 'type' => 'string', 'description' => 'Whatever.' }
                               }
                             }
                           }
@@ -213,7 +213,7 @@ module Brainstem
                       before do
                         presenter_class.fields do
                           fields :sprockets, :array, item_type: 'hash', info: 'parent' do
-                            field :sprocket_name, :string, via: :name, info: 'whatever'
+                            field :sprocket_name, :string, via: :name, info: 'Whatever.'
                           end
                         end
                       end
@@ -229,7 +229,7 @@ module Brainstem
                               'type' => 'object',
                               'properties' => {
 
-                                'sprocket_name' => { 'type' => 'string', 'description' => 'whatever' }
+                                'sprocket_name' => { 'type' => 'string', 'description' => 'Whatever.' }
                               }
                             }
                           }
@@ -253,7 +253,7 @@ module Brainstem
 
                       expect(subject.definition).to have_key :properties
                       expect(subject.definition[:properties]).to eq({
-                        'sprocket_name' => { 'type' => 'string', 'description' => 'whatever' },
+                        'sprocket_name' => { 'type' => 'string', 'description' => 'Whatever.' },
                         'sprocket_size' => { 'type' => 'integer', 'format' => 'int32' }
                       })
                     end
@@ -264,7 +264,7 @@ module Brainstem
                       context 'when true' do
                         before do
                           presenter_class.fields do
-                            field :sprocket_name, :string, info: 'whatever', optional: true
+                            field :sprocket_name, :string, info: 'Whatever.', optional: true
                             field :sprocket_size, :integer
                           end
                         end
@@ -280,7 +280,7 @@ module Brainstem
                       context 'when false' do
                         before do
                           presenter_class.fields do
-                            field :sprocket_name, :string, info: 'whatever', optional: false
+                            field :sprocket_name, :string, info: 'Whatever.', optional: false
                             field :sprocket_size, :integer
                           end
                         end
@@ -298,7 +298,7 @@ module Brainstem
                       context 'when present' do
                         before do
                           presenter_class.fields do
-                            field :sprocket_name, :string, info: 'whatever'
+                            field :sprocket_name, :string, info: 'Whatever.'
                             field :sprocket_size, :integer
                           end
                         end
@@ -307,7 +307,7 @@ module Brainstem
                           subject.send(:format_fields!)
 
                           expect(subject.definition).to have_key :properties
-                          expect(subject.definition[:properties]['sprocket_name']['description']).to eq('whatever')
+                          expect(subject.definition[:properties]['sprocket_name']['description']).to eq('Whatever.')
                         end
                       end
 
@@ -362,7 +362,7 @@ module Brainstem
                         let(:conditionals) {
                           {
                             :it_is_a_friday => OpenStruct.new(
-                              description: 'it is a friday',
+                              description: 'It is a friday',
                               name:        :it_is_a_friday,
                               type:        :request,
                               options:     {},

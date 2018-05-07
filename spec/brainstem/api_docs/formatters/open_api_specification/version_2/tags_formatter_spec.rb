@@ -139,11 +139,11 @@ module Brainstem
                   },
                   {
                     'name' => 'Tag A',
-                    'description' => 'Controller_a desc.'
+                    'description' => 'Controller_A desc.'
                   },
                   {
                     'name' => 'Tag Z',
-                    'description' => 'Controller_z desc.'
+                    'description' => 'Controller_Z desc.'
                   },
                 ])
               end

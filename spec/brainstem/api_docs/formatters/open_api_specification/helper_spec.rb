@@ -67,7 +67,25 @@ module Brainstem
               let(:description) { "" }
 
               it "returns nil" do
-                expect(subject.format_description(description)).to be_nil
+                expect(subject.format_description(description)).to eq('')
+              end
+            end
+          end
+
+          describe "uncapitalize" do
+            context "when description is given" do
+              let(:description) { "  Lorem ipsum dolor sit amet  " }
+
+              it "returns the formatted description" do
+                expect(subject.uncapitalize(description)).to eq("lorem ipsum dolor sit amet")
+              end
+            end
+
+            context "when description is nil" do
+              let(:description) { "" }
+
+              it "returns nil" do
+                expect(subject.uncapitalize(description)).to eq("")
               end
             end
           end

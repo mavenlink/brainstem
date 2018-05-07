@@ -63,7 +63,7 @@ module Brainstem
                     'name'        => param,
                     'required'    => true,
                     'type'        => 'integer',
-                    'description' => "the ID of the #{model_name.humanize}"
+                    'description' => "The ID of the #{model_name.humanize}."
                   }
                 end
               end
@@ -144,11 +144,9 @@ module Brainstem
                   text = md_inline_code(association.name)
                   text += " (#{ association.target_class.to_s })"
 
-                  desc = association.description.to_s
+                  desc = format_description(association.description)
                   if association.options && association.options[:restrict_to_only]
-                    desc += "." unless desc =~ /\.\s*\z/
                     desc += "  Restricted to queries using the #{md_inline_code("only")} parameter."
-                    desc.strip!
                   end
 
                   result << md_li(text + (desc.present? ? " - #{desc}" : ''))
@@ -192,7 +190,7 @@ module Brainstem
                   'in'          => 'query',
                   'name'        => param_name.to_s,
                   'required'    => param_config[:required],
-                  'description' => param_config[:info].to_s.strip.presence,
+                  'description' => format_description(param_config[:info]).presence,
                 }.merge(type_data).reject { |_, v| v.nil? }
               end
 
@@ -218,7 +216,7 @@ module Brainstem
                   'in'          => 'body',
                   'required'    => true,
                   'name'        => param_name.to_s,
-                  'description' => param_data[:_config][:info].to_s.strip,
+                  'description' => format_description(param_data[:_config][:info]),
                   'schema'      => {
                     'type'       => 'object',
                     'properties' => format_param_branch(nested_properties(param_data))
@@ -255,7 +253,7 @@ module Brainstem
 
                   buffer[param_name.to_s] = {
                     title:       param_name.to_s,
-                    description: param_config[:info].to_s.strip
+                    description: format_description(param_config[:info])
                   }.merge(branch_schema).reject { |_, v| v.blank? }
 
                   buffer

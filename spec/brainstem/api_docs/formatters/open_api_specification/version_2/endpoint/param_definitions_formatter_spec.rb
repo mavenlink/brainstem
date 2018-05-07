@@ -152,7 +152,7 @@ module Brainstem
                           'name'        => 'id',
                           'required'    => true,
                           'type'        => 'integer',
-                          'description' => 'the ID of the Model'
+                          'description' => 'The ID of the Model.'
                         }
                       ])
                     end
@@ -170,14 +170,14 @@ module Brainstem
                           'name'        => 'sprocket_id',
                           'required'    => true,
                           'type'        => 'integer',
-                          'description' => 'the ID of the Sprocket'
+                          'description' => 'The ID of the Sprocket.'
                         },
                         {
                           'in'          => 'path',
                           'name'        => 'id',
                           'required'    => true,
                           'type'        => 'integer',
-                          'description' => 'the ID of the Model'
+                          'description' => 'The ID of the Model.'
                         }
                       ])
                     end
@@ -233,13 +233,13 @@ module Brainstem
                         'required'    => true,
                         'type'        => 'integer',
                         'format'      => 'int32',
-                        'description' => 'The ID of the model'
+                        'description' => 'The ID of the model.'
                       },
                       {
                         'in'          => 'query',
                         'name'        => 'sprocket_name',
                         'type'        => 'string',
-                        'description' => 'The name of the sprocket'
+                        'description' => 'The name of the sprocket.'
                       },
                       {
                         'in'          => 'query',
@@ -320,18 +320,18 @@ module Brainstem
                         'in'          => 'body',
                         'required'    => true,
                         'name'        => 'task',
-                        'description' => 'attributes for the task',
+                        'description' => 'Attributes for the task.',
                         'schema'      => {
                           'type'       => 'object',
                           'properties' => {
                             'name' => {
                               'title'       => 'name',
-                              'description' => 'name of the task',
+                              'description' => 'Name of the task.',
                               'type'        => 'string'
                             },
                             'subs' => {
                               'title'       => 'subs',
-                              'description' => 'sub tasks of the task',
+                              'description' => 'Sub tasks of the task.',
                               'type'        => 'object',
                               'properties'  => {
                                 'name' => {
@@ -430,7 +430,7 @@ module Brainstem
                       {
                         'in'   => 'query',
                         'name' => 'optional_fields',
-                        'description' => 'Allows you to request one or more optional fields as an array',
+                        'description' => 'Allows you to request one or more optional fields as an array.',
                         'type' => 'array',
                         'items' => {
                           'type' => 'string',
@@ -447,12 +447,12 @@ module Brainstem
                       'association_1' => OpenStruct.new(
                         name:         'association_1',
                         target_class: 'association_1_class',
-                        description:  'association_1 description'
+                        description:  'Association_1 description.'
                       ),
                       'association_2' => OpenStruct.new(
                         name:         'association_2',
                         target_class: 'association_2_class',
-                        description:  'association_2 description',
+                        description:  'Association_2 description.',
                         options:      { restrict_to_only: true }
                       )
                     }
@@ -474,8 +474,8 @@ module Brainstem
                       'type' => 'string',
                     )
                     expect(param_def['description']).to include('e.g. `include=association1,association2.`')
-                    expect(param_def['description']).to include('`association_1` (association_1_class) - association_1 description')
-                    association_2_desc = 'association_2 description.  Restricted to queries using the `only` parameter.'
+                    expect(param_def['description']).to include('`association_1` (association_1_class) - Association_1 description')
+                    association_2_desc = 'Association_2 description.  Restricted to queries using the `only` parameter.'
                     expect(param_def['description']).to include("`association_2` (association_2_class) - #{association_2_desc}")
                   end
                 end
@@ -489,7 +489,7 @@ module Brainstem
                         'in'          => 'query',
                         'name'        => 'only',
                         'type'        => 'string',
-                        'description' => 'Allows you to request one or more resources directly by IDs in a comma separated list'
+                        'description' => 'Allows you to request one or more resources directly by IDs in a comma separated list.'
                       }
                     ])
                   end
@@ -513,7 +513,7 @@ module Brainstem
                       {
                         'in'          => 'query',
                         'name'        => 'order',
-                        'description' => 'Supply `order` with the name of a valid sort field for the endpoint and a direction',
+                        'description' => 'Supply `order` with the name of a valid sort field for the endpoint and a direction.',
                         'type'        => 'array',
                         'items'       => {
                           'type'    => 'string',
@@ -546,7 +546,7 @@ module Brainstem
                         'in'          => 'query',
                         'name'        => 'filter_1',
                         'type'        => 'string',
-                        'description' => 'Filter by string'
+                        'description' => 'Filter by string.'
                       },
                       {
                         'in'      => 'query',

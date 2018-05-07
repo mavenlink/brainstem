@@ -198,8 +198,8 @@ module Brainstem
             let(:expected_yaml) {
               {
                 'tags' => [
-                  { 'name' => 'Tag A', 'description' => 'controller_A desc' },
-                  { 'name' => 'Tag Z', 'description' => 'controller_Z desc' }
+                  { 'name' => 'Tag A', 'description' => 'Controller_A desc.' },
+                  { 'name' => 'Tag Z', 'description' => 'Controller_Z desc.' }
                 ],
                 'x-tagGroups' => [
                   { 'name' => 'Group A', 'tags' => ['Tag A'] },

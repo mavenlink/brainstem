@@ -104,7 +104,7 @@ module Brainstem
             #
             def format_optional_info!
               info = {
-                description:    format_description(endpoint.description),
+                description:    format_description(description),
                 operation_id:   endpoint.operation_id,
                 consumes:       endpoint.consumes,
                 produces:       endpoint.produces,

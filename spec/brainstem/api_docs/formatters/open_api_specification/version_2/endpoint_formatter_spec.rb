@@ -179,7 +179,7 @@ module Brainstem
 
               describe "#format_optional_info!" do
                 context "when present" do
-                  let(:description)   { lorem }
+                  let(:description)   { " lorem ipsum dolor sit amet " }
                   let(:operation_id)  { "Operation 1" }
                   let(:consumes)      { %w(application/json) }
                   let(:produces)      { %w(application/json) }
@@ -201,7 +201,7 @@ module Brainstem
                     subject.send(:format_optional_info!)
 
                     output = subject.output["/widgets"]["get"]
-                    expect(output["description"]).to eq("#{lorem}.")
+                    expect(output["description"]).to eq("Lorem ipsum dolor sit amet.")
                     expect(output["operation_id"]).to eq(operation_id)
                     expect(output["consumes"]).to eq(consumes)
                     expect(output["produces"]).to eq(produces)

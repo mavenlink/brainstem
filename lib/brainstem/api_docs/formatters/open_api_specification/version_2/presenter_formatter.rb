@@ -43,7 +43,7 @@ module Brainstem
             end
 
             def format_description!
-              definition.merge! description: presenter.description.to_s.strip
+              definition.merge! description: format_description(presenter.description)
             end
 
             def format_type!
@@ -102,7 +102,7 @@ module Brainstem
             end
 
             def format_description_for(field)
-              field_description = field.description.to_s
+              field_description = format_description(field.description) || ''
               field_description << format_conditional_description(field.options)
               field_description << "\nOnly returned when requested through the optional_fields param.\n" if field.optional?
               field_description.try(:chomp!)
@@ -114,8 +114,9 @@ module Brainstem
 
               conditions = field_options[:if]
                 .reject { |cond| presenter.conditionals[cond].options[:nodoc] }
-                .map    { |cond| presenter.conditionals[cond].description.to_s }
+                .map    { |cond| uncapitalize(presenter.conditionals[cond].description) }
                 .delete_if(&:empty?)
+                .uniq
                 .join(' and ')
 
               conditions.present? ? "\nVisible when #{conditions}.\n" : ''
