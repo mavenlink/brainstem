@@ -99,20 +99,42 @@ module Brainstem
           end
         end
 
-        describe "#nodoc?" do
-          let(:default_config) { { nodoc: nodoc } }
+        describe "#tag" do
+          let(:default_config) { { tag: tag } }
 
-          context "when nodoc in default" do
-            let(:nodoc) { true }
+          context "when tag in specified" do
+            let(:tag) { 'Tag Name' }
 
             it "is true" do
-              expect(subject.nodoc?).to eq true
+              expect(subject.tag).to eq(tag)
             end
           end
 
-          context "when not nodoc in default" do
-            it "is false" do
-              expect(subject.nodoc?).to eq false
+          context "when tag is not specified" do
+            let(:tag) { nil }
+
+            it "is nil" do
+              expect(subject.tag).to eq(nil)
+            end
+          end
+        end
+
+        describe "#tag_groups" do
+          let(:default_config) { { tag_groups: tag_groups } }
+
+          context "when tag groups are specified" do
+            let(:tag_groups) { ['Group 1', 'Group 2'] }
+
+            it "is true" do
+              expect(subject.tag_groups).to eq(tag_groups)
+            end
+          end
+
+          context "when tag_groups are not specified" do
+            let(:tag_groups) { nil }
+
+            it "is nil" do
+              expect(subject.tag_groups).to eq(nil)
             end
           end
         end

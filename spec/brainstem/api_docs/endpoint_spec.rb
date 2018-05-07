@@ -135,6 +135,45 @@ module Brainstem
           end
         end
 
+        describe "#operation_id" do
+          context "when present" do
+            let(:show_config) { { operation_id: "blah" } }
+
+            it "returns the operation ID" do
+              expect(subject.operation_id).to eq("blah")
+            end
+          end
+
+          context "when not present" do
+            let(:show_config) { { title: "Blah" } }
+
+            it "returns nothing" do
+              expect(subject.operation_id).to be_nil
+            end
+          end
+        end
+
+        describe "#produces" do
+          it "returns the produces key from action or default" do
+            mock(subject).key_with_default_fallback(:produces)
+            subject.produces
+          end
+        end
+
+        describe "#consumes" do
+          it "returns the consumes key from action or default" do
+            mock(subject).key_with_default_fallback(:consumes)
+            subject.consumes
+          end
+        end
+
+        describe "#security" do
+          it "returns the security key from action or default" do
+            mock(subject).key_with_default_fallback(:security)
+            subject.security
+          end
+        end
+
         describe "#params_configuration_tree" do
           let(:default_config) { { valid_params: which_param } }
 

@@ -113,6 +113,22 @@ module Brainstem
         @custom_response ||= action_configuration[:custom_response]
       end
 
+      def operation_id
+        @operation_id ||= action_configuration[:operation_id]
+      end
+
+      def consumes
+        @consumes ||= key_with_default_fallback(:consumes)
+      end
+
+      def produces
+        @produces ||= key_with_default_fallback(:produces)
+      end
+
+      def security
+        @security ||= key_with_default_fallback(:security)
+      end
+
       #
       # Returns a hash of all params nested under the specified root or
       # parent fields along with their type, item type & children.

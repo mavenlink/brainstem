@@ -88,6 +88,14 @@ module Brainstem
         contextual_documentation(:description) || ""
       end
 
+      def tag
+        default_configuration[:tag]
+      end
+
+      def tag_groups
+        default_configuration[:tag_groups]
+      end
+
       #
       # Returns a key if it exists and is documentable.
       #
