@@ -174,6 +174,27 @@ module Brainstem
           end
         end
 
+        describe "#schemes" do
+          it "returns the schemes key from action or default" do
+            mock(subject).key_with_default_fallback(:schemes)
+            subject.schemes
+          end
+        end
+
+        describe "#external_docs" do
+          it "returns the external_docs key from action or default" do
+            mock(subject).key_with_default_fallback(:external_docs)
+            subject.external_docs
+          end
+        end
+
+        describe "#deprecated" do
+          it "returns the deprecated key from action or default" do
+            mock(subject).key_with_default_fallback(:deprecated)
+            subject.deprecated
+          end
+        end
+
         describe "#params_configuration_tree" do
           let(:default_config) { { valid_params: which_param } }
 
