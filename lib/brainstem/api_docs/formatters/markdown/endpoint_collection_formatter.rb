@@ -61,6 +61,5 @@ module Brainstem
   end
 end
 
-
 Brainstem::ApiDocs::FORMATTERS[:endpoint_collection][:markdown] = \
   Brainstem::ApiDocs::Formatters::Markdown::EndpointCollectionFormatter.method(:call)

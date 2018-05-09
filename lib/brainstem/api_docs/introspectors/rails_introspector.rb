@@ -53,7 +53,6 @@ module Brainstem
           base_application_class.present? ? base_application_class.constantize : ::Rails.application
         end
 
-
         #
         # Returns an array of hashes describing the endpoints of the
         # application. See +routes_method+ for the keys of those hashes.
@@ -187,14 +186,12 @@ module Brainstem
           proc_or_string.respond_to?(:call) ? proc_or_string.call : proc_or_string
         end
 
-
         #
         # Allows for the specification for an alternate base application name
         #
         # @param [Nil,String] returns the name of the alternate application or engine
         #
         attr_writer :base_application_class
-
 
         #
         # Returns the proc that is called to format and retrieve routes.

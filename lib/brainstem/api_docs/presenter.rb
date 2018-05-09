@@ -152,7 +152,6 @@ module Brainstem
           .keep_if(&method(:documentable_association?))
       end
 
-
       def link_for_association(association)
         if (associated_presenter = find_by_class(association.target_class)) &&
             !associated_presenter.nodoc?
