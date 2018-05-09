@@ -49,6 +49,7 @@ module Brainstem
             args_for_introspector: {
               base_presenter_class:  ::Brainstem::ApiDocs.method(:base_presenter_class),
               base_controller_class: ::Brainstem::ApiDocs.method(:base_controller_class),
+              base_application_class: ::Brainstem::ApiDocs.method(:base_application_class),
             },
           },
         }
@@ -145,6 +146,11 @@ module Brainstem
 
           opts.on('--base-controller-class=CLASS', "which class to look up controllers on") do |o|
             options[:builder][:args_for_introspector][:base_controller_class] = o
+          end
+
+
+          opts.on('--base-application-class=CLASS', "which class to look up routes on") do |o|
+            options[:builder][:args_for_introspector][:base_application_class] = o
           end
 
 

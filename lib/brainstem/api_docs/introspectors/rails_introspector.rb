@@ -15,7 +15,7 @@ module Brainstem
         #
         def load_environment!
           load rails_environment_file unless env_already_loaded?
-          ::Rails.application.eager_load!
+          base_application.eager_load!
 
           validate!
         rescue LoadError => e
@@ -48,6 +48,17 @@ module Brainstem
 
 
         #
+        # Returns the alternate application class or defaults to Rails.application class
+        # class.
+        #
+        # @return [Array<Class>] an array of descendant classes
+        #
+        def base_application
+          base_application_class.present? ? base_application_class.constantize : ::Rails.application
+        end
+
+
+        #
         # Returns an array of hashes describing the endpoints of the
         # application. See +routes_method+ for the keys of those hashes.
         #
@@ -70,7 +81,7 @@ module Brainstem
             :rails_environment_file,
             :base_presenter_class,
             :base_controller_class,
-            :base_application_proc
+            :base_application_class
           ]
         end
 
@@ -177,21 +188,26 @@ module Brainstem
 
 
         #
-        # Returns a proc that will return the application or engine to get routes from.
+        # Returns the name of the alternate application or engine to get routes from.
         #
-        # @return [Proc] Proc that returns the Rails application or an engine
+        # Because the initializer that contains configuration data is unlikely
+        # to have been loaded, this may also return a Proc, which will be called
+        # after the environment is loaded.
         #
-        def base_application_proc
-          @base_application_proc ||= Proc.new { Rails.application }
+        # @return [String,Nil] returns the name of the application or engine
+        #
+        def base_application_class
+          proc_or_string = @base_application_class
+          proc_or_string.respond_to?(:call) ? proc_or_string.call : proc_or_string
         end
 
 
         #
-        # Allows for the specification for an alternate base application
+        # Allows for the specification for an alternate base application name
         #
-        # @param [Proc] Proc that returns the Rails application or an engine
+        # @param [Nil,String] returns the name of the alternate application or engine
         #
-        attr_writer :base_application_proc
+        attr_writer :base_application_class
 
 
         #
@@ -207,7 +223,7 @@ module Brainstem
         #
         def routes_method
           @routes_method ||= Proc.new do
-            base_application_proc.call.routes.routes.map do |route|
+            base_application.routes.routes.map do |route|
               next unless route.defaults.has_key?(:controller) &&
                 controller_const = "#{route.defaults[:controller]}_controller"
                   .classify
