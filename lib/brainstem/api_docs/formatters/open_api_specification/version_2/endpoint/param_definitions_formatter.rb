@@ -165,6 +165,9 @@ module Brainstem
 
               def format_query_param(param_name, param_config)
                 type_data = type_and_format(param_config[:type], param_config[:item_type])
+                if type_data.nil?
+                  raise "Unknown Brainstem Param type encountered(#{param_config[:type]}) for param #{param_name}"
+                end
 
                 if param_config[:type].to_s == 'array'
                   type_data[:items].merge!(
@@ -180,10 +183,6 @@ module Brainstem
                     'minimum'     => param_config[:minimum],
                     'maximum'     => param_config[:maximum]
                   )
-                end
-
-                if type_data.nil?
-                  raise "Unknown Brainstem Param type encountered(#{param_config[:type]}) for param #{param_name}"
                 end
 
                 {
