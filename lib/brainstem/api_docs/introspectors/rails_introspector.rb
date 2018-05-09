@@ -48,8 +48,7 @@ module Brainstem
 
 
         #
-        # Returns the alternate application class or defaults to Rails.application class
-        # class.
+        # Returns the alternate application class or defaults to Rails.application
         #
         # @return [Class] The base application class
         #
