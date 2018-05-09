@@ -21,7 +21,7 @@ module Brainstem
         output_extension
         base_presenter_class
         base_controller_class
-        base_application_proc
+        base_application_class
         document_empty_presenter_associations
         document_empty_presenter_filters
       ).each do |meth|

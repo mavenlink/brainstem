@@ -39,7 +39,6 @@ class Rails
   end
 end
 
-
 class FakeBasePresenter; end
 class FakeDescendantPresenter < FakeBasePresenter; end
 
@@ -47,3 +46,26 @@ class FakeBaseController; end
 class FakeDescendantController < FakeBaseController; end
 
 class FakeNonDescendantController; end
+
+class FakeApiEngine
+  def self.eager_load!;end
+  def self.routes
+    @routes ||= begin
+      route_1 = FakeRailsRoute.new(
+        "fake_descendant",
+        FakeRailsRoutePathObject.new(spec: '/fake_route_1'),
+        { controller: "fake_descendant", action: "show" },
+        { :request_method => /^GET$/ }
+      )
+
+      route_2 = FakeRailsRoute.new(
+        "fake_descendant",
+        FakeRailsRoutePathObject.new(spec: '/fake_route_2'),
+        { controller: "fake_descendant", action: "show" },
+        { :request_method => /^GET$/ }
+      )
+
+      FakeRailsRoutesObject.new([ route_1, route_2 ])
+    end
+  end
+end
