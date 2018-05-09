@@ -1,5 +1,9 @@
 # Changelog
 
++ **1.4.1** - _05/09/2018_
+  - Add the capability to specify an alternate base application / engine the routes are derived from.
+    This capability is specific to documemtation generation.
+
 + **1.3.0** - _04/12/2018_
   - Add the capability to nest fields under evaluable parent blocks where the nested fields are evaluated
     with the resulting value of the parent field.
