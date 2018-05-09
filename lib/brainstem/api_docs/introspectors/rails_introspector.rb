@@ -51,7 +51,7 @@ module Brainstem
         # Returns the alternate application class or defaults to Rails.application class
         # class.
         #
-        # @return [Array<Class>] an array of descendant classes
+        # @return [Class] The base application class
         #
         def base_application
           base_application_class.present? ? base_application_class.constantize : ::Rails.application
@@ -194,7 +194,7 @@ module Brainstem
         # to have been loaded, this may also return a Proc, which will be called
         # after the environment is loaded.
         #
-        # @return [String,Nil] returns the name of the application or engine
+        # @return [String,Nil] returns the name of the alternate application or engine.
         #
         def base_application_class
           proc_or_string = @base_application_class
