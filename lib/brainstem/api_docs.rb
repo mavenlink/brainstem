@@ -106,16 +106,11 @@ module Brainstem
     end
 
     #
-    # Defines the application or engine that all routes will be fetched from.
+    # Defines the alternate application or engine that all routes will be fetched from.
     #
-    # Is a proc because most relevant classes are not loaded until much
-    # later.
+    # @see Brainstem::ApiDocs::RailsIntrospector#base_application_class=
     #
-    # @see Brainstem::ApiDocs::RailsIntrospector#base_application_proc=
-    #
-    config_accessor(:base_application_proc) do
-      Proc.new { Rails.application }
-    end
+    config_accessor(:base_application_class) { nil }
 
     #
     # If associations on a presenter have no description, i.e. no documentation,

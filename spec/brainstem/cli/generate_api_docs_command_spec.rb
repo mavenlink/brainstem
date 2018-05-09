@@ -41,6 +41,15 @@ module Brainstem
           end
         end
 
+        context "when --base-application-class" do
+          let(:args) { %w(--base-application-class=::Api::Engine) }
+
+          it "sets sink to a ControllerPresenterMultifileSink" do
+            expect(subject.options).to have_key :builder
+            expect(subject.options[:builder][:args_for_introspector][:base_application_class]).to eq("::Api::Engine")
+          end
+        end
+
         context "when --output-dir" do
           let(:args) { %w(--output-dir=./blah) }
 

@@ -112,6 +112,43 @@ module Brainstem
             end
           end
 
+          describe "#base_application" do
+            before do
+              stub.any_instance_of(described_class).validate!
+            end
+
+            context "when custom base_application_class is not given" do
+              subject do
+                described_class.with_loaded_environment(default_args)
+              end
+
+              it "returns nil" do
+                expect(subject.send(:base_application_class)).to be_nil
+              end
+
+              it "returns the descendants of the base controller class" do
+                expect(subject.base_application).to eq(::Rails.application)
+              end
+            end
+
+            context "when custom base_application_class is given" do
+              subject do
+                described_class.with_loaded_environment(
+                  default_args.merge(base_application_class: "::FakeApiEngine")
+                )
+              end
+
+              it "allows the specification of a custom base_application_class" do
+                expect(subject.send(:base_application_class).to_s)
+                  .to eq "::FakeApiEngine"
+              end
+
+              it "returns the descendants of the base controller class" do
+                expect(subject.base_application).to eq(FakeApiEngine)
+              end
+            end
+          end
+
           describe "#routes" do
             let(:a_proc) { Object.new }
 
@@ -159,27 +196,10 @@ module Brainstem
             end
 
             context "with an alternate base application or engine provided" do
-              let(:base_application_proc) { Proc.new { FakeRailsApplication.new(true, routes) } }
-              let(:routes) { FakeRailsRoutesObject.new([route_1, route_2]) }
-              let(:route_1) {
-                FakeRailsRoute.new(
-                  "fake_descendant",
-                  FakeRailsRoutePathObject.new(spec: '/fake_route_1'),
-                  { controller: "fake_descendant", action: "show" },
-                  { :request_method => /^GET$/ }
-                )
-              }
-              let(:route_2) {
-                FakeRailsRoute.new(
-                  "fake_descendant",
-                  FakeRailsRoutePathObject.new(spec: '/fake_route_2'),
-                  { controller: "fake_descendant", action: "show" },
-                  { :request_method => /^GET$/ }
-                )
-              }
+              let(:base_application_class) { "FakeApiEngine" }
 
               subject do
-                described_class.with_loaded_environment(default_args.merge({ base_application_proc: base_application_proc }))
+                described_class.with_loaded_environment(default_args.merge({ base_application_class: base_application_class }))
               end
 
               it "recognizes the configured application or engine's routes" do
