@@ -21,7 +21,7 @@
       end
     end
   ```
-  - Add DSL on controllers to set Open Api Specification 2.0 configurations
+  - Add DSL on controllers to set Open API Specification 2.0 configurations
   ```ruby
   class PetsController < ApiController
     brainstem_params do
@@ -75,7 +75,7 @@
     end
   end
   ```
-  - Add the capability to generate Open Api Specificiation 2.0
+  - Add the capability to generate Open API Specification 2.0
 
 + **1.4.1** - _05/09/2018_
   - Add the capability to specify an alternate base application / engine the routes are derived from.
