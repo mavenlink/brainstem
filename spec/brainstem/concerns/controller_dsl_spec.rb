@@ -986,7 +986,7 @@ module Brainstem
       describe ".consumes" do
         it "sets the consumes property for the context" do
           subject.brainstem_params do
-            consumes "application/xml"
+            consumes "application/xml", "application/json"
 
             actions :show do
               consumes ["application/x-www-form-urlencoded"]
@@ -994,7 +994,7 @@ module Brainstem
           end
 
           expect(subject.configuration[:_default][:consumes]).to \
-            eq ["application/xml"]
+            eq ["application/xml", "application/json"]
 
           expect(subject.configuration[:show][:consumes]).to \
             eq ["application/x-www-form-urlencoded"]
