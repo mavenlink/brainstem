@@ -524,70 +524,6 @@ module Brainstem
             end
           end
         end
-
-        context "deprecated type behavior" do
-          context "when no type is provided" do
-            before do
-              mock(subject).deprecated_type_warning
-            end
-
-            it "defaults to type string" do
-              subject.brainstem_params do
-                valid :sprocket_name, required: true
-              end
-
-              valid_params = subject.configuration[:_default][:valid_params]
-              expect(valid_params.keys.length).to eq(1)
-              expect(valid_params.keys[0].call).to eq("sprocket_name")
-
-              configuration = valid_params[valid_params.keys[0]]
-              expect(configuration[:type]).to eq("string")
-              expect(configuration[:required]).to be_truthy
-            end
-          end
-
-          context "when no type and options are provided" do
-            before do
-              mock(subject).deprecated_type_warning
-            end
-
-            it "defaults type to string and sets default options for the param" do
-              subject.brainstem_params do
-                valid :sprocket_name
-              end
-
-              valid_params = subject.configuration[:_default][:valid_params]
-              expect(valid_params.keys.length).to eq(1)
-              expect(valid_params.keys[0].call).to eq("sprocket_name")
-
-              configuration = valid_params[valid_params.keys[0]]
-              expect(configuration[:nodoc]).to be_falsey
-              expect(configuration[:required]).to be_falsey
-              expect(configuration[:type]).to eq("string")
-            end
-          end
-
-          context "when type and options are hashes" do
-          before do
-            mock(subject).deprecated_type_warning
-          end
-
-          it "ignores the type and defaults to string" do
-            subject.brainstem_params do
-              valid :sprocket_name, { troll: true }, { required: true }
-            end
-
-            valid_params = subject.configuration[:_default][:valid_params]
-            expect(valid_params.keys.length).to eq(1)
-            expect(valid_params.keys[0].call).to eq("sprocket_name")
-
-            configuration = valid_params[valid_params.keys[0]]
-            expect(configuration[:nodoc]).to be_falsey
-            expect(configuration[:required]).to be_truthy
-            expect(configuration[:type]).to eq("string")
-          end
-          end
-        end
       end
 
       describe ".transform" do
@@ -782,6 +718,7 @@ module Brainstem
               type: 'array',
               item_type: 'hash',
               nodoc: false,
+              required: false,
             }.with_indifferent_access)
           end
         end
@@ -800,6 +737,7 @@ module Brainstem
               type: 'array',
               item_type: 'string',
               nodoc: false,
+              required: false,
             }.with_indifferent_access)
           end
         end
@@ -840,13 +778,15 @@ module Brainstem
               expect(configuration[param_keys[1]]).to eq({
                 type: 'hash',
                 nodoc: false,
+                required: false,
               }.with_indifferent_access)
 
               expect(param_keys[2].call).to eq('full_name')
               expect(configuration[param_keys[2]]).to eq({
                 type: 'string',
                 nodoc: false,
-                ancestors: [param_keys[1]]
+                ancestors: [param_keys[1]],
+                required: false,
               }.with_indifferent_access)
             end
           end
@@ -871,12 +811,14 @@ module Brainstem
                 type: 'array',
                 item_type: 'hash',
                 nodoc: false,
+                required: false,
               }.with_indifferent_access)
 
               expect(param_keys[2].call).to eq('full_name')
               expect(configuration[param_keys[2]]).to eq({
                 type: 'string',
                 nodoc: false,
+                required: false,
                 ancestors: [param_keys[1]]
               }.with_indifferent_access)
             end
@@ -903,12 +845,14 @@ module Brainstem
               expect(configuration[param_keys[1]]).to eq({
                 type: 'hash',
                 nodoc: true,
+                required: false,
               }.with_indifferent_access)
 
               expect(param_keys[2].call).to eq('details')
               expect(configuration[param_keys[2]]).to eq({
                 type: 'hash',
                 nodoc: true,
+                required: false,
                 ancestors: [param_keys[1]]
               }.with_indifferent_access)
 
@@ -916,6 +860,7 @@ module Brainstem
               expect(configuration[param_keys[3]]).to eq({
                 type: 'string',
                 nodoc: true,
+                required: false,
                 ancestors: [param_keys[1], param_keys[2]]
               }.with_indifferent_access)
             end
@@ -955,6 +900,7 @@ module Brainstem
                 type: 'array',
                 item_type: 'string',
                 nodoc: false,
+                required: false,
               }.with_indifferent_access)
             end
           end
@@ -976,6 +922,7 @@ module Brainstem
               expect(configuration[param_keys[1]]).to eq({
                 type: 'string',
                 nodoc: false,
+                required: false,
               }.with_indifferent_access)
             end
           end
@@ -999,12 +946,14 @@ module Brainstem
               expect(configuration[param_keys[1]]).to eq({
                 type: 'hash',
                 nodoc: true,
+                required: false,
               }.with_indifferent_access)
 
               expect(param_keys[2].call).to eq('full_name')
               expect(configuration[param_keys[2]]).to eq({
                 type: 'string',
                 nodoc: true,
+                required: false,
                 ancestors: [param_keys[1]]
               }.with_indifferent_access)
             end

@@ -210,18 +210,7 @@ module Brainstem
         #
         def valid(name, type = nil, options = {}, &block)
           valid_params = configuration[brainstem_params_context][:valid_params]
-          param_config = format_param_configuration(type, options, &block)
-
-          # Inherit `nodoc` attribute from parent
-          parent_key = (options[:ancestors] || []).reverse.first
-          param_config[:nodoc] = true if parent_key && valid_params[parent_key] && valid_params[parent_key][:nodoc]
-
-          # Rollup `required` attribute to ancestors if true
-          if param_config[:required]
-            (options[:ancestors] || []).reverse.each do |ancestor_key|
-              valid_params[ancestor_key][:required] = true if valid_params.has_key?(ancestor_key)
-            end
-          end
+          param_config = format_field_configuration(valid_params, type, options, &block)
 
           formatted_name = convert_to_proc(name)
           valid_params[formatted_name] = param_config
@@ -243,10 +232,10 @@ module Brainstem
           configuration[brainstem_params_context].nest! :custom_response
           custom_response = configuration[brainstem_params_context][:custom_response]
 
-          custom_response[:_config] = format_response_field_configuration(
-            brainstem_params_context,
+          custom_response[:_config] = format_field_configuration(
+            custom_response,
             type,
-            options.except(:nodoc),
+            options,
             &block
           )
           class_eval(&block) if block_given?
@@ -267,7 +256,7 @@ module Brainstem
           raise "`fields` must be nested under a response block" if custom_response.nil?
 
           formatted_name = convert_to_proc(name)
-          field_block_config = format_response_field_configuration(brainstem_params_context, type, options, &block)
+          field_block_config = format_field_configuration(custom_response, type, options, &block)
 
           custom_response[formatted_name] = field_block_config
           with_options(format_ancestry_options(formatted_name, field_block_config), &block)
@@ -288,7 +277,7 @@ module Brainstem
           raise "`fields` must be nested under a response block" if custom_response.nil?
 
           formatted_name = convert_to_proc(name)
-          custom_response[formatted_name] = format_response_field_configuration(brainstem_params_context, type, options)
+          custom_response[formatted_name] = format_field_configuration(custom_response, type, options)
         end
 
         ####################################################
@@ -476,72 +465,34 @@ module Brainstem
         #
         # Formats the configuration of the param and returns the default configuration if not specified.
         #
-        def format_param_configuration(type = nil, options = {}, &block)
-          options = type if type.is_a?(Hash) && options.empty?
+        def format_field_configuration(configuration_map, type, options = {}, &block)
+          field_config = options.with_indifferent_access
 
-          options[:type] = sanitize_param_data_type(type, &block)
-          options[:item_type] = options[:item_type].to_s if options.has_key?(:item_type)
-
-          DEFAULT_PARAM_OPTIONS.merge(options).with_indifferent_access
-        end
-
-        DEFAULT_PARAM_OPTIONS = { nodoc: false, required: false }
-        private_constant :DEFAULT_PARAM_OPTIONS
-
-        #
-        # Returns the type of the param and adds a deprecation warning if not specified.
-        #
-        def sanitize_param_data_type(type, &block)
-          if type.is_a?(Hash) || type.blank?
-            deprecated_type_warning
-            type = block_given? ? DEFAULT_BLOCK_DATA_TYPE : DEFAULT_DATA_TYPE
+          field_config[:type] = type.to_s
+          if options.has_key?(:item_type)
+            field_config[:item_type] = field_config[:item_type].to_s
+          elsif field_config[:type] == 'array'
+            field_config[:item_type] = block_given? ? 'hash' : 'string'
           end
-
-          type.to_s
-        end
-
-        DEFAULT_DATA_TYPE = 'string'
-        private_constant :DEFAULT_DATA_TYPE
-
-        DEFAULT_BLOCK_DATA_TYPE = 'hash'
-        private_constant :DEFAULT_BLOCK_DATA_TYPE
-
-        #
-        # Adds deprecation warning if the type argument is not specified when defining a valid param.
-        #
-        def deprecated_type_warning
-          ActiveSupport::Deprecation.warn(
-            'Please specify the `type` of the parameter as the second argument. If not specified, '\
-              'it will default to `:string`. This default behavior will be deprecated in the next major '\
-              'version and will need to be explicitly specified. e.g. `post.valid :message, :text, required: true`',
-            caller
-          )
-        end
-
-        #
-        # Formats the configuration of the response block & field.
-        #
-        def format_response_field_configuration(params_context, type, options = {}, &block)
-          config = options.with_indifferent_access
-          config[:type] = type.to_s
 
           # Inherit `nodoc` attribute from parent
-          parent_field_key = (config[:ancestors] || []).reverse.first
-          custom_response = configuration[params_context][:custom_response]
-          if parent_field_key && custom_response[parent_field_key] && custom_response[parent_field_key][:nodoc]
-            config[:nodoc] = true
-          else
-            config[:nodoc] ||= false
+          parent_key = (field_config[:ancestors] || []).reverse.first
+          if parent_key && (parent_field_config = configuration_map[parent_key])
+            field_config[:nodoc] ||= !!parent_field_config[:nodoc]
           end
 
-          if config[:type] == 'array' && config[:item_type].nil?
-            config[:item_type] = block_given? ? 'hash' : 'string'
-          elsif config[:type] == 'array'
-            config[:item_type] = config[:item_type].to_s
+          # Rollup `required` attribute to ancestors if true
+          if field_config[:required]
+            (field_config[:ancestors] || []).reverse.each do |ancestor_key|
+              configuration_map[ancestor_key][:required] = true if configuration_map.has_key?(ancestor_key)
+            end
           end
 
-          config
+          DEFAULT_FIELD_CONFIG.merge(field_config).with_indifferent_access
         end
+
+        DEFAULT_FIELD_CONFIG = { nodoc: false, required: false }
+        private_constant :DEFAULT_FIELD_CONFIG
       end
 
       def valid_params_tree(requested_context = action_name.to_sym)
