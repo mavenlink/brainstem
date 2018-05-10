@@ -1,5 +1,82 @@
 # Changelog
 
++ **2.0.0** - _05/17/2018_
+  - Introduce the capability to document custom response on endpoints
+  ```ruby
+  class ContactsController < ApiController
+    brainstem_params do
+      actions :index do
+        response :hash do
+          field :count, :integer,
+                info: "Total count of contacts"
+
+          fields :contacts, :array,
+                 item_type: :hash,
+                 info: "Array of contact details" do
+
+            field :full_name, :string,
+                  info: "Full name of the contact"
+          end
+        end
+      end
+    end
+  ```
+  - Add DSL on controllers to set Open Api Specification 2.0 configurations
+  ```ruby
+  class PetsController < ApiController
+    brainstem_params do
+      # The `tag` configuration allows grouping of all endpoints
+      # in a controller under the same group.
+      tag "Adopt a Pet"
+
+      # The `tag_group` configuration introduces another level of nesting
+      # and allows grouping multiple controllers under a specific group
+      tag_groups "Dogs", "Cats"
+
+      # A list of default MIME types, endpoints on this controller can consume.
+      consumes "application/xml", "application/json"
+
+      # A list of default MIME types, endpoints on this controller can produce.
+      produces "application/xml"
+
+      # A declaration of which security schemes are applied to endpoints on this controller.
+      security []
+
+      # The default transfer protocols for endpoints on this controller.
+      schemes "https", "http"
+
+      # Additional external documentation
+      external_doc description: 'External Doc',
+                   url: 'www.google.com'
+
+      # Declares endpoints on this controller to be deprecated.
+      deprecated true
+
+      actions :update do
+        # Overriden MIME types the endpoints can consume.
+        consumes "application/json"
+
+        # A list of default MIME types the endpoints can produce.
+        produces "application/json"
+
+        # Security schemes for this endpoint.
+        security { "petstore_auth" => [ "write:pets" ] }
+
+        # Transfer protocols applicable to this endpoint.
+        schemes "https"
+
+        # External documentation for the endpoint.
+        external_doc description: 'Stock Market News',
+                     url: 'www.google.com/finance'
+
+        # Overrides the deprecated value set on the root context.
+        deprecated false
+      end
+    end
+  end
+  ```
+  - Add the capability to generate Open Api Specificiation 2.0
+
 + **1.4.1** - _05/09/2018_
   - Add the capability to specify an alternate base application / engine the routes are derived from.
     This capability is specific to documemtation generation.
