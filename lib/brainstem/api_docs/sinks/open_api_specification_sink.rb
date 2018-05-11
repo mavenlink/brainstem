@@ -18,6 +18,8 @@ module Brainstem
             :format,
             :write_method,
             :write_path,
+            :oas_filename_pattern,
+            :output_extension,
           ]
         end
 
@@ -28,6 +30,8 @@ module Brainstem
                       :atlas,
                       :format,
                       :ignore_tagging,
+                      :oas_filename_pattern,
+                      :output_extension,
                       :output
 
         delegate [:controllers, :presenters] => :atlas
@@ -156,10 +160,24 @@ module Brainstem
         #
         # Writes a given bufer to a filename within the base path.
         #
-        def write_spec_to_file!(filename = 'specification.yml')
-          abs_path = File.join(write_path, filename)
+        def write_spec_to_file!
+          formatted_output = format_output(output, extension)
+          abs_path         = File.join(write_path, suggested_filename)
+
           assert_directory_exists!(abs_path)
-          write_method.call(abs_path, output.to_hash.to_yaml)
+          write_method.call(abs_path, formatted_output)
+        end
+
+        #
+        # Format output to the requested format.
+        #
+        def format_output(output, requested_format)
+          unless %w(json yaml yml).include?(requested_format)
+            raise "Open API Specification only supports generation of json / yaml files"
+          end
+
+          data = output.to_hash
+          requested_format == 'json' ? data.to_json : data.to_yaml
         end
 
         #
@@ -179,9 +197,37 @@ module Brainstem
           end
         end
 
+        #
+        # Defines the output directory for the file.
+        #
         def write_path
           @write_path ||= ::Brainstem::ApiDocs.write_path
         end
+
+        #
+        # Defines the file extension for the output file.
+        #
+        def extension
+          return output_extension.downcase.to_s if output_extension.present?
+
+          configured_extension = Brainstem::ApiDocs.output_extension.downcase.to_s
+          configured_extension == "markdown" ? DEFAULT_OAS_EXTENSION : configured_extension
+        end
+
+        DEFAULT_OAS_EXTENSION = 'yml'
+        private_constant :DEFAULT_OAS_EXTENSION
+
+        #
+        # Defines the name of the file.
+        #
+        def suggested_filename
+          (oas_filename_pattern.presence || DEFAULT_FILENAME_PATTERN)
+            .gsub('{{version}}', formatted_version)
+            .gsub('{{extension}}', extension)
+        end
+
+        DEFAULT_FILENAME_PATTERN = 'specification.{{extension}}'
+        private_constant :DEFAULT_FILENAME_PATTERN
       end
     end
   end

@@ -155,6 +155,10 @@ module Brainstem
             end
           end
 
+          opts.on('--output-extension=EXTENSION', 'extension that should be used for output files') do |extension|
+            options[:sink][:options][:output_extension] = extension
+          end
+
           #########################################################
           #                                                       #
           # Open Api Specification generation specific commands:  #
@@ -183,6 +187,11 @@ module Brainstem
           opts.on('--ignore-tagging',
                   'does not add the tag definitions in the Open Api Specification') do |api_version|
             options[:sink][:options][:ignore_tagging] = true
+          end
+
+          opts.on('--oas-filename-pattern=PATTERN',
+                  'defines the naming pattern of the Open API specification file') do |pattern|
+            options[:sink][:options][:oas_filename_pattern] = pattern
           end
         end
       end

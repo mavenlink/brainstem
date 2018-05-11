@@ -9,6 +9,20 @@ module Brainstem
     end
 
     #
+    # Defines the naming pattern of the Open API specification file.
+    #
+    # The following tokens will be substituted:
+    #
+    # - {{version}}   : the specified version
+    # - {{extension}  : the specified file extension
+    #
+    # @see #output_extension
+    #
+    config_accessor(:oas_filename_pattern) do
+      File.join("endpoints", "{{version}}.{{extension}}")
+    end
+
+    #
     # Defines the naming pattern of each controller documentation file.
     #
     # The following tokens will be substituted:

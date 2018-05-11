@@ -8,31 +8,75 @@ module Brainstem
   module ApiDocs
     module Sinks
       describe OpenApiSpecificationSink do
-        let(:write_method) { Object.new }
-        let(:atlas)        { Object.new}
-        let(:options)      {
+        let(:write_method)    { Object.new }
+        let(:atlas)           { Object.new }
+        let(:options)         { default_options }
+        let(:default_options) {
           {
             api_version:  '2.0.0',
             format:       :oas_v2,
             write_method: write_method,
-            write_path:   './'
+            write_path:   './',
           }
         }
 
         subject { described_class.new(options) }
 
-        it "calls the write method" do
-          mock(subject).write_info_object!
-          mock(subject).write_presenter_definitions!
-          mock(subject).write_error_definitions!
-          mock(subject).write_endpoint_definitions!
-          mock(subject).write_tag_definitions!
-          mock(subject).write_security_definitions!
+        context "writing the specification" do
+          before do
+            mock(subject).write_info_object!
+            mock(subject).write_presenter_definitions!
+            mock(subject).write_error_definitions!
+            mock(subject).write_endpoint_definitions!
+            mock(subject).write_tag_definitions!
+            mock(subject).write_security_definitions!
 
-          mock.proxy(subject).write_spec_to_file!
-          mock(write_method).call('./specification.yml', anything)
+            mock.proxy(subject).write_spec_to_file!
+          end
 
-          subject << atlas
+          it "calls the write method" do
+            mock(write_method).call('./specification.yml', anything)
+
+            subject << atlas
+          end
+
+          context "when a filename pattern is specified" do
+            let(:options) {
+              default_options.merge(
+                api_version: "1.1.0",
+                oas_filename_pattern: "specification_{{version}}.{{extension}}",
+                output_extension: "json"
+              )
+            }
+
+            it "calls the write method with customized filename" do
+              mock(write_method).call('./specification_1.1.0.json', anything)
+
+              subject << atlas
+            end
+          end
+
+          context "when a output extension is specified" do
+            let(:options) { default_options.merge(output_extension: output_extension) }
+
+            context "when valid extension is specified" do
+              let(:output_extension) { 'JSON' }
+
+              it "calls the write method with the correct file extension" do
+                mock(write_method).call('./specification.json', anything)
+
+                subject << atlas
+              end
+            end
+
+            context "when unsupported extension is specified" do
+              let(:output_extension) { 'JSON' }
+
+              it "raises an error" do
+                expect { subject << atlas }.to raise_error
+              end
+            end
+          end
         end
 
         describe "specification" do
@@ -207,6 +251,8 @@ module Brainstem
                 ],
               }.to_yaml
             }
+            let(:ignore_tagging) { false }
+            let(:options) { default_options.merge(ignore_tagging: ignore_tagging) }
 
             it "writes endpoint definitions" do
               mock(subject).write_info_object!
@@ -287,6 +333,35 @@ module Brainstem
 
             it "returns the default version" do
               expect(subject.send(:formatted_version)).to eq('1.0.0')
+            end
+          end
+        end
+
+        describe "suggested_filename" do
+          let(:options) {
+            default_options.merge(
+              api_version: '1.1.1',
+              oas_filename_pattern: oas_filename_pattern
+            )
+          }
+
+          before do
+            stub(subject).write_spec_to_file!
+          end
+
+          context "when version is specified" do
+            let(:oas_filename_pattern) { "{{version}}.{{extension}}" }
+
+            it "returns the customized filename" do
+              expect(subject.send(:suggested_filename)).to eq("1.1.1.yml")
+            end
+          end
+
+          context "when version is not specified" do
+            let(:oas_filename_pattern) { nil }
+
+            it "returns the default filename" do
+              expect(subject.send(:suggested_filename)).to eq('specification.yml')
             end
           end
         end

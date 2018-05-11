@@ -14,6 +14,7 @@ module Brainstem
 
       %w(
         base_path
+        oas_filename_pattern
         controller_filename_pattern
         presenter_filename_pattern
         controller_filename_link_pattern

@@ -59,7 +59,7 @@ module Brainstem
         end
 
         context "when --api-version" do
-          let(:args) { %w(--api-version=2.0.0 ) }
+          let(:args) { %w(--api-version=2.0.0) }
 
           it "sets the api version option of the sink" do
             expect(subject.options[:sink][:options][:api_version]).to eq '2.0.0'
@@ -108,6 +108,22 @@ module Brainstem
             it "raises a Not Implemented Error" do
               expect { subject }.to raise_error(NotImplementedError)
             end
+          end
+        end
+
+        context "when --output-extension" do
+          let(:args) { %w(--output-extension=yml) }
+
+          it "sets the api version option of the sink" do
+            expect(subject.options[:sink][:options][:output_extension]).to eq 'yml'
+          end
+        end
+
+        context "when --oas-filename-pattern" do
+          let(:args) { %w(--oas-filename-pattern=blah/{{version}}.{{extension}}) }
+
+          it "sets the api version option of the sink" do
+            expect(subject.options[:sink][:options][:oas_filename_pattern]).to eq 'blah/{{version}}.{{extension}}'
           end
         end
       end
@@ -164,7 +180,6 @@ module Brainstem
           end
         end
       end
-
     end
   end
 end
