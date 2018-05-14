@@ -89,8 +89,7 @@ module Brainstem
             unless target_class.is_a?(Class) || target_class == :default || target_class.nil?
 
           target_class = brainstem_model_class if target_class == :default
-          configuration[brainstem_params_context][:presents] = \
-            options.merge(target_class: target_class)
+          configuration[brainstem_params_context][:presents] = options.merge(target_class: target_class)
         end
 
         #

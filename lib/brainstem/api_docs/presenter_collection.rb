@@ -79,8 +79,7 @@ module Brainstem
       # to reduce total surface.
       #
       def presenter_constant_lookup_method
-        @presenter_constant_lookup_method ||= \
-          Brainstem.presenter_collection.presenters.method(:fetch)
+        @presenter_constant_lookup_method ||= Brainstem.presenter_collection.presenters.method(:fetch)
       end
 
     end

@@ -150,8 +150,7 @@ module Brainstem
             if options[:sink][:options][:format] == :oas_v2
               raise NotImplementedError.new("Multi File support for Open Api Specification is not supported yet")
             else
-              options[:sink][:method] = \
-                Brainstem::ApiDocs::Sinks::ControllerPresenterMultifileSink.method(:new)
+              options[:sink][:method] = Brainstem::ApiDocs::Sinks::ControllerPresenterMultifileSink.method(:new)
             end
           end
 

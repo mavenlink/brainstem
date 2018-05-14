@@ -119,5 +119,5 @@ module Brainstem
   end
 end
 
-Brainstem::ApiDocs::FORMATTERS[:tags][:oas_v2] = \
+Brainstem::ApiDocs::FORMATTERS[:tags][:oas_v2] =
   Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::TagsFormatter.method(:call)

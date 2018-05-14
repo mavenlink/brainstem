@@ -64,5 +64,5 @@ module Brainstem
   end
 end
 
-Brainstem::ApiDocs::FORMATTERS[:controller][:markdown] = \
+Brainstem::ApiDocs::FORMATTERS[:controller][:markdown] =
   Brainstem::ApiDocs::Formatters::Markdown::ControllerFormatter.method(:call)

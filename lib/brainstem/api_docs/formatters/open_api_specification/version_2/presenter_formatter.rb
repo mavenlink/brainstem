@@ -128,5 +128,5 @@ module Brainstem
   end
 end
 
-Brainstem::ApiDocs::FORMATTERS[:presenter][:oas_v2] = \
+Brainstem::ApiDocs::FORMATTERS[:presenter][:oas_v2] =
   Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::PresenterFormatter.method(:call)

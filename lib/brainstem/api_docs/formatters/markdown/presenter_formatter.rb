@@ -191,5 +191,5 @@ module Brainstem
   end
 end
 
-Brainstem::ApiDocs::FORMATTERS[:presenter][:markdown] = \
+Brainstem::ApiDocs::FORMATTERS[:presenter][:markdown] =
   Brainstem::ApiDocs::Formatters::Markdown::PresenterFormatter.method(:call)

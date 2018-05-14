@@ -188,5 +188,5 @@ module Brainstem
   end
 end
 
-Brainstem::ApiDocs::FORMATTERS[:endpoint][:markdown] = \
+Brainstem::ApiDocs::FORMATTERS[:endpoint][:markdown] =
   Brainstem::ApiDocs::Formatters::Markdown::EndpointFormatter.method(:call)

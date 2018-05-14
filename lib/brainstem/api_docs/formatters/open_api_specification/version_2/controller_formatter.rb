@@ -53,5 +53,5 @@ module Brainstem
   end
 end
 
-Brainstem::ApiDocs::FORMATTERS[:controller][:oas_v2] = \
+Brainstem::ApiDocs::FORMATTERS[:controller][:oas_v2] =
   Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::ControllerFormatter.method(:call)
