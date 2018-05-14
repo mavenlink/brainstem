@@ -5,7 +5,7 @@ module Brainstem
   module ApiDocs
     module Formatters
       module OpenApiSpecification
-        describe "Helper" do
+        describe Helper do
           let(:klass) { Class.new { include Helper } }
 
           subject { klass.new }
