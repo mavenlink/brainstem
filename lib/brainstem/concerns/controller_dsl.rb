@@ -99,7 +99,7 @@ module Brainstem
         # Setting the +:nodoc+ option marks this title as 'internal use only',
         # and causes formatters to fall back to the controller constant or to
         # the action name as appropriate. If you are trying to set the entire
-        # controller or action as nondocumentable, instead, use the discrete
+        # controller or action as nondocumentable, instead, use the
         # +.nodoc!+ method in the desired context without a block.
         #
         # @param [String] text The title to set

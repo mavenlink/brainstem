@@ -1,6 +1,3 @@
-# This is a very simple DSL that makes generating a markdown document a bit
-# easier.
-
 module Brainstem
   module ApiDocs
     module Formatters

@@ -189,9 +189,9 @@ module Brainstem
 
         @custom_response_configuration ||= begin
           custom_response_fields = custom_response
-                                    .to_h
-                                    .deep_dup
-                                    .with_indifferent_access
+            .to_h
+            .deep_dup
+            .with_indifferent_access
           custom_config_tree = ActiveSupport::HashWithIndifferentAccess.new
           custom_config_tree[:_config] = custom_response_fields[:_config]
 
