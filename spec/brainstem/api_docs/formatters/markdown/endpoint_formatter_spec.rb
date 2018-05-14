@@ -396,7 +396,7 @@ module Brainstem
                     subject.send(:format_presents!)
 
                     output = subject.output
-                    expect(output).to include "The resulting JSON is an array of hashes with the following properties\n\n"
+                    expect(output).to include "The resulting JSON is an array of objects with the following properties\n\n"
                     expect(output).to include("- `widget_name` (`String`) - the name of the widget\n")
                     expect(output).to include("- `widget_permissions` (`Array<Hash>`) - the permissions of the widget\n")
                     expect(output).to include("    - `can_edit` (`Boolean`) - can edit the widget\n")

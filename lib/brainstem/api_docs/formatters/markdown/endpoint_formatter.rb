@@ -170,7 +170,7 @@ module Brainstem
             result << case response_config[:type]
               when "array"
                 if response_config[:item_type] == "hash"
-                  "an array of hashes with the following properties"
+                  "an array of objects with the following properties"
                 else
                   "an array of #{response_config[:item_type].pluralize}"
                 end
