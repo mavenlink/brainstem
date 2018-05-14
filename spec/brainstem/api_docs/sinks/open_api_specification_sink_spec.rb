@@ -73,7 +73,7 @@ module Brainstem
               let(:output_extension) { 'JSON' }
 
               it "raises an error" do
-                expect { subject << atlas }.to raise_error
+                expect { subject << atlas }.to raise_error(StandardError)
               end
             end
           end

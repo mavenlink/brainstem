@@ -1,4 +1,5 @@
 require 'active_support/core_ext/hash/except'
+require 'active_support/core_ext/hash/compact'
 require 'active_support/inflector'
 require 'brainstem/api_docs/formatters/abstract_formatter'
 require 'brainstem/api_docs/formatters/open_api_specification/helper'
@@ -175,7 +176,7 @@ module Brainstem
                       'type'    => param_config[:item_type],
                       'enum'    => param_config[:items],
                       'default' => param_config[:default],
-                    }.reject { |_, v| v.nil? }
+                    }.compact
                   )
                 else
                   type_data.merge!(
@@ -190,7 +191,7 @@ module Brainstem
                   'name'        => param_name.to_s,
                   'required'    => param_config[:required],
                   'description' => format_description(param_config[:info]).presence,
-                }.merge(type_data).reject { |_, v| v.nil? }
+                }.merge(type_data).compact
               end
 
               def format_body_params!
