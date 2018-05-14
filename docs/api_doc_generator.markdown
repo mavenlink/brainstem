@@ -172,7 +172,7 @@ intelligent interfaces on these collections by which to mutate them. It wraps:
    controller and presenter as its own file, rather than as a concatenated
    collection.
 6. This sink, having received an instance of the `Atlas`, is responsible for
-   serializing&mdash;primarily invoking formatting&mdash;and then outputting
+   serializing &mdash; primarily invoking formatting &mdash; and then outputting
    the result somewhere, whether to `$stdout`, a file or files on disk, or a
    remote location.
 
@@ -211,6 +211,6 @@ intelligent interfaces on these collections by which to mutate them. It wraps:
    `Brainstem::ApiDocs::Sinks::OpenApiSpecificationSink`, outputs all
    controllers and presenters into a single `specification.yml` file.
 6. This sink, having received an instance of the `Atlas`, is responsible for
-   serializing&mdash;primarily invoking formatting&mdash;and then outputting
+   serializing &mdash; primarily invoking formatting &mdash; and then outputting
    the result somewhere, whether to `$stdout`, a file or files on disk, or a
    remote location.
