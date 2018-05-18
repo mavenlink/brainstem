@@ -488,9 +488,10 @@ module Brainstem
                       {
                         'in'          => 'query',
                         'name'        => 'only',
-                        'type'        => 'array',
-                        'items'       => {'type' => 'integer'},
-                        'description' => 'Allows you to request one or more resources directly by IDs in a comma separated list.'
+                        'type'        => 'string',
+                        'description' =>
+                          "Allows you to request one or more resources directly by ID. Multiple IDs can be supplied\n" +
+                          "in a comma separated list, like `GET /api/v1/workspaces.json?only=5,6,7`."
                       }
                     ])
                   end

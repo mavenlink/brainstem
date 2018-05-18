@@ -93,9 +93,11 @@ module Brainstem
 
               def format_only_param!
                 output << format_query_param(:only,
-                  type: 'array',
-                  item_type: 'integer',
-                  info: 'Allows you to request one or more resources directly by IDs in a comma separated list'
+                  type: 'string',
+                  info: <<-DESC.strip_heredoc
+                    Allows you to request one or more resources directly by ID. Multiple IDs can be supplied
+                    in a comma separated list, like `GET /api/v1/workspaces.json?only=5,6,7`.
+                  DESC
                 )
               end
 
