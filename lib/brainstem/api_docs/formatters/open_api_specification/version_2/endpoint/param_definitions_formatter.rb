@@ -106,7 +106,7 @@ module Brainstem
                   [md_inline_code("#{sort_name}:asc"), md_inline_code("#{sort_name}:desc")]
                 }.flatten.sort
 
-                description = <<~DESC
+                description = <<-DESC.strip_heredoc
                   Supply `order` with the name of a valid sort field for the endpoint and a direction.
 
                   Valid values: #{sort_orders.to_sentence}.
