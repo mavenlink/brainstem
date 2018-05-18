@@ -93,7 +93,8 @@ module Brainstem
 
               def format_only_param!
                 output << format_query_param(:only,
-                  type: 'string',
+                  type: 'array',
+                  item_type: 'integer',
                   info: 'Allows you to request one or more resources directly by IDs in a comma separated list'
                 )
               end
@@ -102,15 +103,19 @@ module Brainstem
                 return if presenter.nil? || (valid_sort_orders = presenter.valid_sort_orders).empty?
 
                 sort_orders = valid_sort_orders.map { |sort_name, _|
-                  ["#{sort_name}:asc", "#{sort_name}:desc"]
+                  [md_inline_code("#{sort_name}:asc"), md_inline_code("#{sort_name}:desc")]
                 }.flatten.sort
 
+                description = <<~DESC
+                  Supply `order` with the name of a valid sort field for the endpoint and a direction.
+
+                  Valid values: #{sort_orders.to_sentence}.
+                DESC
+
                 output << format_query_param('order',
-                  info:      'Supply `order` with the name of a valid sort field for the endpoint and a direction',
-                  type:      'array',
-                  item_type: 'string',
-                  items:     sort_orders,
-                  default:   presenter.default_sort_order
+                  info:    description,
+                  type:    'string',
+                  default: presenter.default_sort_order
                 )
               end
 

@@ -488,7 +488,8 @@ module Brainstem
                       {
                         'in'          => 'query',
                         'name'        => 'only',
-                        'type'        => 'string',
+                        'type'        => 'array',
+                        'items'       => {'type' => 'integer'},
                         'description' => 'Allows you to request one or more resources directly by IDs in a comma separated list.'
                       }
                     ])
@@ -513,13 +514,10 @@ module Brainstem
                       {
                         'in'          => 'query',
                         'name'        => 'order',
-                        'description' => 'Supply `order` with the name of a valid sort field for the endpoint and a direction.',
-                        'type'        => 'array',
-                        'items'       => {
-                          'type'    => 'string',
-                          'default' => 'title:asc',
-                          'enum'    => ['sprocket_name:asc', 'sprocket_name:desc', 'title:asc', 'title:desc']
-                        }
+                        'type'        => 'string',
+                        'default'     => 'title:asc',
+                        'description' => "Supply `order` with the name of a valid sort field for the endpoint and a direction.\n\n" +
+                                         "Valid values: `sprocket_name:asc`, `sprocket_name:desc`, `title:asc`, and `title:desc`."
                       }
                     ])
                   end
