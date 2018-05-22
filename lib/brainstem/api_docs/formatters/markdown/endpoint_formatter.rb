@@ -109,18 +109,15 @@ module Brainstem
           #
           # @param [String] name the param name
           # @param [Hash] options information pertinent to the param
-          # @option [Boolean] options :required
-          # @option [Boolean] options :legacy
-          # @option [Boolean] options :recursive
-          # @option [String,Symbol] options :only Deprecated: use +actions+
-          #   block instead
-          # @option [String] options :info the doc string for the param
-          # @option [String] options :type The type of the field.
-          #   e.g. string, integer, boolean, array, hash
-          # @option [String] options :item_type The type of the items in the field.
+          # @option options [Boolean] :required
+          # @option options [Boolean] :legacy
+          # @option options [Boolean] :recursive
+          # @option options [String, Symbol] :only Deprecated: use +actions+ block instead
+          # @option options [String] :info the doc string for the param
+          # @option options [String] :type The type of the field. e.g. string, integer, boolean, array, hash
+          # @option options [String] :item_type The type of the items in the field.
           #   Ideally used when the type of the field is an array or hash.
-          # @param [Integer] indent how many levels the output should be
-          #   indented from normal
+          # @param [Integer] indent how many levels the output should be indented from normal
           #
           def parameter_with_indent_level(title, options = {}, indent = 0)
             options = options.dup

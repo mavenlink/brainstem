@@ -77,12 +77,9 @@ module Brainstem
         # Setting the +:nodoc+ option marks this presenter as 'internal use only',
         # and causes formatters to display this as not indicated.
         #
-        # @param [Class] target_class the target class of the presenter (i.e
-        #   the model it presents)
+        # @param [Class] target_class the target class of the presenter (i.e the model it presents)
         # @param [Hash] options options to record with the presenter
-        # @option [Boolean] options :nodoc whether this presenter should not
-        #   be output in the documentation.
-        #
+        # @option options [Boolean] :nodoc whether this presenter should not be output in the documentation.
         #
         def presents(target_class = :default, options = { nodoc: false })
           raise "`presents` must be a class (in #{self.to_s})" \
@@ -104,8 +101,7 @@ module Brainstem
         #
         # @param [String] text The title to set
         # @param [Hash] options options to record with the title
-        # @option [Boolean] options :nodoc whether this title should not be
-        #   output in the documentation.
+        # @option options [Boolean] :nodoc whether this title should not be output in the documentation.
         #
         def title(text, options = { nodoc: false })
           configuration[brainstem_params_context][:title] = options.merge(info: text)
@@ -120,8 +116,7 @@ module Brainstem
         #
         # @param [String] text The description to set
         # @param [Hash] options options to record with the description
-        # @option [Boolean] options :nodoc whether this description should not
-        #   be output in the documentation.
+        # @option options [Boolean] :nodoc whether this description should not be output in the documentation.
         #
         def description(text, options = { nodoc: false })
           configuration[brainstem_params_context][:description] = options.merge(info: text)
@@ -195,16 +190,16 @@ module Brainstem
         # the info sent with it.
         #
         # @param [Symbol] field_name the name of the param
-        # @param [String,Symbol] type the data type of the field. If not specified, will default to `string`.
+        # @param [String, Symbol] type the data type of the field. If not specified, will default to `string`.
         # @param [Hash] options
         # @option options [String] :info the documentation for the param
-        # @option options [String,Symbol] :root if this is a nested param,
+        # @option options [String, Symbol] :root if this is a nested param,
         #   under which param should it be nested?
         # @option options [Boolean] :nodoc should this param appear in the
         #   documentation?
         # @option options [Boolean] :required if the param is required for
         #   the endpoint
-        # @option options [String,Symbol] :item_type The data type of the items contained in a field.
+        # @option options [String, Symbol] :item_type The data type of the items contained in a field.
         #   Ideally used when the data type of the field is an `array`, `object` or `hash`.
         #
         def valid(name, type = nil, options = {}, &block)
@@ -224,7 +219,7 @@ module Brainstem
         # @param [Hash] options
         # @option options [String] :info the documentation for the param
         # @option options [Boolean] :nodoc should this block appear in the documentation?
-        # @option options [String,Symbol] :item_type The data type of the items contained in a field.
+        # @option options [String, Symbol] :item_type The data type of the items contained in a field.
         #   Ideally used when the data type of the response is an `array`.
         #
         def response(type, options = {}, &block)
@@ -247,7 +242,7 @@ module Brainstem
         # @param [Symbol] type the data type of the response.
         # @param [Hash] options
         # @option options [String] :info the documentation for the param
-        # @option options [String,Symbol] :item_type The data type of the items contained in a field.
+        # @option options [String, Symbol] :item_type The data type of the items contained in a field.
         #   Ideally used when the data type of the response is an `array`.
         #
         def fields(name, type, options = {}, &block)
@@ -268,7 +263,7 @@ module Brainstem
         # @param [Symbol] type the data type of the response.
         # @param [Hash] options
         # @option options [String] :info the documentation for the param
-        # @option options [String,Symbol] :item_type The data type of the items contained in a field.
+        # @option options [String, Symbol] :item_type The data type of the items contained in a field.
         #   Ideally used when the data type of the response is an `array`.
         #
         def field(name, type, options = {})
