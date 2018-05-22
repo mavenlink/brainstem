@@ -196,8 +196,8 @@ intelligent interfaces on these collections by which to mutate them. It wraps:
    - `Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::EndpointFormatter`
 
    The EndpointFormatter uses the following formatters:
-   - Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::Endpoint::ParamDefinitionsFormatter
-   - Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::Endpoint::ResponseDefinitionsFormatter
+   - `Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::Endpoint::ParamDefinitionsFormatter`
+   - `Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::Endpoint::ResponseDefinitionsFormatter`
 
    The Open Api Specification Sink also uses some formatters to add metadata to the specification. They
    are listed below:
