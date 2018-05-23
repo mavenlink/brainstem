@@ -121,6 +121,14 @@ module Brainstem
                 )
               end
 
+              def format_filter_params!
+                return if presenter.nil?
+
+                presenter.valid_filters.each do |filter_name, filter_config|
+                  output << format_query_param(filter_name, filter_config)
+                end
+              end
+
               def format_optional_params!
                 return if presenter.nil? || (optional_field_names = presenter.optional_field_names).empty?
 
@@ -202,33 +210,52 @@ module Brainstem
               end
 
               def format_body_params!
-                endpoint.params_configuration_tree.each do |param_name, param_config|
-                  next if nested_properties(param_config).blank?
-
-                  output << format_body_param(param_name, param_config)
-                end
-              end
-
-              def format_filter_params!
-                return if presenter.nil?
-
-                presenter.valid_filters.each do |filter_name, filter_config|
-                  output << format_query_param(filter_name, filter_config)
-                end
-              end
-
-              # TODO: Array of recursive attributes
-              def format_body_param(param_name, param_data)
-                {
+                output << {
                   'in'          => 'body',
                   'required'    => true,
-                  'name'        => param_name.to_s,
-                  'description' => format_description(param_data[:_config][:info]),
+                  'name'        => 'body',
                   'schema'      => {
                     'type'       => 'object',
-                    'properties' => format_param_branch(nested_properties(param_data))
+                    'properties' => format_body_params
                   },
-                }.reject { |_, v| v.blank? }
+                }
+              end
+
+              def format_body_params
+                ActiveSupport::HashWithIndifferentAccess.new.tap do |body_params|
+                  endpoint.params_configuration_tree.each do |param_name, param_config|
+                    next if nested_properties(param_config).blank?
+
+                    body_params[param_name] = format_parent_param(param_name, param_config)
+                  end
+                end
+              end
+
+              def format_parent_param(param_name, param_data)
+                param_config = param_data[:_config]
+                result = case param_config[:type]
+                  when 'hash'
+                    {
+                      type:        'object',
+                      title:       param_name.to_s,
+                      description: format_description(param_config[:info]),
+                      properties:  format_param_branch(nested_properties(param_data))
+                    }
+                  when 'array'
+                    {
+                      type:        'array',
+                      title:       param_name.to_s,
+                      description: format_description(param_config[:info]),
+                      items: {
+                        type: 'object',
+                        properties: format_param_branch(nested_properties(param_data))
+                      }
+                    }
+                  else
+                    raise "Unknown Brainstem body param encountered(#{param_config[:type]}) for field #{param_name}"
+                end
+
+                result.with_indifferent_access.reject { |_, v| v.blank? }
               end
 
               def format_param_branch(branch)

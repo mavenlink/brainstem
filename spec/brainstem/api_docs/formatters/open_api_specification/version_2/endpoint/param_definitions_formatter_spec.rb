@@ -305,6 +305,36 @@ module Brainstem
                           },
                         },
                       },
+                      creator: {
+                        _config: {
+                          type: 'hash',
+                          info: 'attributes for the creator'
+                        },
+                        id: {
+                          _config: {
+                            type: 'integer',
+                            info: 'ID of the creator'
+                          }
+                        },
+                      },
+                      assignees: {
+                        _config: {
+                          type: 'array',
+                          info: 'attributes for the assignees'
+                        },
+                        id: {
+                          _config: {
+                            type: 'integer',
+                            info: 'ID of the assignee'
+                          }
+                        },
+                        active: {
+                          _config: {
+                            type: 'boolean',
+                            info: 'activates the assignment'
+                          }
+                        }
+                      }
                     }.with_indifferent_access
                   end
 
@@ -319,37 +349,80 @@ module Brainstem
                       {
                         'in'          => 'body',
                         'required'    => true,
-                        'name'        => 'task',
-                        'description' => 'Attributes for the task.',
+                        'name'        => 'body',
                         'schema'      => {
                           'type'       => 'object',
                           'properties' => {
-                            'name' => {
-                              'title'       => 'name',
-                              'description' => 'Name of the task.',
-                              'type'        => 'string'
-                            },
-                            'subs' => {
-                              'title'       => 'subs',
-                              'description' => 'Sub tasks of the task.',
+
+                            'task' => {
+                              'title'       => 'task',
                               'type'        => 'object',
+                              'description' => 'Attributes for the task.',
                               'properties'  => {
                                 'name' => {
-                                  'title'    => 'name',
-                                  'type'     => 'string'
+                                  'title'       => 'name',
+                                  'description' => 'Name of the task.',
+                                  'type'        => 'string'
+                                },
+                                'subs' => {
+                                  'title'       => 'subs',
+                                  'description' => 'Sub tasks of the task.',
+                                  'type'        => 'object',
+                                  'properties'  => {
+                                    'name' => {
+                                      'title'    => 'name',
+                                      'type'     => 'string'
+                                    }
+                                  }
+                                },
+                                'checklist' => {
+                                  'title'  => 'checklist',
+                                  'type'   => 'array',
+                                  'items'  => {
+                                    'type'       => 'object',
+                                    'properties' => {
+                                      'name' => {
+                                        'title'    => 'name',
+                                        'type'     => 'string'
+                                      }
+                                    }
+                                  }
                                 }
                               }
                             },
-                            'checklist' => {
-                              'title'  => 'checklist',
-                              'type'   => 'array',
-                              'items'  => {
-                                'type'       => 'object',
-                                'properties' => {
-                                  'name' => {
-                                    'title'    => 'name',
-                                    'type'     => 'string'
-                                  }
+
+                            'creator' => {
+                              'title'       => 'creator',
+                              'type'        => 'object',
+                              'description' => 'Attributes for the creator.',
+                              'properties'  => {
+                                'id' => {
+                                  'title'       => 'id',
+                                  'description' => 'ID of the creator.',
+                                  'type'        => 'integer',
+                                  'format'      => 'int32'
+                                },
+                              }
+                            },
+
+                            'assignees' => {
+                              'title'       => 'assignees',
+                              'type'        => 'array',
+                              'description' => 'Attributes for the assignees.',
+                              'items'       => {
+                                'type'        => 'object',
+                                'properties'  => {
+                                  'id' => {
+                                    'title'       => 'id',
+                                    'description' => 'ID of the assignee.',
+                                    'type'        => 'integer',
+                                    'format'      => 'int32'
+                                  },
+                                  'active' => {
+                                    'title'       => 'active',
+                                    'description' => 'Activates the assignment.',
+                                    'type'        => 'boolean'
+                                  },
                                 }
                               }
                             }
@@ -357,6 +430,16 @@ module Brainstem
                         },
                       }
                     ])
+                  end
+
+                  context 'when type of the param is unknown' do
+                    before do
+                      mocked_params_configuration_tree[:task][:_config][:type] = 'invalid'
+                    end
+
+                    it 'raises an error' do
+                      expect { subject.send(:format_body_params!) }.to raise_error(StandardError)
+                    end
                   end
                 end
 
