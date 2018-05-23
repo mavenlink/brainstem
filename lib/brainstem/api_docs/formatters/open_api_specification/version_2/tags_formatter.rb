@@ -76,7 +76,7 @@ module Brainstem
 
             def format_tag_groups
               groups = Hash.new.tap do |result|
-                documentable_controllers.map do |controller|
+                documentable_controllers.each do |controller|
                   controller_tag = tag_name(controller)
                   controller_tag_groups = tag_groups(controller).presence || [controller_tag]
 
