@@ -176,7 +176,7 @@ intelligent interfaces on these collections by which to mutate them. It wraps:
    the result somewhere, whether to `$stdout`, a file or files on disk, or a
    remote location.
 
-### Specific to Open Api Specification generation
+### Specific to Open API Specification generation
 
 ![OAS 2.0 Docgen overview](./oas_2_docgen.png)
 
@@ -188,7 +188,7 @@ intelligent interfaces on these collections by which to mutate them. It wraps:
    these formatters may be provided for this type, depending on the desired
    behaviour.
 
-   Brainstem includes an implementation of an `Open Api Specification` formatter,
+   Brainstem includes an implementation of an `Open API Specification` formatter,
    stored under the type `:oas_v2`. The formatters are listed below:
    - `Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::PresenterFormatter`
    - `Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::ControllerFormatter`
@@ -199,7 +199,7 @@ intelligent interfaces on these collections by which to mutate them. It wraps:
    - `Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::Endpoint::ParamDefinitionsFormatter`
    - `Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::Endpoint::ResponseDefinitionsFormatter`
 
-   The Open Api Specification Sink also uses some formatters to add metadata to the specification. They
+   The Open API Specification Sink also uses some formatters to add metadata to the specification. They
    are listed below:
    - `Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::InfoFormatter`
    - `Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::SecurityDefinitionsFormatter`

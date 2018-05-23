@@ -9,7 +9,7 @@ module Brainstem
     end
 
     #
-    # Defines the naming pattern of the Open API specification file.
+    # Defines the naming pattern of the Open API Specification file.
     #
     # The following tokens will be substituted:
     #
@@ -153,7 +153,7 @@ module Brainstem
       endpoint:    {},
       presenter:   {},
 
-      # Formatter for Open Api Specifications
+      # Formatter for Open API Specifications
       info:       {},
       response:   {},
       parameters: {},

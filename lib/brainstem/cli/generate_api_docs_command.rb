@@ -148,7 +148,7 @@ module Brainstem
           opts.on('-m', '--multifile-presenters-and-controllers',
             'dumps presenters and controllers to separate files (default)') do |o|
             if options[:sink][:options][:format] == :oas_v2
-              raise NotImplementedError.new("Multi File support for Open Api Specification is not supported yet")
+              raise NotImplementedError.new("Multi File support for Open API Specification is not supported yet")
             else
               options[:sink][:method] = Brainstem::ApiDocs::Sinks::ControllerPresenterMultifileSink.method(:new)
             end
@@ -160,19 +160,19 @@ module Brainstem
 
           #########################################################
           #                                                       #
-          # Open Api Specification generation specific commands:  #
+          # Open API Specification generation specific commands:  #
           #                                                       #
           #########################################################
 
-          # Future proofing for different Open Api Specification versions.
+          # Future proofing for different Open API Specification versions.
           opts.on('--open-api-specification=VERSION',
-                  'dumps an Open Api Specification for presenters and controllers in a single file') do |oas_version|
+                  'dumps an Open API Specification for presenters and controllers in a single file') do |oas_version|
             case oas_version.to_i
               when 2
                 options[:sink][:options][:format] = :oas_v2
               else
                 raise NotImplementedError.new(
-                  "Please specify the version of Open Api Specification to be generated e.g. --open-api-specification=2"
+                  "Please specify the version of Open API Specification to be generated e.g. --open-api-specification=2"
                 )
             end
             options[:sink][:method] = Brainstem::ApiDocs::Sinks::OpenApiSpecificationSink.method(:new)
@@ -184,12 +184,12 @@ module Brainstem
           end
 
           opts.on('--ignore-tagging',
-                  'does not add the tag definitions in the Open Api Specification') do |api_version|
+                  'does not add the tag definitions in the Open API Specification') do |api_version|
             options[:sink][:options][:ignore_tagging] = true
           end
 
           opts.on('--oas-filename-pattern=PATTERN',
-                  'defines the naming pattern of the Open API specification file') do |pattern|
+                  'defines the naming pattern of the Open API Specification file') do |pattern|
             options[:sink][:options][:oas_filename_pattern] = pattern
           end
         end

@@ -32,7 +32,7 @@ module Brainstem
               Brainstem::ApiDocs::Sinks::ControllerPresenterMultifileSink
           end
 
-          context "when format is Open Api Specification" do
+          context "when format is Open API Specification" do
             let(:args) { %w(--open-api-specification=2 --multifile-presenters-and-controllers) }
 
             it "raises an error" do

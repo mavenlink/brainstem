@@ -123,7 +123,7 @@ module Brainstem
         end
 
         ####################################################
-        # Used only for Open Api Specification generation. #
+        # Used only for Open API Specification generation. #
         ####################################################
         #
         # Specifies the tag name to be used in tagging a class.
@@ -139,7 +139,7 @@ module Brainstem
         end
 
         ####################################################
-        # Used only for Open Api Specification generation. #
+        # Used only for Open API Specification generation. #
         ####################################################
         #
         # Specifies an array of tag names to group the class under. Used for the x-tags OAS vendor extension.
@@ -275,7 +275,7 @@ module Brainstem
         end
 
         ####################################################
-        # Used only for Open Api Specification generation. #
+        # Used only for Open API Specification generation. #
         ####################################################
         #
         # Unique string used to identify the operation. The id MUST be unique among all operations
@@ -293,11 +293,11 @@ module Brainstem
         end
 
         ####################################################
-        # Used only for Open Api Specification generation. #
+        # Used only for Open API Specification generation. #
         ####################################################
         #
         # A list of MIME types the endpoints can consume. This overrides the default consumes definition
-        # on the Info object in the Open Api Specification.
+        # on the Info object in the Open API Specification.
         #
         # @param [Array<String>] mime_types Array of mime types
         #
@@ -306,11 +306,11 @@ module Brainstem
         end
 
         ####################################################
-        # Used only for Open Api Specification generation. #
+        # Used only for Open API Specification generation. #
         ####################################################
         #
         # A list of MIME types the endpoints can produce. This overrides the default produces definition
-        # on the Info object in the Open Api Specification.
+        # on the Info object in the Open API Specification.
         #
         # @param [Array<String>] mime_types Array of mime types
         #
@@ -319,7 +319,7 @@ module Brainstem
         end
 
         ####################################################
-        # Used only for Open Api Specification generation. #
+        # Used only for Open API Specification generation. #
         ####################################################
         #
         # A declaration of which security schemes are applied for this operation. The list of values
@@ -333,7 +333,7 @@ module Brainstem
         end
 
         ####################################################
-        # Used only for Open Api Specification generation. #
+        # Used only for Open API Specification generation. #
         ####################################################
         #
         # Additional external documentation for this operation.
@@ -349,7 +349,7 @@ module Brainstem
         end
 
         ####################################################
-        # Used only for Open Api Specification generation. #
+        # Used only for Open API Specification generation. #
         ####################################################
         #
         # The transfer protocol for the operation. Values MUST be from the list: "http", "https", "ws", "wss".
@@ -362,7 +362,7 @@ module Brainstem
         end
 
         ####################################################
-        # Used only for Open Api Specification generation. #
+        # Used only for Open API Specification generation. #
         ####################################################
         #
         # Declares this operation to be deprecated. Usage of the declared operation should be refrained.

@@ -367,7 +367,7 @@ bundle exec brainstem generate --help
 Currently, Brainstem supports generation of documentation in the following formats:
 
 - Markdown
-- [Open Api Specification 2.0 (OAS 2.0)](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md)
+- [Open API Specification 2.0 (OAS 2.0)](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md)
 
 ### The `generate` command
 
@@ -739,7 +739,7 @@ class ContactsController < ApiController
   end
 ```
 
-##### Specific to Open Api Specification 2.0 generation
+##### Specific to Open API Specification 2.0 generation
 
 ###### `tag` / `tag_groups`
 
