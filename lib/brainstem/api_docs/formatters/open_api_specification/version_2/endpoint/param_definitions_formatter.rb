@@ -213,13 +213,16 @@ module Brainstem
               end
 
               def format_body_params!
+                formatted_body_params = format_body_params
+                return if formatted_body_params.blank?
+
                 output << {
                   'in'          => 'body',
                   'required'    => true,
                   'name'        => 'body',
                   'schema'      => {
                     'type'       => 'object',
-                    'properties' => format_body_params
+                    'properties' => formatted_body_params
                   },
                 }
               end

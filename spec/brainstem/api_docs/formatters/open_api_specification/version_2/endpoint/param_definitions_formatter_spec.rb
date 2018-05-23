@@ -441,6 +441,16 @@ module Brainstem
                       expect { subject.send(:format_body_params!) }.to raise_error(StandardError)
                     end
                   end
+
+                  context 'when no body params are present' do
+                    let(:mocked_params_configuration_tree) { {} }
+
+                    it 'does not add any output' do
+                      subject.send(:format_body_params!)
+
+                      expect(subject.output).to be_empty
+                    end
+                  end
                 end
 
                 describe '#format_pagination_params!' do
