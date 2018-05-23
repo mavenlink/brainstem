@@ -1,4 +1,5 @@
 require 'brainstem/concerns/inheritable_configuration'
+require 'brainstem/params_validator'
 require 'active_support/core_ext/object/with_options'
 
 module Brainstem
@@ -370,7 +371,8 @@ module Brainstem
       # Lists all valid parameters for the current action. Falls back to the
       # valid parameters for the default context.
       #
-      # @params [Symbol] requested_context the context which to look up.
+      # @params [String, Symbol] (Optional) requested_context the context which to look up.
+      # @params [String, Symbol] (Optional) root_param_name the param name of the model being changed.
       #
       # @return [Hash{String => String, Hash] a hash of pairs of param names and
       # descriptions or sub-hashes.
@@ -380,6 +382,21 @@ module Brainstem
       end
       alias_method :brainstem_valid_params_for, :brainstem_valid_params
 
+      #
+      # Ensures that the parameters passed through to the action are valid.
+      #
+      # It raises Brainstem::ValidatorError.new(message, unknown_params, malformed_params) error,
+      # when params are missing or unknown params are encountered
+      #
+      # @params [String, Symbol] (Optional) requested_context the context which to look up.
+      # @params [String, Symbol] (Optional) root_param_name the param name of the model being changed.
+      #
+      def brainstem_validate_params!(requested_context = action_name.to_sym, root_param_name = brainstem_model_name)
+        input_params            = params.with_indifferent_access[brainstem_model_name]
+        brainstem_params_config = brainstem_valid_params(requested_context, root_param_name)
+
+        Brainstem::ParamsValidator.validate!(requested_context, input_params, brainstem_params_config)
+      end
 
       #
       # Lists all incoming param keys that will be rewritten to use a different
