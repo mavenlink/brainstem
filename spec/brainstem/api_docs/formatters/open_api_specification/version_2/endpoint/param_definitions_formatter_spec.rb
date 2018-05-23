@@ -187,13 +187,6 @@ module Brainstem
                 describe '#format_query_params' do
                   let(:mocked_params_configuration_tree) do
                     {
-                      id: {
-                        _config: {
-                          type: 'integer',
-                          info: 'The ID of the model   ',
-                          required: true
-                        }
-                      },
                       sprocket_name: {
                         _config: {
                           type: 'string',
@@ -216,6 +209,13 @@ module Brainstem
                           }
                         },
                       },
+                      id: {
+                        _config: {
+                          type: 'integer',
+                          info: 'The ID of the model   ',
+                          required: true
+                        }
+                      },
                     }.with_indifferent_access
                   end
 
@@ -223,7 +223,7 @@ module Brainstem
                     mock(endpoint).params_configuration_tree { mocked_params_configuration_tree }
                   end
 
-                  it 'exclusively adds non-nested fields as query params' do
+                  it 'exclusively adds non-nested fields as query params ordered by it\'s required & name attributes' do
                     subject.send(:format_query_params!)
 
                     expect(subject.output).to eq([
@@ -237,15 +237,15 @@ module Brainstem
                       },
                       {
                         'in'          => 'query',
-                        'name'        => 'sprocket_name',
-                        'type'        => 'string',
-                        'description' => 'The name of the sprocket.'
-                      },
-                      {
-                        'in'          => 'query',
                         'name'        => 'sprocket_ids',
                         'type'        => 'array',
                         'items'       => { 'type' => 'integer' }
+                      },
+                      {
+                        'in'          => 'query',
+                        'name'        => 'sprocket_name',
+                        'type'        => 'string',
+                        'description' => 'The name of the sprocket.'
                       }
                     ])
                   end

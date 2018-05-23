@@ -177,6 +177,9 @@ module Brainstem
 
                   output << format_query_param(param_name, param_config[:_config])
                 end
+
+                # Sort all query params by required attribute & alphabetically.
+                output.sort_by! { |param| [(param['required'] ? 0 : 1), param['name']] }
               end
 
               def format_query_param(param_name, param_config)
