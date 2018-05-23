@@ -110,7 +110,7 @@ module Brainstem
       end
 
       def optional_field_names(fields = configuration[:fields], buffer = [])
-        fields.to_h.select do |field_name, field_config|
+        fields.to_h.each do |field_name, field_config|
           next if invalid_field?(field_config)
 
           if optional_field?(field_config)
