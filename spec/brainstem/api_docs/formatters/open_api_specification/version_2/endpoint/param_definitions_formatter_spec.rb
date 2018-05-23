@@ -473,7 +473,7 @@ module Brainstem
                       'in'   => 'query',
                       'type' => 'string',
                     )
-                    expect(param_def['description']).to include('e.g. `include=association1,association2.`')
+                    expect(param_def['description']).to include('e.g. `include=association1,association2`.')
                     expect(param_def['description']).to include('`association_1` (association_1_class) - Association_1 description')
                     association_2_desc = 'Association_2 description.  Restricted to queries using the `only` parameter.'
                     expect(param_def['description']).to include("`association_2` (association_2_class) - #{association_2_desc}")

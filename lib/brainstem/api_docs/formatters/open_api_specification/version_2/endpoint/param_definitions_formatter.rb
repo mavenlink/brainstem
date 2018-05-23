@@ -143,7 +143,7 @@ module Brainstem
 
               def include_params_description
                 result = "Any of the below associations can be included in your request by providing the `include` "\
-                         "param, e.g. `include=association1,association2.`\n"
+                         "param, e.g. `include=association1,association2`.\n"
 
                 presenter.valid_associations
                   .sort_by { |_, association| association.name }
