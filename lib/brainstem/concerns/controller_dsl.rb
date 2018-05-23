@@ -279,7 +279,7 @@ module Brainstem
         ####################################################
         #
         # Unique string used to identify the operation. The id MUST be unique among all operations
-        # described in the API. Tools and libraries MAY use the operationId to uniquely identify an
+        # described in the API. Tools and libraries MAY use the operation_id to uniquely identify an
         # operation, therefore, it is recommended to follow common programming naming conventions.
         #
         # @param [String] unique_id
