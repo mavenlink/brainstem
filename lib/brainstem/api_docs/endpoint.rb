@@ -210,7 +210,7 @@ module Brainstem
                 traversed_hash[ancestor_name]
               end
 
-              parent[field_name] = { :_config => field_config.except(:root, :ancestors) }
+              parent[field_name] = { :_config => field_config.except(:ancestors) }
             else
               result[field_name] = { :_config => field_config }
             end
