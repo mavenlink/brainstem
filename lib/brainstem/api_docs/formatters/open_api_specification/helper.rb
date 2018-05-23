@@ -40,7 +40,7 @@ module Brainstem
               else
                 TYPE_INFO[type.to_s]
             end
-            result ? result.dup.with_indifferent_access : nil
+            result ? result.with_indifferent_access : nil
           end
 
           TYPE_INFO = {
