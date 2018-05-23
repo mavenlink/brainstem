@@ -9,17 +9,15 @@ module Brainstem
           File.expand_path('../../../../../spec/dummy/rails.rb', __FILE__)
         end
 
-        let(:described_klass) { RailsIntrospector }
-        let(:default_args)    { { rails_environment_file: dummy_environment_file } }
+        let(:default_args) { { rails_environment_file: dummy_environment_file } }
 
         subject do
-          RailsIntrospector.send(:new, default_args)
+          described_class.send(:new, default_args)
         end
-
 
         context "when cannot find the environment file" do
           describe "#load_environment!" do
-            subject { described_klass.send(:new) }
+            subject { described_class.send(:new) }
 
             before do
             #   In the event that we've already loaded the environment through
@@ -74,11 +72,11 @@ module Brainstem
 
           describe "#presenters" do
             before do
-              stub.any_instance_of(described_klass).validate!
+              stub.any_instance_of(described_class).validate!
             end
 
             subject do
-              described_klass.with_loaded_environment(
+              described_class.with_loaded_environment(
                 default_args.merge(base_presenter_class: "::FakeBasePresenter")
               )
             end
@@ -96,11 +94,11 @@ module Brainstem
 
           describe "#controllers" do
             before do
-              stub.any_instance_of(described_klass).validate!
+              stub.any_instance_of(described_class).validate!
             end
 
             subject do
-              described_klass.with_loaded_environment(
+              described_class.with_loaded_environment(
                 default_args.merge(base_controller_class: "::FakeBaseController")
               )
             end
@@ -116,16 +114,53 @@ module Brainstem
             end
           end
 
+          describe "#base_application" do
+            before do
+              stub.any_instance_of(described_class).validate!
+            end
+
+            context "when custom base_application_class is not given" do
+              subject do
+                described_class.with_loaded_environment(default_args)
+              end
+
+              it "returns nil" do
+                expect(subject.send(:base_application_class)).to be_nil
+              end
+
+              it "returns the descendants of the base controller class" do
+                expect(subject.base_application).to eq(::Rails.application)
+              end
+            end
+
+            context "when custom base_application_class is given" do
+              subject do
+                described_class.with_loaded_environment(
+                  default_args.merge(base_application_class: "::FakeApiEngine")
+                )
+              end
+
+              it "allows the specification of a custom base_application_class" do
+                expect(subject.send(:base_application_class).to_s)
+                  .to eq "::FakeApiEngine"
+              end
+
+              it "returns the descendants of the base controller class" do
+                expect(subject.base_application).to eq(FakeApiEngine)
+              end
+            end
+          end
+
           describe "#routes" do
             let(:a_proc) { Object.new }
 
             before do
-              stub.any_instance_of(described_klass).validate!
+              stub.any_instance_of(described_class).validate!
             end
 
             context "with dummy method" do
               subject do
-                described_klass.with_loaded_environment(
+                described_class.with_loaded_environment(
                   default_args.merge(routes_method: a_proc)
                 )
               end
@@ -142,7 +177,7 @@ module Brainstem
 
             context "with fake (but realistic) data" do
               subject do
-                described_klass.with_loaded_environment(default_args)
+                described_class.with_loaded_environment(default_args)
               end
 
               it "skips the entry if it does not have a valid controller" do
@@ -160,7 +195,21 @@ module Brainstem
               it "transforms the HTTP method regexp into a list of verbs" do
                 expect(subject.routes.first[:http_methods]).to eq %w(GET POST)
               end
+            end
 
+            context "with an alternate base application or engine provided" do
+              let(:base_application_class) { "FakeApiEngine" }
+
+              subject do
+                described_class.with_loaded_environment(default_args.merge({ base_application_class: base_application_class }))
+              end
+
+              it "recognizes the configured application or engine's routes" do
+                expect(subject.routes.map { |route| route[:path] }).to match_array([
+                  { spec: "/fake_route_1" }.to_s,
+                  { spec: "/fake_route_2" }.to_s
+                ])
+              end
             end
           end
         end

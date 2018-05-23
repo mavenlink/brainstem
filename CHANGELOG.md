@@ -1,10 +1,8 @@
 # Changelog
 
-+ **1.4.0** - _04/27/2018_
-  - Add the capability to validate params based on documented parameters on endpoints. Invoking
-    `brainstem_validate_params!` raises an error if unknown parameters are encountered.
-  - Add the capability to ignore unknown params based off documented parameters on endpoints. Invoking
-    `brainstem_ignore_unknown_params!` returns a copy of params while excluding unknown parameters.
++ **1.4.1** - _05/09/2018_
+  - Add the capability to specify an alternate base application / engine the routes are derived from.
+    This capability is specific to documemtation generation.
 
 + **1.3.0** - _04/12/2018_
   - Add the capability to nest fields under evaluable parent blocks where the nested fields are evaluated
