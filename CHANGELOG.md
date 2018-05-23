@@ -1,5 +1,9 @@
 # Changelog
 
++ **1.5.0** - _05/23/2018_
+  - Add the capability to validate params based on documented parameters on endpoints. Invoking
+    `brainstem_validate_params!` raises an error if unknown parameters are encountered.
+
 + **1.4.1** - _05/09/2018_
   - Add the capability to specify an alternate base application / engine the routes are derived from.
     This capability is specific to documemtation generation.
