@@ -117,7 +117,7 @@ module Brainstem
                 .map    { |cond| uncapitalize(presenter.conditionals[cond].description) }
                 .delete_if(&:empty?)
                 .uniq
-                .join(' and ')
+                .to_sentence
 
               conditions.present? ? "\nVisible when #{conditions}.\n" : ''
             end
