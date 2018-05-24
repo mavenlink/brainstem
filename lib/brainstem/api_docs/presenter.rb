@@ -14,7 +14,6 @@ module Brainstem
       include Concerns::Optional
       include Concerns::Formattable
 
-
       def valid_options
         super | [
           :const,
@@ -37,7 +36,6 @@ module Brainstem
       alias_method :document_empty_associations?, :document_empty_associations
       alias_method :document_empty_filters?,      :document_empty_filters
 
-
       def initialize(atlas, options = {})
         self.atlas = atlas
         self.document_empty_associations = Brainstem::ApiDocs.document_empty_presenter_associations
@@ -47,13 +45,11 @@ module Brainstem
         yield self if block_given?
       end
 
-
       def suggested_filename(format)
         filename_pattern
           .gsub('{{name}}', target_class.to_s.underscore)
           .gsub('{{extension}}', extension)
       end
-
 
       def suggested_filename_link(format)
         filename_link_pattern
@@ -61,48 +57,38 @@ module Brainstem
           .gsub('{{extension}}', extension)
       end
 
-
       attr_accessor :atlas
-
 
       def extension
         @extension ||= Brainstem::ApiDocs.output_extension
       end
 
-
       def filename_pattern
         @filename_pattern ||= Brainstem::ApiDocs.presenter_filename_pattern
       end
-
 
       def filename_link_pattern
         @filename_link_pattern ||= Brainstem::ApiDocs.presenter_filename_link_pattern
       end
 
-
       delegate :configuration => :const
       delegate :find_by_class => :atlas
-
 
       def nodoc?
         configuration[:nodoc]
       end
 
-
       def title
         contextual_documentation(:title) || const.to_s.demodulize
       end
-
 
       def brainstem_keys
         const.possible_brainstem_keys.to_a.sort
       end
 
-
       def description
         contextual_documentation(:description) || ""
       end
-
 
       def valid_fields(fields = configuration[:fields])
         fields.to_h.reject do |_, field|
@@ -111,23 +97,38 @@ module Brainstem
       end
       alias_method :valid_fields_in, :valid_fields
 
-
       def invalid_field?(field)
         field.options[:nodoc]
       end
-
 
       def nested_field?(field)
         field.respond_to?(:configuration)
       end
 
+      def optional_field?(field)
+        field.options[:optional]
+      end
+
+      def optional_field_names(fields = configuration[:fields], buffer = [])
+        fields.to_h.each do |field_name, field_config|
+          next if invalid_field?(field_config)
+
+          if optional_field?(field_config)
+            buffer << field_name
+          elsif nested_field?(field_config)
+            optional_field_names_in(field_config.configuration, buffer)
+          end
+        end
+
+        buffer
+      end
+      alias_method :optional_field_names_in, :optional_field_names
 
       def valid_filters
         configuration[:filters]
           .to_h
           .keep_if(&method(:documentable_filter?))
       end
-
 
       def documentable_filter?(_, filter)
         !filter[:nodoc] &&
@@ -137,19 +138,19 @@ module Brainstem
           )
       end
 
+      def searchable?
+        configuration[:search].present?
+      end
 
       def valid_sort_orders
         configuration[:sort_orders].to_h.reject {|k, v| v[:nodoc] }
       end
-
 
       def valid_associations
         configuration[:associations]
           .to_h
           .keep_if(&method(:documentable_association?))
       end
-
-
 
       def link_for_association(association)
         if (associated_presenter = find_by_class(association.target_class)) &&
@@ -159,7 +160,6 @@ module Brainstem
           nil
         end
       end
-
 
       #
       # Returns whether this association should be documented based on nodoc
@@ -175,26 +175,21 @@ module Brainstem
           )
       end
 
-
       def conditionals
         configuration[:conditionals]
       end
-
 
       def default_sort_order
         configuration[:default_sort_order] || ""
       end
 
-
       def default_sort_field
         @default_sort_field ||= (default_sort_order.split(":")[0] || nil)
       end
 
-
       def default_sort_direction
         @default_sort_direction ||= (default_sort_order.split(":")[1] || nil)
       end
-
 
       #
       # Returns a key if it exists and is documentable.
@@ -204,7 +199,6 @@ module Brainstem
           !configuration[key][:nodoc] &&
           configuration[key][:info]
       end
-
 
       #
       # Returns the relative path between this presenter and another given

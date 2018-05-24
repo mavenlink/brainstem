@@ -12,22 +12,18 @@ module Brainstem
           puts_method.call(output)
         end
 
-
         ########################################################################
         private
         ########################################################################
-
 
         def valid_options
           super | [ :puts_method ]
         end
 
-
         #
         # Storage for holding the writing method.
         #
         attr_writer :puts_method
-
 
         #
         # Callable method for writing data to a buffer (by default stdout).
@@ -37,7 +33,6 @@ module Brainstem
         def puts_method
           @puts_method ||= $stdout.method(:puts)
         end
-
       end
     end
   end

@@ -7,7 +7,6 @@ module Brainstem
       let(:options) { { } }
       subject { AbstractCommand.new(options) }
 
-
       describe ".call" do
         before do
           any_instance_of(AbstractCommand) do |instance|
@@ -41,7 +40,6 @@ module Brainstem
         end
       end
 
-
       describe "#extract_options!" do
         let(:option_parser) { Object.new }
         let(:args) { %w(--silent --pretend) }
@@ -57,13 +55,11 @@ module Brainstem
         end
       end
 
-
       describe "#option_parser" do
         it "is not implemented" do
           expect { AbstractCommand.new }.to raise_error NotImplementedError
         end
       end
-
 
       describe "#initialize" do
         it "extracts options from args" do

@@ -7,7 +7,6 @@ silence_warnings do
   FakeRailsRoute            = Struct.new(:name, :path, :defaults, :constraints)
 end
 
-
 class Rails
   def self.application
     @application ||= begin

@@ -10,7 +10,6 @@ module Brainstem
 
         delegate [:controllers, :presenters] => :atlas
 
-
         def <<(atlas)
           self.atlas = atlas
 
@@ -18,18 +17,15 @@ module Brainstem
           write_presenter_files
         end
 
-
         def valid_options
           super | [ :write_method, :format, :write_path ]
         end
-
 
         attr_writer     :write_method,
                         :write_path
 
         attr_accessor   :atlas,
                         :format
-
 
         #######################################################################
         private
@@ -46,14 +42,12 @@ module Brainstem
           )
         end
 
-
         #
         # Dumps each formatted presenter to a file.
         #
         def write_presenter_files
           presenters.each_formatted_with_filename(format, &method(:write_buffer_to_file))
         end
-
 
         #
         # Writes a given bufer to a filename within the base path.
@@ -64,7 +58,6 @@ module Brainstem
           write_method.call(abs_path, buffer)
         end
 
-
         #
         # Asserts that a directory exists, creating it if it does not.
         #
@@ -72,7 +65,6 @@ module Brainstem
           dir = File.dirname(path)
           FileUtils.mkdir_p(dir) unless File.directory?(dir)
         end
-
 
         #
         # Defines how we write out the files.
@@ -82,7 +74,6 @@ module Brainstem
             File.write(name, buff, mode: 'w')
           end
         end
-
 
         def write_path
           @write_path ||= ::Brainstem::ApiDocs.write_path

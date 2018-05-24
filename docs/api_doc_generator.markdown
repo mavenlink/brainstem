@@ -124,9 +124,6 @@ Brainstem::ApiDocs.my_config_option
 
 ### Detailed Overview
 
-![DocGen overview](./docgen.png)
-
-
 1. `Brainstem::CLI::GenerateApiDocsCommand` instantiates a builder and a sink,
    and hands the output of the builder to the sink, which serializes and stores
    the input somewhere. It also merges the options given to it on the command
@@ -153,6 +150,11 @@ intelligent interfaces on these collections by which to mutate them. It wraps:
       a `Brainstem::ApiDocs::ControllerCollection`;
     - Presenters into `Brainstem::ApiDocs::Presenter` objects, and these into a
       `Brainstem::ApiDocs::PresenterCollection`.
+
+#### Specific to Markdown Generation
+
+![DocGen overview](./docgen.png)
+
 5. Each of these collection and entity objects includes
    `Brainstem::Concerns::Formattable`, which enables them to be formatted by
    passing them `formatted_as(format, options)`. Formatters inherit from
@@ -170,6 +172,45 @@ intelligent interfaces on these collections by which to mutate them. It wraps:
    controller and presenter as its own file, rather than as a concatenated
    collection.
 6. This sink, having received an instance of the `Atlas`, is responsible for
-   serializing&mdash;primarily invoking formatting&mdash;and then outputting
+   serializing &mdash; primarily invoking formatting &mdash; and then outputting
+   the result somewhere, whether to `$stdout`, a file or files on disk, or a
+   remote location.
+
+### Specific to Open API Specification generation
+
+![OAS 2.0 Docgen overview](./oas_2_docgen.png)
+
+5. Each of these collection and entity objects includes
+   `Brainstem::Concerns::Formattable`, which enables them to be formatted by
+   passing them `formatted_as(format, options)`. Formatters inherit from
+   `Brainstem::ApiDocs::Formatters::AbstractFormatter`, are loaded by
+   `Cerebellum::ApiDocs`, and are stored by self-assigned type. Some or all of
+   these formatters may be provided for this type, depending on the desired
+   behaviour.
+
+   Brainstem includes an implementation of an `Open API Specification` formatter,
+   stored under the type `:oas_v2`. The formatters are listed below:
+   - `Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::PresenterFormatter`
+   - `Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::ControllerFormatter`
+   - `Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::EndpointCollectionFormatter`
+   - `Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::EndpointFormatter`
+
+   The EndpointFormatter uses the following formatters:
+   - `Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::Endpoint::ParamDefinitionsFormatter`
+   - `Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::Endpoint::ResponseDefinitionsFormatter`
+
+   The Open API Specification Sink also uses some formatters to add metadata to the specification. They
+   are listed below:
+   - `Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::InfoFormatter`
+   - `Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::SecurityDefinitionsFormatter`
+   - `Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::TagsFormatter`
+
+   Note that there is not a `ControllerCollectionFormatter`, nor a
+   `PresenterCollectionFormatter` included: this is because the Sink shares
+   partial responsibility for collection formatting, and in the case of the
+   `Brainstem::ApiDocs::Sinks::OpenApiSpecificationSink`, outputs all
+   controllers and presenters into a single `specification.yml` file.
+6. This sink, having received an instance of the `Atlas`, is responsible for
+   serializing &mdash; primarily invoking formatting &mdash; and then outputting
    the result somewhere, whether to `$stdout`, a file or files on disk, or a
    remote location.

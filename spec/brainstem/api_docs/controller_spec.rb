@@ -15,7 +15,6 @@ module Brainstem
         end
       end
 
-
       describe "#add_endpoint" do
         let(:endpoint) { Object.new }
 
@@ -25,7 +24,6 @@ module Brainstem
           expect(subject.endpoints.count).to eq 1
         end
       end
-
 
       describe "derived fields" do
         let(:lorem)          { "lorem ipsum dolor sit amet" }
@@ -45,7 +43,6 @@ module Brainstem
             constant.to_s { "Api::V1::ClassName" }
           end
         end
-
 
         describe "configuration helpers" do
           describe "#contextual_documentation" do
@@ -93,7 +90,6 @@ module Brainstem
             end
           end
 
-
           describe "#default_configuration" do
             let(:default_config) { { title: nil } }
 
@@ -103,25 +99,45 @@ module Brainstem
           end
         end
 
+        describe "#tag" do
+          let(:default_config) { { tag: tag } }
 
-        describe "#nodoc?" do
-          let(:default_config) { { nodoc: nodoc } }
-
-          context "when nodoc in default" do
-            let(:nodoc) { true }
+          context "when tag in specified" do
+            let(:tag) { 'Tag Name' }
 
             it "is true" do
-              expect(subject.nodoc?).to eq true
+              expect(subject.tag).to eq(tag)
             end
           end
 
-          context "when not nodoc in default" do
-            it "is false" do
-              expect(subject.nodoc?).to eq false
+          context "when tag is not specified" do
+            let(:tag) { nil }
+
+            it "is nil" do
+              expect(subject.tag).to eq(nil)
             end
           end
         end
 
+        describe "#tag_groups" do
+          let(:default_config) { { tag_groups: tag_groups } }
+
+          context "when tag groups are specified" do
+            let(:tag_groups) { ['Group 1', 'Group 2'] }
+
+            it "is true" do
+              expect(subject.tag_groups).to eq(tag_groups)
+            end
+          end
+
+          context "when tag_groups are not specified" do
+            let(:tag_groups) { nil }
+
+            it "is nil" do
+              expect(subject.tag_groups).to eq(nil)
+            end
+          end
+        end
 
         describe "#title" do
           context "when present" do
@@ -148,7 +164,6 @@ module Brainstem
             end
           end
         end
-
 
         describe "#description" do
           context "when present" do
@@ -177,7 +192,6 @@ module Brainstem
         end
       end
 
-
       describe "#suggested_filename" do
         let(:const)          { Object.new }
 
@@ -186,7 +200,6 @@ module Brainstem
             constant.to_s { "Api::V1::ClassName" }
           end
         end
-
 
         it "gsubs namespace, filename and extension" do
           instance = described_class.new(atlas,
@@ -202,7 +215,6 @@ module Brainstem
         end
       end
 
-
       describe "#suggested_filename_link" do
         it "gsubs filename and extension" do
 
@@ -216,7 +228,6 @@ module Brainstem
           expect(instance.suggested_filename_link(:xyz)).to eq "controllers/abc_controller.xyz.foo"
         end
       end
-
 
       it_behaves_like "formattable"
       it_behaves_like "atlas taker"

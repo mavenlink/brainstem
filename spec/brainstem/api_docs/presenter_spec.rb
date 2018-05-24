@@ -21,7 +21,6 @@ module Brainstem
         end
       end
 
-
       describe "configured fields" do
         let(:lorem)  { "lorem ipsum dolor sit amet" }
         let(:const)  { Object.new }
@@ -37,7 +36,6 @@ module Brainstem
             constant.possible_brainstem_keys { Set.new(%w(lorem ipsum)) }
           end
         end
-
 
         describe "#nodoc?" do
           let(:config) { { nodoc: nodoc } }
@@ -57,7 +55,6 @@ module Brainstem
           end
         end
 
-
         describe "#title" do
           let(:config) { { title: { info: lorem, nodoc: nodoc } } }
 
@@ -76,13 +73,11 @@ module Brainstem
           end
         end
 
-
         describe "#brainstem_keys" do
           it "retrieves from the constant, array-izes, and sorts" do
             expect(subject.brainstem_keys).to eq [ "ipsum", "lorem" ]
           end
         end
-
 
         describe "#description" do
           context "with description" do
@@ -109,7 +104,6 @@ module Brainstem
             end
           end
         end
-
 
         describe "#valid_fields" do
           let(:presenter_class) do
@@ -240,6 +234,64 @@ module Brainstem
           end
         end
 
+        describe "#optional_field_names" do
+          let(:presenter_class) do
+            Class.new(Brainstem::Presenter) do
+              presents Workspace
+
+              fields do
+                field :mandatory_field, :string, dynamic: lambda { "new_field value" }
+                field :optional_top_field, :string, dynamic: lambda { "new_field value" }, optional: true
+                field :nodoc_optional_top_field, :string, dynamic: lambda { "new_field value" }, optional: true, nodoc: true
+
+                fields :optional_block_field, :hash, optional: true do
+                  field :leaf_field_1, :string
+                end
+
+                fields :nodoc_optional_block_field, :hash, optional: true, nodoc: true do
+                  field :leaf_field_2, :string
+                end
+
+                fields :nodoc_block_field, :hash, nodoc: true do
+                  field :optional_field_nodoc_block_field, :string, optional: true
+                end
+
+                fields :block_field_with_optional_fields, :hash do
+                  fields :optional_double_nested_field, :hash, optional: true do
+                    field :leaf_field_3, :string
+                  end
+
+                  fields :double_nested_field, :hash do
+                    field :leaf_field_4, :string
+                    field :optional_leaf_field, :string, optional: true
+                    field :nodoc_optional_leaf_field, :string, optional: true, nodoc: true
+                  end
+                end
+              end
+            end
+          end
+
+          subject { described_class.new(atlas, target_class: 'Workspace', const: presenter_class).optional_field_names }
+
+          before do
+            stub(atlas).find_by_class(anything) { nil }
+          end
+
+          it 'includes optional top level fields if nodoc is false' do
+            expect(subject).to include('optional_top_field')
+            expect(subject).to_not include('nodoc_optional_top_field')
+          end
+
+          it 'includes optional block fields if nodoc is false' do
+            expect(subject).to include('optional_block_field', 'optional_double_nested_field')
+            expect(subject).to_not include('nodoc_optional_block_field')
+          end
+
+          it 'includes optional leaf fields of block fields if nodoc is false' do
+            expect(subject).to include('optional_leaf_field')
+            expect(subject).to_not include('nodoc_optional_leaf_field', 'optional_field_nodoc_block_field')
+          end
+        end
 
         describe "#valid_filters" do
           let(:info)        { lorem }
@@ -266,7 +318,6 @@ module Brainstem
             end
           end
         end
-
 
         describe "#documentable_filter?" do
           let(:info)   { lorem }
@@ -309,7 +360,6 @@ module Brainstem
           end
         end
 
-
         describe "#valid_sort_orders" do
           let(:config) { { sort_orders: { title: { nodoc: true }, date: {} } } }
 
@@ -318,7 +368,6 @@ module Brainstem
             expect(subject.valid_sort_orders).not_to have_key(:title)
           end
         end
-
 
         describe "#valid_associations" do
           let(:info)        { lorem }
@@ -345,7 +394,6 @@ module Brainstem
             end
           end
         end
-
 
         describe "#documentable_association?" do
           let(:desc)        { lorem }
@@ -388,7 +436,6 @@ module Brainstem
           end
         end
 
-
         describe "#conditionals" do
           let(:config) { { conditionals: { thing: :other_thing } } }
 
@@ -405,7 +452,6 @@ module Brainstem
           end
         end
 
-
         describe "#default_sort_field" do
           context "when has default sort order" do
             let(:config) { { default_sort_order: "alphabetical:asc" } }
@@ -421,7 +467,6 @@ module Brainstem
             end
           end
         end
-
 
         describe "#default_sort_direction" do
           context "when has default sort order" do
@@ -485,7 +530,6 @@ module Brainstem
         end
       end
 
-
       describe "#suggested_filename" do
         before do
           stub(target_class).to_s { "Abc" }
@@ -503,7 +547,6 @@ module Brainstem
           expect(instance.suggested_filename(:xyz)).to eq "presenters/abc.xyz"
         end
       end
-
 
       describe "#suggested_filename_link" do
         before do
@@ -523,7 +566,6 @@ module Brainstem
         end
       end
 
-
       describe "#relative_path_to_presenter" do
         let(:presenter) {
           mock!
@@ -537,7 +579,6 @@ module Brainstem
             eq "sprocket_widget"
         end
       end
-
 
       describe "#link_for_association" do
         let(:presenter)    { Object.new }
@@ -577,7 +618,6 @@ module Brainstem
           end
         end
       end
-
 
       it_behaves_like "formattable"
       it_behaves_like "atlas taker"

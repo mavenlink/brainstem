@@ -14,11 +14,9 @@ module Brainstem
           include Helper
           extend Forwardable
 
-
           ################################################################################
           # Public API
           ################################################################################
-
 
           def initialize(endpoint, options = {})
             self.endpoint = endpoint
@@ -27,10 +25,8 @@ module Brainstem
             super options
           end
 
-
           attr_accessor :endpoint,
                         :output
-
 
           def call
             return output if endpoint.nodoc?
@@ -44,13 +40,11 @@ module Brainstem
             output
           end
 
-
           ################################################################################
           private
           ################################################################################
 
           delegate :controller => :endpoint
-
 
           #
           # Formats the title as given, falling back to the humanized action
@@ -60,14 +54,12 @@ module Brainstem
             output << md_h4(endpoint.title)
           end
 
-
           #
           # Formats the description if given.
           #
           def format_description!
             output << md_p(endpoint.description) unless endpoint.description.empty?
           end
-
 
           #
           # Formats the actual URI and stated HTTP methods.
@@ -77,7 +69,6 @@ module Brainstem
             path = endpoint.path.gsub('(.:format)', '.json')
             output << md_code("#{http_methods} #{path}")
           end
-
 
           #
           # Formats each parameter.
@@ -118,18 +109,15 @@ module Brainstem
           #
           # @param [String] name the param name
           # @param [Hash] options information pertinent to the param
-          # @option [Boolean] options :required
-          # @option [Boolean] options :legacy
-          # @option [Boolean] options :recursive
-          # @option [String,Symbol] options :only Deprecated: use +actions+
-          #   block instead
-          # @option [String] options :info the doc string for the param
-          # @option [String] options :type The type of the field.
-          #   e.g. string, integer, boolean, array, hash
-          # @option [String] options :item_type The type of the items in the field.
+          # @option options [Boolean] :required
+          # @option options [Boolean] :legacy
+          # @option options [Boolean] :recursive
+          # @option options [String, Symbol] :only Deprecated: use +actions+ block instead
+          # @option options [String] :info the doc string for the param
+          # @option options [String] :type The type of the field. e.g. string, integer, boolean, array, hash
+          # @option options [String] :item_type The type of the items in the field.
           #   Ideally used when the type of the field is an array or hash.
-          # @param [Integer] indent how many levels the output should be
-          #   indented from normal
+          # @param [Integer] indent how many levels the output should be indented from normal
           #
           def parameter_with_indent_level(title, options = {}, indent = 0)
             options = options.dup
@@ -149,12 +137,22 @@ module Brainstem
             md_li(text, indent)
           end
 
-
           #
           # Formats the data model for the action.
           #
           def format_presents!
-            if endpoint.presenter
+            if endpoint.custom_response.present?
+              response_configuration_tree = endpoint.custom_response_configuration_tree
+              response_structure_config = response_configuration_tree[:_config]
+
+              output << md_p(format_custom_response_message(response_structure_config))
+              output << md_ul do
+                response_configuration_tree.except(:_config).inject("") do |buff, (param_name, param_config)|
+                  buff << format_param_tree!("", param_name, param_config)
+                  buff
+                end
+              end
+            elsif endpoint.presenter
               output << md_h5("Data Model")
 
               link = md_a(endpoint.presenter_title, endpoint.relative_presenter_path_from_controller(:markdown))
@@ -163,12 +161,29 @@ module Brainstem
               end
             end
           end
+
+          def format_custom_response_message(response_config)
+            result = "The resulting JSON is "
+            result << case response_config[:type]
+              when "array"
+                if response_config[:item_type] == "hash"
+                  "an array of objects with the following properties"
+                else
+                  "an array of #{response_config[:item_type].pluralize}"
+                end
+              when "hash"
+                "a hash with the following properties"
+              else
+                "a #{response_config[:type]}"
+            end
+
+            result
+          end
         end
       end
     end
   end
 end
 
-
-Brainstem::ApiDocs::FORMATTERS[:endpoint][:markdown] = \
+Brainstem::ApiDocs::FORMATTERS[:endpoint][:markdown] =
   Brainstem::ApiDocs::Formatters::Markdown::EndpointFormatter.method(:call)

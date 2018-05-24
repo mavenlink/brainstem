@@ -9,14 +9,12 @@ module Brainstem
       let(:options) { {} }
       subject       { described_class.new(atlas, options) }
 
-
       describe "#initialize" do
         it "yields self if given a block" do
           block = Proc.new { |s| s.path = "bork bork" }
           expect(described_class.new(atlas, &block).path).to eq "bork bork"
         end
       end
-
 
       describe "#merge_http_methods!" do
         let(:options) { { http_methods: %w(GET) } }
@@ -28,7 +26,6 @@ module Brainstem
           expect(subject.http_methods).to eq %w(GET POST PATCH)
         end
       end
-
 
       describe "configured fields" do
         let(:const) do
@@ -61,7 +58,6 @@ module Brainstem
           stub(controller).const { const }
         end
 
-
         describe "#nodoc?" do
           let(:show_config) { { nodoc: nodoc } }
 
@@ -79,7 +75,6 @@ module Brainstem
             end
           end
         end
-
 
         describe "#title" do
           context "when present" do
@@ -107,7 +102,6 @@ module Brainstem
           end
         end
 
-
         describe "#description" do
           context "when present" do
             let(:show_config) { { description: { info: lorem, nodoc: nodoc } } }
@@ -134,7 +128,6 @@ module Brainstem
           end
         end
 
-
         describe "#valid_params" do
           it "returns the valid_params key from action or default" do
             mock(subject).key_with_default_fallback(:valid_params)
@@ -142,6 +135,65 @@ module Brainstem
           end
         end
 
+        describe "#operation_id" do
+          context "when present" do
+            let(:show_config) { { operation_id: "blah" } }
+
+            it "returns the operation ID" do
+              expect(subject.operation_id).to eq("blah")
+            end
+          end
+
+          context "when not present" do
+            let(:show_config) { { title: "Blah" } }
+
+            it "returns nothing" do
+              expect(subject.operation_id).to be_nil
+            end
+          end
+        end
+
+        describe "#produces" do
+          it "returns the produces key from action or default" do
+            mock(subject).key_with_default_fallback(:produces)
+            subject.produces
+          end
+        end
+
+        describe "#consumes" do
+          it "returns the consumes key from action or default" do
+            mock(subject).key_with_default_fallback(:consumes)
+            subject.consumes
+          end
+        end
+
+        describe "#security" do
+          it "returns the security key from action or default" do
+            mock(subject).key_with_default_fallback(:security)
+            subject.security
+          end
+        end
+
+        describe "#schemes" do
+          it "returns the schemes key from action or default" do
+            mock(subject).key_with_default_fallback(:schemes)
+            subject.schemes
+          end
+        end
+
+        describe "#external_docs" do
+          it "returns the external_docs key from action or default" do
+            mock(subject).key_with_default_fallback(:external_docs)
+            subject.external_docs
+          end
+        end
+
+        describe "#deprecated" do
+          it "returns the deprecated key from action or default" do
+            mock(subject).key_with_default_fallback(:deprecated)
+            subject.deprecated
+          end
+        end
 
         describe "#params_configuration_tree" do
           let(:default_config) { { valid_params: which_param } }
@@ -540,14 +592,12 @@ module Brainstem
           end
         end
 
-
         describe "#valid_presents" do
           it "returns the presents key from action or default" do
             mock(subject).key_with_default_fallback(:presents)
             subject.valid_presents
           end
         end
-
 
         describe "#contextual_documentation" do
           let(:show_config) { { title: { info: info, nodoc: nodoc } } }
@@ -594,7 +644,6 @@ module Brainstem
           end
         end
 
-
         describe "#key_with_default_fallback" do
           let(:default_config) { { info: "default" } }
 
@@ -613,7 +662,6 @@ module Brainstem
           end
         end
       end
-
 
       describe "#sort" do
         actions = %w(index show create update delete articuno zapdos moltres)
@@ -637,7 +685,6 @@ module Brainstem
         end
       end
 
-
       describe "#presenter_title" do
         let(:presenter) { mock!.title.returns(lorem).subject }
         let(:options)   { { presenter: presenter } }
@@ -646,7 +693,6 @@ module Brainstem
           expect(subject.presenter_title).to eq lorem
         end
       end
-
 
       describe "#relative_presenter_path_from_controller" do
         let(:presenter) {
@@ -671,6 +717,290 @@ module Brainstem
         end
       end
 
+      describe "custom response" do
+        let(:const) do
+          Class.new do
+            def self.brainstem_model_name
+              :widget
+            end
+          end
+        end
+
+        let(:controller)     { Object.new }
+        let(:action)         { :show }
+        let(:show_config)    { {} }
+        let(:nodoc)          { false }
+        let(:configuration)  { { :show => show_config } }
+
+        let(:options) { { controller: controller, action: action } }
+
+        before do
+          stub(controller).configuration { configuration }
+          stub(controller).const { const }
+        end
+
+        describe "#custom_response_configuration_tree" do
+          let(:default_response_config) { { nodoc: nodoc, type: 'array', item_type: 'hash' } }
+
+          context "when no custom response is present" do
+            let(:show_config) { {} }
+
+            it "returns empty object" do
+              expect(subject.custom_response_configuration_tree).to be_empty
+            end
+          end
+
+          context "when custom response is present" do
+            let(:show_config) do
+              {
+                custom_response: { _config: default_response_config }.merge(other_response_fields)
+              }
+            end
+
+            context "non-nested params" do
+              let(:other_response_fields) do
+                { Proc.new { 'title' } => { nodoc: nodoc, type: 'string' } }
+              end
+
+              context "when nodoc" do
+                let(:nodoc) { true }
+
+                it "rejects the key" do
+                  expect(subject.custom_response_configuration_tree).to eq(
+                    {
+                      _config: default_response_config
+                    }.with_indifferent_access
+                  )
+                end
+              end
+
+              context "when not nodoc" do
+                let(:nodoc) { false }
+
+                it "lists it as a root param" do
+                  expect(subject.custom_response_configuration_tree).to eq(
+                    {
+                      _config: default_response_config,
+                      title: {
+                        _config: { nodoc: nodoc, type: 'string' }
+                      }
+                    }.with_indifferent_access
+                  )
+                end
+
+                context "when param has an item" do
+                  let(:other_response_fields) do
+                    { Proc.new { 'only' } => { nodoc: nodoc, type: 'array', item: 'integer' } }
+                  end
+
+                  it "lists it as a root param" do
+                    expect(subject.custom_response_configuration_tree).to eq(
+                      {
+                        _config: default_response_config,
+                        only: {
+                          _config: { nodoc: nodoc, type: 'array', item: 'integer' }
+                        }
+                      }.with_indifferent_access
+                    )
+                  end
+                end
+              end
+            end
+
+            context "nested params" do
+              let(:parent_proc) { Proc.new { 'sprocket' } }
+              let(:other_response_fields) do
+                {
+                  parent_proc => { nodoc: nodoc, type: 'array', item_type: 'hash' },
+                  Proc.new { 'title' } => { nodoc: nodoc, type: 'string', ancestors: [parent_proc] }
+                }
+              end
+
+              context "when nodoc" do
+                let(:nodoc) { true }
+
+                it "rejects the key" do
+                  expect(subject.custom_response_configuration_tree).to eq(
+                    {
+                      _config: default_response_config,
+                    }.with_indifferent_access
+                  )
+                end
+              end
+
+              context "when not nodoc" do
+                it "lists it as a nested param" do
+                  expect(subject.custom_response_configuration_tree).to eq(
+                    {
+                      _config: default_response_config,
+                      sprocket: {
+                        _config: {
+                          nodoc: nodoc,
+                          type: 'array',
+                          item_type: 'hash'
+                        },
+                        title: {
+                          _config: {
+                            nodoc: nodoc,
+                            type: 'string'
+                          }
+                        }
+                      }
+                    }.with_indifferent_access
+                  )
+                end
+
+                context "when nested param has an item" do
+                  let(:other_response_fields) do
+                    {
+                      parent_proc => { nodoc: nodoc, type: 'array', item_type: 'hash' },
+                      Proc.new { 'ids' } => { nodoc: nodoc, type: 'array', item: 'integer', ancestors: [parent_proc] }
+                    }
+                  end
+
+                  it "lists it as a nested param" do
+                    expect(subject.custom_response_configuration_tree).to eq(
+                      {
+                        _config: default_response_config,
+                        sprocket: {
+                          _config: {
+                            nodoc: nodoc,
+                            type: 'array',
+                            item_type: 'hash'
+                          },
+                          ids: {
+                            _config: {
+                              nodoc: nodoc,
+                              type: 'array',
+                              item: 'integer'
+                            }
+                          }
+                        }
+                      }.with_indifferent_access
+                    )
+                  end
+                end
+              end
+            end
+
+            context "multi nested params" do
+              let(:project_proc)   { Proc.new { 'project' } }
+              let(:id_proc)        { Proc.new { 'id' } }
+              let(:task_proc)      { Proc.new { 'task' } }
+              let(:title_proc)     { Proc.new { 'title' } }
+              let(:checklist_proc) { Proc.new { 'checklist' } }
+              let(:name_proc)      { Proc.new { 'name' } }
+              let(:other_response_fields) do
+                {
+                  task_proc => {
+                    type: 'hash',
+                  },
+                  title_proc => {
+                    type: 'string',
+                    ancestors: [task_proc]
+                  },
+                  checklist_proc => {
+                    type: 'array',
+                    item: 'hash',
+                    ancestors: [task_proc]
+                  },
+                  name_proc => {
+                    type: 'string',
+                    ancestors: [task_proc, checklist_proc]
+                  }
+                }
+              end
+
+              context "when a leaf param has no doc" do
+                before do
+                  other_response_fields[name_proc][:nodoc] = true
+                end
+
+                it "rejects the key" do
+                  expect(subject.custom_response_configuration_tree).to eq(
+                    {
+                      _config: default_response_config,
+                      task: {
+                        _config: {
+                          type: 'hash'
+                        },
+                        title: {
+                          _config: {
+                            type: 'string'
+                          }
+                        },
+                        checklist: {
+                          _config: {
+                            type: 'array',
+                            item: 'hash'
+                          }
+                        },
+                      },
+                    }.with_indifferent_access
+                  )
+                end
+              end
+
+              context "when parent param has nodoc" do
+                before do
+                  other_response_fields[checklist_proc][:nodoc] = true
+                  # The nested field will be inherit the nodoc property from its parent.
+                  other_response_fields[name_proc][:nodoc] = true
+                end
+
+                it "rejects the parent key and its children" do
+                  expect(subject.custom_response_configuration_tree).to eq(
+                    {
+                      _config: default_response_config,
+                      task: {
+                        _config: {
+                          type: 'hash'
+                        },
+                        title: {
+                          _config: {
+                            type: 'string'
+                          }
+                        }
+                      }
+                    }.with_indifferent_access
+                  )
+                end
+              end
+
+              context "when not nodoc" do
+                it "evaluates the proc in the controller's context and lists it as a nested param" do
+                  expect(subject.custom_response_configuration_tree).to eq(
+                    {
+                      _config: default_response_config,
+                      task: {
+                        _config: {
+                          type: 'hash'
+                        },
+                        title: {
+                          _config: {
+                            type: 'string'
+                          }
+                        },
+                        checklist: {
+                          _config: {
+                            type: 'array',
+                            item: 'hash',
+                          },
+                          name: {
+                            _config: {
+                              type: 'string',
+                            }
+                          },
+                        },
+                      },
+                    }.with_indifferent_access
+                  )
+                end
+              end
+            end
+          end
+        end
+      end
 
       it_behaves_like "formattable"
       it_behaves_like "atlas taker"

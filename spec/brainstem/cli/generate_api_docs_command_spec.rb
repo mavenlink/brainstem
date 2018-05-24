@@ -31,6 +31,14 @@ module Brainstem
             expect(subject.options[:sink][:method].call).to be_a \
               Brainstem::ApiDocs::Sinks::ControllerPresenterMultifileSink
           end
+
+          context "when format is Open API Specification" do
+            let(:args) { %w(--open-api-specification=2 --multifile-presenters-and-controllers) }
+
+            it "raises an error" do
+              expect { subject }.to raise_error(NotImplementedError)
+            end
+          end
         end
 
         context "when --base-application-class" do
@@ -47,6 +55,14 @@ module Brainstem
 
           it "sets the write_path option of the sink" do
             expect(subject.options[:sink][:options][:write_path]).to eq "./blah"
+          end
+        end
+
+        context "when --api-version" do
+          let(:args) { %w(--api-version=2.0.0) }
+
+          it "sets the api version option of the sink" do
+            expect(subject.options[:sink][:options][:api_version]).to eq '2.0.0'
           end
         end
 
@@ -73,8 +89,44 @@ module Brainstem
             end
           end
         end
-      end
 
+        context "when --open-api-specification" do
+          context "when the correct version is specified" do
+            let(:args) { %w(--open-api-specification=2) }
+
+            it "sets sink to OpenApiSpecificationSink and format to oas_v2" do
+              expect(subject.options).to have_key :sink
+              expect(subject.options[:sink][:options][:format]).to eq(:oas_v2)
+              expect(subject.options[:sink][:method].call).to be_a \
+                Brainstem::ApiDocs::Sinks::OpenApiSpecificationSink
+            end
+          end
+
+          context "when the incorrect version is specified" do
+            let(:args) { %w(--open-api-specification=3) }
+
+            it "raises a Not Implemented Error" do
+              expect { subject }.to raise_error(NotImplementedError)
+            end
+          end
+        end
+
+        context "when --output-extension" do
+          let(:args) { %w(--output-extension=yml) }
+
+          it "sets the api version option of the sink" do
+            expect(subject.options[:sink][:options][:output_extension]).to eq 'yml'
+          end
+        end
+
+        context "when --oas-filename-pattern" do
+          let(:args) { %w(--oas-filename-pattern=blah/{{version}}.{{extension}}) }
+
+          it "sets the api version option of the sink" do
+            expect(subject.options[:sink][:options][:oas_filename_pattern]).to eq 'blah/{{version}}.{{extension}}'
+          end
+        end
+      end
 
       describe "execution" do
         context "when no sink provided" do
@@ -128,7 +180,6 @@ module Brainstem
           end
         end
       end
-
     end
   end
 end

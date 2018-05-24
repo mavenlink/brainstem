@@ -16,7 +16,6 @@ module Brainstem
 
       subject { Builder.new(default_options.merge(options)) }
 
-
       describe "#initialize" do
         let(:introspector_method) { Object.new }
         let(:options)             { { introspector_method: introspector_method } }
@@ -34,7 +33,6 @@ module Brainstem
           expect(subject.introspector_method).to eq introspector_method
         end
       end
-
 
       describe "introspection" do
         let(:introspector_method)   { Object.new }
@@ -55,7 +53,6 @@ module Brainstem
           end
         end
 
-
         it "passes the introspector method the introspector options" do
           mock(introspector_method).call(args_for_introspector)
           subject
@@ -66,7 +63,6 @@ module Brainstem
           expect(subject.introspector).to eq introspector
         end
       end
-
 
       describe "modeling" do
         let(:introspector)        { Object.new }

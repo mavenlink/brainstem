@@ -81,7 +81,6 @@ module Brainstem
               )
             end
 
-
             it "allows the specification of a custom base_presenter_class" do
               expect(subject.send(:base_presenter_class).to_s)
                 .to eq "::FakeBasePresenter"
@@ -102,7 +101,6 @@ module Brainstem
                 default_args.merge(base_controller_class: "::FakeBaseController")
               )
             end
-
 
             it "allows the specification of a custom base_controller_class" do
               expect(subject.send(:base_controller_class).to_s)

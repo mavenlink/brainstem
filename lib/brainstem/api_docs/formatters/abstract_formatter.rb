@@ -46,11 +46,9 @@ module Brainstem
           new(*args).call
         end
 
-
         def initialize(*args)
           super args.last || {}
         end
-
 
         #
         # Override to transform atlas data into serialized format.

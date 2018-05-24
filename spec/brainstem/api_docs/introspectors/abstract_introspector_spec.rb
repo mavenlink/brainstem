@@ -43,7 +43,6 @@ module Brainstem
           end
         end
 
-
         describe "#load_environment!" do
           it "is not implemented" do
             expect { subject.send(:load_environment!) }.to raise_error NotImplementedError
@@ -130,7 +129,6 @@ module Brainstem
             expect(subject.send(:valid_controllers?)).to eq false
           end
         end
-
 
         describe "#valid_presenters?" do
           it "is valid when a collection of zero or more classes" do

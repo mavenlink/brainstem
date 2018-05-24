@@ -9,17 +9,14 @@ module Brainstem
         class PresenterFormatter < AbstractFormatter
           include Helper
 
-
           def initialize(presenter, options = {})
             self.presenter = presenter
             self.output    = ""
             super options
           end
 
-
           attr_accessor :presenter,
                         :output
-
 
           def call
             return output if presenter.nodoc?
@@ -35,7 +32,6 @@ module Brainstem
             output
           end
 
-
           #####################################################################
           private
           #####################################################################
@@ -43,7 +39,6 @@ module Brainstem
           def format_title!
             output << md_h4(presenter.title)
           end
-
 
           def format_brainstem_keys!
             text = "Top-level key: "
@@ -54,11 +49,9 @@ module Brainstem
             output << md_p(text)
           end
 
-
           def format_description!
             output << md_p(presenter.description) unless presenter.description.empty?
           end
-
 
           def format_field_leaf(field, indent_level)
             text = md_inline_code(field.name.to_s)
@@ -81,7 +74,6 @@ module Brainstem
             text.chomp!
           end
 
-
           def format_field_branch(branch, indent_level = 0)
             branch.inject("") do |buffer, (name, field)|
               if nested_field?(field)
@@ -94,11 +86,9 @@ module Brainstem
             end
           end
 
-
           def nested_field?(field)
             field.respond_to?(:configuration)
           end
-
 
           def format_fields!
             output << md_h5("Fields")
@@ -112,7 +102,6 @@ module Brainstem
               output << md_p("No fields were listed.")
             end
           end
-
 
           def format_filters!
             if presenter.valid_filters.any?
@@ -141,7 +130,6 @@ module Brainstem
             end
           end
 
-
           def format_sort_orders!
             if presenter.valid_sort_orders.any?
               output << md_h5("Sort Orders")
@@ -169,34 +157,33 @@ module Brainstem
             end
           end
 
-
           def format_associations!
-            if presenter.valid_associations.any?
-              output << md_h5("Associations")
+            return if presenter.valid_associations.empty?
 
-              output << "Association Name | Associated Class | Description\n"
-              output << " --------------  |  --------------  |  ----------\n"
+            output << md_h5("Associations")
 
-              output << presenter.valid_associations.inject("") do |buffer, (_, association)|
-                link = presenter.link_for_association(association)
-                if link
-                  link = md_a(association.target_class, link)
-                else
-                  link = association.target_class.to_s
-                end
+            output << "Association Name | Associated Class | Description\n"
+            output << " --------------  |  --------------  |  ----------\n"
 
-                desc = association.description.to_s
-                if association.options && association.options[:restrict_to_only]
-                  desc += "." unless desc =~ /\.\s*\z/
-                  desc += "  Restricted to queries using the #{md_inline_code("only")} parameter."
-                  desc.strip!
-                end
-
-                buffer << md_inline_code(association.name) + " | " + link + " | " + desc + "\n"
+            output << presenter.valid_associations.inject("") do |buffer, (_, association)|
+              link = presenter.link_for_association(association)
+              if link
+                link = md_a(association.target_class, link)
+              else
+                link = association.target_class.to_s
               end
 
-              output << "\n"
+              desc = association.description.to_s
+              if association.options && association.options[:restrict_to_only]
+                desc += "." unless desc =~ /\.\s*\z/
+                desc += "  Restricted to queries using the #{md_inline_code("only")} parameter."
+                desc.strip!
+              end
+
+              buffer << md_inline_code(association.name) + " | " + link + " | " + desc + "\n"
             end
+
+            output << "\n"
           end
         end
       end
@@ -204,5 +191,5 @@ module Brainstem
   end
 end
 
-Brainstem::ApiDocs::FORMATTERS[:presenter][:markdown] = \
+Brainstem::ApiDocs::FORMATTERS[:presenter][:markdown] =
   Brainstem::ApiDocs::Formatters::Markdown::PresenterFormatter.method(:call)

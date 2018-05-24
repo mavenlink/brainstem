@@ -40,7 +40,6 @@ module Brainstem
             end
           end
 
-
           describe "formatting" do
             describe "#format_endpoints!" do
               it "joins each documentable endpoint" do
@@ -50,7 +49,6 @@ module Brainstem
               end
             end
 
-
             describe "#format_zero_text!" do
               it "appends the zero text" do
                 subject.send(:format_zero_text!)
@@ -58,7 +56,6 @@ module Brainstem
               end
             end
           end
-
 
           describe "#all_formatted_endpoints" do
             it "retrieves all formatted endpoints" do
@@ -77,8 +74,6 @@ module Brainstem
             end
           end
         end
-
-
       end
     end
   end

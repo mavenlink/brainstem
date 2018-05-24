@@ -10,7 +10,6 @@ require 'brainstem/dsl/conditionals_block'
 require 'brainstem/dsl/fields_block'
 require 'brainstem/dsl/associations_block'
 
-
 require 'active_support/core_ext/array/extract_options'
 
 module Brainstem
@@ -70,7 +69,6 @@ module Brainstem
           end
         end
 
-
         # @overload default_sort_order(sort_string)
         #   Sets a default sort order.
         #   @param [String] sort_string The sort order to apply by default
@@ -85,7 +83,6 @@ module Brainstem
           configuration[:default_sort_order] = sort_string if sort_string
           configuration[:default_sort_order]
         end
-
 
         #
         # @overload sort_order(name, order, options)
@@ -121,7 +118,6 @@ module Brainstem
           })
         end
 
-
         #
         # @overload filter(name, type, options = {})
         #   @param [Symbol] name The name of the scope that may be applied as a
@@ -142,13 +138,8 @@ module Brainstem
         #   @yieldreturn [ActiveRecord::Relation] A new scope that filters the
         #     scope that was yielded.
         #
-        def filter(name, type = DEFAULT_FILTER_DATA_TYPE, options = {}, &block)
-          if type.is_a?(Hash)
-            options = type if options.blank?
-            type = DEFAULT_FILTER_DATA_TYPE
-
-            deprecated_type_warning
-          elsif type.to_s == 'array'
+        def filter(name, type, options = {}, &block)
+          if type.to_s == 'array'
             options[:item_type] = options[:item_type].to_s.presence || DEFAULT_FILTER_DATA_TYPE
           end
 
@@ -189,16 +180,6 @@ module Brainstem
 
         DEFAULT_FILTER_DATA_TYPE = 'string'
         private_constant :DEFAULT_FILTER_DATA_TYPE
-
-        def deprecated_type_warning
-          ActiveSupport::Deprecation.warn(
-            'Please specify the `type` of the filter as the second argument. If not specified, '\
-              'it will default to `:string`. This default behavior will be deprecated in the next major '\
-              'version and will need to be explicitly specified. '\
-              'e.g. `filter :status, :string, items: ["Started", "Completed"]`',
-            caller
-          )
-        end
       end
     end
   end

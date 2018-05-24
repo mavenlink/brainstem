@@ -101,6 +101,58 @@ module Brainstem
         end
       end
 
+      describe ".tag" do
+        it "sets the tag for the context" do
+          subject.brainstem_params do
+            tag "TagName"
+          end
+
+          expect(subject.configuration[:_default][:tag]).to eq "TagName"
+        end
+
+        context "when used in an action" do
+          it "raises and error" do
+            expect {
+              subject.brainstem_params do
+                actions :show do
+                  tag "TagName"
+                end
+              end
+            }.to raise_error(StandardError)
+          end
+        end
+      end
+
+      describe ".tag_groups" do
+        it "sets the tag groups" do
+          subject.brainstem_params do
+            tag_groups "Group Tag 1"
+          end
+
+          expect(subject.configuration[:_default][:tag_groups]).to eq ["Group Tag 1"]
+        end
+
+        it "sets the tag groups when an array is given" do
+          subject.brainstem_params do
+            tag_groups ["Group Tag 1", "Group Tag 2"]
+          end
+
+          expect(subject.configuration[:_default][:tag_groups]).to eq ["Group Tag 1", "Group Tag 2"]
+        end
+
+        context "when used in an action" do
+          it "raises and error" do
+            expect {
+              subject.brainstem_params do
+                actions :show do
+                  tag_groups ["Group Tag 1", "Group Tag 2"]
+                end
+              end
+            }.to raise_error(StandardError)
+          end
+        end
+      end
+
       describe ".model_params" do
         let(:root_proc) { Proc.new {} }
 
@@ -472,70 +524,6 @@ module Brainstem
             end
           end
         end
-
-        context "deprecated type behavior" do
-          context "when no type is provided" do
-            before do
-              mock(subject).deprecated_type_warning
-            end
-
-            it "defaults to type string" do
-              subject.brainstem_params do
-                valid :sprocket_name, required: true
-              end
-
-              valid_params = subject.configuration[:_default][:valid_params]
-              expect(valid_params.keys.length).to eq(1)
-              expect(valid_params.keys[0].call).to eq("sprocket_name")
-
-              configuration = valid_params[valid_params.keys[0]]
-              expect(configuration[:type]).to eq("string")
-              expect(configuration[:required]).to be_truthy
-            end
-          end
-
-          context "when no type and options are provided" do
-            before do
-              mock(subject).deprecated_type_warning
-            end
-
-            it "defaults type to string and sets default options for the param" do
-              subject.brainstem_params do
-                valid :sprocket_name
-              end
-
-              valid_params = subject.configuration[:_default][:valid_params]
-              expect(valid_params.keys.length).to eq(1)
-              expect(valid_params.keys[0].call).to eq("sprocket_name")
-
-              configuration = valid_params[valid_params.keys[0]]
-              expect(configuration[:nodoc]).to be_falsey
-              expect(configuration[:required]).to be_falsey
-              expect(configuration[:type]).to eq("string")
-            end
-          end
-
-          context "when type and options are hashes" do
-          before do
-            mock(subject).deprecated_type_warning
-          end
-
-          it "ignores the type and defaults to string" do
-            subject.brainstem_params do
-              valid :sprocket_name, { troll: true }, { required: true }
-            end
-
-            valid_params = subject.configuration[:_default][:valid_params]
-            expect(valid_params.keys.length).to eq(1)
-            expect(valid_params.keys[0].call).to eq("sprocket_name")
-
-            configuration = valid_params[valid_params.keys[0]]
-            expect(configuration[:nodoc]).to be_falsey
-            expect(configuration[:required]).to be_truthy
-            expect(configuration[:type]).to eq("string")
-          end
-          end
-        end
       end
 
       describe ".transform" do
@@ -710,6 +698,384 @@ module Brainstem
             expect(subject.configuration[meth.to_sym][:valid_params].keys.map(&:call)).to \
               include "param_1"
           end
+        end
+      end
+
+      describe ".response" do
+        context "when block given" do
+          it "sets the custom_response configuration" do
+            subject.brainstem_params do
+              actions :show do
+                response :array do |response_param|
+                  response_param.field :blah, :string
+                end
+              end
+            end
+
+            configuration = subject.configuration[:show][:custom_response]
+            expect(configuration).to be_present
+            expect(configuration[:_config]).to eq({
+              type: 'array',
+              item_type: 'hash',
+              nodoc: false,
+              required: false,
+            }.with_indifferent_access)
+          end
+        end
+
+        context "when block not given" do
+          it "sets the custom_response configuration" do
+            subject.brainstem_params do
+              actions :show do
+                response :array
+              end
+            end
+
+            configuration = subject.configuration[:show][:custom_response]
+            expect(configuration).to be_present
+            expect(configuration[:_config]).to eq({
+              type: 'array',
+              item_type: 'string',
+              nodoc: false,
+              required: false,
+            }.with_indifferent_access)
+          end
+        end
+      end
+
+      describe ".fields" do
+        context "when used outside of the response block" do
+          it "raises an error" do
+            expect {
+              subject.brainstem_params do
+                actions :show do
+                  fields :contacts, :array do
+                    field :full_name, :string
+                  end
+                end
+              end
+            }.to raise_error(StandardError)
+          end
+        end
+
+        context "when used within the response block" do
+          context "when type is hash" do
+            it "adds the field block to custom_response configuration" do
+              subject.brainstem_params do
+                actions :show do
+                  response :hash do
+                    fields :contact, :hash do
+                      field :full_name, :string
+                    end
+                  end
+                end
+              end
+
+              configuration = subject.configuration[:show][:custom_response]
+              param_keys = configuration.keys
+
+              expect(param_keys[1].call).to eq('contact')
+              expect(configuration[param_keys[1]]).to eq({
+                type: 'hash',
+                nodoc: false,
+                required: false,
+              }.with_indifferent_access)
+
+              expect(param_keys[2].call).to eq('full_name')
+              expect(configuration[param_keys[2]]).to eq({
+                type: 'string',
+                nodoc: false,
+                ancestors: [param_keys[1]],
+                required: false,
+              }.with_indifferent_access)
+            end
+          end
+
+          context "when type is array" do
+            it "adds the field block to custom_response configuration" do
+              subject.brainstem_params do
+                actions :show do
+                  response :hash do
+                    fields :contacts, :array do
+                      field :full_name, :string
+                    end
+                  end
+                end
+              end
+
+              configuration = subject.configuration[:show][:custom_response]
+              param_keys = configuration.keys
+
+              expect(param_keys[1].call).to eq('contacts')
+              expect(configuration[param_keys[1]]).to eq({
+                type: 'array',
+                item_type: 'hash',
+                nodoc: false,
+                required: false,
+              }.with_indifferent_access)
+
+              expect(param_keys[2].call).to eq('full_name')
+              expect(configuration[param_keys[2]]).to eq({
+                type: 'string',
+                nodoc: false,
+                required: false,
+                ancestors: [param_keys[1]]
+              }.with_indifferent_access)
+            end
+          end
+
+          context "when multi nested" do
+            it "adds the field block to custom_response configuration" do
+              subject.brainstem_params do
+                actions :show do
+                  response :hash do
+                    fields :contact, :hash, nodoc: true do
+                      fields :details, :hash do
+                        field :full_name, :string
+                      end
+                    end
+                  end
+                end
+              end
+
+              configuration = subject.configuration[:show][:custom_response]
+              param_keys = configuration.keys
+
+              expect(param_keys[1].call).to eq('contact')
+              expect(configuration[param_keys[1]]).to eq({
+                type: 'hash',
+                nodoc: true,
+                required: false,
+              }.with_indifferent_access)
+
+              expect(param_keys[2].call).to eq('details')
+              expect(configuration[param_keys[2]]).to eq({
+                type: 'hash',
+                nodoc: true,
+                required: false,
+                ancestors: [param_keys[1]]
+              }.with_indifferent_access)
+
+              expect(param_keys[3].call).to eq('full_name')
+              expect(configuration[param_keys[3]]).to eq({
+                type: 'string',
+                nodoc: true,
+                required: false,
+                ancestors: [param_keys[1], param_keys[2]]
+              }.with_indifferent_access)
+            end
+          end
+        end
+      end
+
+      describe ".field" do
+        context "when used outside of the response block" do
+          it "raises an error" do
+            expect {
+              subject.brainstem_params do
+                actions :show do
+                  field :full_name, :string
+                end
+              end
+            }.to raise_error(StandardError)
+          end
+        end
+
+        context "when used within the response block" do
+          context "when type is array" do
+            it "adds the field block to custom_response configuration" do
+              subject.brainstem_params do
+                actions :show do
+                  response :hash do
+                    field :names, :array
+                  end
+                end
+              end
+
+              configuration = subject.configuration[:show][:custom_response]
+              param_keys = configuration.keys
+
+              expect(param_keys[1].call).to eq('names')
+              expect(configuration[param_keys[1]]).to eq({
+                type: 'array',
+                item_type: 'string',
+                nodoc: false,
+                required: false,
+              }.with_indifferent_access)
+            end
+          end
+
+          context "when type is not array" do
+            it "adds the field block to custom_response configuration" do
+              subject.brainstem_params do
+                actions :show do
+                  response :hash do
+                    field :full_name, :string
+                  end
+                end
+              end
+
+              configuration = subject.configuration[:show][:custom_response]
+              param_keys = configuration.keys
+
+              expect(param_keys[1].call).to eq('full_name')
+              expect(configuration[param_keys[1]]).to eq({
+                type: 'string',
+                nodoc: false,
+                required: false,
+              }.with_indifferent_access)
+            end
+          end
+
+          context "when nested under parent field" do
+            it "inherits the nodoc attribute" do
+              subject.brainstem_params do
+                actions :show do
+                  response :hash do
+                    fields :contact, :hash, nodoc: true do
+                      field :full_name, :string
+                    end
+                  end
+                end
+              end
+
+              configuration = subject.configuration[:show][:custom_response]
+              param_keys = configuration.keys
+
+              expect(param_keys[1].call).to eq('contact')
+              expect(configuration[param_keys[1]]).to eq({
+                type: 'hash',
+                nodoc: true,
+                required: false,
+              }.with_indifferent_access)
+
+              expect(param_keys[2].call).to eq('full_name')
+              expect(configuration[param_keys[2]]).to eq({
+                type: 'string',
+                nodoc: true,
+                required: false,
+                ancestors: [param_keys[1]]
+              }.with_indifferent_access)
+            end
+          end
+        end
+      end
+
+      describe ".operation_id" do
+        it "sets the operation_id for the context" do
+          subject.brainstem_params do
+            actions :show do
+              operation_id "getPetByID"
+            end
+          end
+
+          expect(subject.configuration[:show][:operation_id]).to eq("getPetByID")
+        end
+
+        context "when defined on the default context" do
+          it "raises an error" do
+            expect {
+              subject.brainstem_params do
+                operation_id :blah
+              end
+            }.to raise_error(StandardError)
+          end
+        end
+      end
+
+      describe ".consumes" do
+        it "sets the consumes property for the context" do
+          subject.brainstem_params do
+            consumes "application/xml", "application/json"
+
+            actions :show do
+              consumes ["application/x-www-form-urlencoded"]
+            end
+          end
+
+          expect(subject.configuration[:_default][:consumes]).to \
+            eq ["application/xml", "application/json"]
+
+          expect(subject.configuration[:show][:consumes]).to \
+            eq ["application/x-www-form-urlencoded"]
+        end
+      end
+
+      describe ".produces" do
+        it "sets the produces property for the context" do
+          subject.brainstem_params do
+            produces "application/xml"
+
+            actions :show do
+              produces ["application/x-www-form-urlencoded"]
+            end
+          end
+
+          expect(subject.configuration[:_default][:produces]).to \
+            eq ["application/xml"]
+
+          expect(subject.configuration[:show][:produces]).to \
+            eq ["application/x-www-form-urlencoded"]
+        end
+      end
+
+      describe ".security" do
+        it "sets the security configuration for the context" do
+          subject.brainstem_params do
+            security []
+
+            actions :show do
+              security({"petstore_auth" => [ "write:pets", "read:pets" ]})
+            end
+          end
+
+          expect(subject.configuration[:_default][:security]).to eq []
+          expect(subject.configuration[:show][:security]).to eq([
+            { "petstore_auth" => [ "write:pets", "read:pets" ] }
+          ])
+        end
+      end
+
+      describe ".external_doc" do
+        it "sets the external_doc for the context" do
+          subject.brainstem_params do
+            actions :show do
+              external_doc description: 'External Doc',
+                           url: 'www.blah.com'
+            end
+          end
+
+          expect(subject.configuration[:show][:external_doc]).to eq(
+            'description' => 'External Doc',
+            'url' => 'www.blah.com'
+          )
+        end
+      end
+
+      describe ".schemes" do
+        it "sets the schemes property for the context" do
+          subject.brainstem_params do
+            schemes "https"
+
+            actions :show do
+              schemes ["http"]
+            end
+          end
+
+          expect(subject.configuration[:_default][:schemes]).to eq ["https"]
+          expect(subject.configuration[:show][:schemes]).to eq ["http"]
+        end
+      end
+
+      describe ".deprecated" do
+        it "sets the deprecated property for the context" do
+          subject.brainstem_params do
+            actions :show do
+              deprecated true
+            end
+          end
+
+          expect(subject.configuration[:show][:deprecated]).to eq true
         end
       end
 

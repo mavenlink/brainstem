@@ -25,7 +25,6 @@ module Brainstem
         instance
       end
 
-
       #
       # Returns a new instance of the command with options set.
       #
@@ -35,7 +34,6 @@ module Brainstem
         extract_options!
       end
 
-
       #
       # Returns the hash of default options used as a base into which cli args
       # are merged.
@@ -43,7 +41,6 @@ module Brainstem
       def default_options
         {}
       end
-
 
       #
       # Kicks off execution of app-level code. Has available to it +options+,
@@ -54,18 +51,15 @@ module Brainstem
           "Override #call and implement your application logic."
       end
 
-
       #
       # Storage for given options.
       #
       attr_accessor :options
 
-
       #
       # Storage for passed, unparsed args.
       #
       attr_accessor :args
-
 
       #
       # Extracts command-line options for this specific command based on the
@@ -76,7 +70,6 @@ module Brainstem
       def extract_options!
         option_parser.order!(args)
       end
-
 
       #
       # An +OptionParser+ instance that specifies how options should be

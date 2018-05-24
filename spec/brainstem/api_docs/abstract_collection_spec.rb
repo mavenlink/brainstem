@@ -18,7 +18,6 @@ module Brainstem
         end
       end
 
-
       describe "#<<" do
         it "adds a member to the collection" do
           subject << member
@@ -31,7 +30,6 @@ module Brainstem
         end
       end
 
-
       describe "#each" do
         it "iterates over each member" do
           subject << members
@@ -39,12 +37,10 @@ module Brainstem
         end
       end
 
-
       describe "iteration" do
         before do
           subject << member
         end
-
 
         describe "#filenames" do
           it "maps all its members" do
@@ -54,7 +50,6 @@ module Brainstem
           end
         end
 
-
         describe "#each_filename" do
           it "maps all its controllers and yields each in turn" do
             stub(member).formatted_as(:markdown, {}) { "blah" }
@@ -63,7 +58,6 @@ module Brainstem
               yield_with_args("member.markdown")
           end
         end
-
 
         describe "#formatted" do
           it "maps all its members" do
@@ -81,7 +75,6 @@ module Brainstem
             expect(subject.formatted(:markdown)).to eq []
           end
         end
-
 
         describe "#formatted_with_filename" do
           it "maps all its members and filenames" do
@@ -105,7 +98,6 @@ module Brainstem
           end
         end
 
-
         describe "#each_formatted" do
           it "maps all its controllers and yields each in turn" do
             mock(member).formatted_as(:markdown, {}) { "blah" }
@@ -119,7 +111,6 @@ module Brainstem
             subject.each_formatted(:markdown, blah: true) {|_, _| nil }
           end
         end
-
 
         describe "#each_formatted_with_filename" do
           it "maps all its controllers and filenames and yields each in turn" do
@@ -139,7 +130,6 @@ module Brainstem
         end
       end
 
-
       describe ".with_members" do
         subject { described_class.with_members(atlas, member) }
 
@@ -147,7 +137,6 @@ module Brainstem
           expect(subject).to be_a described_class
           expect(subject.send(:members)).to eq [ member ]
         end
-
       end
 
       it_behaves_like "atlas taker"

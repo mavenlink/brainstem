@@ -60,7 +60,6 @@ module Brainstem
         @storage[key] ||= InheritableAppendSet.new
       end
 
-
       #
       # Marks a key in the configuration as nonheritable, which means that the key:
       #
@@ -82,9 +81,7 @@ module Brainstem
         self.nonheritable_keys << formatted_key unless self.nonheritable_keys.include?(formatted_key)
       end
 
-
       attr_accessor :nonheritable_keys
-
 
       #
       # Returns the keys in this configuration object that are visible to child
@@ -96,7 +93,6 @@ module Brainstem
         keys - nonheritable_keys.to_a
       end
 
-
       #
       # Returns a hash of this object's storage, less those pairs that are
       # not visible to children.
@@ -106,7 +102,6 @@ module Brainstem
       def pairs_visible_to_children
         to_h.select {|k, v| keys_visible_to_children.include?(format_key(k)) }
       end
-
 
       #
       # Returns the union of all keys in this configuration plus those that are
@@ -121,7 +116,6 @@ module Brainstem
           @parent_configuration.keys | @storage.keys
         end
       end
-
 
       #
       # Returns a list of nonheritable keys for the parent configuration, if
@@ -139,7 +133,6 @@ module Brainstem
         end
       end
 
-
       #
       # Returns whether a key is nonheritable in this configuration object's
       # parent configuration.
@@ -152,7 +145,6 @@ module Brainstem
       def key_nonheritable_in_parent?(*key)
         parent_nonheritable_keys.include?(format_key(key.first))
       end
-
 
       #
       # An inversion of +key_nonheritable_in_parent+. Returns true if the
@@ -167,7 +159,6 @@ module Brainstem
         !key_nonheritable_in_parent?(format_key(key.first))
       end
 
-
       #
       # Returns a hash of this object's storage merged over the heritable pairs
       # of its parent configurations.
@@ -181,7 +172,6 @@ module Brainstem
           @parent_configuration.to_h.merge(@storage)
         end
       end
-
 
       #
       # Returns the value for the given key, or if it could not be found:
@@ -209,7 +199,6 @@ module Brainstem
           raise KeyError
         end
       end
-
 
       def has_key?(key)
         @storage.has_key?(key) ||

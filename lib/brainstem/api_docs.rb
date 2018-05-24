@@ -8,6 +8,19 @@ module Brainstem
       File.expand_path("./brainstem_docs")
     end
 
+    #
+    # Defines the naming pattern of the Open API Specification file.
+    #
+    # The following tokens will be substituted:
+    #
+    # - {{version}}   : the specified version
+    # - {{extension}  : the specified file extension
+    #
+    # @see #output_extension
+    #
+    config_accessor(:oas_filename_pattern) do
+      File.join("endpoints", "{{version}}.{{extension}}")
+    end
 
     #
     # Defines the naming pattern of each controller documentation file.
@@ -26,7 +39,6 @@ module Brainstem
       File.join("endpoints", "{{name}}.{{extension}}")
     end
 
-
     #
     # Defines the naming pattern of each presenter documentation file.
     #
@@ -40,7 +52,6 @@ module Brainstem
     config_accessor(:presenter_filename_pattern) do
       File.join("objects", "{{name}}.{{extension}}")
     end
-
 
     #
     # Defines the naming pattern for the relative link to each controller documentation file.
@@ -56,7 +67,6 @@ module Brainstem
       controller_filename_pattern
     end
 
-
     #
     # Defines the naming pattern for the relative link to each presenter documentation file.
     #
@@ -71,6 +81,10 @@ module Brainstem
       presenter_filename_pattern
     end
 
+    #
+    # Defines the base path for the given API.
+    #
+    config_accessor(:base_path) { "/v2" }
 
     #
     # Defines the extension that should be used for output files.
@@ -78,7 +92,6 @@ module Brainstem
     # Excludes the '.'.
     #
     config_accessor(:output_extension) { "markdown" }
-
 
     #
     # Defines the class that all presenters should inherit from / be drawn
@@ -92,7 +105,6 @@ module Brainstem
     config_accessor(:base_presenter_class) do
       "::Brainstem::Presenter"
     end
-
 
     #
     # Defines the class that all controllers should inherit from / be drawn
@@ -114,21 +126,17 @@ module Brainstem
     #
     config_accessor(:base_application_class) { nil }
 
-
     #
     # If associations on a presenter have no description, i.e. no documentation,
     # should they be documented anyway?
     #
     config_accessor(:document_empty_presenter_associations) { true }
 
-
     #
     # If filters on a presenter have no `:info` key, i.e. no documentation,
     # should they be documented anyway?
     #
     config_accessor(:document_empty_presenter_filters) { true }
-
-
 
     FORMATTERS = {
 
@@ -145,6 +153,12 @@ module Brainstem
       endpoint:    {},
       presenter:   {},
 
+      # Formatter for Open API Specifications
+      info:       {},
+      response:   {},
+      parameters: {},
+      security:   {},
+      tags:       {},
     }
   end
 end

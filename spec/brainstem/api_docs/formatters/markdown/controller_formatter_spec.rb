@@ -56,7 +56,6 @@ module Brainstem
             let(:default_config) { {} }
             let(:configuration)  { { _default: default_config } }
 
-
             describe "#format_title!" do
               it "outputs it as an h2" do
                 stub(controller).title { lorem }

@@ -2,7 +2,6 @@
 Dir.glob(File.expand_path('../cli/**/*.rb', __FILE__)).each { |f| require f }
 require 'brainstem/concerns/optional'
 
-
 #
 # General manager for CLI requests. Takes incoming user input and routes to a
 # subcommand.
@@ -21,7 +20,6 @@ module Brainstem
       new(args, options).call
     end
 
-
     #
     # Creates a new instance of the Cli to respond to user input.
     #
@@ -34,7 +32,6 @@ module Brainstem
       self._args              = args.dup.freeze
       self.requested_command  = args.shift
     end
-
 
     #
     # Routes to an application endpoint depending on given options.
@@ -51,23 +48,19 @@ module Brainstem
       self
     end
 
-
     #
     # Holds a copy of the initial given args for debugging purposes.
     #
     attr_accessor :_args
-
 
     #
     # Storage for the extracted command.
     #
     attr_accessor :requested_command
 
-
     ################################################################################
     private
     ################################################################################
-
 
     #
     # A whitelist of valid options that can be applied to the instance.
@@ -80,7 +73,6 @@ module Brainstem
       ]
     end
 
-
     #
     # A basic routing table where the keys are the command to invoke, and where
     # the value is a callable object or class that will be called with the
@@ -92,7 +84,6 @@ module Brainstem
       { 'generate' => Brainstem::CLI::GenerateApiDocsCommand }
     end
 
-
     #
     # Retrieves the help text and subs any placeholder values.
     #
@@ -101,12 +92,10 @@ module Brainstem
         .gsub('EXECUTABLE_NAME', EXECUTABLE_NAME)
     end
 
-
     #
     # Stores the method we should call to run the user command.
     #
     attr_writer :command_method
-
 
     #
     # Reader for the method to invoke. By default, will output the help text
@@ -122,12 +111,10 @@ module Brainstem
       end
     end
 
-
     #
     # Stores the method we should use to log messages.
     #
     attr_writer :log_method
-
 
     #
     # Reader for the method to log. By default, will print to stdout when

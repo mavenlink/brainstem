@@ -364,6 +364,11 @@ bundle exec brainstem generate --help
 
 ## API Documentation
 
+Currently, Brainstem supports generation of documentation in the following formats:
+
+- Markdown
+- [Open API Specification 2.0 (OAS 2.0)](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md)
+
 ### The `generate` command
 
 Running `bundle exec brainstem generate [ARGS]` will generate the documentation
@@ -705,6 +710,120 @@ class BlogPostsController < ApiController
     # Includes a link to the presenter for `BlogPost` in each action.
     presents BlogPost
   end
+```
+
+##### `response`
+
+Allows documenting custom responses on endpoints. These are only applicable to action contexts.
+
+```ruby
+class ContactsController < ApiController
+  brainstem_params do
+    actions :index do
+      response :hash do
+        field :count, :integer,
+              info: "Total count of contacts"
+         
+        fields :contacts, :array,
+               item_type: :hash,
+               info: "Array of contact details" do
+          
+          field :full_name, :string,
+                info: "Full name of the contact"
+            
+          field :email_address, :string,
+                info: "Email address of the contact"
+        end
+      end
+    end
+  end
+```
+
+##### Specific to Open API Specification 2.0 generation
+
+###### `tag` / `tag_groups`
+
+These are applicable only to the root context.
+ 
+```ruby
+brainstem_params do
+
+  # The `tag` configuration allows grouping of all endpoints
+  # in a controller under the same group
+  tag "Adopt a Pet"
+  
+  # The `tag_group` configuration introduces another level of nesting
+  # and allows grouping multiple controllers under a specific group
+  tag_groups "Dogs", "Cats"
+end
+```
+
+###### `consumes` / `produces` / `security` / `external_doc` / `schemes` / `deprecated`
+
+Any of these can be used inside an action context.
+
+```ruby
+class PetsController < ApiController
+  brainstem_params do
+    
+    # A list of default MIME types, endpoints on this controller can consume.
+    consumes "application/xml", "application/json"
+
+    # A list of default MIME types, endpoints on this controller can produce.
+    produces "application/xml"
+    
+    # A declaration of which security schemes are applied to endpoints on this controller.
+    security []
+    
+    # The default transfer protocols for endpoints on this controller. 
+    schemes "https", "http"
+    
+    # Additional external documentation
+    external_doc description: 'External Doc',
+                 url: 'www.google.com'
+    
+    # Declares endpoints on this controller to be deprecated.
+    deprecated true
+    
+    actions :update do
+      
+      # Overriden MIME types the endpoints can consume.
+      consumes "application/json"
+            
+      # A list of default MIME types the endpoints can produce.
+      produces "application/json"
+      
+      # Security schemes for this endpoint.
+      security { "petstore_auth" => [ "write:pets" ] }
+      
+      # Transfer protocols applicable to this endpoint.
+      schemes "https"
+      
+      # External documentation for the endpoint.
+      external_doc description: 'Stock Market News',
+                   url: 'www.google.com/finance'
+      
+      # Overrides the deprecated value set on the root context.
+      deprecated false
+    end
+  end
+end
+```
+
+###### `operation_id`
+
+The `operation_id` configuration can only be used within an action context.
+
+```ruby
+class BlogPostsController < ApiController
+  brainstem_params do
+    actions :show do
+    
+      # Unique string used to identify the operation. 
+      operation_id "getBlogByID"
+    end
+  end
+end
 ```
 
 ### Extending and Customizing the API Documentation

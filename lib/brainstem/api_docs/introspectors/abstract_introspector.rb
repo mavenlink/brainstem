@@ -19,7 +19,6 @@ module Brainstem
           new(options).tap(&:load_environment!)
         end
 
-
         # Override to return a collection of all controller classes.
         #
         # @return [Array<Class>] all controller classes to document
@@ -27,14 +26,12 @@ module Brainstem
           raise NotImplementedError
         end
 
-
         # Override to return a collection of all presenter classes.
         #
         # @return [Array<Class>] all presenter classes to document
         def presenters
           raise NotImplementedError
         end
-
 
         # Override to return a collection of hashes with the minimum following
         # keys:
@@ -48,7 +45,6 @@ module Brainstem
           raise NotImplementedError
         end
 
-
         # Provides both a sanity check to ensure that output confirms to
         # interface and also confirms that there is actually something to
         # generate docs for.
@@ -58,7 +54,6 @@ module Brainstem
           valid_controllers? && valid_presenters? && valid_routes?
         end
 
-
         #######################################################################
         private
         #######################################################################
@@ -67,13 +62,11 @@ module Brainstem
         # instantiation happens through +with_loaded_environment.
         private_class_method :new
 
-
         # Loads the host application environment.
         # @api private
         def load_environment!
           raise NotImplementedError
         end
-
 
         def valid_controllers?
           controllers.is_a?(Array) &&

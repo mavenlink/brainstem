@@ -18,6 +18,7 @@ module Brainstem
           describe "#call" do
             before do
               stub(endpoint).nodoc? { nodoc }
+              stub(endpoint).custom_response { {} }
             end
 
             context "when it is nodoc" do
@@ -78,7 +79,6 @@ module Brainstem
               end
             end
 
-
             describe "#format_description!" do
               context "when present" do
                 before do
@@ -106,7 +106,6 @@ module Brainstem
               end
             end
 
-
             describe "#format_endpoint!" do
               let(:endpoint_args) { { http_methods: %w(get post), path: "/widgets(.:format)" } }
 
@@ -126,7 +125,6 @@ module Brainstem
                 expect(subject.output).to include "/widgets"
               end
             end
-
 
             describe "#format_params!" do
               let(:const) do
@@ -316,15 +314,103 @@ module Brainstem
             end
 
             describe "#format_presents!" do
-              let(:presenter) { Object.new }
+              context "when has a custom response" do
+                before do
+                  stub(endpoint).custom_response { true }
+                  stub(endpoint).custom_response_configuration_tree { custom_response_configuration }
+                end
 
-              before do
-                stub(endpoint).presenter_title { "Sprocket Widget" }
-                stub(endpoint).relative_presenter_path_from_controller(:markdown) { "../../sprocket_widget.markdown" }
+                context "when the response type is a hash" do
+                  let(:custom_response_configuration) do
+                    {
+                      '_config' => {
+                        'type' => 'hash',
+                      },
+                      'widget_name' => {
+                        '_config' => {
+                          'type' => 'string',
+                          'info' => 'the name of the widget',
+                          'nodoc' => false
+                        },
+                      },
+                      'widget_permission' => {
+                        '_config' => {
+                          'type' => 'hash',
+                          'nodoc' => false
+                        },
+                        'can_edit' => {
+                          '_config' => {
+                            'type' => 'boolean',
+                            'info' => 'can edit the widget',
+                            'nodoc' => false
+                          },
+                        }
+                      },
+                    }.with_indifferent_access
+                  end
+
+                  it "formats the custom response" do
+                    subject.send(:format_presents!)
+
+                    output = subject.output
+                    expect(output).to include("The resulting JSON is a hash with the following properties\n\n")
+                    expect(output).to include("- `widget_name` (`String`) - the name of the widget\n")
+                    expect(output).to include("- `widget_permission` (`Hash`)\n")
+                    expect(output).to include("    - `can_edit` (`Boolean`) - can edit the widget\n")
+                  end
+                end
+
+                context "when the response is an array" do
+                  let(:custom_response_configuration) do
+                    {
+                      '_config' => {
+                        'type' => 'array',
+                        'item_type' => 'hash',
+                      },
+                      'widget_name' => {
+                        '_config' => {
+                          'type' => 'string',
+                          'info' => 'the name of the widget',
+                          'nodoc' => false
+                        },
+                      },
+                      'widget_permissions' => {
+                        '_config' => {
+                          'type' => 'array',
+                          'item_type' => 'hash',
+                          'info' => 'the permissions of the widget',
+                          'nodoc' => false
+                        },
+                        'can_edit' => {
+                          '_config' => {
+                            'type' => 'boolean',
+                            'info' => 'can edit the widget',
+                            'nodoc' => false
+                          },
+                        }
+                      },
+                    }.with_indifferent_access
+                  end
+
+                  it "formats the custom response" do
+                    subject.send(:format_presents!)
+
+                    output = subject.output
+                    expect(output).to include "The resulting JSON is an array of objects with the following properties\n\n"
+                    expect(output).to include("- `widget_name` (`String`) - the name of the widget\n")
+                    expect(output).to include("- `widget_permissions` (`Array<Hash>`) - the permissions of the widget\n")
+                    expect(output).to include("    - `can_edit` (`Boolean`) - can edit the widget\n")
+                  end
+                end
               end
 
-              context "when present" do
+              context "when custom response is absent and presenter is present" do
+                let(:presenter) { Object.new }
+
                 before do
+                  stub(endpoint).custom_response { false }
+                  stub(endpoint).presenter_title { "Sprocket Widget" }
+                  stub(endpoint).relative_presenter_path_from_controller(:markdown) { "../../sprocket_widget.markdown" }
                   stub(endpoint).presenter { presenter }
                 end
 

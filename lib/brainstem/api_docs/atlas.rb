@@ -17,7 +17,6 @@ module Brainstem
       extend Forwardable
       include Concerns::Optional
 
-
       def initialize(introspector, options = {})
         self.endpoints          = EndpointCollection.new(self)
         self.controllers        = ControllerCollection.new(self)
@@ -34,20 +33,16 @@ module Brainstem
         validate!
       end
 
-
       attr_accessor :endpoints,
                     :controllers,
                     :presenters,
                     :resolver
 
-
       delegate :find_by_class => :resolver
-
 
       #########################################################################
       private
       #########################################################################
-
 
       #
       # Lists valid options that may be passed on instantiation.
@@ -55,7 +50,6 @@ module Brainstem
       def valid_options
         super | [ :controller_matches ]
       end
-
 
       #
       # Ensures the atlas is valid before allowing consumers to make requests
@@ -65,12 +59,10 @@ module Brainstem
         raise InvalidAtlasError, "Atlas is not valid." unless valid?
       end
 
-
       #
       # Set and read the introspector.
       #
       attr_accessor :introspector
-
 
       #
       # Holds +Regexp+s which each controller name must match in order to be
@@ -78,14 +70,12 @@ module Brainstem
       #
       attr_accessor :controller_matches
 
-
       #
       # Returns a list of all routes that pass the user's filtering.
       #
       def allowed_routes
         introspector.routes.keep_if(&method(:allow_route?))
       end
-
 
       #
       # Constructs +Endpoint+ and +Controller wrappers per route.
@@ -102,7 +92,6 @@ module Brainstem
           end
         end
       end
-
 
       #
       # Extracts declared presents for each endpoint and converts it into a
@@ -121,7 +110,6 @@ module Brainstem
         end
       end
 
-
       #
       # Returns a list of valid +target_class_to_s => PresenterConst+ pairs,
       # determining validity by whether they descend from the base presenter.
@@ -134,7 +122,6 @@ module Brainstem
         end
       end
 
-
       #
       # Whether this Atlas is valid (i.e. if it has at least one endpoint).
       #
@@ -143,7 +130,6 @@ module Brainstem
       def valid?
         endpoints.count > 0
       end
-
 
       #
       # Returns whether a route's controller passes the limiting regexp passed to the

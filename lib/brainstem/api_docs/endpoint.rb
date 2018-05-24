@@ -27,13 +27,11 @@ module Brainstem
         ]
       end
 
-
       def initialize(atlas, options = {})
         self.atlas = atlas
         super options
         yield self if block_given?
       end
-
 
       attr_accessor :path,
                     :http_methods,
@@ -42,7 +40,6 @@ module Brainstem
                     :action,
                     :atlas
 
-
       #
       # Pretty prints each endpoint.
       #
@@ -50,14 +47,12 @@ module Brainstem
         "#{http_methods.join(" / ")} #{path}"
       end
 
-
       #
       # Merges http methods (for de-duping Rails' routes).
       #
       def merge_http_methods!(methods)
         self.http_methods |= methods
       end
-
 
       #
       # Sorts this endpoint in comparison to other endpoints.
@@ -91,7 +86,6 @@ module Brainstem
         end
       end
 
-
       ################################################################################
       # Derived fields
       ################################################################################
@@ -103,21 +97,49 @@ module Brainstem
         action_configuration[:nodoc]
       end
 
-
       def title
         @title ||= contextual_documentation(:title) || action.to_s.humanize
       end
-
 
       def description
         @description ||= contextual_documentation(:description) || ""
       end
 
-
       def valid_params
         @valid_params ||= key_with_default_fallback(:valid_params)
       end
 
+      def custom_response
+        @custom_response ||= action_configuration[:custom_response]
+      end
+
+      def operation_id
+        @operation_id ||= action_configuration[:operation_id]
+      end
+
+      def consumes
+        @consumes ||= key_with_default_fallback(:consumes)
+      end
+
+      def produces
+        @produces ||= key_with_default_fallback(:produces)
+      end
+
+      def security
+        @security ||= key_with_default_fallback(:security)
+      end
+
+      def schemes
+        @schemes ||= key_with_default_fallback(:schemes)
+      end
+
+      def external_docs
+        @external_docs ||= key_with_default_fallback(:external_docs)
+      end
+
+      def deprecated
+        @deprecated ||= key_with_default_fallback(:deprecated)
+      end
 
       #
       # Returns a hash of all params nested under the specified root or
@@ -155,6 +177,48 @@ module Brainstem
         end
       end
 
+      #
+      # Returns a hash of all fields for a custom response nested under the specified
+      # parent fields along with their type, item type & children.
+      #
+      # @return [Hash{Symbol => Hash}] root keys and their type info, item info & children
+      #   nested under them.
+      #
+      def custom_response_configuration_tree
+        return {} unless custom_response.present?
+
+        @custom_response_configuration ||= begin
+          custom_response_fields = custom_response
+            .to_h
+            .deep_dup
+            .with_indifferent_access
+          custom_config_tree = ActiveSupport::HashWithIndifferentAccess.new
+          custom_config_tree[:_config] = custom_response_fields[:_config]
+
+          custom_response_fields
+            .except(:_config)
+            .inject(custom_config_tree) do |result, (field_name_proc, field_config)|
+
+            next result if field_config[:nodoc]
+
+            field_name = evaluate_field_name(field_name_proc)
+            if field_config.has_key?(:ancestors)
+              ancestors = field_config[:ancestors].map { |ancestor_key| evaluate_field_name(ancestor_key) }
+
+              parent = ancestors.inject(result) do |traversed_hash, ancestor_name|
+                traversed_hash[ancestor_name] ||= { :_config => { type: 'hash' } }
+                traversed_hash[ancestor_name]
+              end
+
+              parent[field_name] = { :_config => field_config.except(:ancestors) }
+            else
+              result[field_name] = { :_config => field_config }
+            end
+
+            result
+          end
+        end
+      end
 
       #
       # Evaluate field name if proc and symbolize it.
@@ -167,14 +231,12 @@ module Brainstem
       end
       alias_method :evaluate_root_name, :evaluate_field_name
 
-
       #
       # Retrieves the +presents+ settings.
       #
       def valid_presents
         key_with_default_fallback(:presents) || {}
       end
-
 
       #
       # Used to retrieve this endpoint's presenter constant.
@@ -185,12 +247,10 @@ module Brainstem
           valid_presents[:target_class]
       end
 
-
       #
       # Stores the +ApiDocs::Presenter+ object associated with this endpoint.
       #
       attr_accessor :presenter
-
 
       ################################################################################
       # Configuration Helpers
@@ -202,7 +262,6 @@ module Brainstem
       delegate :configuration => :controller
       delegate :find_by_class => :atlas
 
-
       #
       # Helper for retrieving action-specific configuration from the controller.
       #
@@ -210,14 +269,12 @@ module Brainstem
         configuration[action] || {}
       end
 
-
       #
       # Retrieves default action context from the controller.
       #
       def default_configuration
         configuration[:_default] || {}
       end
-
 
       #
       # Returns a key if it exists and is documentable
@@ -228,16 +285,13 @@ module Brainstem
           action_configuration[key][:info]
       end
 
-
       def key_with_default_fallback(key)
         action_configuration[key] || default_configuration[key]
       end
 
-
       def presenter_title
         presenter && presenter.title
       end
-
 
       #
       # Returns the relative path from this endpoint's controller to this

@@ -36,7 +36,6 @@ module Brainstem
         end
       end
 
-
       describe "#create_from_route" do
         it "creates a new controller, adding it to the members" do
           controller = subject.create_from_route(
@@ -54,7 +53,6 @@ module Brainstem
           expect(controller.endpoints.count).to eq 0
         end
       end
-
 
       describe "#find_or_create_from_route" do
         let!(:existing_controller) { subject.create_from_route(

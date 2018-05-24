@@ -34,7 +34,6 @@ module Brainstem
         [ ]
       end
 
-
       def initialize(options = {})
         options.slice(*valid_options).each {|k, v| self.send("#{k}=", v) }
       end

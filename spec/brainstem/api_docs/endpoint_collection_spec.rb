@@ -10,7 +10,6 @@ module Brainstem
 
       subject { described_class.new(atlas, options) }
 
-
       describe "#find_from_route" do
         let(:controller) { stub!.const { Object }.subject }
 
@@ -48,7 +47,6 @@ module Brainstem
         end
       end
 
-
       describe "#create_from_route" do
         it "creates a new endpoint, adding it to the members" do
           controller = Object.new
@@ -68,7 +66,6 @@ module Brainstem
           expect(endpoint.http_methods).to eq ["GET"]
         end
       end
-
 
       describe "#only_documentable" do
         let(:endpoint_2) { Object.new }
@@ -90,7 +87,6 @@ module Brainstem
         end
       end
 
-
       describe "#with_declared_presented_class" do
         let(:endpoint_2) { Object.new }
 
@@ -109,7 +105,6 @@ module Brainstem
           expect(new_clxn).not_to include endpoint_2
         end
       end
-
 
       describe "#with_actions_in_controller" do
         let(:endpoint_2) { Object.new }
@@ -135,7 +130,6 @@ module Brainstem
           expect(new_clxn).not_to include endpoint_2
         end
       end
-
 
       it_behaves_like "formattable"
       it_behaves_like "atlas taker"

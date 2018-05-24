@@ -608,26 +608,6 @@ describe Brainstem::Concerns::PresenterDSL do
         expect(foo[:item_type]).to eq("string")
       end
     end
-
-
-    context "when type is not specified" do
-      before do
-        mock(presenter_class).deprecated_type_warning
-      end
-
-      it "adds a deprecation warning and creates an entry in the filters configuration" do
-        my_proc = Proc.new { 1 }
-        presenter_class.filter(:foo, :default => true, &my_proc)
-
-        expect(foo).to eq({ "default" => true, "value" => my_proc, "type" => "string" })
-      end
-
-      it "adds a deprecation warning and records the info option" do
-        presenter_class.filter(:foo, :info => "This is documented.")
-        expect(foo[:info]).to eq "This is documented."
-        expect(foo[:type]).to eq "string"
-      end
-    end
   end
 
   describe ".search" do

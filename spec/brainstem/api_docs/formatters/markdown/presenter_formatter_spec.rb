@@ -68,7 +68,6 @@ module Brainstem
               end
             end
 
-
             describe "#format_brainstem_keys!" do
               before do
                 stub(presenter).brainstem_keys { [ "sprockets", "widgets" ] }
@@ -79,7 +78,6 @@ module Brainstem
                 expect(subject.output).to include "Top-level key: `sprockets` / `widgets`"
               end
             end
-
 
             describe "#format_description!" do
               context "when present" do
@@ -106,7 +104,6 @@ module Brainstem
                 end
               end
             end
-
 
             describe "#format_fields!" do
               let(:presenter_class) do
@@ -315,7 +312,6 @@ module Brainstem
                     end
                   end
 
-
                   context "if it is conditional" do
                     before do
                       presenter_class.fields do
@@ -383,7 +379,6 @@ module Brainstem
               end
             end
 
-
             describe "#format_filters!" do
               let(:valid_filters) { {} }
 
@@ -440,7 +435,6 @@ module Brainstem
               end
             end
 
-
             describe "format_sort_orders!" do
               before do
                 stub(presenter).valid_sort_orders { sort_orders }
@@ -491,7 +485,6 @@ module Brainstem
                 end
               end
             end
-
 
             describe "format_associations!" do
               let(:associations) { {} }

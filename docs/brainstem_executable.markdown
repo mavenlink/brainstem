@@ -4,7 +4,7 @@
 
 Usage: `brainstem SUBCOMMAND options`
 
-e.g. `brainstem generate --markdown`
+e.g. `brainstem generate --markdown` or `brainstem generate --open-api-specification=2`
 
 Get help by running `brainstem help generate`, or `brainstem generate --help`.
 

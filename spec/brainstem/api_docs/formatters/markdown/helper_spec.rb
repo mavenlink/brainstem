@@ -32,20 +32,17 @@ module Brainstem
             end
           end
 
-
           describe "#md_p" do
             it "appends two newlines" do
               expect(subject.md_p(lipsum)).to eq(lipsum + "\n\n")
             end
           end
 
-
           describe "#md_strong" do
             it "wraps the text in asterisk pairs" do
               expect(subject.md_strong("Popeye")).to eq "**Popeye**"
             end
           end
-
 
           describe "#md_code" do
             it "renders the code between backtick blocks" do
@@ -57,13 +54,11 @@ module Brainstem
             end
           end
 
-
           describe "#md_inline_code" do
             it "renders the code between single backticks" do
               expect(subject.md_inline_code('my_var')).to eq "`my_var`"
             end
           end
-
 
           describe "#md_ul" do
             it "evaluates the block given to it in the instance's context" do
@@ -76,7 +71,6 @@ module Brainstem
             end
           end
 
-
           describe "#md_li" do
             it "renders the text after a dash-space with a newline" do
               expect(subject.md_li("text")).to eq "- text\n"
@@ -87,13 +81,11 @@ module Brainstem
             end
           end
 
-
           describe "#md_a" do
             it "renders the text in a bracket and includes a link in parens" do
               expect(subject.md_a("text", "link.md")).to eq "[text](link.md)"
             end
           end
-
 
           describe "#md_inline_type" do
             it "renders the code between single backticks" do

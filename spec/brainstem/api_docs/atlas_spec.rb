@@ -36,7 +36,6 @@ module Brainstem
           end
         end
 
-
         describe "validation" do
           before do
             any_instance_of(Atlas) do |instance|
@@ -166,7 +165,6 @@ module Brainstem
           end
         end
 
-
         context "when a route is invalid" do
           let(:route_2) { {
             path: "/endpoint2",
@@ -201,7 +199,6 @@ module Brainstem
           end
         end
       end
-
 
       describe "#extract_presenters!" do
         let(:endpoint_1)           { Object.new }
@@ -249,7 +246,6 @@ module Brainstem
         end
       end
 
-
       describe "#valid?" do
         before do
           any_instance_of(Atlas) do |instance|
@@ -281,7 +277,6 @@ module Brainstem
           end
         end
       end
-
 
       describe "#allow_route?" do
         before do
@@ -330,7 +325,6 @@ module Brainstem
           end
         end
       end
-
 
       describe "#find_by_class" do
         before do

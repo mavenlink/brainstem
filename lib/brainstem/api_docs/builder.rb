@@ -16,7 +16,6 @@ module Brainstem
     class Builder
       include Brainstem::Concerns::Optional
 
-
       def valid_options
         [
           :introspector_method,
@@ -26,7 +25,6 @@ module Brainstem
           :args_for_atlas
         ]
       end
-
 
       #
       # @param [Hash] options
@@ -53,7 +51,6 @@ module Brainstem
         build_atlas!
       end
 
-
       #
       # Builds an introspector.
       #
@@ -61,14 +58,12 @@ module Brainstem
         self.introspector = introspector_method.call(args_for_introspector)
       end
 
-
       #
       # Builds an atlas.
       #
       def build_atlas!
         self.atlas = atlas_method.call(introspector, args_for_atlas)
       end
-
 
       #
       # Arguments to be passed to the introspector on creation.
@@ -80,13 +75,11 @@ module Brainstem
         @args_for_introspector ||= {}
       end
 
-
       #
       # Allows passing args to the introspector if - for example - you are
       # using a custom base controller class.
       #
       attr_writer :args_for_introspector
-
 
       #
       # Arguments to be passed to the atlas on creation.
@@ -97,13 +90,11 @@ module Brainstem
         @args_for_atlas ||= {}
       end
 
-
       #
       # Allows passing args to the atlas if - for example - you are
       # specifying match terms for the allowable controller set.
       #
       attr_writer :args_for_atlas
-
 
       #
       # A method which returns the introspector which extracts information
@@ -122,7 +113,6 @@ module Brainstem
           Introspectors::RailsIntrospector.method(:with_loaded_environment)
       end
 
-
       #
       # Allows setting the introspector_method if - for example - you are using
       # Brainstem on a Sinatra app and you need to customize how lookups for
@@ -130,12 +120,10 @@ module Brainstem
       #
       attr_writer :introspector_method
 
-
       #
       # Holds a reference to the constructed introspector.
       #
       attr_accessor :introspector
-
 
       #
       # A proc of arity 1..2 which takes an introspector and optional options,
@@ -149,14 +137,12 @@ module Brainstem
         @atlas_method ||= Atlas.method(:new)
       end
 
-
       #
       # Allows setting the introspector_method if - for example - you are using
       # an alternative formatter and the requisite information is not present
       # in the +Endpoint+ objects.
       #
       attr_writer :atlas_method
-
 
       #
       # Holds a reference to the constructed atlas.

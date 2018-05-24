@@ -24,7 +24,6 @@ module Brainstem
             "You may have to manually specify an Introspector (#{e.message})."
         end
 
-
         #
         # Returns a list of presenters that descend from the base presenter
         # class.
@@ -34,7 +33,6 @@ module Brainstem
         def presenters
           base_presenter_class.constantize.descendants
         end
-
 
         #
         # Returns a list of controllers that descend from the base controller
@@ -46,7 +44,6 @@ module Brainstem
           base_controller_class.constantize.descendants
         end
 
-
         #
         # Returns the alternate application class or defaults to Rails.application
         #
@@ -55,7 +52,6 @@ module Brainstem
         def base_application
           base_application_class.present? ? base_application_class.constantize : ::Rails.application
         end
-
 
         #
         # Returns an array of hashes describing the endpoints of the
@@ -68,11 +64,9 @@ module Brainstem
           routes_method.call
         end
 
-
         #######################################################################
         private
         #######################################################################
-
 
         def valid_options
           super | [
@@ -84,7 +78,6 @@ module Brainstem
           ]
         end
 
-
         #
         # Used to short-circuit loading if Rails is already loaded, which
         # reduces start-up time substantially.
@@ -93,7 +86,6 @@ module Brainstem
         def env_already_loaded?
           defined? Rails
         end
-
 
         # Returns the path of the Rails +config/environment.rb+ file - by
         # default, +#{Dir.pwd}/config/environment.rb+.
@@ -106,14 +98,12 @@ module Brainstem
           )
         end
 
-
         #
         # Allows a custom location to be set for the environment file if - for
         # example - the command were to be called from a cron task that cannot
         # change directory.
         #
         attr_writer :rails_environment_file
-
 
         #
         # Returns the name of the base presenter class.
@@ -129,7 +119,6 @@ module Brainstem
           proc_or_string = (@base_presenter_class ||= "::Brainstem::Presenter")
           proc_or_string.respond_to?(:call) ? proc_or_string.call : proc_or_string
         end
-
 
         #
         # Allows for the specification for an alternate base presenter class
@@ -149,7 +138,6 @@ module Brainstem
         #
         attr_writer :base_presenter_class
 
-
         #
         # Returns the name of the base controller class.
         #
@@ -164,7 +152,6 @@ module Brainstem
           proc_or_string = (@base_controller_class ||= "::ApplicationController")
           proc_or_string.respond_to?(:call) ? proc_or_string.call : proc_or_string
         end
-
 
         #
         # Allows for the specification for an alternate base controller class
@@ -185,7 +172,6 @@ module Brainstem
         #
         attr_writer :base_controller_class
 
-
         #
         # Returns the name of the alternate application or engine to get routes from.
         #
@@ -200,14 +186,12 @@ module Brainstem
           proc_or_string.respond_to?(:call) ? proc_or_string.call : proc_or_string
         end
 
-
         #
         # Allows for the specification for an alternate base application name
         #
         # @param [Nil,String] returns the name of the alternate application or engine
         #
         attr_writer :base_application_class
-
 
         #
         # Returns the proc that is called to format and retrieve routes.
@@ -244,7 +228,6 @@ module Brainstem
           end
         end
 
-
         #
         # Allows setting the routes method used to retrieve the routes if - for
         # example - your application needs to retrieve additional data or if it
@@ -252,13 +235,11 @@ module Brainstem
         #
         attr_writer :routes_method
 
-
         #
         # Throws an error if the introspector did not produce valid results.
         #
         def validate!
-          raise InvalidIntrospectorError, "Introspector is not valid." \
-            unless valid?
+          raise InvalidIntrospectorError, "Introspector is not valid." unless valid?
         end
       end
     end

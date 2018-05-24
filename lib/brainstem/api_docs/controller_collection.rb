@@ -5,7 +5,6 @@ module Brainstem
   module ApiDocs
     class ControllerCollection < AbstractCollection
 
-
       #
       # Creates a new controller from a route object and appends it to the
       # collection.
@@ -16,7 +15,6 @@ module Brainstem
         ).tap { |controller| self.<< controller }
       end
 
-
       #
       # Finds a controller from a route object.
       #
@@ -25,7 +23,6 @@ module Brainstem
           controller.const == route[:controller]
         end
       end
-
 
       #
       # Finds a controller from a route object or creates one if it does not
