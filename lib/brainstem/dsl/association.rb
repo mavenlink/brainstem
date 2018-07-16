@@ -11,6 +11,7 @@ module Brainstem
         @name = name.to_s
         @target_class = target_class
         @options = options
+        @plural = plural
       end
 
       def description
@@ -22,6 +23,14 @@ module Brainstem
           nil
         else
           (options[:via].presence || name).to_s
+        end
+      end
+
+      def plural
+        if options[:plural].present?
+          options[:plural]
+        else
+          name.singularize != name && name.pluralize == name
         end
       end
 
