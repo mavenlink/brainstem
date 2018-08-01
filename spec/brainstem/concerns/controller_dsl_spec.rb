@@ -388,43 +388,6 @@ module Brainstem
               expect(template_key.call).to eq('template')
               expect(valid_params[template_key][:required]).to be_falsey
             end
-
-            context "when one of the nested fields is required" do
-              it "sets the required attribute for the parent configuration to true" do
-                subject.brainstem_params do
-                  valid :template, :hash do |param|
-                    param.valid :id, :integer, required: true
-                    param.valid :title, :string
-                  end
-
-                  model_params :sprocket do |param|
-                    param.valid :details, :hash do |nested_param|
-                      nested_param.valid :data, :hash do |double_nested_param|
-                        double_nested_param.valid :raw_text, :string, required: true
-                      end
-                    end
-                  end
-                end
-
-                valid_params = subject.configuration[:_default][:valid_params]
-
-                template_key = valid_params.keys[0]
-                expect(template_key.call).to eq('template')
-                expect(valid_params[template_key][:required]).to be_truthy
-
-                sprocket_details_key = valid_params.keys[3]
-                expect(sprocket_details_key.call).to eq('details')
-                expect(valid_params[sprocket_details_key][:required]).to be_truthy
-
-                sprocket_details_data_key = valid_params.keys[4]
-                expect(sprocket_details_data_key.call).to eq('data')
-                expect(valid_params[sprocket_details_data_key][:required]).to be_truthy
-
-                sprocket_details_data_raw_text_key = valid_params.keys[5]
-                expect(sprocket_details_data_raw_text_key.call).to eq('raw_text')
-                expect(valid_params[sprocket_details_data_raw_text_key][:required]).to be_truthy
-              end
-            end
           end
 
           context "when root is nodoc" do

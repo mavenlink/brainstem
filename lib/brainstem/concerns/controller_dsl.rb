@@ -475,13 +475,6 @@ module Brainstem
             field_config[:nodoc] ||= !!parent_field_config[:nodoc]
           end
 
-          # Rollup `required` attribute to ancestors if true
-          if field_config[:required]
-            (field_config[:ancestors] || []).reverse.each do |ancestor_key|
-              configuration_map[ancestor_key][:required] = true if configuration_map.has_key?(ancestor_key)
-            end
-          end
-
           DEFAULT_FIELD_CONFIG.merge(field_config).with_indifferent_access
         end
 
