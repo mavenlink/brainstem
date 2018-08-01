@@ -30,17 +30,19 @@ module Brainstem
               def call
                 format_path_params!
 
-                if endpoint.action == 'index'
-                  format_pagination_params!
-                  format_search_param!
-                  format_only_param!
-                  format_sort_order_params!
-                  format_filter_params!
-                end
+                if presenter
+                  if endpoint.action == 'index'
+                    format_pagination_params!
+                    format_search_param!
+                    format_only_param!
+                    format_sort_order_params!
+                    format_filter_params!
+                  end
 
-                if http_method != 'delete'
-                  format_optional_params!
-                  format_include_params!
+                  if http_method != 'delete'
+                    format_optional_params!
+                    format_include_params!
+                  end
                 end
 
                 format_query_params!

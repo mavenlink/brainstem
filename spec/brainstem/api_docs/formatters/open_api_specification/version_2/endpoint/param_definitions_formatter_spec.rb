@@ -34,38 +34,86 @@ module Brainstem
               end
 
               describe '#call' do
-                context 'when request type is get' do
-                  let(:http_methods)  { %w(GET) }
+                context 'when an endpoint presents a brainstem object' do
+                  context 'when request type is get' do
+                    let(:http_methods)  { %w(GET) }
 
-                  context 'when action is index' do
-                    let(:action) { 'index' }
+                    context 'when action is index' do
+                      let(:action) { 'index' }
 
-                    it 'formats path, shared, query and body params for the endpoint' do
+                      it 'formats path, shared, query and body params for the endpoint' do
+                        any_instance_of(described_class) do |instance|
+                          mock(instance).format_path_params!
+                          mock(instance).format_optional_params!
+                          mock(instance).format_include_params!
+                          mock(instance).format_query_params!
+                          mock(instance).format_body_params!
+                          mock(instance).format_pagination_params!
+                          mock(instance).format_search_param!
+                          mock(instance).format_only_param!
+                          mock(instance).format_sort_order_params!
+                          mock(instance).format_filter_params!
+                        end
+
+                        subject.call
+                      end
+                    end
+
+                    context 'when action is show' do
+                      let(:action) { 'show' }
+
+                      it 'formats path, optional, query and body params for the endpoint' do
+                        any_instance_of(described_class) do |instance|
+                          mock(instance).format_path_params!
+                          mock(instance).format_optional_params!
+                          mock(instance).format_include_params!
+                          mock(instance).format_query_params!
+                          mock(instance).format_body_params!
+
+                          dont_allow(instance).format_pagination_params!
+                          dont_allow(instance).format_search_param!
+                          dont_allow(instance).format_only_param!
+                          dont_allow(instance).format_sort_order_params!
+                          dont_allow(instance).format_filter_params!
+                        end
+
+                        subject.call
+                      end
+                    end
+                  end
+
+                  context 'when request type is `delete`' do
+                    let(:http_methods) { %w(DELETE) }
+                    let(:action)       { 'destroy' }
+
+                    it 'formats path, query and body param for the endpoint' do
                       any_instance_of(described_class) do |instance|
                         mock(instance).format_path_params!
-                        mock(instance).format_optional_params!
-                        mock(instance).format_include_params!
                         mock(instance).format_query_params!
                         mock(instance).format_body_params!
-                        mock(instance).format_pagination_params!
-                        mock(instance).format_search_param!
-                        mock(instance).format_only_param!
-                        mock(instance).format_sort_order_params!
-                        mock(instance).format_filter_params!
+
+                        dont_allow(instance).format_pagination_params!
+                        dont_allow(instance).format_search_param!
+                        dont_allow(instance).format_only_param!
+                        dont_allow(instance).format_sort_order_params!
+                        dont_allow(instance).format_optional_params!
+                        dont_allow(instance).format_include_params!
+                        dont_allow(instance).format_filter_params!
                       end
 
                       subject.call
                     end
                   end
 
-                  context 'when action is show' do
-                    let(:action) { 'show' }
+                  context 'when request type is not delete' do
+                    let(:http_methods) { %w(PATCH) }
+                    let(:action)       { 'update' }
 
-                    it 'formats path, optional, query and body params for the endpoint' do
+                    it 'formats path, query and body param for the endpoint' do
                       any_instance_of(described_class) do |instance|
-                        mock(instance).format_path_params!
                         mock(instance).format_optional_params!
                         mock(instance).format_include_params!
+                        mock(instance).format_path_params!
                         mock(instance).format_query_params!
                         mock(instance).format_body_params!
 
@@ -81,9 +129,8 @@ module Brainstem
                   end
                 end
 
-                context 'when request type is `delete`' do
-                  let(:http_methods) { %w(DELETE) }
-                  let(:action)       { 'destroy' }
+                context 'when an endpoint does not present a brainstem object' do
+                  let(:presenter) { nil }
 
                   it 'formats path, query and body param for the endpoint' do
                     any_instance_of(described_class) do |instance|
@@ -97,29 +144,6 @@ module Brainstem
                       dont_allow(instance).format_sort_order_params!
                       dont_allow(instance).format_optional_params!
                       dont_allow(instance).format_include_params!
-                      dont_allow(instance).format_filter_params!
-                    end
-
-                    subject.call
-                  end
-                end
-
-                context 'when request type is not delete' do
-                  let(:http_methods) { %w(PATCH) }
-                  let(:action)       { 'update' }
-
-                  it 'formats path, query and body param for the endpoint' do
-                    any_instance_of(described_class) do |instance|
-                      mock(instance).format_optional_params!
-                      mock(instance).format_include_params!
-                      mock(instance).format_path_params!
-                      mock(instance).format_query_params!
-                      mock(instance).format_body_params!
-
-                      dont_allow(instance).format_pagination_params!
-                      dont_allow(instance).format_search_param!
-                      dont_allow(instance).format_only_param!
-                      dont_allow(instance).format_sort_order_params!
                       dont_allow(instance).format_filter_params!
                     end
 
