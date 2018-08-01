@@ -277,40 +277,20 @@ module Brainstem
                   param_config = param_data[:_config]
 
                   branch_schema = if nested_properties.present?
-                    case param_config[:type].to_s
-                      when 'hash'
-                        {
-                            type:       'object',
-                            required:   required_children(nested_properties),
-                            properties: format_param_branch(nested_properties),
-                        }
-                      when 'array'
-                        {
-                          type: 'array',
-                          items: {
-                            type:       'object',
-                            required:   required_children(nested_properties),
-                            properties: format_param_branch(nested_properties)
-                          }.reject { |_, v| v.blank? }
-                        }
-                      else
-                        raise "Unknown Brainstem Param type encountered(#{param_config[:type]}) for param #{param_name}"
-                    end
+                    format_parent_param(param_name, param_data)
                   else
-                    param_data = type_and_format(param_config[:type].to_s, param_config[:item_type])
-
-                    if param_data.blank?
+                    type_and_format = type_and_format(param_config[:type].to_s, param_config[:item_type])
+                    if type_and_format.blank?
                       raise "Unknown Brainstem Param type encountered(#{param_config[:type]}) for param #{param_name}"
                     end
 
-                    param_data
+                    {
+                      title:       param_name.to_s,
+                      description: format_description(param_config[:info])
+                    }.merge(type_and_format)
                   end
 
-                  buffer[param_name.to_s] = {
-                    title:       param_name.to_s,
-                    description: format_description(param_config[:info])
-                  }.merge(branch_schema).reject { |_, v| v.blank? }
-
+                  buffer[param_name.to_s] = branch_schema.reject { |_, v| v.blank? }
                   buffer
                 end
               end
