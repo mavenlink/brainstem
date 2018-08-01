@@ -239,13 +239,15 @@ module Brainstem
 
               def format_parent_param(param_name, param_data)
                 param_config = param_data[:_config]
+                nested_properties = nested_properties(param_data)
                 result = case param_config[:type]
                   when 'hash'
                     {
                       type:        'object',
                       title:       param_name.to_s,
+                      required:    required_children(nested_properties),
                       description: format_description(param_config[:info]),
-                      properties:  format_param_branch(nested_properties(param_data))
+                      properties:  format_param_branch(nested_properties)
                     }
                   when 'array'
                     {
@@ -253,15 +255,20 @@ module Brainstem
                       title:       param_name.to_s,
                       description: format_description(param_config[:info]),
                       items: {
-                        type: 'object',
-                        properties: format_param_branch(nested_properties(param_data))
-                      }
+                        type:       'object',
+                        required:   required_children(nested_properties),
+                        properties: format_param_branch(nested_properties)
+                      }.reject { |_, v| v.blank? }
                     }
                   else
                     raise "Unknown Brainstem body param encountered(#{param_config[:type]}) for field #{param_name}"
                 end
 
                 result.with_indifferent_access.reject { |_, v| v.blank? }
+              end
+
+              def required_children(children)
+                children.select { |_, field_data| field_data[:_config][:required] }.keys
               end
 
               def format_param_branch(branch)
@@ -272,11 +279,19 @@ module Brainstem
                   branch_schema = if nested_properties.present?
                     case param_config[:type].to_s
                       when 'hash'
-                        { type: 'object', properties: format_param_branch(nested_properties) }
+                        {
+                            type:       'object',
+                            required:   required_children(nested_properties),
+                            properties: format_param_branch(nested_properties),
+                        }
                       when 'array'
                         {
                           type: 'array',
-                          items: { type: 'object', properties: format_param_branch(nested_properties) }
+                          items: {
+                            type:       'object',
+                            required:   required_children(nested_properties),
+                            properties: format_param_branch(nested_properties)
+                          }.reject { |_, v| v.blank? }
                         }
                       else
                         raise "Unknown Brainstem Param type encountered(#{param_config[:type]}) for param #{param_name}"

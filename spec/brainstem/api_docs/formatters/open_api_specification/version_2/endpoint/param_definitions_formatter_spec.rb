@@ -300,7 +300,8 @@ module Brainstem
                           },
                           name: {
                             _config: {
-                              type: 'string'
+                              type: 'string',
+                              required: true,
                             }
                           },
                         },
@@ -324,6 +325,7 @@ module Brainstem
                         },
                         id: {
                           _config: {
+                            required: true,
                             type: 'integer',
                             info: 'ID of the assignee'
                           }
@@ -356,8 +358,9 @@ module Brainstem
 
                             'task' => {
                               'title'       => 'task',
-                              'type'        => 'object',
                               'description' => 'Attributes for the task.',
+                              'required'    => ['name'],
+                              'type'        => 'object',
                               'properties'  => {
                                 'name' => {
                                   'title'       => 'name',
@@ -367,6 +370,7 @@ module Brainstem
                                 'subs' => {
                                   'title'       => 'subs',
                                   'description' => 'Sub tasks of the task.',
+                                  'required'    => ['name'],
                                   'type'        => 'object',
                                   'properties'  => {
                                     'name' => {
@@ -380,10 +384,11 @@ module Brainstem
                                   'type'   => 'array',
                                   'items'  => {
                                     'type'       => 'object',
+                                    'required'   => ['name'],
                                     'properties' => {
                                       'name' => {
                                         'title'    => 'name',
-                                        'type'     => 'string'
+                                        'type'     => 'string',
                                       }
                                     }
                                   }
@@ -411,6 +416,7 @@ module Brainstem
                               'description' => 'Attributes for the assignees.',
                               'items'       => {
                                 'type'        => 'object',
+                                'required'    => ['id'],
                                 'properties'  => {
                                   'id' => {
                                     'title'       => 'id',
