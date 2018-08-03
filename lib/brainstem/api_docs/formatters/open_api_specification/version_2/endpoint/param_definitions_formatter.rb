@@ -3,6 +3,7 @@ require 'active_support/core_ext/hash/compact'
 require 'active_support/inflector'
 require 'brainstem/api_docs/formatters/abstract_formatter'
 require 'brainstem/api_docs/formatters/open_api_specification/helper'
+require 'brainstem/api_docs/formatters/open_api_specification/version_2/endpoint/field_formatter'
 require 'brainstem/api_docs/formatters/markdown/helper'
 
 #
@@ -234,67 +235,13 @@ module Brainstem
                   endpoint.params_configuration_tree.each do |param_name, param_config|
                     next if nested_properties(param_config).blank?
 
-                    body_params[param_name] = format_parent_param(param_name, param_config)
+                    body_params[param_name] = formatted_field(param_config)
                   end
                 end
               end
 
-              def format_parent_param(param_name, param_data)
-                param_config = param_data[:_config]
-                nested_properties = nested_properties(param_data)
-                result = case param_config[:type]
-                  when 'hash'
-                    {
-                      type:        'object',
-                      title:       param_name.to_s,
-                      required:    required_children(nested_properties),
-                      description: format_description(param_config[:info]),
-                      properties:  format_param_branch(nested_properties)
-                    }
-                  when 'array'
-                    {
-                      type:        'array',
-                      title:       param_name.to_s,
-                      description: format_description(param_config[:info]),
-                      items: {
-                        type:       'object',
-                        required:   required_children(nested_properties),
-                        properties: format_param_branch(nested_properties)
-                      }.reject { |_, v| v.blank? }
-                    }
-                  else
-                    raise "Unknown Brainstem body param encountered(#{param_config[:type]}) for field #{param_name}"
-                end
-
-                result.with_indifferent_access.reject { |_, v| v.blank? }
-              end
-
-              def required_children(children)
-                children.select { |_, field_data| field_data[:_config][:required] }.keys
-              end
-
-              def format_param_branch(branch)
-                branch.inject(ActiveSupport::HashWithIndifferentAccess.new) do |buffer, (param_name, param_data)|
-                  nested_properties = nested_properties(param_data)
-                  param_config = param_data[:_config]
-
-                  branch_schema = if nested_properties.present?
-                    format_parent_param(param_name, param_data)
-                  else
-                    type_and_format = type_and_format(param_config[:type].to_s, param_config[:item_type])
-                    if type_and_format.blank?
-                      raise "Unknown Brainstem Param type encountered(#{param_config[:type]}) for param #{param_name}"
-                    end
-
-                    {
-                      title:       param_name.to_s,
-                      description: format_description(param_config[:info])
-                    }.merge(type_and_format)
-                  end
-
-                  buffer[param_name.to_s] = branch_schema.reject { |_, v| v.blank? }
-                  buffer
-                end
+              def formatted_field(param_data)
+                FieldFormatter.new(param_data, include_required: true).format
               end
             end
           end

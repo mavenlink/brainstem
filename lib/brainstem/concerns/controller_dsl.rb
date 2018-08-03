@@ -475,6 +475,8 @@ module Brainstem
             field_config[:nodoc] ||= !!parent_field_config[:nodoc]
           end
 
+          field_config.delete(:nested_levels) if field_config[:nested_levels].to_i < 2
+
           DEFAULT_FIELD_CONFIG.merge(field_config).with_indifferent_access
         end
 

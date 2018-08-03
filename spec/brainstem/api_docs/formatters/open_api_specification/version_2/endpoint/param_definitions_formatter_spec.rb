@@ -379,39 +379,32 @@ module Brainstem
                         'schema'      => {
                           'type'       => 'object',
                           'properties' => {
-
                             'task' => {
-                              'title'       => 'task',
                               'description' => 'Attributes for the task.',
                               'required'    => ['name'],
                               'type'        => 'object',
                               'properties'  => {
                                 'name' => {
-                                  'title'       => 'name',
                                   'description' => 'Name of the task.',
                                   'type'        => 'string'
                                 },
                                 'subs' => {
-                                  'title'       => 'subs',
                                   'description' => 'Sub tasks of the task.',
                                   'required'    => ['name'],
                                   'type'        => 'object',
                                   'properties'  => {
                                     'name' => {
-                                      'title'    => 'name',
                                       'type'     => 'string'
                                     }
                                   }
                                 },
                                 'checklist' => {
-                                  'title'  => 'checklist',
                                   'type'   => 'array',
                                   'items'  => {
                                     'type'       => 'object',
                                     'required'   => ['name'],
                                     'properties' => {
                                       'name' => {
-                                        'title'    => 'name',
                                         'type'     => 'string',
                                       }
                                     }
@@ -421,12 +414,10 @@ module Brainstem
                             },
 
                             'creator' => {
-                              'title'       => 'creator',
                               'type'        => 'object',
                               'description' => 'Attributes for the creator.',
                               'properties'  => {
                                 'id' => {
-                                  'title'       => 'id',
                                   'description' => 'ID of the creator.',
                                   'type'        => 'integer',
                                   'format'      => 'int32'
@@ -435,7 +426,6 @@ module Brainstem
                             },
 
                             'assignees' => {
-                              'title'       => 'assignees',
                               'type'        => 'array',
                               'description' => 'Attributes for the assignees.',
                               'items'       => {
@@ -443,13 +433,11 @@ module Brainstem
                                 'required'    => ['id'],
                                 'properties'  => {
                                   'id' => {
-                                    'title'       => 'id',
                                     'description' => 'ID of the assignee.',
                                     'type'        => 'integer',
                                     'format'      => 'int32'
                                   },
                                   'active' => {
-                                    'title'       => 'active',
                                     'description' => 'Activates the assignment.',
                                     'type'        => 'boolean'
                                   },

@@ -2,6 +2,7 @@ require 'active_support/core_ext/hash/except'
 require 'active_support/inflector'
 require 'brainstem/api_docs/formatters/abstract_formatter'
 require 'brainstem/api_docs/formatters/open_api_specification/helper'
+require 'brainstem/api_docs/formatters/open_api_specification/version_2/endpoint/field_formatter'
 require 'forwardable'
 
 #
@@ -124,66 +125,12 @@ module Brainstem
               def format_custom_response!
                 output.merge! '200' => {
                   description: success_response_description,
-                  schema: format_response(endpoint.custom_response_configuration_tree)
+                  schema: format_response!
                 }
               end
 
-              def format_response(response_tree)
-                response_config   = response_tree[:_config]
-                response_branches = response_tree.except(:_config)
-
-                format_response_field(response_config, response_branches)
-              end
-
-              def format_response_field(field_config, field_branches)
-                if field_branches.present?
-                  formed_nested_field(field_config, field_branches)
-                else
-                  format_response_leaf(field_config)
-                end
-              end
-
-              def format_response_leaf(field_config)
-                field_data = type_and_format(field_config[:type], field_config[:item_type])
-
-                unless field_data
-                  raise "Unknown Brainstem Field type encountered(#{field_config[:type]}) for field #{field_config[:name]}"
-                end
-
-                field_data.merge!(description: format_description(field_config[:info])) if field_config[:info].present?
-                field_data
-              end
-
-              def formed_nested_field(field_config, field_branches)
-                result = case field_config[:type]
-                  when 'hash'
-                    {
-                      type: 'object',
-                      description: format_description(field_config[:info]),
-                      properties: format_response_branches(field_branches)
-                    }
-                  when 'array'
-                    {
-                      type: 'array',
-                      description: format_description(field_config[:info]),
-                      items: {
-                        type: 'object',
-                        properties: format_response_branches(field_branches)
-                      }
-                    }
-                end
-
-                result.with_indifferent_access.reject { |_, v| v.blank? }
-              end
-
-              def format_response_branches(branches)
-                branches.inject(ActiveSupport::HashWithIndifferentAccess.new) do |buffer, (field_name, field_config)|
-                  config   = field_config[:_config]
-                  branches = field_config.except(:_config)
-
-                  buffer[field_name.to_s] = format_response_field(config, branches)
-                  buffer
-                end
+              def format_response!
+                FieldFormatter.new(endpoint.custom_response_configuration_tree).format
               end
             end
           end

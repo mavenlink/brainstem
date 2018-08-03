@@ -703,6 +703,45 @@ module Brainstem
               required: false,
             }.with_indifferent_access)
           end
+
+          context "when response is a nested array of strings" do
+            it "sets the custom_response configuration" do
+              subject.brainstem_params do
+                actions :show do
+                  response :array, nested_levels: 2, item_type: :string
+                end
+              end
+
+              configuration = subject.configuration[:show][:custom_response]
+              expect(configuration).to be_present
+              expect(configuration[:_config]).to eq({
+                type: 'array',
+                item_type: 'string',
+                nested_levels: 2,
+                nodoc: false,
+                required: false,
+              }.with_indifferent_access)
+            end
+
+            context "when the nested level is less than 2" do
+              it "does not return a config with a `nested_levels` key" do
+                subject.brainstem_params do
+                  actions :show do
+                    response :array, nested_levels: 1, item_type: :string
+                  end
+                end
+
+                configuration = subject.configuration[:show][:custom_response]
+                expect(configuration).to be_present
+                expect(configuration[:_config]).to eq({
+                  type: 'array',
+                  item_type: 'string',
+                  nodoc: false,
+                  required: false,
+                }.with_indifferent_access)
+              end
+            end
+          end
         end
       end
 
@@ -759,8 +798,13 @@ module Brainstem
               subject.brainstem_params do
                 actions :show do
                   response :hash do
-                    fields :contacts, :array do
-                      field :full_name, :string
+                    fields :contacts, :array do |contact|
+                      contact.field :full_name, :string
+                      contact.field :friends, :array, nested_levels: 3, item_type: :string
+                      contact.field :enemies, :array, nested_levels: 1, item_type: :string
+                      contact.fields :frenemies, :array, nested_levels: 2 do |frenemy|
+                        frenemy.field :jim, :string
+                      end
                     end
                   end
                 end
@@ -769,20 +813,63 @@ module Brainstem
               configuration = subject.configuration[:show][:custom_response]
               param_keys = configuration.keys
 
-              expect(param_keys[1].call).to eq('contacts')
-              expect(configuration[param_keys[1]]).to eq({
+              contacts_proc = param_keys[1]
+              expect(contacts_proc.call).to eq('contacts')
+              expect(configuration[contacts_proc]).to eq({
                 type: 'array',
                 item_type: 'hash',
                 nodoc: false,
                 required: false,
               }.with_indifferent_access)
 
-              expect(param_keys[2].call).to eq('full_name')
-              expect(configuration[param_keys[2]]).to eq({
+              full_name_proc = param_keys[2]
+              expect(full_name_proc.call).to eq('full_name')
+              expect(configuration[full_name_proc]).to eq({
                 type: 'string',
                 nodoc: false,
                 required: false,
-                ancestors: [param_keys[1]]
+                ancestors: [contacts_proc]
+              }.with_indifferent_access)
+
+              friends_proc = param_keys[3]
+              expect(friends_proc.call).to eq('friends')
+              expect(configuration[friends_proc]).to eq({
+                type: 'array',
+                item_type: 'string',
+                nested_levels: 3,
+                nodoc: false,
+                required: false,
+                ancestors: [contacts_proc]
+              }.with_indifferent_access)
+
+              enemies_proc = param_keys[4]
+              expect(enemies_proc.call).to eq('enemies')
+              expect(configuration[enemies_proc]).to eq({
+                type: 'array',
+                item_type: 'string',
+                nodoc: false,
+                required: false,
+                ancestors: [contacts_proc]
+              }.with_indifferent_access)
+
+              frenemies_proc = param_keys[5]
+              expect(frenemies_proc.call).to eq('frenemies')
+              expect(configuration[frenemies_proc]).to eq({
+                type: 'array',
+                nested_levels: 2,
+                item_type: 'hash',
+                nodoc: false,
+                required: false,
+                ancestors: [contacts_proc]
+              }.with_indifferent_access)
+
+              jim_proc = param_keys[6]
+              expect(jim_proc.call).to eq('jim')
+              expect(configuration[jim_proc]).to eq({
+                type: 'string',
+                nodoc: false,
+                required: false,
+                ancestors: [contacts_proc, frenemies_proc]
               }.with_indifferent_access)
             end
           end

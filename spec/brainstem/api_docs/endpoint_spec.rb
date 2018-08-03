@@ -812,7 +812,8 @@ module Brainstem
               let(:other_response_fields) do
                 {
                   parent_proc => { nodoc: nodoc, type: 'array', item_type: 'hash' },
-                  Proc.new { 'title' } => { nodoc: nodoc, type: 'string', ancestors: [parent_proc] }
+                  Proc.new { 'title' } => { nodoc: nodoc, type: 'string', ancestors: [parent_proc] },
+                  Proc.new { 'nested_array' } => { nodoc: nodoc, type: 'array', item_type: 'string', nested_levels: 2, ancestors: [parent_proc] },
                 }
               end
 
@@ -843,6 +844,14 @@ module Brainstem
                           _config: {
                             nodoc: nodoc,
                             type: 'string'
+                          }
+                        },
+                        nested_array: {
+                          _config: {
+                            nodoc: nodoc,
+                            type: 'array',
+                            nested_levels: 2,
+                            item_type: 'string'
                           }
                         }
                       }
