@@ -141,7 +141,7 @@ module Brainstem
     FORMATTERS = {
 
       # Formatter for entire response
-      document:    {},
+      document: {},
 
       # Formatters for collections
       controller_collection: {},
@@ -149,9 +149,9 @@ module Brainstem
       presenter_collection:  {},
 
       # Formatters for individual entities
-      controller:  {},
-      endpoint:    {},
-      presenter:   {},
+      controller: {},
+      endpoint:   {},
+      presenter:  {},
 
       # Formatter for Open API Specifications
       info:       {},
@@ -159,6 +159,11 @@ module Brainstem
       parameters: {},
       security:   {},
       tags:       {},
+
+      # Formatter for Open API Specifications Individual field / param definition
+      endpoint_param:  {},
+      presenter_field: {},
+      response_field:  {},
     }
   end
 end

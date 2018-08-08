@@ -2,7 +2,7 @@ require 'active_support/core_ext/hash/except'
 require 'active_support/inflector'
 require 'brainstem/api_docs/formatters/abstract_formatter'
 require 'brainstem/api_docs/formatters/open_api_specification/helper'
-require 'brainstem/api_docs/formatters/open_api_specification/version_2/endpoint/field_formatter'
+require 'brainstem/api_docs/formatters/open_api_specification/version_2/field_definitions/response_field_formatter'
 require 'forwardable'
 
 #
@@ -130,7 +130,11 @@ module Brainstem
               end
 
               def format_response!
-                FieldFormatter.new(endpoint.custom_response_configuration_tree).format
+                Brainstem::ApiDocs::FORMATTERS[:response_field][:oas_v2].call(
+                  endpoint,
+                  'schema',
+                  endpoint.custom_response_configuration_tree
+                )
               end
             end
           end
