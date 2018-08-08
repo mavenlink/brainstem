@@ -191,7 +191,7 @@ module Brainstem
                 it "returns type as `array` and given item type" do
                   expect(subject.send(:type_and_format, 'array', 'integer')).to eq({
                     'type' => 'array',
-                    'items' => { 'type' => 'integer' }
+                    'items' => { 'type' => 'integer', 'format' => 'int32' }
                   })
                 end
               end

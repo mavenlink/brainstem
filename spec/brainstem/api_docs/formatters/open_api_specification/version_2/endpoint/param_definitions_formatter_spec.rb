@@ -263,7 +263,7 @@ module Brainstem
                         'in'          => 'query',
                         'name'        => 'sprocket_ids',
                         'type'        => 'array',
-                        'items'       => { 'type' => 'integer' }
+                        'items'       => { 'type' => 'integer', 'format' => 'int32' }
                       },
                       {
                         'in'          => 'query',

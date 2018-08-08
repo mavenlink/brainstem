@@ -36,7 +36,7 @@ module Brainstem
           def type_and_format(type, item_type = nil)
             result = case type.to_s.downcase
               when 'array'
-                { 'type' => 'array', 'items' => { 'type' => item_type.presence || 'string' } }
+                { 'type' => 'array', 'items' => type_and_format(item_type.presence || 'string') }
               else
                 TYPE_INFO[type.to_s]
             end
