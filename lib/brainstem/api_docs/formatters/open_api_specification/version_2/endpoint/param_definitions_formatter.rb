@@ -163,7 +163,7 @@ module Brainstem
                   text = md_inline_code(association.name)
                   text += " (#{ association.target_class.to_s })"
 
-                  desc = format_description(association.description)
+                  desc = format_sentence(association.description)
                   if association.options && association.options[:restrict_to_only]
                     desc += "  Restricted to queries using the #{md_inline_code("only")} parameter."
                   end
@@ -211,7 +211,7 @@ module Brainstem
                   'in'          => 'query',
                   'name'        => param_name.to_s,
                   'required'    => param_config[:required],
-                  'description' => format_description(param_config[:info]).presence,
+                  'description' => format_sentence(param_config[:info]).presence,
                 }.merge(type_data).compact
               end
 

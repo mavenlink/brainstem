@@ -43,7 +43,7 @@ module Brainstem
             end
 
             def format_description!
-              definition.merge! description: format_description(presenter.description)
+              definition.merge! description: format_sentence(presenter.description)
             end
 
             def format_type!
@@ -102,7 +102,7 @@ module Brainstem
             end
 
             def format_description_for(field)
-              field_description = format_description(field.description) || ''
+              field_description = format_sentence(field.description) || ''
               field_description << format_conditional_description(field.options)
               field_description << "\nOnly returned when requested through the optional_fields param.\n" if field.optional?
               field_description.try(:chomp!)

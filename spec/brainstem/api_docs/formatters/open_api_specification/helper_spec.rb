@@ -54,12 +54,12 @@ module Brainstem
             end
           end
 
-          describe "format_description" do
+          describe "format_sentence" do
             context "when description is given" do
               let(:description) { "  lorem ipsum dolor sit amet  " }
 
               it "returns the formatted description" do
-                expect(subject.format_description(description)).to eq("Lorem ipsum dolor sit amet.")
+                expect(subject.format_sentence(description)).to eq("Lorem ipsum dolor sit amet.")
               end
             end
 
@@ -67,7 +67,7 @@ module Brainstem
               let(:description) { "" }
 
               it "returns nil" do
-                expect(subject.format_description(description)).to eq('')
+                expect(subject.format_sentence(description)).to eq('')
               end
             end
           end

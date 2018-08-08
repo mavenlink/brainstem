@@ -70,7 +70,7 @@ module Brainstem
                   raise "Unknown Brainstem Field type encountered(#{field_config[:type]}) for field #{field_config[:name]}"
                 end
 
-                field_data.merge!(description: format_description(field_config[:info])) if field_config[:info].present?
+                field_data.merge!(description: format_sentence(field_config[:info])) if field_config[:info].present?
                 field_data
               end
 
@@ -79,14 +79,14 @@ module Brainstem
                 when 'hash'
                   {
                     type: 'object',
-                    description: format_description(field_config[:info]),
+                    description: format_sentence(field_config[:info]),
                     properties: format_response_branches(field_branches),
                     required: include_required? && required_children(field_branches)
                   }
                 when 'array'
                   {
                     type: 'array',
-                    description: format_description(field_config[:info]),
+                    description: format_sentence(field_config[:info]),
                     items: {
                       type: 'object',
                       properties: format_response_branches(field_branches),

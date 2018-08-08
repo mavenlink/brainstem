@@ -18,7 +18,7 @@ module Brainstem
             name.underscore.titleize.strip
           end
 
-          def format_description(description)
+          def format_sentence(description)
             return '' if description.blank?
 
             desc = description.to_s.strip.tap { |desc| desc[0] = desc[0].upcase }
