@@ -3,7 +3,7 @@ require 'active_support/core_ext/hash/compact'
 require 'active_support/inflector'
 require 'brainstem/api_docs/formatters/abstract_formatter'
 require 'brainstem/api_docs/formatters/open_api_specification/helper'
-require 'brainstem/api_docs/formatters/open_api_specification/version_2/endpoint/field_formatter'
+require 'brainstem/api_docs/formatters/open_api_specification/version_2/field_definitions/endpoint_param_formatter'
 require 'brainstem/api_docs/formatters/markdown/helper'
 
 #
@@ -235,13 +235,17 @@ module Brainstem
                   endpoint.params_configuration_tree.each do |param_name, param_config|
                     next if nested_properties(param_config).blank?
 
-                    body_params[param_name] = formatted_field(param_config)
+                    body_params[param_name] = formatted_field(param_name, param_config)
                   end
                 end
               end
 
-              def formatted_field(param_data)
-                FieldFormatter.new(param_data, include_required: true).format
+              def formatted_field(param_name, param_data)
+                Brainstem::ApiDocs::FORMATTERS[:endpoint_param][:oas_v2].call(
+                  endpoint,
+                  param_name,
+                  param_data
+                )
               end
             end
           end
@@ -253,3 +257,4 @@ end
 
 Brainstem::ApiDocs::FORMATTERS[:parameters][:oas_v2] =
   Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::Endpoint::ParamDefinitionsFormatter.method(:call)
+
