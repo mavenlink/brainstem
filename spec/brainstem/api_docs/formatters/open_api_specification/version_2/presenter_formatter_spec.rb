@@ -225,6 +225,7 @@ module Brainstem
                         expect(subject.definition[:properties]).to eq({
                           'sprockets' => {
                             'type' => 'array',
+                            'description' => 'Parent.',
                             'items' => {
                               'type' => 'object',
                               'properties' => {

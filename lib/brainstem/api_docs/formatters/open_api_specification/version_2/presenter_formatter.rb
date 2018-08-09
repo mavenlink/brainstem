@@ -1,6 +1,7 @@
 require 'active_support/core_ext/string/inflections'
 require 'brainstem/api_docs/formatters/abstract_formatter'
 require 'brainstem/api_docs/formatters/open_api_specification/helper'
+require 'brainstem/api_docs/formatters/open_api_specification/version_2/field_definitions/presenter_field_formatter'
 
 module Brainstem
   module ApiDocs
@@ -58,68 +59,13 @@ module Brainstem
 
             def format_field_branch(branch)
               branch.inject(ActiveSupport::HashWithIndifferentAccess.new) do |buffer, (name, field)|
-                if nested_field?(field)
-                  buffer[name.to_s] = case field.type
-                    when 'hash'
-                      {
-                        type: 'object',
-                        properties: format_field_branch(field.to_h)
-                      }.with_indifferent_access
-                    when 'array'
-                      {
-                        type: 'array',
-                        items: {
-                          type: 'object',
-                          properties: format_field_branch(field.to_h)
-                        }
-                      }.with_indifferent_access
-                    else
-                      raise "Unknown Brainstem Field type encountered(#{field.type}) for field #{name}"
-                  end
-                else
-                  buffer[name.to_s] = format_field_leaf(field)
-                end
-
+                buffer[name.to_s] = format_field(field)
                 buffer
               end
             end
-
-            def nested_field?(field)
-              field.respond_to?(:configuration)
-            end
-
-            def format_field_leaf(field)
-              field_data = type_and_format(field.type, field.options[:item_type])
-
-              unless field_data
-                raise "Unknown Brainstem Field type encountered(#{field.type}) for field #{field.name}"
-              end
-
-              field_data.merge!(description: format_description_for(field))
-              field_data.delete(:description) if field_data[:description].blank?
-
-              field_data
-            end
-
-            def format_description_for(field)
-              field_description = format_sentence(field.description) || ''
-              field_description << format_conditional_description(field.options)
-              field_description << "\nOnly returned when requested through the optional_fields param.\n" if field.optional?
-              field_description.try(:chomp!)
-              field_description
-            end
-
-            def format_conditional_description(field_options)
-              return '' if field_options[:if].blank?
-
-              conditions = field_options[:if]
-                .reject { |cond| presenter.conditionals[cond].options[:nodoc] }
-                .map    { |cond| uncapitalize(presenter.conditionals[cond].description) }
-                .delete_if(&:empty?)
-                .uniq
-                .to_sentence
-
-              conditions.present? ? "\nVisible when #{conditions}.\n" : ''
+            
+            def format_field(field)
+              Brainstem::ApiDocs::FORMATTERS[:presenter_field][:oas_v2].call(presenter, field)
             end
           end
         end
