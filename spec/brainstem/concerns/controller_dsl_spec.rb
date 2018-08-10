@@ -684,6 +684,106 @@ module Brainstem
               required: false,
             }.with_indifferent_access)
           end
+
+          context "when key is dynamic" do
+            it "sets the custom_response configuration" do
+              subject.brainstem_params do
+                actions :show do
+                  response :hash do |response_param|
+                    response_param.fields :mk, :hash do |dk|
+                      dk.dynamic_key_field :string
+                      dk.field :mk_blah, :string, required: true
+                    end
+
+                    response_param.fields :mk2, :hash do |dk|
+                      dk.dynamic_key_field :string, required: true
+                    end
+
+                    response_param.dynamic_key_field :hash do |dk|
+                      dk.dynamic_key_field :string
+                    end
+                  end
+                end
+              end
+
+              configuration = subject.configuration[:show][:custom_response]
+              expect(configuration).to be_present
+              expect(configuration[:_config]).to eq({
+                type: 'hash',
+                nodoc: false,
+                required: false,
+              }.with_indifferent_access)
+
+
+              param_keys = configuration.keys
+              expect(param_keys.length).to eq(8)
+
+              mk_key = param_keys[1]
+              expect(mk_key.call).to eq('mk')
+              my_key_config = configuration.to_h[mk_key]
+              expect(my_key_config).to eq({
+                nodoc: false,
+                type: 'hash',
+                required: false,
+              }.with_indifferent_access)
+
+              mk_dynamic_key = param_keys[2]
+              mk_dynamic_config = configuration.to_h[mk_dynamic_key]
+              expect(mk_dynamic_config).to eq({
+                nodoc: false,
+                dynamic_key_field: true,
+                type: 'string',
+                ancestors: [mk_key],
+                required: false,
+              }.with_indifferent_access)
+
+              mk_blah_key = param_keys[3]
+              mk_blah_config = configuration.to_h[mk_blah_key]
+              expect(mk_blah_config).to eq({
+                nodoc: false,
+                type: 'string',
+                ancestors: [mk_key],
+                required: true,
+              }.with_indifferent_access)
+
+              mk2_key = param_keys[4]
+              mk2_config = configuration.to_h[mk2_key]
+              expect(mk2_config).to eq({
+                nodoc: false,
+                type: 'hash',
+                required: false,
+              }.with_indifferent_access)
+
+              mk2_dynamic_key = param_keys[5]
+              mk2_dynamic_config = configuration.to_h[mk2_dynamic_key]
+              expect(mk2_dynamic_config).to eq({
+                nodoc: false,
+                dynamic_key_field: true,
+                type: 'string',
+                ancestors: [mk2_key],
+                required: true,
+              }.with_indifferent_access)
+
+              dynamic_key = param_keys[6]
+              dynamic_config = configuration.to_h[dynamic_key]
+              expect(dynamic_config).to eq({
+                nodoc: false,
+                dynamic_key_field: true,
+                type: 'hash',
+                required: false,
+              }.with_indifferent_access)
+
+              dynamic_child_key = param_keys[7]
+              dynamic_child_config = configuration.to_h[dynamic_child_key]
+              expect(dynamic_child_config).to eq({
+                nodoc: false,
+                dynamic_key_field: true,
+                ancestors: [dynamic_key],
+                type: 'string',
+                required: false,
+              }.with_indifferent_access)
+            end
+          end
         end
 
         context "when block not given" do

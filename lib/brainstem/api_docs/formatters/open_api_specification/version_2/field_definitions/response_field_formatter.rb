@@ -79,15 +79,30 @@ module Brainstem
                     }
                 end.with_indifferent_access.reject { |_, v| v.blank? }
               end
-              
+
               def format_object_field(field_config, field_properties, include_description = true)
+                properties, additional_properties = split_properties(field_properties)
+
                 {
                   type: 'object',
                   description: include_description && format_description(field_config),
-                  properties: format_field_properties(field_properties),
+                  properties: format_field_properties(properties),
+                  additionalProperties: format_field_properties(additional_properties),
                 }.with_indifferent_access.reject { |_, v| v.blank? }
               end
-              
+
+              def split_properties(field_properties)
+                split_properties = field_properties.each_with_object({ properties: {}, additional_properties: {} }) do |(field_name, field_config), acc|
+                  if field_config[:_config][:dynamic_key_field]
+                    acc[:additional_properties][field_name] = field_config
+                  else
+                    acc[:properties][field_name] = field_config
+                  end
+                end
+
+                [split_properties[:properties], split_properties[:additional_properties]]
+              end
+
               def format_simple_field(field_config)
                 field_data = type_and_format(field_config[:type], field_config[:item_type])
                 raise(invalid_type_error_message(field_config)) unless field_data
@@ -107,8 +122,12 @@ module Brainstem
                   config = field_config[:_config]
                   branches = field_config.except(:_config)
 
-                  buffer[field_name.to_s] = format_field(config, branches)
-                  buffer
+                  if config[:dynamic_key_field]
+                    format_field(config, branches)
+                  else
+                    buffer[field_name.to_s] = format_field(config, branches)
+                    buffer
+                  end
                 end
               end
               

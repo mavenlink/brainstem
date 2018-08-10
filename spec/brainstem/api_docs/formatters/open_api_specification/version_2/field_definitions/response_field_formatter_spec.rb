@@ -12,9 +12,9 @@ module Brainstem
                 let(:endpoint) { OpenStruct.new(controller_name: 'Test', action: 'create') }
                 let(:field_name) { 'sprocket' }
                 let(:configuration_tree) { field_configuration_tree.with_indifferent_access }
-                
+
                 subject { described_class.new(endpoint, field_name, configuration_tree).format }
-                
+
                 context 'when formatting non-nested field' do
                   let(:field_configuration_tree) do
                     {
@@ -53,7 +53,7 @@ module Brainstem
                       )
                     end
                   end
-                  
+
                   context 'when formatting a nested array field with non nested data type' do
                     let(:field_configuration_tree) do
                       {
@@ -81,7 +81,7 @@ module Brainstem
                       )
                     end
                   end
-                  
+
                   context 'when formatting a nested array field with objects' do
                     let(:field_configuration_tree) do
                       {
@@ -203,7 +203,7 @@ module Brainstem
                       )
                     end
                   end
-                  
+
                   context 'when formatting a multi nested hash field' do
                     let(:field_configuration_tree) do
                       {
@@ -257,6 +257,150 @@ module Brainstem
                           }
                         }
                       )
+                    end
+                  end
+                end
+
+                context 'dynamic keys' do
+                  context 'when formatting a hash field' do
+                    let(:field_configuration_tree) do
+                      {
+                        _config: {
+                          type: 'hash',
+                          info: 'Dynamic keys hash.',
+                        },
+                        __dynamic: {
+                          _config: {
+                            nodoc: false,
+                            type: 'hash',
+                            dynamic_key_field: true,
+                            info: 'a dynamic description.'
+                          },
+                          blah: {
+                            _config: {
+                              nodoc: false,
+                              type: 'string',
+                            },
+                          },
+                        },
+                      }
+                    end
+
+                    it 'returns the formatted field schema' do
+                      expect(subject).to eq({
+                        'type' => 'object',
+                        'description' => 'Dynamic keys hash.',
+                        'additionalProperties' => {
+                          'type' => 'object',
+                          'description' => 'A dynamic description.',
+                          'properties' => {
+                            'blah' => {
+                              'type' => 'string',
+                            },
+                          },
+                        },
+                      })
+                    end
+                  end
+
+                  context 'when formatting a nested hash field' do
+                    let(:field_configuration_tree) do
+                      {
+                        _config: {
+                          type: 'hash',
+                          info: 'Dynamic keys hash.',
+                        },
+                        non_dynamic_key: {
+                          _config: {
+                            nodoc: false,
+                            type: 'hash',
+                            info: 'A non-dynamic description.'
+                          },
+                          non_dynamic_property: {
+                            _config: {
+                              nodoc: false,
+                              type: 'string',
+                            },
+                          },
+                        },
+                        __dynamic: {
+                          _config: {
+                            nodoc: false,
+                            type: 'hash',
+                            dynamic_key_field: true,
+                            info: 'A dynamic description.'
+                          },
+                          dynamic_property1: {
+                            _config: {
+                              nodoc: false,
+                              type: 'string',
+                            },
+                          },
+                          __dynamic: {
+                            _config: {
+                              nodoc: false,
+                              type: 'hash',
+                              dynamic_key_field: true,
+                              info: 'A 2nd dynamic description.'
+                            },
+                            __dynamic: {
+                              _config: {
+                                nodoc: false,
+                                type: 'string',
+                                dynamic_key_field: true,
+                                info: 'A dynamic string.'
+                              },
+                            },
+                            dynamic_property2: {
+                              _config: {
+                                nodoc: false,
+                                type: 'string',
+                              },
+                            },
+                          },
+                        },
+                      }
+                    end
+
+                    it 'returns the formatted field schema' do
+                      subject
+                      expect(subject).to eq({
+                        'type' => 'object',
+                        'description' => 'Dynamic keys hash.',
+                        'properties' => {
+                          'non_dynamic_key' => {
+                            'type' => 'object',
+                            'description' => 'A non-dynamic description.',
+                            'properties' => {
+                              'non_dynamic_property' => {
+                                'type' => 'string',
+                              }
+                            }
+                          },
+                        },
+                        'additionalProperties' => {
+                          'type' => 'object',
+                          'description' => 'A dynamic description.',
+                          'properties' => {
+                            'dynamic_property1' => {
+                              'type' => 'string',
+                            },
+                          },
+                          'additionalProperties' => {
+                            'type' => 'object',
+                            'description' => 'A 2nd dynamic description.',
+                            'properties' => {
+                              'dynamic_property2' => {
+                                'type' => 'string',
+                              },
+                            },
+                            'additionalProperties' => {
+                              'type' => 'string',
+                              'description' => 'A dynamic string.',
+                            },
+                          },
+                        },
+                      })
                     end
                   end
                 end

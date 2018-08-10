@@ -257,6 +257,31 @@ module Brainstem
         end
 
         #
+        # Allows defining a dynamic key field block for a custom response
+        #
+        # @param [Symbol] type the data type of the response.
+        # @param [Hash] options
+        # @option options [String] :info the documentation for the param
+        # @option options [String, Symbol] :item_type The data type of the items contained in a field.
+        #   Ideally used when the data type of the response is an `array`.
+        #
+        def dynamic_key_field(type, options = {}, &block)
+          custom_response = configuration[brainstem_params_context][:custom_response]
+          raise "`dynamic_fields` must be nested under a response block" if custom_response.nil?
+          options[:dynamic_key_field] = true
+
+          formatted_name = convert_to_proc('__dynamic')
+
+          if type == :hash
+            field_block_config = format_field_configuration(custom_response, type, options, &block)
+            custom_response[formatted_name] = field_block_config
+            with_options(format_ancestry_options(formatted_name, field_block_config), &block)
+          else
+            custom_response[formatted_name] = format_field_configuration(custom_response, type, options)
+          end
+        end
+
+        #
         # Allows defining a field either under a field block or the custom response block.
         #
         # @param [Symbol] name the name of the field of the response.
