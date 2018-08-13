@@ -691,16 +691,22 @@ module Brainstem
                 actions :show do
                   response :hash do |response_param|
                     response_param.fields :mk, :hash do |dk|
-                      dk.dynamic_key_field :string
-                      dk.field :mk_blah, :string, required: true
+                      dk.dynamic_key_field :string,
+                        info: "I am a dynamic key field I"
+                      dk.field :mk_blah, :string,
+                        required: true
                     end
 
                     response_param.fields :mk2, :hash do |dk|
-                      dk.dynamic_key_field :string, required: true
+                      dk.field :_dynamic_key, :string,
+                        required: true,
+                        info: "dynamic key field II"
                     end
 
-                    response_param.dynamic_key_field :hash do |dk|
-                      dk.dynamic_key_field :string
+                    response_param.dynamic_key_fields :hash do |dk|
+                      dk.field :user_id, :string,
+                        dynamic_key: true,
+                        info: "dynamic key field with dynamic_key attribute"
                     end
                   end
                 end
@@ -713,7 +719,6 @@ module Brainstem
                 nodoc: false,
                 required: false,
               }.with_indifferent_access)
-
 
               param_keys = configuration.keys
               expect(param_keys.length).to eq(8)
@@ -731,10 +736,11 @@ module Brainstem
               mk_dynamic_config = configuration.to_h[mk_dynamic_key]
               expect(mk_dynamic_config).to eq({
                 nodoc: false,
-                dynamic_key_field: true,
+                dynamic_key: true,
                 type: 'string',
                 ancestors: [mk_key],
                 required: false,
+                info: "I am a dynamic key field I"
               }.with_indifferent_access)
 
               mk_blah_key = param_keys[3]
@@ -758,17 +764,18 @@ module Brainstem
               mk2_dynamic_config = configuration.to_h[mk2_dynamic_key]
               expect(mk2_dynamic_config).to eq({
                 nodoc: false,
-                dynamic_key_field: true,
+                dynamic_key: true,
                 type: 'string',
                 ancestors: [mk2_key],
                 required: true,
+                info: "dynamic key field II",
               }.with_indifferent_access)
 
               dynamic_key = param_keys[6]
               dynamic_config = configuration.to_h[dynamic_key]
               expect(dynamic_config).to eq({
                 nodoc: false,
-                dynamic_key_field: true,
+                dynamic_key: true,
                 type: 'hash',
                 required: false,
               }.with_indifferent_access)
@@ -777,10 +784,11 @@ module Brainstem
               dynamic_child_config = configuration.to_h[dynamic_child_key]
               expect(dynamic_child_config).to eq({
                 nodoc: false,
-                dynamic_key_field: true,
+                dynamic_key: true,
                 ancestors: [dynamic_key],
                 type: 'string',
                 required: false,
+                info: "dynamic key field with dynamic_key attribute",
               }.with_indifferent_access)
             end
           end

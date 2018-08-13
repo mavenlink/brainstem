@@ -8,6 +8,7 @@ module Brainstem
       include Brainstem::Concerns::InheritableConfiguration
 
       DEFAULT_BRAINSTEM_PARAMS_CONTEXT = :_default
+      DYNAMIC_KEY = :_dynamic_key
 
       included do
         reset_configuration!
@@ -204,7 +205,7 @@ module Brainstem
         #
         def valid(name, type = nil, options = {}, &block)
           valid_params = configuration[brainstem_params_context][:valid_params]
-          param_config = format_field_configuration(valid_params, type, options, &block)
+          param_config = format_field_configuration(valid_params, name, type, options, &block)
 
           formatted_name = convert_to_proc(name)
           valid_params[formatted_name] = param_config
@@ -228,6 +229,7 @@ module Brainstem
 
           custom_response[:_config] = format_field_configuration(
             custom_response,
+            nil,
             type,
             options,
             &block
@@ -250,14 +252,14 @@ module Brainstem
           raise "`fields` must be nested under a response block" if custom_response.nil?
 
           formatted_name = convert_to_proc(name)
-          field_block_config = format_field_configuration(custom_response, type, options, &block)
+          field_block_config = format_field_configuration(custom_response, name, type, options, &block)
 
           custom_response[formatted_name] = field_block_config
           with_options(format_ancestry_options(formatted_name, field_block_config), &block)
         end
 
         #
-        # Allows defining a dynamic key field block for a custom response
+        # Allows defining a field block with a dynamic key for a custom response
         #
         # @param [Symbol] type the data type of the response.
         # @param [Hash] options
@@ -265,20 +267,8 @@ module Brainstem
         # @option options [String, Symbol] :item_type The data type of the items contained in a field.
         #   Ideally used when the data type of the response is an `array`.
         #
-        def dynamic_key_field(type, options = {}, &block)
-          custom_response = configuration[brainstem_params_context][:custom_response]
-          raise "`dynamic_fields` must be nested under a response block" if custom_response.nil?
-          options[:dynamic_key_field] = true
-
-          formatted_name = convert_to_proc('__dynamic')
-
-          if type == :hash
-            field_block_config = format_field_configuration(custom_response, type, options, &block)
-            custom_response[formatted_name] = field_block_config
-            with_options(format_ancestry_options(formatted_name, field_block_config), &block)
-          else
-            custom_response[formatted_name] = format_field_configuration(custom_response, type, options)
-          end
+        def dynamic_key_fields(type, options = {}, &block)
+          fields(DYNAMIC_KEY, type, options, &block)
         end
 
         #
@@ -296,7 +286,20 @@ module Brainstem
           raise "`fields` must be nested under a response block" if custom_response.nil?
 
           formatted_name = convert_to_proc(name)
-          custom_response[formatted_name] = format_field_configuration(custom_response, type, options)
+          custom_response[formatted_name] = format_field_configuration(custom_response, name, type, options)
+        end
+
+        #
+        # Allows defining a field with a dynamic key either under a field block or the custom response block.
+        #
+        # @param [Symbol] type the data type of the response.
+        # @param [Hash] options
+        # @option options [String] :info the documentation for the param
+        # @option options [String, Symbol] :item_type The data type of the items contained in a field.
+        #   Ideally used when the data type of the response is an `array`.
+        #
+        def dynamic_key_field(type, options = {})
+          field(DYNAMIC_KEY, type, options)
         end
 
         ####################################################
@@ -484,10 +487,12 @@ module Brainstem
         #
         # Formats the configuration of the param and returns the default configuration if not specified.
         #
-        def format_field_configuration(configuration_map, type, options = {}, &block)
+        def format_field_configuration(configuration_map, name, type, options = {}, &block)
           field_config = options.with_indifferent_access
 
           field_config[:type] = type.to_s
+          field_config[:dynamic_key] = true if name.present? && name.to_sym == DYNAMIC_KEY
+
           if options.has_key?(:item_type)
             field_config[:item_type] = field_config[:item_type].to_s
           elsif field_config[:type] == 'array'
