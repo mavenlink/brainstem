@@ -487,6 +487,40 @@ module Brainstem
             end
           end
         end
+
+        context "when the param has a dynamic key" do
+          let(:dynamic_keyword) { described_class::DYNAMIC_KEY.to_s }
+
+          it "sets the dynamic key property" do
+            subject.brainstem_params do
+              valid :id, :integer
+              valid :_dynamic_key, :string, required: true
+              valid :user_id, :integer, dynamic_key: true
+            end
+
+            valid_params = subject.configuration[:_default][:valid_params]
+            expect(valid_params.keys.length).to eq(3)
+
+            id_config_key = valid_params.keys[0]
+            expect(id_config_key.call).to eq('id')
+            id_config = valid_params[id_config_key]
+            expect(id_config[:required]).to be_falsey
+            expect(id_config[:type]).to eq("integer")
+
+            dynamic_string_key = valid_params.keys[1]
+            expect(dynamic_string_key.call).to eq(dynamic_keyword)
+            dynamic_string_config = valid_params[dynamic_string_key]
+            expect(dynamic_string_config[:type]).to eq("string")
+            expect(dynamic_string_config[:required]).to be_truthy
+            expect(dynamic_string_config[:dynamic_key]).to be_truthy
+
+            dynamic_user_id_key = valid_params.keys[2]
+            expect(dynamic_user_id_key.call).to eq('user_id')
+            dynamic_user_id_config = valid_params[dynamic_user_id_key]
+            expect(dynamic_user_id_config[:type]).to eq("integer")
+            expect(dynamic_user_id_config[:dynamic_key]).to be_truthy
+          end
+        end
       end
 
       describe ".valid_dynamic_param" do
