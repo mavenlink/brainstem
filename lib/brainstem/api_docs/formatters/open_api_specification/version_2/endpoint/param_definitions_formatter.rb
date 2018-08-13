@@ -262,14 +262,6 @@ module Brainstem
                 param_config[:_config][:dynamic_key].presence
               end
 
-              def formatted_dynamic_key_params
-                endpoint.params_configuration_tree.each do |param_name, param_config|
-                  next if !dynamic_key_field?(param_config) || nested_properties(param_config).blank?
-
-                  formatted_field(param_name, param_config)
-                end
-              end
-
               def formatted_field(param_name, param_data)
                 Brainstem::ApiDocs::FORMATTERS[:endpoint_param][:oas_v2].call(
                   endpoint,
