@@ -22,7 +22,9 @@ module Brainstem
               end
 
               def required_properties(field_properties)
-                field_properties.select { |_, property_data| property_data[:_config][:required] }.keys
+                field_properties.select do |_, property_data|
+                  !property_data[:_config][:dynamic_key] && property_data[:_config][:required]
+                end.keys
               end
             end
           end

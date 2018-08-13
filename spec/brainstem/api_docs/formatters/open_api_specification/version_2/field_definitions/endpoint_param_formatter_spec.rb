@@ -178,6 +178,153 @@ module Brainstem
                     end
                   end
                 end
+
+                context 'when formatting params with dynamic keys' do
+                  context 'when formatting a hash param' do
+                    let(:field_configuration_tree) do
+                      {
+                        _config: {
+                          type: 'hash',
+                          info: 'Dynamic keys hash.',
+                        },
+                        _dynamic_key: {
+                          _config: {
+                            nodoc: false,
+                            type: 'hash',
+                            dynamic_key: true,
+                            info: 'a dynamic description.'
+                          },
+                          blah: {
+                            _config: {
+                              nodoc: false,
+                              type: 'string',
+                            },
+                          },
+                        },
+                      }
+                    end
+
+                    it 'returns the formatted field schema' do
+                      expect(subject).to eq({
+                        'type' => 'object',
+                        'description' => 'Dynamic keys hash.',
+                        'additionalProperties' => {
+                          'type' => 'object',
+                          'description' => 'A dynamic description.',
+                          'properties' => {
+                            'blah' => {
+                              'type' => 'string',
+                            },
+                          },
+                        },
+                      })
+                    end
+                  end
+
+                  context 'when formatting a nested hash field' do
+                    let(:field_configuration_tree) do
+                      {
+                        _config: {
+                          type: 'hash',
+                          info: 'Dynamic keys hash.',
+                        },
+                        non_dynamic_key: {
+                          _config: {
+                            nodoc: false,
+                            type: 'hash',
+                            info: 'A non-dynamic description.'
+                          },
+                          non_dynamic_property: {
+                            _config: {
+                              nodoc: false,
+                              type: 'string',
+                            },
+                          },
+                        },
+                        _dynamic_key: {
+                          _config: {
+                            nodoc: false,
+                            type: 'hash',
+                            dynamic_key: true,
+                            required: true,
+                            info: 'A dynamic description.'
+                          },
+                          dynamic_property1: {
+                            _config: {
+                              nodoc: false,
+                              type: 'string',
+                              required: true,
+                            },
+                          },
+                          _dynamic_key: {
+                            _config: {
+                              nodoc: false,
+                              type: 'hash',
+                              dynamic_key: true,
+                              info: 'A 2nd dynamic description.'
+                            },
+                            _dynamic_key: {
+                              _config: {
+                                nodoc: false,
+                                type: 'string',
+                                dynamic_key: true,
+                                info: 'A dynamic string.',
+                                required: true,
+                              },
+                            },
+                            dynamic_property2: {
+                              _config: {
+                                nodoc: false,
+                                type: 'string',
+                              },
+                            },
+                          },
+                        },
+                      }
+                    end
+
+                    it 'returns the formatted field schema' do
+                      expect(subject).to eq({
+                        'type' => 'object',
+                        'description' => 'Dynamic keys hash.',
+                        'properties' => {
+                          'non_dynamic_key' => {
+                            'type' => 'object',
+                            'description' => 'A non-dynamic description.',
+                            'properties' => {
+                              'non_dynamic_property' => {
+                                'type' => 'string',
+                              }
+                            }
+                          },
+                        },
+                        'additionalProperties' => {
+                          'type' => 'object',
+                          'description' => 'A dynamic description.',
+                          'required' => ['dynamic_property1'],
+                          'properties' => {
+                            'dynamic_property1' => {
+                              'type' => 'string',
+                            },
+                          },
+                          'additionalProperties' => {
+                            'type' => 'object',
+                            'description' => 'A 2nd dynamic description.',
+                            'properties' => {
+                              'dynamic_property2' => {
+                                'type' => 'string',
+                              },
+                            },
+                            'additionalProperties' => {
+                              'type' => 'string',
+                              'description' => 'A dynamic string.',
+                            },
+                          },
+                        },
+                      })
+                    end
+                  end
+                end
               end
             end
           end

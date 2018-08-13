@@ -216,8 +216,10 @@ module Brainstem
               end
 
               def format_body_params!
-                formatted_body_params = format_body_params
-                return if formatted_body_params.blank?
+                properties, additional_properties = split_properties(endpoint.params_configuration_tree)
+                formatted_body_params = format_field_properties(properties)
+                formatted_dynamic_key_params = format_field_properties(additional_properties)
+                return if formatted_body_params.blank? && formatted_dynamic_key_params.blank?
 
                 output << {
                   'in'          => 'body',
@@ -225,18 +227,46 @@ module Brainstem
                   'name'        => 'body',
                   'schema'      => {
                     'type'       => 'object',
-                    'properties' => formatted_body_params
+                    'properties' => formatted_body_params,
+                    'additionalProperties' => formatted_dynamic_key_params,
                   },
                 }
               end
 
-              def format_body_params
-                ActiveSupport::HashWithIndifferentAccess.new.tap do |body_params|
-                  endpoint.params_configuration_tree.each do |param_name, param_config|
-                    next if nested_properties(param_config).blank?
-
-                    body_params[param_name] = formatted_field(param_name, param_config)
+              def split_properties(field_properties)
+                split_properties = field_properties.each_with_object({ properties: {}, additional_properties: {} }) do |(field_name, field_config), acc|
+                  if field_config[:_config][:dynamic_key]
+                    acc[:additional_properties][field_name] = field_config
+                  else
+                    acc[:properties][field_name] = field_config
                   end
+                end
+
+                [split_properties[:properties], split_properties[:additional_properties]]
+              end
+
+              def format_field_properties(branches)
+                branches.inject(ActiveSupport::HashWithIndifferentAccess.new) do |buffer, (field_name, field_config)|
+                  if dynamic_key_field?(field_config)
+                    formatted_field('Dynamic Key Field', field_config)
+                  else
+                    if nested_properties(field_config).present?
+                      buffer[field_name.to_s] = formatted_field(field_name, field_config)
+                    end
+                    buffer
+                  end
+                end
+              end
+
+              def dynamic_key_field?(param_config)
+                param_config[:_config][:dynamic_key].presence
+              end
+
+              def formatted_dynamic_key_params
+                endpoint.params_configuration_tree.each do |param_name, param_config|
+                  next if !dynamic_key_field?(param_config) || nested_properties(param_config).blank?
+
+                  formatted_field(param_name, param_config)
                 end
               end
 

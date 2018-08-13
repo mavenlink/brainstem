@@ -269,11 +269,11 @@ module Brainstem
                           type: 'hash',
                           info: 'Dynamic keys hash.',
                         },
-                        __dynamic: {
+                        _dynamic_key: {
                           _config: {
                             nodoc: false,
                             type: 'hash',
-                            dynamic_key_field: true,
+                            dynamic_key: true,
                             info: 'a dynamic description.'
                           },
                           blah: {
@@ -323,11 +323,11 @@ module Brainstem
                             },
                           },
                         },
-                        __dynamic: {
+                        _dynamic_key: {
                           _config: {
                             nodoc: false,
                             type: 'hash',
-                            dynamic_key_field: true,
+                            dynamic_key: true,
                             info: 'A dynamic description.'
                           },
                           dynamic_property1: {
@@ -336,18 +336,18 @@ module Brainstem
                               type: 'string',
                             },
                           },
-                          __dynamic: {
+                          _dynamic_key: {
                             _config: {
                               nodoc: false,
                               type: 'hash',
-                              dynamic_key_field: true,
+                              dynamic_key: true,
                               info: 'A 2nd dynamic description.'
                             },
-                            __dynamic: {
+                            _dynamic_key: {
                               _config: {
                                 nodoc: false,
                                 type: 'string',
-                                dynamic_key_field: true,
+                                dynamic_key: true,
                                 info: 'A dynamic string.'
                               },
                             },
@@ -363,7 +363,6 @@ module Brainstem
                     end
 
                     it 'returns the formatted field schema' do
-                      subject
                       expect(subject).to eq({
                         'type' => 'object',
                         'description' => 'Dynamic keys hash.',

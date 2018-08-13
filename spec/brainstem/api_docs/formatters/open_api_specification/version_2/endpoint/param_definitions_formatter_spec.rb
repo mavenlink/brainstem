@@ -298,7 +298,7 @@ module Brainstem
                           type: 'hash',
                           info: 'attributes for the task  '
                         },
-                        name: {
+                        title: {
                           _config: {
                             type: 'string',
                             required: true,
@@ -310,7 +310,7 @@ module Brainstem
                             type: 'hash',
                             info: 'sub tasks of the task'
                           },
-                          name: {
+                          title: {
                             _config: {
                               type: 'string',
                               required: true
@@ -326,6 +326,13 @@ module Brainstem
                             _config: {
                               type: 'string',
                               required: true,
+                            }
+                          },
+                          _dynamic_key: {
+                            _config: {
+                              type: 'boolean',
+                              info: 'something',
+                              dynamic_key: true,
                             }
                           },
                         },
@@ -360,6 +367,15 @@ module Brainstem
                             info: 'activates the assignment'
                           }
                         }
+                      },
+                      _dynamic_key: {
+                        _config: {
+                          required: true,
+                          type: 'array',
+                          item_type: 'integer',
+                          info: 'IDs of assignees',
+                          dynamic_key: true,
+                        }
                       }
                     }.with_indifferent_access
                   end
@@ -381,20 +397,20 @@ module Brainstem
                           'properties' => {
                             'task' => {
                               'description' => 'Attributes for the task.',
-                              'required'    => ['name'],
+                              'required'    => ['title'],
                               'type'        => 'object',
                               'properties'  => {
-                                'name' => {
+                                'title' => {
                                   'description' => 'Name of the task.',
                                   'type'        => 'string'
                                 },
                                 'subs' => {
                                   'description' => 'Sub tasks of the task.',
-                                  'required'    => ['name'],
+                                  'required'    => ['title'],
                                   'type'        => 'object',
                                   'properties'  => {
-                                    'name' => {
-                                      'type'     => 'string'
+                                    'title' => {
+                                      'type' => 'string'
                                     }
                                   }
                                 },
@@ -405,8 +421,12 @@ module Brainstem
                                     'required'   => ['name'],
                                     'properties' => {
                                       'name' => {
-                                        'type'     => 'string',
+                                        'type' => 'string',
                                       }
+                                    },
+                                    'additionalProperties' => {
+                                      'type' => 'boolean',
+                                      'description' => 'Something.',
                                     }
                                   }
                                 }
@@ -443,6 +463,14 @@ module Brainstem
                                   },
                                 }
                               }
+                            },
+                          },
+                          'additionalProperties' => {
+                            'type' => 'array',
+                            'description' => 'IDs of assignees.',
+                            'items' => {
+                              'type' => 'integer',
+                              'format' => 'int32',
                             }
                           }
                         },

@@ -93,7 +93,7 @@ module Brainstem
 
               def split_properties(field_properties)
                 split_properties = field_properties.each_with_object({ properties: {}, additional_properties: {} }) do |(field_name, field_config), acc|
-                  if field_config[:_config][:dynamic_key_field]
+                  if field_config[:_config][:dynamic_key]
                     acc[:additional_properties][field_name] = field_config
                   else
                     acc[:properties][field_name] = field_config
@@ -122,7 +122,7 @@ module Brainstem
                   config = field_config[:_config]
                   branches = field_config.except(:_config)
 
-                  if config[:dynamic_key_field]
+                  if config[:dynamic_key]
                     format_field(config, branches)
                   else
                     buffer[field_name.to_s] = format_field(config, branches)

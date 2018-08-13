@@ -197,7 +197,25 @@ module Brainstem
                                 'info' => 'Can edit the widget.',
                                 'nodoc' => false
                               },
-                            }
+                            },
+                            '_dynamic_key' => {
+                              '_config' => {
+                                'type' => 'array',
+                                'item_type' => 'integer',
+                                'info' => 'Viewable Widget Ids.',
+                                'nodoc' => false,
+                                'dynamic_key' => true
+                              },
+                            },
+                          },
+                          '_dynamic_key' => {
+                            '_config' => {
+                              'type' => 'array',
+                              'item_type' => 'integer',
+                              'info' => 'Association Ids.',
+                              'nodoc' => false,
+                              'dynamic_key' => true
+                            },
                           },
                         }.with_indifferent_access
                       }
@@ -223,9 +241,25 @@ module Brainstem
                                   'type' => 'boolean',
                                   'description' => 'Can edit the widget.'
                                 }
-                              }
+                              },
+                              'additionalProperties' => {
+                                'type' => 'array',
+                                'description' => 'Viewable Widget Ids.',
+                                'items' => {
+                                  'type' => 'integer',
+                                  'format' => 'int32',
+                                }
+                              },
                             }
-                          }
+                          },
+                          'additionalProperties' => {
+                            'type' => 'array',
+                            'description' => 'Association Ids.',
+                            'items' => {
+                              'type' => 'integer',
+                              'format' => 'int32',
+                            }
+                          },
                         }
                       })
                     end
