@@ -93,6 +93,8 @@ module Brainstem
         #   @option options [String] :info Docstring for the sort order
         #   @option options [Boolean] :nodoc Whether this sort order be
         #     included in the generated documentation
+        #   @option options [Boolean] :direction Whether this sort order
+        #     has direction based ordering (asc/desc). Defaults to true
         #
         # @overload sort_order(name, options, &block)
         #   @yieldparam scope [ActiveRecord::Relation] The scope representing
@@ -107,9 +109,11 @@ module Brainstem
         # @raise [ArgumentError] if neither an order string or block is given.
         #
         def sort_order(name, *args, &block)
-          valid_options = %w(info nodoc)
+          valid_options = %w(info nodoc direction)
           options       = args.extract_options!
                             .select { |k, v| valid_options.include?(k.to_s) }
+                            .with_indifferent_access
+          options[:direction] = true unless options.has_key?(:direction)
           order         = args.first
 
           raise ArgumentError, "A sort order must be given" unless block_given? || order

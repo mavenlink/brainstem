@@ -641,8 +641,8 @@ module Brainstem
                     mock(presenter).default_sort_order { 'title:asc' }
                     mock(presenter).valid_sort_orders {
                       {
-                        'title'         => { info: 'Order by title aphabetically' },
-                        'sprocket_name' => { info: 'Order by sprocket name aphabetically' },
+                        'title'         => { info: 'Order by title alphabetically', direction: true },
+                        'sprocket_name' => { info: 'Order by sprocket name alphabetically', direction: false },
                       }
                     }
                   end
@@ -657,7 +657,7 @@ module Brainstem
                         'type'        => 'string',
                         'default'     => 'title:asc',
                         'description' => "Supply `order` with the name of a valid sort field for the endpoint and a direction.\n\n" +
-                                         "Valid values: `sprocket_name:asc`, `sprocket_name:desc`, `title:asc`, and `title:desc`."
+                                         "Valid values: `sprocket_name`, `title:asc`, and `title:desc`."
                       }
                     ])
                   end

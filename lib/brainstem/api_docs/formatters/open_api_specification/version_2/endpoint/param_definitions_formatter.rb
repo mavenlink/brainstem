@@ -107,8 +107,12 @@ module Brainstem
               def format_sort_order_params!
                 return if presenter.nil? || (valid_sort_orders = presenter.valid_sort_orders).empty?
 
-                sort_orders = valid_sort_orders.map { |sort_name, _|
-                  [md_inline_code("#{sort_name}:asc"), md_inline_code("#{sort_name}:desc")]
+                sort_orders = valid_sort_orders.map { |sort_name, sort_config|
+                  if sort_config[:direction]
+                    [md_inline_code("#{sort_name}:asc"), md_inline_code("#{sort_name}:desc")]
+                  else
+                    md_inline_code(sort_name)
+                  end
                 }.flatten.sort
 
                 description = <<-DESC.strip_heredoc

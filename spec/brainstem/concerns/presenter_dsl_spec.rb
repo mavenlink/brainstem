@@ -172,6 +172,24 @@ describe Brainstem::Concerns::PresenterDSL do
         expect(orders[:created_at][:info]).to eq "sorts by creation time"
       end
     end
+
+    context "when setting the direction" do
+      it "sets the direction to true by default" do
+        presenter_class.sort_order :created_at, value, info: "sorts by creation time"
+
+        expect(orders[:created_at][:direction]).to be_truthy
+      end
+
+      context "when direction is given" do
+        it "respects the given direction value" do
+          presenter_class.sort_order :created_at, value, info: "sorts by creation time", direction: false
+          presenter_class.sort_order :updated_at, value, info: "sorts by creation time", direction: true
+
+          expect(orders[:created_at][:direction]).to be_falsey
+          expect(orders[:updated_at][:direction]).to be_truthy
+        end
+      end
+    end
   end
 
   describe 'the conditional block' do
