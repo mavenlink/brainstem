@@ -190,7 +190,7 @@ module Brainstem
         # Adds a param to the list of valid params, storing
         # the info sent with it.
         #
-        # @param [Symbol] field_name the name of the param
+        # @param [Symbol] name the name of the param
         # @param [String, Symbol] type the data type of the field. If not specified, will default to `string`.
         # @param [Hash] options
         # @option options [String] :info the documentation for the param
@@ -211,6 +211,26 @@ module Brainstem
           valid_params[formatted_name] = param_config
 
           with_options(format_ancestry_options(formatted_name, param_config), &block) if block_given?
+        end
+
+        #
+        # Adds a param that has a dynamic key to the list of valid params, storing
+        # the info sent with it.
+        #
+        # @param [String, Symbol] type the data type of the field. If not specified, will default to `string`.
+        # @param [Hash] options
+        # @option options [String] :info the documentation for the param
+        # @option options [String, Symbol] :root if this is a nested param,
+        #   under which param should it be nested?
+        # @option options [Boolean] :nodoc should this param appear in the
+        #   documentation?
+        # @option options [Boolean] :required if the param is required for
+        #   the endpoint
+        # @option options [String, Symbol] :item_type The data type of the items contained in a field.
+        #   Ideally used when the data type of the field is an `array`, `object` or `hash`.
+        #
+        def valid_dynamic_param(type, options = {}, &block)
+          valid(DYNAMIC_KEY, type, options, &block)
         end
 
         #

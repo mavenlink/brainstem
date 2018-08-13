@@ -489,6 +489,137 @@ module Brainstem
         end
       end
 
+      describe ".valid_dynamic_param" do
+        let(:dynamic_keyword) { described_class::DYNAMIC_KEY.to_s }
+        
+        it "sets the correct configuration" do
+          subject.brainstem_params do
+            valid_dynamic_param :integer,
+              info: "User ID is required",
+              required: true
+          end
+
+          valid_params = subject.configuration[:_default][:valid_params]
+          expect(valid_params.keys.length).to eq(1)
+          expect(valid_params.keys[0]).to be_a(Proc)
+          expect(valid_params.keys[0].call).to eq(dynamic_keyword)
+
+          sprocket_ids_config = valid_params[valid_params.keys[0]]
+          expect(sprocket_ids_config[:info]).to eq "User ID is required"
+          expect(sprocket_ids_config[:required]).to be_truthy
+          expect(sprocket_ids_config[:type]).to eq("integer")
+          expect(sprocket_ids_config[:dynamic_key]).to be_truthy
+        end
+
+        context "when type is hash" do
+          it "adds the nested fields to valid params" do
+            subject.brainstem_params do
+              valid :id, :integer
+
+              valid :info, :hash, required: true do |param|
+                param.valid_dynamic_param :string, required: true
+
+                param.valid :data, :hash do |double_nested_param|
+                  double_nested_param.valid_dynamic_param :string
+                end
+              end
+            end
+
+            valid_params = subject.configuration[:_default][:valid_params]
+            param_keys = valid_params.keys
+            expect(param_keys.length).to eq(5)
+
+            expect(param_keys[0].call).to eq('id')
+            id_config = valid_params[param_keys[0]]
+            expect(id_config[:root]).to be_nil
+            expect(id_config[:ancestors]).to be_nil
+
+            expect(param_keys[1].call).to eq('info')
+            info_key = param_keys[1]
+            info_config = valid_params[info_key]
+            expect(info_config[:root]).to be_nil
+            expect(info_config[:ancestors]).to be_nil
+
+            expect(param_keys[2].call).to eq(dynamic_keyword)
+            dynamic_info_nested_config = valid_params[param_keys[2]]
+            expect(dynamic_info_nested_config[:root]).to be_nil
+            expect(dynamic_info_nested_config[:ancestors]).to eq([info_key])
+            expect(dynamic_info_nested_config[:dynamic_key]).to be_truthy
+            expect(dynamic_info_nested_config[:required]).to be_truthy
+
+            expect(param_keys[3].call).to eq('data')
+            details_data_key = param_keys[3]
+            details_data_config = valid_params[details_data_key]
+            expect(details_data_config[:root]).to be_nil
+            expect(details_data_config[:ancestors]).to eq([info_key])
+
+            expect(param_keys[4].call).to eq(dynamic_keyword)
+            dynamic_data_nested_config = valid_params[param_keys[4]]
+            expect(dynamic_data_nested_config[:root]).to be_nil
+            expect(dynamic_data_nested_config[:ancestors]).to eq([info_key, details_data_key])
+          end
+        end
+
+        context "when type is array" do
+          it "sets the type and sub type appropriately" do
+            subject.brainstem_params do
+              valid :sprocket_ids, :array,
+                    required: true,
+                    item_type: :string
+            end
+
+            valid_params = subject.configuration[:_default][:valid_params]
+
+            sprocket_ids_key = valid_params.keys[0]
+            expect(sprocket_ids_key.call).to eq('sprocket_ids')
+
+            sprocket_ids_config = valid_params[sprocket_ids_key]
+            expect(sprocket_ids_config[:required]).to be_truthy
+            expect(sprocket_ids_config[:type]).to eq('array')
+            expect(sprocket_ids_config[:item_type]).to eq('string')
+          end
+
+          context "when a block is given" do
+            it "sets the type and sub type appropriately" do
+              subject.brainstem_params do
+                valid :sprocket_tasks, :array, required: true, item_type: 'hash' do |param|
+                  param.valid :task_id, :integer, required: true
+                  param.valid :task_title, :string
+                end
+              end
+
+              valid_params = subject.configuration[:_default][:valid_params]
+
+              sprocket_tasks_key = valid_params.keys[0]
+              expect(sprocket_tasks_key.call).to eq('sprocket_tasks')
+
+              sprocket_tasks_config = valid_params[sprocket_tasks_key]
+              expect(sprocket_tasks_config[:required]).to be_truthy
+              expect(sprocket_tasks_config[:type]).to eq('array')
+              expect(sprocket_tasks_config[:item_type]).to eq('hash')
+
+              task_id_key = valid_params.keys[1]
+              expect(task_id_key.call).to eq('task_id')
+
+              task_id_config = valid_params[task_id_key]
+              expect(task_id_config[:required]).to be_truthy
+              expect(task_id_config[:type]).to eq('integer')
+              expect(task_id_config[:root]).to be_nil
+              expect(task_id_config[:ancestors]).to eq([sprocket_tasks_key])
+
+              task_title_key = valid_params.keys[2]
+              expect(task_title_key.call).to eq('task_title')
+
+              task_title_config = valid_params[task_title_key]
+              expect(task_title_config[:required]).to be_falsey
+              expect(task_title_config[:type]).to eq('string')
+              expect(task_title_config[:root]).to be_nil
+              expect(task_title_config[:ancestors]).to eq([sprocket_tasks_key])
+            end
+          end
+        end
+      end
+
       describe ".transform" do
         it "appends to the list of transforms" do
           subject.brainstem_params do
@@ -1026,6 +1157,119 @@ module Brainstem
         end
       end
 
+      describe ".dynamic_key_fields" do
+        context "when used outside of the response block" do
+          it "raises an error" do
+            expect {
+              subject.brainstem_params do
+                actions :show do
+                  dynamic_key_fields :array do
+                    field :full_name, :string
+                  end
+                end
+              end
+            }.to raise_error(StandardError)
+          end
+        end
+
+        context "when used within the response block" do
+          let(:dynamic_keyword) { described_class::DYNAMIC_KEY.to_s }
+          
+          context "when type is hash" do
+            it "adds the field block to custom_response configuration" do
+              subject.brainstem_params do
+                actions :show do
+                  response :hash do
+                    dynamic_key_fields :hash do
+                      field :full_name, :string
+                    end
+                  end
+                end
+              end
+
+              configuration = subject.configuration[:show][:custom_response]
+              param_keys = configuration.keys
+
+              expect(param_keys[1].call).to eq(dynamic_keyword)
+              expect(configuration[param_keys[1]]).to eq({
+                type: 'hash',
+                nodoc: false,
+                required: false,
+                dynamic_key: true,
+              }.with_indifferent_access)
+
+              expect(param_keys[2].call).to eq('full_name')
+              expect(configuration[param_keys[2]]).to eq({
+                type: 'string',
+                nodoc: false,
+                ancestors: [param_keys[1]],
+                required: false,
+              }.with_indifferent_access)
+            end
+          end
+
+          context "when type is array" do
+            it "adds the field block to custom_response configuration" do
+              subject.brainstem_params do
+                actions :show do
+                  response :hash do
+                    dynamic_key_fields :array do |contact|
+                      contact.field :full_name, :string
+                      contact.dynamic_key_fields :array, nested_levels: 2 do |frenemy|
+                        frenemy.field :jim, :string
+                      end
+                    end
+                  end
+                end
+              end
+
+              configuration = subject.configuration[:show][:custom_response]
+              param_keys = configuration.keys
+
+              dynamic_parent_proc = param_keys[1]
+              expect(dynamic_parent_proc.call).to eq(dynamic_keyword)
+              expect(configuration[dynamic_parent_proc]).to eq({
+                type: 'array',
+                item_type: 'hash',
+                nodoc: false,
+                required: false,
+                dynamic_key: true,
+              }.with_indifferent_access)
+
+              full_name_proc = param_keys[2]
+              expect(full_name_proc.call).to eq('full_name')
+              expect(configuration[full_name_proc]).to eq({
+                type: 'string',
+                nodoc: false,
+                required: false,
+                ancestors: [dynamic_parent_proc]
+              }.with_indifferent_access)
+
+              dynamic_nested_proc = param_keys[3]
+              expect(dynamic_nested_proc.call).to eq(dynamic_keyword)
+              expect(configuration[dynamic_nested_proc]).to eq({
+                type: 'array',
+                nested_levels: 2,
+                item_type: 'hash',
+                nodoc: false,
+                required: false,
+                ancestors: [dynamic_parent_proc],
+                dynamic_key: true,
+              }.with_indifferent_access)
+
+              jim_proc = param_keys[4]
+              expect(jim_proc.call).to eq('jim')
+              expect(configuration[jim_proc]).to eq({
+                type: 'string',
+                nodoc: false,
+                required: false,
+                ancestors: [dynamic_parent_proc, dynamic_nested_proc]
+              }.with_indifferent_access)
+            end
+          end
+        end
+      end
+
       describe ".field" do
         context "when used outside of the response block" do
           it "raises an error" do
@@ -1112,6 +1356,105 @@ module Brainstem
                 type: 'string',
                 nodoc: true,
                 required: false,
+                ancestors: [param_keys[1]]
+              }.with_indifferent_access)
+            end
+          end
+        end
+      end
+
+      describe ".dynamic_key_field" do
+        let(:dynamic_keyword) { described_class::DYNAMIC_KEY.to_s }
+
+        context "when used outside of the response block" do
+          it "raises an error" do
+            expect {
+              subject.brainstem_params do
+                actions :show do
+                  dynamic_key_field :string
+                end
+              end
+            }.to raise_error(StandardError)
+          end
+        end
+
+        context "when used within the response block" do
+          context "when type is array" do
+            it "adds the field block to custom_response configuration" do
+              subject.brainstem_params do
+                actions :show do
+                  response :hash do
+                    dynamic_key_field :array
+                  end
+                end
+              end
+
+              configuration = subject.configuration[:show][:custom_response]
+              param_keys = configuration.keys
+
+              expect(param_keys[1].call).to eq(dynamic_keyword)
+              expect(configuration[param_keys[1]]).to eq({
+                type: 'array',
+                item_type: 'string',
+                nodoc: false,
+                required: false,
+                dynamic_key: true
+              }.with_indifferent_access)
+            end
+          end
+
+          context "when type is not array" do
+            it "adds the field block to custom_response configuration" do
+              subject.brainstem_params do
+                actions :show do
+                  response :hash do
+                    dynamic_key_field :string
+                  end
+                end
+              end
+
+              configuration = subject.configuration[:show][:custom_response]
+              param_keys = configuration.keys
+
+              expect(param_keys[1].call).to eq(dynamic_keyword)
+              expect(configuration[param_keys[1]]).to eq({
+                type: 'string',
+                nodoc: false,
+                required: false,
+                dynamic_key: true,
+              }.with_indifferent_access)
+            end
+          end
+
+          context "when nested under parent field" do
+            it "inherits the nodoc attribute" do
+              subject.brainstem_params do
+                actions :show do
+                  response :hash do
+                    dynamic_key_fields :hash, nodoc: true do
+                      dynamic_key_field :string
+                    end
+                  end
+                end
+              end
+
+              configuration = subject.configuration[:show][:custom_response]
+              param_keys = configuration.keys
+
+              expect(param_keys[1].call).to eq(dynamic_keyword)
+              expect(configuration[param_keys[1]]).to eq({
+                type: 'hash',
+                nodoc: true,
+                required: false,
+                dynamic_key: true,
+              }.with_indifferent_access)
+
+              expect(param_keys[2].call).to eq(dynamic_keyword)
+              expect(configuration[param_keys[2]]).to eq({
+                type: 'string',
+                nodoc: true,
+                required: false,
+                dynamic_key: true,
                 ancestors: [param_keys[1]]
               }.with_indifferent_access)
             end
