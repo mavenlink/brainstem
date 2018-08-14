@@ -32,7 +32,6 @@ module Brainstem
             description.strip.tap { |desc| desc[0] = desc[0].downcase }
           end
 
-          # TODO: multi nested
           def type_and_format(type, item_type = nil)
             result = case type.to_s.downcase
               when 'array'
@@ -44,19 +43,23 @@ module Brainstem
           end
 
           TYPE_INFO = {
-            'string'       => { 'type' => 'string'                           },
-            'boolean'      => { 'type' => 'boolean'                          },
-            'integer'      => { 'type' => 'integer', 'format' => 'int32'	   },
-            'long'         => { 'type' => 'integer', 'format' => 'int64'	   },
-            'float'        => { 'type' => 'number',  'format' => 'float'     },
-            'double'       => { 'type' => 'number',  'format' => 'double'    },
-            'byte'         => { 'type' => 'string',  'format' => 'byte'      },
-            'binary'       => { 'type' => 'string',  'format' => 'binary'    },
-            'date'         => { 'type' => 'string',  'format' => 'date'      },
-            'datetime'     => { 'type' => 'string',  'format' => 'date-time' },
-            'password'     => { 'type' => 'string',  'format' => 'password'  },
-            'id'           => { 'type' => 'integer', 'format' => 'int32'	   },
-            'decimal'      => { 'type' => 'number',  'format' => 'float'     },
+            'string'   => { 'type' => 'string'                           },
+            'boolean'  => { 'type' => 'boolean'                          },
+            'integer'  => { 'type' => 'integer', 'format' => 'int32'	   },
+            'long'     => { 'type' => 'integer', 'format' => 'int64'	   },
+            'float'    => { 'type' => 'number',  'format' => 'float'     },
+            'double'   => { 'type' => 'number',  'format' => 'double'    },
+            'byte'     => { 'type' => 'string',  'format' => 'byte'      },
+            'binary'   => { 'type' => 'string',  'format' => 'binary'    },
+            'date'     => { 'type' => 'string',  'format' => 'date'      },
+            'datetime' => { 'type' => 'string',  'format' => 'date-time' },
+            'password' => { 'type' => 'string',  'format' => 'password'  },
+            'id'       => { 'type' => 'integer', 'format' => 'int32'	   },
+            'decimal'  => { 'type' => 'number',  'format' => 'float'     },
+            'csv'      => { 'type' => 'string',  'collectionFormat' => 'csv'   },
+            'ssv'      => { 'type' => 'string',  'collectionFormat' => 'ssv'   },
+            'tsv'      => { 'type' => 'string',  'collectionFormat' => 'tsv'   },
+            'pipes'    => { 'type' => 'string',  'collectionFormat' => 'pipes' },
           }
           private_constant :TYPE_INFO
         end

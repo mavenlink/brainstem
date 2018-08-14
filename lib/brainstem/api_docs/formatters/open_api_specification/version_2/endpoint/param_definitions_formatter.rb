@@ -229,7 +229,7 @@ module Brainstem
                     'type'       => 'object',
                     'properties' => formatted_body_params,
                     'additionalProperties' => formatted_dynamic_key_params,
-                  },
+                  }.with_indifferent_access.reject { |_, v| v.blank? },
                 }
               end
 
@@ -250,9 +250,7 @@ module Brainstem
                   if dynamic_key_field?(field_config)
                     formatted_field('Dynamic Key Field', field_config)
                   else
-                    if nested_properties(field_config).present?
-                      buffer[field_name.to_s] = formatted_field(field_name, field_config)
-                    end
+                    buffer[field_name.to_s] = formatted_field(field_name, field_config) if nested_properties(field_config).present?
                     buffer
                   end
                 end

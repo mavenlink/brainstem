@@ -197,6 +197,17 @@ module Brainstem
               end
             end
 
+            context "when dealing with delimited strings" do
+              it 'returns string as type and the collection format' do
+                %w(csv ssv tsv pipes).each do |delimited_string_type|
+                  expect(subject.type_and_format(delimited_string_type)).to eq(
+                    'type' => 'string',
+                    'collectionFormat' => delimited_string_type,
+                  )
+                end
+              end
+            end
+
             context "when type is unknown" do
               it "returns nil" do
                 expect(subject.send(:type_and_format, 'invalid')).to be_nil
