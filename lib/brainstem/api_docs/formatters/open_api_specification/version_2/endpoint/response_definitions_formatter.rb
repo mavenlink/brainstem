@@ -107,12 +107,7 @@ module Brainstem
                       }
                     }
                   },
-                  brainstem_key => {
-                    type: 'object',
-                    additionalProperties: {
-                      '$ref' => "#/definitions/#{model_klass}"
-                    }
-                  }
+                  brainstem_key => object_reference(model_klass)
                 }.merge(associated_properties)
               end
 
@@ -134,10 +129,14 @@ module Brainstem
                 brainstem_key = assoc_presenter.brainstem_keys.first
                 return if assoc_presenter.nodoc?
 
-                obj[brainstem_key] = {
+                obj[brainstem_key] = object_reference(target_class)
+              end
+
+              def object_reference(klass)
+                {
                   type: 'object',
                   additionalProperties: {
-                    '$ref' => "#/definitions/#{target_class.to_s}"
+                    '$ref' => "#/definitions/#{klass}"
                   }
                 }
               end
