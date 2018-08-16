@@ -5,10 +5,13 @@ describe Brainstem::DSL::Association do
   let(:name) { :user }
   let(:target_class) { User }
   let(:description) { "This object's user" }
-  let(:options) { { info: description } }
+  let(:type) { :belongs_to }
+  let(:foreign_key) { :user_id }
+  let(:polymorphic_classes) { [User, Task] }
+  let(:options) { { info: description, foreign_key: foreign_key, type: type, polymorphic_classes: polymorphic_classes } }
   let(:association) { Brainstem::DSL::Association.new(name, target_class, options) }
 
-  describe 'description' do
+  describe '#description' do
     context 'when `info` is specified in the options' do
       it 'returns the value specified with the info key' do
         expect(association.description).to eq(description)
@@ -24,8 +27,56 @@ describe Brainstem::DSL::Association do
     end
   end
 
+  describe '#foreign_key' do
+    context 'when `foreign_key` is specified in the options' do
+      it 'returns the value specified with the foreign_key key' do
+        expect(association.foreign_key).to eq(foreign_key)
+      end
+    end
+
+    context 'when `foreign_key` is not specified in the options' do
+      let(:options) { {} }
+
+      it 'returns nil' do
+        expect(association.foreign_key).to be_nil
+      end
+    end
+  end
+
+  describe '#type' do
+    context 'when `type` is specified in the options' do
+      it 'returns the value specified with the type key' do
+        expect(association.type).to eq(type)
+      end
+    end
+
+    context 'when `type` is not specified in the options' do
+      let(:options) { {} }
+
+      it 'returns nil' do
+        expect(association.type).to be_nil
+      end
+    end
+  end
+
+  describe '#polymorphic_classes' do
+    context 'when `polymorphic_classes` is specified in the options' do
+      it 'returns the value specified with the polymorphic_classes key' do
+        expect(association.polymorphic_classes).to eq(polymorphic_classes)
+      end
+    end
+
+    context 'when `polymorphic_classes` is not specified in the options' do
+      let(:options) { {} }
+
+      it 'returns nil' do
+        expect(association.polymorphic_classes).to be_nil
+      end
+    end
+  end
+
   describe "#run_on" do
-    let(:context) { { } }
+    let(:context) { {} }
 
     context 'with no special options' do
       it 'calls the method by name on the model' do

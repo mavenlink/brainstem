@@ -30,9 +30,10 @@ module Brainstem
 
             describe '#call' do
               before do
-                stub(presenter).format_title!  { title }
-                stub(presenter).format_fields! { fake_formatted_fields }
-                stub(presenter).valid_fields   { valid_fields }
+                stub(presenter).format_title!      { title }
+                stub(presenter).format_fields!     { fake_formatted_fields }
+                stub(presenter).valid_fields       { valid_fields }
+                stub(presenter).valid_associations { {} }
               end
 
               context 'when nodoc' do
@@ -144,6 +145,91 @@ module Brainstem
 
               before do
                 stub(presenter).conditionals { conditionals }
+              end
+
+              context 'with associations present' do
+                context 'when association type is belongs_to or has_one' do
+                  before do
+                    presenter_class.associations do
+                      association :task, Task,
+                        foreign_key: :task_id,
+                        type: :belongs_to,
+                        info: "Assign people to your task"
+
+                      association :user, User,
+                        foreign_key: :user_id,
+                        type: :has_one,
+                        info: "People are users"
+                    end
+                  end
+
+                  it 'outputs the foreign key in single formatted id' do
+                    subject.send(:format_fields!)
+
+                    expect(subject.definition).to have_key :properties
+                    expect(subject.definition[:properties]).to eq({
+                      'task_id' => { 'type' => 'integer', 'format' => 'int32', 'description' => 'Assign people to your task' },
+                      'user_id' => { 'type' => 'integer', 'format' => 'int32', 'description' => 'People are users' }
+                    })
+                  end
+                end
+
+                context 'when association type is has_many' do
+                  before do
+                    presenter_class.associations do
+                      association :task, Task,
+                        foreign_key: :task_id,
+                        type: :has_many,
+                        info: "Assign people to your task"
+                    end
+                  end
+
+                  it 'outputs the foreign key in plural formatted id' do
+                    subject.send(:format_fields!)
+
+                    expect(subject.definition).to have_key :properties
+                    expect(subject.definition[:properties]).to eq({
+                      'task_ids' => {
+                        'type' => 'array',
+                        'description' => 'Assign people to your task',
+                        'items' => {
+                          'type' => 'integer',
+                          'format' => 'int32'
+                        },
+                      },
+                    })
+                  end
+                end
+
+                context 'when association is polymorphic' do
+                  before do
+                    presenter_class.associations do
+                      association :task, :polymorphic,
+                        polymorphic_classes: [User, Task],
+                        info: "Users and tasks"
+                    end
+                  end
+
+                  it 'outputs an object that contains an id and key' do
+                    subject.send(:format_fields!)
+
+                    expect(subject.definition).to have_key :properties
+                    expect(subject.definition[:properties]).to eq({
+                      'task_ref' => {
+                        'type' => 'object',
+                        'description' => 'Users and tasks',
+                        'properties' => {
+                          'id' => {
+                            'type' => 'string'
+                          },
+                          'key' => {
+                            'type' => 'string'
+                          }
+                        }
+                      }
+                    })
+                  end
+                end
               end
 
               context 'with fields present' do

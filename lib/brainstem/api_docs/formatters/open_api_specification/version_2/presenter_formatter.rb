@@ -52,18 +52,45 @@ module Brainstem
             end
 
             def format_fields!
-              return unless presenter.valid_fields.any?
+              return unless presenter.valid_fields.any? || presenter.valid_associations.any?
 
-              definition.merge! properties: format_field_branch(presenter.valid_fields)
+              properties = format_field_branch(presenter.valid_fields)
+              with_associations = format_field_associations(properties)
+
+              definition.merge! properties: with_associations
             end
 
             def format_field_branch(branch)
-              branch.inject(ActiveSupport::HashWithIndifferentAccess.new) do |buffer, (name, field)|
+              branch.each_with_object(ActiveSupport::HashWithIndifferentAccess.new) do |(name, field), buffer|
                 buffer[name.to_s] = format_field(field)
-                buffer
               end
             end
-            
+
+            def format_field_associations(properties)
+              presenter.valid_associations.each_with_object(properties) do |(_name, association), props|
+                if association.foreign_key
+                  case association.type
+                  when :belongs_to, :has_one
+                    props[association.foreign_key] = type_and_format(:integer).merge(description: association.description) unless props[association.foreign_key]
+                  when :has_many
+                    prop_key = "#{association.foreign_key}s"
+                    props[prop_key] = type_and_format(:array, :integer).merge(description: association.description) unless props[prop_key]
+                  end
+                end
+
+                if association.polymorphic?
+                  props[association.name + "_ref"] = {
+                    type: 'object',
+                    description: association.description,
+                    properties: {
+                      key: type_and_format(:string),
+                      id: type_and_format(:string)
+                    }
+                  }
+                end
+              end
+            end
+
             def format_field(field)
               Brainstem::ApiDocs::FORMATTERS[:presenter_field][:oas_v2].call(presenter, field)
             end

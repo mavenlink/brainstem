@@ -73,41 +73,71 @@ module Brainstem
               def format_schema_response!
                 return if presenter.nil?
 
-                brainstem_key = presenter.brainstem_keys.first
-                model_klass   = presenter.target_class
-
                 output.merge! '200' => {
                   description: success_response_description,
                   schema: {
                     type: 'object',
+                    properties: properties
+                  }
+                }
+              end
+
+              def properties
+                brainstem_key = presenter.brainstem_keys.first
+                model_klass = presenter.target_class
+
+                {
+                  count: type_and_format('integer'),
+                  meta: {
+                    type: 'object',
                     properties: {
                       count: type_and_format('integer'),
-                      meta: {
-                        type: 'object',
-                        properties: {
-                          count:       type_and_format('integer'),
-                          page_count:  type_and_format('integer'),
-                          page_number: type_and_format('integer'),
-                          page_size:   type_and_format('integer'),
-                        }
-                      },
-                      results: {
-                        type: 'array',
-                        items: {
-                          type: 'object',
-                          properties: {
-                            key: type_and_format('string'),
-                            id:  type_and_format('string')
-                          }
-                        }
-                      },
-                      brainstem_key => {
-                        type: 'object',
-                        additionalProperties: {
-                          '$ref' => "#/definitions/#{model_klass}"
-                        }
+                      page_count: type_and_format('integer'),
+                      page_number: type_and_format('integer'),
+                      page_size: type_and_format('integer'),
+                    }
+                  },
+                  results: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        key: type_and_format('string'),
+                        id: type_and_format('string')
                       }
                     }
+                  },
+                  brainstem_key => {
+                    type: 'object',
+                    additionalProperties: {
+                      '$ref' => "#/definitions/#{model_klass}"
+                    }
+                  }
+                }.merge(associated_properties)
+              end
+
+              def associated_properties
+                presenter.valid_associations.each_with_object({}) do |(_key, association), obj|
+                  if association.polymorphic?
+                    associations = association.polymorphic_classes || []
+                    associations.each do |assoc|
+                      association_reference(assoc, obj)
+                    end
+                  else
+                    association_reference(association.target_class, obj)
+                  end
+                end
+              end
+
+              def association_reference(target_class, obj)
+                assoc_presenter = presenter.find_by_class(target_class)
+                brainstem_key = assoc_presenter.brainstem_keys.first
+                return if assoc_presenter.nodoc?
+
+                obj[brainstem_key] = {
+                  type: 'object',
+                  additionalProperties: {
+                    '$ref' => "#/definitions/#{target_class.to_s}"
                   }
                 }
               end
