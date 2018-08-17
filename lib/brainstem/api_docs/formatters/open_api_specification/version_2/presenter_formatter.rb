@@ -67,28 +67,44 @@ module Brainstem
             end
 
             def format_field_associations(properties)
-              presenter.valid_associations.each_with_object(properties) do |(_name, association), props|
-                if association.foreign_key
-                  case association.type
-                  when :belongs_to, :has_one
-                    props[association.foreign_key] = type_and_format(:integer).merge(description: association.description) unless props[association.foreign_key]
-                  when :has_many
-                    prop_key = "#{association.foreign_key}s"
-                    props[prop_key] = type_and_format(:array, :integer).merge(description: association.description) unless props[prop_key]
-                  end
-                end
-
+              presenter.valid_associations.each_with_object(properties) do |(name, association), props|
                 if association.polymorphic?
-                  props[association.name + "_ref"] = {
+                  key = association.name + "_ref"
+                  props[key] = {
                     type: 'object',
-                    description: association.description,
+                    description: association_description(key, name),
                     properties: {
                       key: type_and_format(:string),
                       id: type_and_format(:string)
                     }
                   }
+                  next
                 end
+
+                key = association_key(association)
+                description = association_description(key, association.name)
+                formatted_type = if association.type == :has_many
+                  type_and_format(:array, :integer)
+                else
+                  type_and_format(:integer)
+                end.merge(description: description)
+
+                props[key] = formatted_type unless props[key]
               end
+            end
+
+            def association_description(key, name)
+              "`#{key}` will only be included in the response if `#{name}` is in the list of included associations."
+            end
+
+            def association_key(association)
+              key = if association.foreign_key
+                association.foreign_key
+              else
+                "#{association.name.singularize}_id"
+              end
+
+              association.type == :has_many ? "#{key}s" : key
             end
 
             def format_field(field)

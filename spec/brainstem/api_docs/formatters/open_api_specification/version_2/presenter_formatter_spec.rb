@@ -152,14 +152,11 @@ module Brainstem
                   before do
                     presenter_class.associations do
                       association :task, Task,
-                        foreign_key: :task_id,
-                        type: :belongs_to,
-                        info: "Assign people to your task"
+                        type: :belongs_to
 
                       association :user, User,
                         foreign_key: :user_id,
-                        type: :has_one,
-                        info: "People are users"
+                        type: :has_one
                     end
                   end
 
@@ -168,8 +165,8 @@ module Brainstem
 
                     expect(subject.definition).to have_key :properties
                     expect(subject.definition[:properties]).to eq({
-                      'task_id' => { 'type' => 'integer', 'format' => 'int32', 'description' => 'Assign people to your task' },
-                      'user_id' => { 'type' => 'integer', 'format' => 'int32', 'description' => 'People are users' }
+                      'task_id' => { 'type' => 'integer', 'format' => 'int32', 'description' => '`task_id` will only be included in the response if `task` is in the list of included associations.' },
+                      'user_id' => { 'type' => 'integer', 'format' => 'int32', 'description' => '`user_id` will only be included in the response if `user` is in the list of included associations.' }
                     })
                   end
                 end
@@ -178,9 +175,7 @@ module Brainstem
                   before do
                     presenter_class.associations do
                       association :task, Task,
-                        foreign_key: :task_id,
-                        type: :has_many,
-                        info: "Assign people to your task"
+                        type: :has_many
                     end
                   end
 
@@ -191,7 +186,7 @@ module Brainstem
                     expect(subject.definition[:properties]).to eq({
                       'task_ids' => {
                         'type' => 'array',
-                        'description' => 'Assign people to your task',
+                        'description' => '`task_ids` will only be included in the response if `task` is in the list of included associations.',
                         'items' => {
                           'type' => 'integer',
                           'format' => 'int32'
@@ -204,9 +199,7 @@ module Brainstem
                 context 'when association is polymorphic' do
                   before do
                     presenter_class.associations do
-                      association :task, :polymorphic,
-                        polymorphic_classes: [User, Task],
-                        info: "Users and tasks"
+                      association :task, :polymorphic, polymorphic_classes: [User, Task]
                     end
                   end
 
@@ -217,7 +210,7 @@ module Brainstem
                     expect(subject.definition[:properties]).to eq({
                       'task_ref' => {
                         'type' => 'object',
-                        'description' => 'Users and tasks',
+                        'description' => '`task_ref` will only be included in the response if `task` is in the list of included associations.',
                         'properties' => {
                           'id' => {
                             'type' => 'string'
