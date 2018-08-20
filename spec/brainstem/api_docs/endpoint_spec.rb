@@ -4,10 +4,11 @@ require 'brainstem/api_docs/endpoint'
 module Brainstem
   module ApiDocs
     describe Endpoint do
-      let(:lorem)   { "lorem ipsum dolor sit amet" }
-      let(:atlas)   { Object.new }
-      let(:options) { {} }
-      subject       { described_class.new(atlas, options) }
+      let(:lorem) { "lorem ipsum dolor sit amet" }
+      let(:atlas) { Object.new }
+      let(:options) { { internal: internal_flag } }
+      let(:internal_flag) { false }
+      subject { described_class.new(atlas, options) }
 
       describe "#initialize" do
         it "yields self if given a block" do
@@ -17,7 +18,9 @@ module Brainstem
       end
 
       describe "#merge_http_methods!" do
-        let(:options) { { http_methods: %w(GET) } }
+        before do
+          options[:http_methods] = %w(GET)
+        end
 
         it "adds http methods that are not already present" do
 
@@ -36,36 +39,77 @@ module Brainstem
           end
         end
 
-        let(:controller)     { Object.new }
-        let(:action)         { :show }
+        let(:controller) { Object.new }
+        let(:action) { :show }
 
-        let(:lorem)          { "lorem ipsum dolor sit amet" }
+        let(:lorem) { "lorem ipsum dolor sit amet" }
         let(:default_config) { {} }
-        let(:show_config)    { {} }
-        let(:nodoc)          { false }
+        let(:show_config) { {} }
+        let(:nodoc) { false }
+        let(:internal) { false }
 
-        let(:configuration)  {
+        let(:configuration) {
           {
             :_default => default_config,
-            :show     => show_config,
+            :show => show_config,
           }
         }
-
-        let(:options) { { controller: controller, action: action } }
 
         before do
           stub(controller).configuration { configuration }
           stub(controller).const { const }
+          options[:controller] = controller
+          options[:action] = action
         end
 
         describe "#nodoc?" do
-          let(:show_config) { { nodoc: nodoc } }
+          let(:show_config) { { nodoc: nodoc, internal: internal } }
 
           context "when nodoc" do
             let(:nodoc) { true }
 
             it "is true" do
               expect(subject.nodoc?).to eq true
+            end
+          end
+
+          context "when internal flag is true" do
+            let(:internal_flag) { true }
+
+            context "when action config is internal" do
+              let(:internal) { true }
+
+              it "is false" do
+                expect(subject.nodoc?).to eq false
+              end
+            end
+
+            context "when action config is not internal" do
+              let(:internal) { false }
+
+              it "is false" do
+                expect(subject.nodoc?).to eq false
+              end
+            end
+          end
+
+          context "when internal flag is false" do
+            let(:internal_flag) { false }
+
+            context "when action config is internal" do
+              let(:internal) { true }
+
+              it "is true" do
+                expect(subject.nodoc?).to eq true
+              end
+            end
+
+            context "when action config is not internal" do
+              let(:internal) { false }
+
+              it "is false" do
+                expect(subject.nodoc?).to eq false
+              end
             end
           end
 
@@ -78,7 +122,7 @@ module Brainstem
 
         describe "#title" do
           context "when present" do
-            let(:show_config) { { title: { info: lorem, nodoc: nodoc } } }
+            let(:show_config) { { title: { info: lorem, nodoc: nodoc, internal: internal } } }
 
             context "when nodoc" do
               let(:nodoc) { true }
@@ -93,6 +137,46 @@ module Brainstem
                 expect(subject.title).to eq lorem
               end
             end
+
+            context "when internal flag is true" do
+              let(:internal_flag) { true }
+
+              context "when title is internal" do
+                let(:internal) { true }
+
+                it "formats the title as an h4" do
+                  expect(subject.title).to eq lorem
+                end
+              end
+
+              context "when title is not internal" do
+                let(:internal) { false }
+
+                it "formats the title as an h4" do
+                  expect(subject.title).to eq lorem
+                end
+              end
+            end
+
+            context "when internal flag is false" do
+              let(:internal_flag) { false }
+
+              context "when title is internal" do
+                let(:internal) { true }
+
+                it "uses the action name" do
+                  expect(subject.title).to eq "Show"
+                end
+              end
+
+              context "when title is not internal" do
+                let(:internal) { false }
+
+                it "formats the title as an h4" do
+                  expect(subject.title).to eq lorem
+                end
+              end
+            end
           end
 
           context "when absent" do
@@ -104,7 +188,7 @@ module Brainstem
 
         describe "#description" do
           context "when present" do
-            let(:show_config) { { description: { info: lorem, nodoc: nodoc } } }
+            let(:show_config) { { description: { info: lorem, nodoc: nodoc, internal: internal } } }
 
             context "when nodoc" do
               let(:nodoc) { true }
@@ -117,6 +201,46 @@ module Brainstem
             context "when not nodoc" do
               it "shows the description" do
                 expect(subject.description).to eq lorem
+              end
+            end
+
+            context "when internal flag is true" do
+              let(:internal_flag) { true }
+
+              context "when description is internal" do
+                let(:internal) { true }
+
+                it "shows the description" do
+                  expect(subject.description).to eq lorem
+                end
+              end
+
+              context "when description is not internal" do
+                let(:internal) { false }
+
+                it "shows the description" do
+                  expect(subject.description).to eq lorem
+                end
+              end
+            end
+
+            context "when internal flag is false" do
+              let(:internal_flag) { false }
+
+              context "when description is internal" do
+                let(:internal) { true }
+
+                it "shows nothing" do
+                  expect(subject.description).to be_empty
+                end
+              end
+
+              context "when description is not internal" do
+                let(:internal) { false }
+
+                it "shows the description" do
+                  expect(subject.description).to eq lorem
+                end
               end
             end
           end
@@ -199,7 +323,7 @@ module Brainstem
           let(:default_config) { { valid_params: which_param } }
 
           context "non-nested params" do
-            let(:root_param)  { { Proc.new { 'title' } => { nodoc: nodoc, type: 'string' } } }
+            let(:root_param) { { Proc.new { 'title' } => { nodoc: nodoc, type: 'string', internal: internal } } }
             let(:which_param) { root_param }
 
             context "when nodoc" do
@@ -217,7 +341,7 @@ module Brainstem
                 expect(subject.params_configuration_tree).to eq(
                   {
                     title: {
-                      _config: { nodoc: nodoc, type: 'string' }
+                      _config: { type: 'string' }
                     }
                   }.with_indifferent_access
                 )
@@ -230,7 +354,65 @@ module Brainstem
                   expect(subject.params_configuration_tree).to eq(
                     {
                       only: {
-                        _config: { nodoc: nodoc, type: 'array', item: 'integer' }
+                        _config: { type: 'array', item: 'integer' }
+                      }
+                    }.with_indifferent_access
+                  )
+                end
+              end
+            end
+
+            context "when internal flag is true" do
+              let(:internal_flag) { true }
+
+              context "when params_configuration_tree is internal" do
+                let(:internal) { true }
+
+                it "lists it as a root param" do
+                  expect(subject.params_configuration_tree).to eq(
+                    {
+                      title: {
+                        _config: { type: 'string' }
+                      }
+                    }.with_indifferent_access
+                  )
+                end
+              end
+
+              context "when params_configuration_tree is not internal" do
+                let(:internal) { false }
+
+                it "lists it as a root param" do
+                  expect(subject.params_configuration_tree).to eq(
+                    {
+                      title: {
+                        _config: { type: 'string' }
+                      }
+                    }.with_indifferent_access
+                  )
+                end
+              end
+            end
+
+            context "when internal flag is false" do
+              let(:internal_flag) { false }
+
+              context "when description is internal" do
+                let(:internal) { true }
+
+                it "rejects the key" do
+                  expect(subject.params_configuration_tree).to be_empty
+                end
+              end
+
+              context "when description is not internal" do
+                let(:internal) { false }
+
+                it "lists it as a root param" do
+                  expect(subject.params_configuration_tree).to eq(
+                    {
+                      title: {
+                        _config: { type: 'string' }
                       }
                     }.with_indifferent_access
                   )
@@ -242,7 +424,13 @@ module Brainstem
           context "nested params" do
             let(:root_proc) { Proc.new { 'sprocket' } }
             let(:nested_param) {
-              { Proc.new { 'title' } => { nodoc: nodoc, type: 'string', root: root_proc, ancestors: [root_proc] } }
+              { Proc.new { 'title' } => {
+                nodoc: nodoc,
+                type: 'string',
+                root: root_proc,
+                ancestors: [root_proc],
+                internal: internal
+              } }
             }
             let(:which_param) { nested_param }
 
@@ -251,6 +439,85 @@ module Brainstem
 
               it "rejects the key" do
                 expect(subject.params_configuration_tree).to be_empty
+              end
+            end
+
+            context "when internal flag is true" do
+              let(:internal_flag) { true }
+
+              context "when params_configuration_tree is internal" do
+                let(:internal) { true }
+
+                it "lists it as a nested param" do
+                  expect(subject.params_configuration_tree).to eq(
+                    {
+                      sprocket: {
+                        _config: {
+                          type: 'hash',
+                        },
+                        title: {
+                          _config: {
+                            type: 'string'
+                          }
+                        }
+                      }
+                    }.with_indifferent_access
+                  )
+                end
+              end
+
+              context "when params_configuration_tree is not internal" do
+                let(:internal) { false }
+
+                it "lists it as a nested param" do
+                  expect(subject.params_configuration_tree).to eq(
+                    {
+                      sprocket: {
+                        _config: {
+                          type: 'hash',
+                        },
+                        title: {
+                          _config: {
+                            type: 'string'
+                          }
+                        }
+                      }
+                    }.with_indifferent_access
+                  )
+                end
+              end
+            end
+
+            context "when internal flag is false" do
+              let(:internal_flag) { false }
+
+              context "when description is internal" do
+                let(:internal) { true }
+
+                it "rejects the key" do
+                  expect(subject.params_configuration_tree).to be_empty
+                end
+              end
+
+              context "when description is not internal" do
+                let(:internal) { false }
+
+                it "lists it as a nested param" do
+                  expect(subject.params_configuration_tree).to eq(
+                    {
+                      sprocket: {
+                        _config: {
+                          type: 'hash',
+                        },
+                        title: {
+                          _config: {
+                            type: 'string'
+                          }
+                        }
+                      }
+                    }.with_indifferent_access
+                  )
+                end
               end
             end
 
@@ -264,7 +531,6 @@ module Brainstem
                       },
                       title: {
                         _config: {
-                          nodoc: nodoc,
                           type: 'string'
                         }
                       }
@@ -289,7 +555,6 @@ module Brainstem
                         },
                         ids: {
                           _config: {
-                            nodoc: nodoc,
                             type: 'array',
                             item: 'integer'
                           }
@@ -303,11 +568,11 @@ module Brainstem
           end
 
           context "proc nested params" do
-            let!(:root_proc)        { Proc.new { |klass| klass.brainstem_model_name } }
+            let!(:root_proc) { Proc.new { |klass| klass.brainstem_model_name } }
             let(:proc_nested_param) {
               { Proc.new { 'title' } => { nodoc: nodoc, type: 'string', root: root_proc, ancestors: [root_proc] } }
             }
-            let(:which_param)       { proc_nested_param }
+            let(:which_param) { proc_nested_param }
 
             context "when nodoc" do
               let(:nodoc) { true }
@@ -328,20 +593,19 @@ module Brainstem
                 expect(children_of_the_root.keys).to eq(%w(title))
 
                 title_param = children_of_the_root[:title][:_config]
-                expect(title_param.keys).to eq(%w(nodoc type))
-                expect(title_param[:nodoc]).to eq(nodoc)
+                expect(title_param.keys).to eq(%w(type))
                 expect(title_param[:type]).to eq('string')
               end
             end
           end
 
           context "multi nested params" do
-            let(:project_proc)   { Proc.new { 'project' } }
-            let(:id_proc)        { Proc.new { 'id' } }
-            let(:task_proc)      { Proc.new { 'task' } }
-            let(:title_proc)     { Proc.new { 'title' } }
+            let(:project_proc) { Proc.new { 'project' } }
+            let(:id_proc) { Proc.new { 'id' } }
+            let(:task_proc) { Proc.new { 'task' } }
+            let(:title_proc) { Proc.new { 'title' } }
             let(:checklist_proc) { Proc.new { 'checklist' } }
-            let(:name_proc)      { Proc.new { 'name' } }
+            let(:name_proc) { Proc.new { 'name' } }
 
             context "has a root & ancestors" do
               let(:which_param) {
@@ -600,11 +864,51 @@ module Brainstem
         end
 
         describe "#contextual_documentation" do
-          let(:show_config) { { title: { info: info, nodoc: nodoc } } }
-          let(:info)           { lorem }
+          let(:show_config) { { title: { info: info, nodoc: nodoc, internal: internal } } }
+          let(:info) { lorem }
 
           context "when has the key" do
             let(:key) { :title }
+
+            context "when internal flag is true" do
+              let(:internal_flag) { true }
+
+              context "when contextual key is internal" do
+                let(:internal) { true }
+
+                it "is the info" do
+                  expect(subject.contextual_documentation(key)).to eq lorem
+                end
+              end
+
+              context "when contextual key is not internal" do
+                let(:internal) { false }
+
+                it "is the info" do
+                  expect(subject.contextual_documentation(key)).to eq lorem
+                end
+              end
+            end
+
+            context "when internal flag is false" do
+              let(:internal_flag) { false }
+
+              context "when contextual key is internal" do
+                let(:internal) { true }
+
+                it "is falsey" do
+                  expect(subject.contextual_documentation(key)).to be_falsey
+                end
+              end
+
+              context "when contextual key is not internal" do
+                let(:internal) { false }
+
+                it "is the info" do
+                  expect(subject.contextual_documentation(key)).to eq lorem
+                end
+              end
+            end
 
             context "when not nodoc" do
               context "when has info" do
@@ -648,7 +952,7 @@ module Brainstem
           let(:default_config) { { info: "default" } }
 
           context "when it has the key in the action config" do
-            let(:show_config)    { { info: "show" } }
+            let(:show_config) { { info: "show" } }
 
             it "returns that" do
               expect(subject.key_with_default_fallback(:info)).to eq "show"
@@ -670,7 +974,7 @@ module Brainstem
           let(axn.to_sym) { described_class.new(atlas, action: axn.to_sym) }
         end
 
-        let(:axns) { actions.map {|axn| send(axn.to_sym) } }
+        let(:axns) { actions.map { |axn| send(axn.to_sym) } }
 
         it "orders appropriately" do
           sorted = axns.reverse.sort
@@ -687,7 +991,7 @@ module Brainstem
 
       describe "#presenter_title" do
         let(:presenter) { mock!.title.returns(lorem).subject }
-        let(:options)   { { presenter: presenter } }
+        let(:options) { { presenter: presenter } }
 
         it "returns the presenter's title" do
           expect(subject.presenter_title).to eq lorem
@@ -726,15 +1030,15 @@ module Brainstem
           end
         end
 
-        let(:controller)     { Object.new }
-        let(:action)         { :show }
-        let(:show_config)    { {} }
-        let(:nodoc)          { false }
-        let(:configuration)  { { :show => show_config } }
-
-        let(:options) { { controller: controller, action: action } }
+        let(:controller) { Object.new }
+        let(:action) { :show }
+        let(:show_config) { {} }
+        let(:nodoc) { false }
+        let(:configuration) { { :show => show_config } }
 
         before do
+          options[:controller] = controller
+          options[:action] = action
           stub(controller).configuration { configuration }
           stub(controller).const { const }
         end
@@ -782,7 +1086,7 @@ module Brainstem
                     {
                       _config: default_response_config,
                       title: {
-                        _config: { nodoc: nodoc, type: 'string' }
+                        _config: { type: 'string' }
                       }
                     }.with_indifferent_access
                   )
@@ -798,7 +1102,7 @@ module Brainstem
                       {
                         _config: default_response_config,
                         only: {
-                          _config: { nodoc: nodoc, type: 'array', item: 'integer' }
+                          _config: { type: 'array', item: 'integer' }
                         }
                       }.with_indifferent_access
                     )
@@ -808,12 +1112,30 @@ module Brainstem
             end
 
             context "nested params" do
+              let(:internal) { false }
               let(:parent_proc) { Proc.new { 'sprocket' } }
               let(:other_response_fields) do
                 {
-                  parent_proc => { nodoc: nodoc, type: 'array', item_type: 'hash' },
-                  Proc.new { 'title' } => { nodoc: nodoc, type: 'string', ancestors: [parent_proc] },
-                  Proc.new { 'nested_array' } => { nodoc: nodoc, type: 'array', item_type: 'string', nested_levels: 2, ancestors: [parent_proc] },
+                  parent_proc => {
+                    nodoc: nodoc,
+                    type: 'array',
+                    item_type: 'hash',
+                    internal: internal
+                  },
+                  Proc.new { 'title' } => {
+                    nodoc: nodoc,
+                    type: 'string',
+                    ancestors: [parent_proc],
+                    internal: internal
+                  },
+                  Proc.new { 'nested_array' } => {
+                    nodoc: nodoc,
+                    type: 'array',
+                    item_type: 'string',
+                    nested_levels: 2,
+                    ancestors: [parent_proc],
+                    internal: internal
+                  },
                 }
               end
 
@@ -829,6 +1151,112 @@ module Brainstem
                 end
               end
 
+              context "when internal flag is true" do
+                let(:internal_flag) { true }
+
+                context "when tree is internal" do
+                  let(:internal) { true }
+
+                  it "lists it as a nested param" do
+                    expect(subject.custom_response_configuration_tree).to eq(
+                      {
+                        _config: default_response_config,
+                        sprocket: {
+                          _config: {
+                            type: 'array',
+                            item_type: 'hash'
+                          },
+                          title: {
+                            _config: {
+                              type: 'string'
+                            }
+                          },
+                          nested_array: {
+                            _config: {
+                              type: 'array',
+                              nested_levels: 2,
+                              item_type: 'string'
+                            }
+                          }
+                        }
+                      }.with_indifferent_access
+                    )
+                  end
+                end
+
+                context "when params_configuration_tree is not internal" do
+                  let(:internal) { false }
+
+                  it "lists it as a nested param" do
+                    expect(subject.custom_response_configuration_tree).to eq(
+                      {
+                        _config: default_response_config,
+                        sprocket: {
+                          _config: {
+                            type: 'array',
+                            item_type: 'hash'
+                          },
+                          title: {
+                            _config: {
+                              type: 'string'
+                            }
+                          },
+                          nested_array: {
+                            _config: {
+                              type: 'array',
+                              nested_levels: 2,
+                              item_type: 'string'
+                            }
+                          }
+                        }
+                      }.with_indifferent_access
+                    )
+                  end
+                end
+              end
+
+              context "when internal flag is false" do
+                let(:internal_flag) { false }
+
+                context "when description is internal" do
+                  let(:internal) { true }
+
+                  it "rejects the key" do
+                    expect(subject.params_configuration_tree).to be_empty
+                  end
+                end
+
+                context "when description is not internal" do
+                  let(:internal) { false }
+
+                  it "lists it as a nested param" do
+                    expect(subject.custom_response_configuration_tree).to eq(
+                      {
+                        _config: default_response_config,
+                        sprocket: {
+                          _config: {
+                            type: 'array',
+                            item_type: 'hash'
+                          },
+                          title: {
+                            _config: {
+                              type: 'string'
+                            }
+                          },
+                          nested_array: {
+                            _config: {
+                              type: 'array',
+                              nested_levels: 2,
+                              item_type: 'string'
+                            }
+                          }
+                        }
+                      }.with_indifferent_access
+                    )
+                  end
+                end
+              end
+
               context "when not nodoc" do
                 it "lists it as a nested param" do
                   expect(subject.custom_response_configuration_tree).to eq(
@@ -836,19 +1264,16 @@ module Brainstem
                       _config: default_response_config,
                       sprocket: {
                         _config: {
-                          nodoc: nodoc,
                           type: 'array',
                           item_type: 'hash'
                         },
                         title: {
                           _config: {
-                            nodoc: nodoc,
                             type: 'string'
                           }
                         },
                         nested_array: {
                           _config: {
-                            nodoc: nodoc,
                             type: 'array',
                             nested_levels: 2,
                             item_type: 'string'
@@ -873,13 +1298,11 @@ module Brainstem
                         _config: default_response_config,
                         sprocket: {
                           _config: {
-                            nodoc: nodoc,
                             type: 'array',
                             item_type: 'hash'
                           },
                           ids: {
                             _config: {
-                              nodoc: nodoc,
                               type: 'array',
                               item: 'integer'
                             }
@@ -893,12 +1316,12 @@ module Brainstem
             end
 
             context "multi nested params" do
-              let(:project_proc)   { Proc.new { 'project' } }
-              let(:id_proc)        { Proc.new { 'id' } }
-              let(:task_proc)      { Proc.new { 'task' } }
-              let(:title_proc)     { Proc.new { 'title' } }
+              let(:project_proc) { Proc.new { 'project' } }
+              let(:id_proc) { Proc.new { 'id' } }
+              let(:task_proc) { Proc.new { 'task' } }
+              let(:title_proc) { Proc.new { 'title' } }
               let(:checklist_proc) { Proc.new { 'checklist' } }
-              let(:name_proc)      { Proc.new { 'name' } }
+              let(:name_proc) { Proc.new { 'name' } }
               let(:other_response_fields) do
                 {
                   task_proc => {

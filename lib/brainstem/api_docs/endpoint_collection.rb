@@ -7,6 +7,14 @@ module Brainstem
     class EndpointCollection < AbstractCollection
       include Concerns::Formattable
 
+      attr_accessor :internal
+
+      def valid_options
+        super | [
+          :internal
+        ]
+      end
+
       def find_from_route(route)
         find do |endpoint|
           endpoint.path == route[:path] &&
@@ -18,7 +26,7 @@ module Brainstem
       alias_method :find_by_route, :find_from_route
 
       def create_from_route(route, controller)
-        Endpoint.new(atlas) do |ep|
+        Endpoint.new(atlas, internal: self.internal) do |ep|
           ep.path             = route[:path]
           ep.http_methods     = route[:http_methods]
           ep.controller       = controller

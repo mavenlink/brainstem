@@ -9,10 +9,11 @@ module Brainstem
       include Concerns::Formattable
 
       def valid_options
-        super | [ :presenter_constant_lookup_method ]
+        super | [ :presenter_constant_lookup_method, :internal ]
       end
 
       attr_writer :presenter_constant_lookup_method
+      attr_accessor :internal
 
       #
       # Finds or creates a presenter with the given target class and appends it to the
@@ -39,7 +40,8 @@ module Brainstem
       def create_from_target_class(target_class)
         ::Brainstem::ApiDocs::Presenter.new(atlas,
           target_class: target_class,
-          const:        target_class_to_const(target_class)
+          const:        target_class_to_const(target_class),
+          internal: internal
         ).tap { |p| self.<< p }
       rescue KeyError
         nil
@@ -55,7 +57,8 @@ module Brainstem
       def create_from_presenter_collection(target_class, const)
         ::Brainstem::ApiDocs::Presenter.new(atlas,
           target_class: target_class,
-          const:        const
+          const:        const,
+          internal: internal
         ).tap { |p| self.<< p }
       end
 

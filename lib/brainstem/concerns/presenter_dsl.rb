@@ -51,6 +51,10 @@ module Brainstem
           configuration[:nodoc] = true
         end
 
+        def internal!
+          configuration[:internal] = true
+        end
+
         #
         # Temporary implementation to track controllers that have been documented.
         #

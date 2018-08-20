@@ -22,6 +22,16 @@ module Brainstem
         end
       end
 
+      describe ".internal!" do
+        it "sets the config nodoc to true" do
+          subject.brainstem_params do
+            internal!
+          end
+
+          expect(subject.configuration[:_default][:internal]).to eq true
+        end
+      end
+
       describe ".brainstem_params" do
         it "evaluates the given block in the class context" do
           mock(subject).configuration

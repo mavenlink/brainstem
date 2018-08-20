@@ -22,7 +22,8 @@ module Brainstem
                     :name,
                     :endpoints,
                     :filename_pattern,
-                    :atlas
+                    :atlas,
+                    :internal
 
       attr_writer   :filename_pattern,
                     :filename_link_pattern
@@ -33,7 +34,8 @@ module Brainstem
           :name,
           :formatters,
           :filename_pattern,
-          :filename_link_pattern
+          :filename_link_pattern,
+          :internal
         ]
       end
 
@@ -77,7 +79,7 @@ module Brainstem
       end
 
       def nodoc?
-        default_configuration[:nodoc]
+        nodoc_for?(default_configuration)
       end
 
       def title
@@ -101,12 +103,18 @@ module Brainstem
       #
       def contextual_documentation(key)
         default_configuration.has_key?(key) &&
-          !default_configuration[key][:nodoc] &&
+          !nodoc_for?(default_configuration[key]) &&
           default_configuration[key][:info]
       end
 
       def valid_sorted_endpoints
         endpoints.sorted_with_actions_in_controller(const)
+      end
+
+      private
+
+      def nodoc_for?(config)
+        !!(config[:nodoc] || (config[:internal] && !internal))
       end
     end
   end

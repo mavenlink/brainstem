@@ -134,6 +134,16 @@ describe Brainstem::Concerns::PresenterDSL do
     end
   end
 
+  describe 'the internal! method' do
+    before do
+      presenter_class.internal!
+    end
+
+    it "is stored in the configuration" do
+      expect(presenter_class.configuration[:internal]).to be true
+    end
+  end
+
   # sort_order :created_at, ".created_at"
   describe 'the sort_order block' do
     let(:value)   { "widgets.created_at" }
