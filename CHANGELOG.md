@@ -1,5 +1,100 @@
 # Changelog
 
++ **2.1.0** - _DATE_
+  ### New Features
+    - Add the ability to mark properties as internal for Open API.
+    ```ruby
+    class ContactsController < ApiController
+      internal!
+
+      brainstem_params do
+        actions :index do
+          response :hash do
+            field :count, :integer,
+                  info: "Total count of contacts",
+                  internal: true
+            fields :contacts, :array,
+                   item_type: :hash,
+                   nodoc: true,
+                   info: "Array of contact details" do
+              field :full_name, :string,
+                    info: "Full name of the contact",
+                    internal: true
+            end
+          end
+        end
+      end
+    end
+    ```
+    - Add `--internal` option to CLI:
+      - `brainstem generate --internal --open-api-specification=2` will generate documentation for everything that is not
+      marked as `nodoc`.
+    - Automatically generate documentation for associations
+      - When association type is `has_many`, the name of the association appended with `_ids` will be added to generated
+      documentation.
+        - Using the example below, `vaccines_ids` will be added to the presented model (`Pet`).
+      - When association type is `has_one` or `belongs_to`, the generated documentation will use the `foreign_key` if
+      given, otherwise, it will use the name of the association appended with `_id`.
+        - Using the example below, the association for `PetCategory` will generate documentation for `shooby_id`,
+        while the `Owner` association will generate documentation for `owner_id`.
+      - The response will include references to all of the associations, including any `polymorphic_classes` added to
+      polymorphic associations.
+        - In the example below, the documentation for the response will contain references to `PetCategory`, `Vaccine`,
+        `Owner`, `Dog`, and `Cat`.
+    ```ruby
+    class PetsPresenter < Brainstem::Presenter
+      presents Pet
+      associations do
+        association :pet_category, PetCategory,
+                    foreign_key: :shooby_id,
+                    type: :belongs_to
+        association :vaccines, Vaccine,
+                    type: :has_many
+        association :owner, Owner,
+                    type: :has_one
+        association :type, :polymorphic,
+                  polymorphic_classes: [Dog, Cat]
+      end
+    end
+    ```
+    - Add support for dynamic key fields.
+      - When key is unknown, use the new DSL for body params or response params. See example below for usage.
+    ```ruby
+    class PetsPresenter < Brainstem::Presenter
+      brainstem_params do
+        actions :show do
+          response :hash do |response_param|
+            response_param.fields :attributes, :hash do |attributes|
+              attributes.dynamic_key_field :string
+              attributes.field :name, :string, required: true
+            end
+             response_param.dynamic_key_field :hash do |dk|
+              dk.dynamic_key_field :string
+            end
+          end
+        end
+      end
+    end
+    ```
+    - Sort orders now default to directions `asc` and `desc`.
+      - When direction is passed as false, no sort order is generated for the docs.
+      - ex.
+        ```ruby
+          presenter_class.sort_order :created_at, value, info: "sorts by creation time", direction: false
+        ```
+    - Add new DSL for nested arrays
+      ```ruby
+        response :array, nested_level: 2, item_type: [:hash, :string, :integer] do
+          nested.field :a, :string
+          nested.field :b, :integer
+        end
+      ```
+      - An example of the response above: ```[[{a: "string", b: 1}, "another string", 4]]```
+
+  ### Bugfixes
+    - Nested required fields will now no longer bubble up the required to its parent. A deeply nested field that is 
+    required will now only be required on its direct parent.
+
 + **2.0.0** - _05/17/2018_
   - Introduce the capability to document custom response on endpoints
   ```ruby
@@ -20,6 +115,7 @@
         end
       end
     end
+  end
   ```
   - Add DSL on controllers to set Open API Specification 2.0 configurations
   ```ruby
