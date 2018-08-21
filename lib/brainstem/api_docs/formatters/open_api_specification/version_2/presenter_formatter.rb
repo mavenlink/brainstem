@@ -52,18 +52,60 @@ module Brainstem
             end
 
             def format_fields!
-              return unless presenter.valid_fields.any?
+              return unless presenter.valid_fields.any? || presenter.valid_associations.any?
 
-              definition.merge! properties: format_field_branch(presenter.valid_fields)
+              properties = format_field_branch(presenter.valid_fields)
+              with_associations = format_field_associations(properties)
+
+              definition.merge! properties: with_associations
             end
 
             def format_field_branch(branch)
-              branch.inject(ActiveSupport::HashWithIndifferentAccess.new) do |buffer, (name, field)|
+              branch.each_with_object(ActiveSupport::HashWithIndifferentAccess.new) do |(name, field), buffer|
                 buffer[name.to_s] = format_field(field)
-                buffer
               end
             end
-            
+
+            def format_field_associations(properties)
+              presenter.valid_associations.each_with_object(properties) do |(name, association), props|
+                if association.polymorphic?
+                  key = association.name + "_ref"
+                  props[key] = {
+                    type: 'object',
+                    description: association_description(key, name),
+                    properties: {
+                      key: type_and_format(:string),
+                      id: type_and_format(:string)
+                    }
+                  }
+                  next
+                end
+
+                key = association_key(association)
+                description = association_description(key, association.name)
+                formatted_type = if association.type == :has_many
+                  type_and_format(:array, :integer)
+                else
+                  type_and_format(:integer)
+                end.merge(description: description)
+
+                props[key] = formatted_type unless props[key]
+              end
+            end
+
+            def association_description(key, name)
+              "`#{key}` will only be included in the response if `#{name}` is in the list of included associations."
+            end
+
+            def association_key(association)
+              if association.foreign_key
+                association.foreign_key
+              else
+                key = association.name.singularize
+                association.type == :has_many ? "#{key}_ids" : "#{key}_id"
+              end
+            end
+
             def format_field(field)
               Brainstem::ApiDocs::FORMATTERS[:presenter_field][:oas_v2].call(presenter, field)
             end

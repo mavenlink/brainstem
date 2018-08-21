@@ -114,6 +114,7 @@ module Brainstem
                   before do
                     stub(presenter).brainstem_keys { ['widgets'] }
                     stub(presenter).target_class { 'Widget' }
+                    stub(presenter).valid_associations { {} }
                   end
 
                   it 'returns the structured response for an endpoint' do
@@ -153,6 +154,172 @@ module Brainstem
                         }
                       }
                     })
+                  end
+
+                  context 'when there are valid associations' do
+                    let(:task_stubbed_presenter) { Object.new }
+                    let(:user_stubbed_presenter) { Object.new }
+                    let(:nodoc) { false }
+
+                    before do
+                      stub(task_stubbed_presenter).nodoc? { nodoc }
+                      stub(task_stubbed_presenter).brainstem_keys { ['tasks'] }
+                      stub(user_stubbed_presenter).nodoc? { nodoc }
+                      stub(user_stubbed_presenter).brainstem_keys { ['users'] }
+                      stub(presenter).find_by_class(Task) { task_stubbed_presenter }
+                      stub(presenter).find_by_class(User) { user_stubbed_presenter }
+                    end
+
+                    context 'when association is pointing to a nodoc class' do
+                      let(:nodoc) { true }
+
+                      it 'does not generate references for the association' do
+                        subject.send(:format_schema_response!)
+
+                        expect(subject.output).to eq('200' => {
+                          'description' => 'A list of Widgets have been retrieved.',
+                          'schema' => {
+                            'type' => 'object',
+                            'properties' => {
+                              'count' => { 'type' => 'integer', 'format' => 'int32' },
+                              'meta' => {
+                                'type' => 'object',
+                                'properties' => {
+                                  'count' => { 'type' => 'integer', 'format' => 'int32' },
+                                  'page_count' => { 'type' => 'integer', 'format' => 'int32' },
+                                  'page_number' => { 'type' => 'integer', 'format' => 'int32' },
+                                  'page_size' => { 'type' => 'integer', 'format' => 'int32' },
+                                }
+                              },
+                              'results' => {
+                                'type' => 'array',
+                                'items' => {
+                                  'type' => 'object',
+                                  'properties' => {
+                                    'key' => { 'type' => 'string' },
+                                    'id' => { 'type' => 'string' }
+                                  }
+                                }
+                              },
+                              'widgets' => {
+                                'type' => 'object',
+                                'additionalProperties' => {
+                                  '$ref' => '#/definitions/Widget'
+                                }
+                              }
+                            }
+                          }
+                        })
+                      end
+                    end
+
+                    context 'when the association is polymorphic' do
+                      before do
+                        stub(presenter).valid_associations { { 'tasks' => ::Brainstem::DSL::Association.new('polymorphic', :polymorphic, polymorphic_classes: [Task, User]) } }
+                      end
+
+                      it 'returns the appropriate associations with their additional properties' do
+                        subject.send(:format_schema_response!)
+
+                        expect(subject.output).to eq('200' => {
+                          'description' => 'A list of Widgets have been retrieved.',
+                          'schema' => {
+                            'type' => 'object',
+                            'properties' => {
+                              'count' => { 'type' => 'integer', 'format' => 'int32' },
+                              'meta' => {
+                                'type' => 'object',
+                                'properties' => {
+                                  'count' => { 'type' => 'integer', 'format' => 'int32' },
+                                  'page_count' => { 'type' => 'integer', 'format' => 'int32' },
+                                  'page_number' => { 'type' => 'integer', 'format' => 'int32' },
+                                  'page_size' => { 'type' => 'integer', 'format' => 'int32' },
+                                }
+                              },
+                              'results' => {
+                                'type' => 'array',
+                                'items' => {
+                                  'type' => 'object',
+                                  'properties' => {
+                                    'key' => { 'type' => 'string' },
+                                    'id' => { 'type' => 'string' }
+                                  }
+                                }
+                              },
+                              'widgets' => {
+                                'type' => 'object',
+                                'additionalProperties' => {
+                                  '$ref' => '#/definitions/Widget'
+                                }
+                              },
+                              'tasks' => {
+                                'type' => 'object',
+                                'additionalProperties' => {
+                                  '$ref' => '#/definitions/Task'
+                                }
+                              },
+                              'users' => {
+                                'type' => 'object',
+                                'additionalProperties' => {
+                                  '$ref' => '#/definitions/User'
+                                }
+                              }
+                            }
+                          }
+                        })
+                      end
+                    end
+
+                    context 'when the association is not polymorphic' do
+                      before do
+                        stub(presenter).valid_associations { { 'tasks' => ::Brainstem::DSL::Association.new('Task', Task, {}) } }
+                      end
+
+                      it 'returns the appropriate association with its additional properties' do
+                        subject.send(:format_schema_response!)
+
+                        expect(subject.output).to eq('200' => {
+                          'description' => 'A list of Widgets have been retrieved.',
+                          'schema' => {
+                            'type' => 'object',
+                            'properties' => {
+                              'count' => { 'type' => 'integer', 'format' => 'int32' },
+                              'meta' => {
+                                'type' => 'object',
+                                'properties' => {
+                                  'count' => { 'type' => 'integer', 'format' => 'int32' },
+                                  'page_count' => { 'type' => 'integer', 'format' => 'int32' },
+                                  'page_number' => { 'type' => 'integer', 'format' => 'int32' },
+                                  'page_size' => { 'type' => 'integer', 'format' => 'int32' },
+                                }
+                              },
+                              'results' => {
+                                'type' => 'array',
+                                'items' => {
+                                  'type' => 'object',
+                                  'properties' => {
+                                    'key' => { 'type' => 'string' },
+                                    'id' => { 'type' => 'string' }
+                                  }
+                                }
+                              },
+                              'widgets' => {
+                                'type' => 'object',
+                                'additionalProperties' => {
+                                  '$ref' => '#/definitions/Widget'
+                                }
+                              },
+                              'tasks' => {
+                                'type' => 'object',
+                                'additionalProperties' => {
+                                  '$ref' => '#/definitions/Task'
+                                }
+                              }
+                            }
+                          }
+                        })
+                      end
+                    end
                   end
                 end
 
