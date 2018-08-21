@@ -114,8 +114,8 @@ module Brainstem
               def associated_properties
                 presenter.valid_associations.each_with_object({}) do |(_key, association), obj|
                   if association.polymorphic?
-                    associations = association.polymorphic_classes || []
-                    associations.each do |assoc|
+                    associated_klasses = association.polymorphic_classes || []
+                    associated_klasses.each do |assoc|
                       association_reference(assoc, obj)
                     end
                   else

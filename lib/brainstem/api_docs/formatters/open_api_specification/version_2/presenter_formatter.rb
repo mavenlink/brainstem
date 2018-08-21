@@ -106,13 +106,12 @@ module Brainstem
             end
 
             def association_key(association)
-              key = if association.response_key
+              if association.response_key
                 association.response_key
               else
-                "#{association.name.singularize}_id"
+                key = association.name.singularize
+                association.type == :has_many ? "#{key}_ids" : "#{key}_id"
               end
-
-              association.type == :has_many ? "#{key}s" : key
             end
 
             def format_field(field)
