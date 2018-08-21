@@ -158,7 +158,7 @@ module Brainstem
             options[:sink][:options][:output_extension] = extension
           end
 
-          opts.on('--internal', 'Generate docs for all `internal!` flagged presenters/controllers') do |_|
+          opts.on('--include-internal', 'Generate docs for all `internal!` flagged presenters/controllers') do |_|
             options[:builder][:args_for_atlas][:internal] = true
           end
 

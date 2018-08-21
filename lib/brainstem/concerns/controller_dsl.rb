@@ -65,7 +65,7 @@ module Brainstem
         # whereas setting it within an action context will force that action to
         # be undocumented.
         #
-        def nodoc!
+        def nodoc!(_description = nil)
           configuration[brainstem_params_context][:nodoc] = true
         end
 
@@ -75,7 +75,7 @@ module Brainstem
         # will force the controller to be undocumented, whereas setting it
         # within an action context will force that action to be undocumented.
         #
-        def internal!
+        def internal!(_description = nil)
           configuration[brainstem_params_context][:internal] = true
         end
 

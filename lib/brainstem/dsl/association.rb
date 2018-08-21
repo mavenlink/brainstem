@@ -17,8 +17,8 @@ module Brainstem
         options[:info].presence
       end
 
-      def foreign_key
-        options[:foreign_key]
+      def response_key
+        options[:response_key]
       end
 
       def polymorphic_classes

@@ -126,7 +126,7 @@ describe Brainstem::Concerns::PresenterDSL do
 
   describe 'the nodoc! method' do
     before do
-      presenter_class.nodoc!
+      presenter_class.nodoc! "Description for why these are nodoc"
     end
 
     it "is stored in the configuration" do
@@ -136,7 +136,7 @@ describe Brainstem::Concerns::PresenterDSL do
 
   describe 'the internal! method' do
     before do
-      presenter_class.internal!
+      presenter_class.internal! "Description for why these are internal docs"
     end
 
     it "is stored in the configuration" do
