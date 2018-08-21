@@ -22,7 +22,7 @@ module Brainstem
           :filename_link_pattern,
           :document_empty_associations,
           :document_empty_filters,
-          :internal
+          :include_internal
         ]
       end
 
@@ -30,7 +30,7 @@ module Brainstem
                     :target_class,
                     :document_empty_associations,
                     :document_empty_filters,
-                    :internal
+                    :include_internal
 
       attr_writer   :filename_pattern,
                     :filename_link_pattern
@@ -216,7 +216,7 @@ module Brainstem
       private
 
       def nodoc_for?(config)
-        !!(config[:nodoc] || (config[:internal] && !internal))
+        !!(config[:nodoc] || (config[:internal] && !include_internal))
       end
     end
   end

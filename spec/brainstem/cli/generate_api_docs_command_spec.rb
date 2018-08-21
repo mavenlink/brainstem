@@ -123,7 +123,7 @@ module Brainstem
           let(:args) { %w(--include-internal) }
 
           it "sets the internal option in the args for atlas" do
-            expect(subject.options[:builder][:args_for_atlas][:internal]).to eq true
+            expect(subject.options[:builder][:args_for_atlas][:include_internal]).to eq true
           end
         end
 

@@ -20,7 +20,7 @@ module Brainstem
             :write_path,
             :oas_filename_pattern,
             :output_extension,
-            :internal
+            :include_internal
           ]
         end
 
@@ -34,7 +34,7 @@ module Brainstem
                       :oas_filename_pattern,
                       :output_extension,
                       :output,
-                      :internal
+                      :include_internal
 
         delegate [:controllers, :presenters] => :atlas
 

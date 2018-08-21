@@ -11,7 +11,7 @@ module Brainstem
 
       let(:atlas)         { Object.new }
       let(:target_class)  { Class.new }
-      let(:options)       { { internal: internal_flag } }
+      let(:options)       { { include_internal: internal_flag } }
       let(:internal_flag) { false }
       let(:nodoc)         { false }
       let(:internal)      { false }

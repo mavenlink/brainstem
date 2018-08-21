@@ -159,7 +159,7 @@ module Brainstem
           end
 
           opts.on('--include-internal', 'Generate docs for all `internal!` flagged presenters/controllers') do |_|
-            options[:builder][:args_for_atlas][:internal] = true
+            options[:builder][:args_for_atlas][:include_internal] = true
           end
 
           #########################################################

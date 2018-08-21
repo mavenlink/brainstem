@@ -24,7 +24,7 @@ module Brainstem
           :controller_name,
           :action,
           :presenter,
-          :internal
+          :include_internal
         ]
       end
 
@@ -40,7 +40,7 @@ module Brainstem
                     :controller_name,
                     :action,
                     :atlas,
-                    :internal
+                    :include_internal
 
       #
       # Pretty prints each endpoint.
@@ -313,7 +313,7 @@ module Brainstem
       private
 
       def nodoc_for?(config)
-        !!(config[:nodoc] || (config[:internal] && !internal))
+        !!(config[:nodoc] || (config[:internal] && !include_internal))
       end
     end
   end

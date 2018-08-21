@@ -6,7 +6,7 @@ module Brainstem
     describe Controller do
       subject       { described_class.new(atlas, options) }
       let(:atlas)   { Object.new }
-      let(:options) { {internal: internal_flag} }
+      let(:options) { {include_internal: internal_flag} }
       let(:internal_flag) { false }
 
       describe "#initialize" do

@@ -23,7 +23,7 @@ module Brainstem
                     :endpoints,
                     :filename_pattern,
                     :atlas,
-                    :internal
+                    :include_internal
 
       attr_writer   :filename_pattern,
                     :filename_link_pattern
@@ -35,7 +35,7 @@ module Brainstem
           :formatters,
           :filename_pattern,
           :filename_link_pattern,
-          :internal
+          :include_internal
         ]
       end
 
@@ -114,7 +114,7 @@ module Brainstem
       private
 
       def nodoc_for?(config)
-        !!(config[:nodoc] || (config[:internal] && !internal))
+        !!(config[:nodoc] || (config[:internal] && !include_internal))
       end
     end
   end

@@ -6,7 +6,7 @@ module Brainstem
     describe Endpoint do
       let(:lorem) { "lorem ipsum dolor sit amet" }
       let(:atlas) { Object.new }
-      let(:options) { { internal: internal_flag } }
+      let(:options) { { include_internal: internal_flag } }
       let(:internal_flag) { false }
       subject { described_class.new(atlas, options) }
 

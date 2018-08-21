@@ -5,11 +5,11 @@ module Brainstem
   module ApiDocs
     class ControllerCollection < AbstractCollection
 
-      attr_accessor :internal
+      attr_accessor :include_internal
 
       def valid_options
         super | [
-          :internal
+          :include_internal
         ]
       end
 
@@ -18,9 +18,9 @@ module Brainstem
       # collection.
       def create_from_route(route)
         Controller.new(atlas,
-          const:    route[:controller],
-          name:     route[:controller_name].split("/").last,
-          internal: internal
+          const:            route[:controller],
+          name:             route[:controller_name].split("/").last,
+          include_internal: include_internal
         ).tap { |controller| self.<< controller }
       end
 
