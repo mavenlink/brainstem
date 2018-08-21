@@ -5,7 +5,7 @@
     - Add the ability to mark properties as internal for Open API.
     ```ruby
     class ContactsController < ApiController
-      internal!
+      internal! "Only used internally"
 
       brainstem_params do
         actions :index do
@@ -26,15 +26,12 @@
       end
     end
     ```
-    - Add `--internal` option to CLI:
-      - `brainstem generate --internal --open-api-specification=2` will generate documentation for everything that is not
+    - Add `--include-internal` option to CLI:
+      - `brainstem generate --include-internal --open-api-specification=2` will generate documentation for everything that is not
       marked as `nodoc`.
     - Automatically generate documentation for associations
-      - When association type is `has_many`, the name of the association appended with `_ids` will be added to generated
-      documentation.
-        - Using the example below, `vaccines_ids` will be added to the presented model (`Pet`).
-      - When association type is `has_one` or `belongs_to`, the generated documentation will use the `foreign_key` if
-      given, otherwise, it will use the name of the association appended with `_id`.
+      - `response_key` will be used if given, otherwise, it will use the name of the association appended
+       with `_id` or `_ids` for `has_many`.
         - Using the example below, the association for `PetCategory` will generate documentation for `shooby_id`,
         while the `Owner` association will generate documentation for `owner_id`.
       - The response will include references to all of the associations, including any `polymorphic_classes` added to
@@ -46,7 +43,7 @@
       presents Pet
       associations do
         association :pet_category, PetCategory,
-                    foreign_key: :shooby_id,
+                    response_key: :shooby_id,
                     type: :belongs_to
         association :vaccines, Vaccine,
                     type: :has_many
