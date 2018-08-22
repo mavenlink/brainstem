@@ -125,21 +125,25 @@ describe Brainstem::Concerns::PresenterDSL do
   end
 
   describe 'the nodoc! method' do
-    before do
+    it "is stored in the configuration" do
       presenter_class.nodoc! "Description for why these are nodoc"
+      expect(presenter_class.configuration[:nodoc]).to eq "Description for why these are nodoc"
     end
 
-    it "is stored in the configuration" do
+    it "is defaults to true" do
+      presenter_class.nodoc!
       expect(presenter_class.configuration[:nodoc]).to be true
     end
   end
 
   describe 'the internal! method' do
-    before do
+    it "is stored in the configuration" do
       presenter_class.internal! "Description for why these are internal docs"
+      expect(presenter_class.configuration[:internal]).to eq "Description for why these are internal docs"
     end
 
-    it "is stored in the configuration" do
+    it "is defaults to true" do
+      presenter_class.internal!
       expect(presenter_class.configuration[:internal]).to be true
     end
   end

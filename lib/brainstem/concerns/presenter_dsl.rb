@@ -47,12 +47,12 @@ module Brainstem
           configuration[:description] = options.merge(info: str)
         end
 
-        def nodoc!(_description = nil)
-          configuration[:nodoc] = true
+        def nodoc!(description = true)
+          configuration[:nodoc] = description
         end
 
-        def internal!(_description = nil)
-          configuration[:internal] = true
+        def internal!(description = true)
+          configuration[:internal] = description
         end
 
         #
