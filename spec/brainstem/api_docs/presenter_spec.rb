@@ -251,7 +251,7 @@ module Brainstem
                 before do
                   presenter_class.fields do
                     field :new_field, :string, dynamic: lambda { "new_field value" }, nodoc: false
-                    field :new_field2, :string, dynamic: lambda { "new_field2 value" }, internal: true
+                    field :new_field2, :string, dynamic: lambda { "new_field2 value" }, internal: 'Only for internal docs'
                     field :new_field3, :string, dynamic: lambda { "new_field3 value" }
                   end
                 end
@@ -283,6 +283,7 @@ module Brainstem
                 before do
                   presenter_class.fields do
                     field :new_field2, :string, dynamic: lambda { "new_field2 value" }, internal: true
+                    field :new_field3, :string, dynamic: lambda { "new_field3 value" }, internal: 'Only for internal docs'
                   end
                 end
 
@@ -444,7 +445,7 @@ module Brainstem
                   field :optional_field_nodoc_block_field, :string, optional: true
                 end
 
-                fields :internal_optional_block_field, :hash, internal: true, optional: true do
+                fields :internal_optional_block_field, :hash, internal: 'Only for internal docs', optional: true do
                   field :optional_field_internal_block_field, :string, optional: true
                 end
 
@@ -459,7 +460,7 @@ module Brainstem
 
                   fields :double_nested_field, :hash do
                     field :leaf_field_4, :string
-                    field :internal_optional_leaf_field, :string, internal: true, optional: true
+                    field :internal_optional_leaf_field, :string, internal: 'Only for internal docs', optional: true
                     field :internal_leaf_field, :string, internal: true
                     field :optional_leaf_field, :string, optional: true
                     field :nodoc_optional_leaf_field, :string, optional: true, nodoc: true
