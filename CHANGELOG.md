@@ -1,6 +1,6 @@
 # Changelog
 
-+ **2.1.0** - _DATE_
++ **2.1.0** - _09/10/2018_
   ### New Features
     - Add the ability to mark properties as internal for Open API.
     ```ruby
@@ -12,7 +12,7 @@
           response :hash do
             field :count, :integer,
                   info: "Total count of contacts",
-                  internal: true
+                  internal: "Internal eyes only"
             fields :contacts, :array,
                    item_type: :hash,
                    nodoc: true,
@@ -26,36 +26,47 @@
       end
     end
     ```
+    
     - Add `--include-internal` option to CLI:
-      - `brainstem generate --include-internal --open-api-specification=2` will generate documentation for everything that is not
-      marked as `nodoc`.
+      `brainstem generate --include-internal --open-api-specification=2` will generate documentation for
+      everything that is not marked as `nodoc`.
+    
     - Automatically generate documentation for associations
       - `response_key` will be used if given, otherwise, it will use the name of the association appended
-       with `_id` or `_ids` for `has_many`.
-        - Using the example below, the association for `PetCategory` will generate documentation for `shooby_id`,
+        with `_id` or `_ids` for `has_many`.
+
+        Using the example below, the association for `PetCategory` will generate documentation for `shooby_id`,
         while the `Owner` association will generate documentation for `owner_id`.
       - The response will include references to all of the associations, including any `polymorphic_classes` added to
-      polymorphic associations.
-        - In the example below, the documentation for the response will contain references to `PetCategory`, `Vaccine`,
+        polymorphic associations.
+
+        In the example below, the documentation for the response will contain references to `PetCategory`, `Vaccine`,
         `Owner`, `Dog`, and `Cat`.
+
     ```ruby
     class PetsPresenter < Brainstem::Presenter
       presents Pet
+
       associations do
         association :pet_category, PetCategory,
                     response_key: :shooby_id,
                     type: :belongs_to
         association :vaccines, Vaccine,
+                    response_key: :vaccine_ids,
                     type: :has_many
         association :owner, Owner,
+                    response_key: :owner_id,
                     type: :has_one
-        association :type, :polymorphic,
-                  polymorphic_classes: [Dog, Cat]
+        association :pettable, :polymorphic,
+                    response_key: :pettable_ref,
+                    polymorphic_classes: [Dog, Cat]
       end
     end
     ```
-    - Add support for dynamic key fields.
-      - When key is unknown, use the new DSL for body params or response params. See example below for usage.
+
+    - Add support for dynamic key fields. When key is non static, use the new DSL for body params or response params.
+      See example below for usage.
+
     ```ruby
     class PetsPresenter < Brainstem::Presenter
       brainstem_params do
@@ -65,7 +76,8 @@
               attributes.dynamic_key_field :string
               attributes.field :name, :string, required: true
             end
-             response_param.dynamic_key_field :hash do |dk|
+
+            response_param.dynamic_key_field :hash do |dk|
               dk.dynamic_key_field :string
             end
           end
@@ -73,20 +85,22 @@
       end
     end
     ```
+
     - Sort orders now default to directions `asc` and `desc`.
-      - When direction is passed as false, no sort order is generated for the docs.
+      When direction is passed as false, no sort order is generated for the docs.
       - ex.
         ```ruby
           presenter_class.sort_order :created_at, value, info: "sorts by creation time", direction: false
         ```
+
     - Add new DSL for nested arrays
       ```ruby
-        response :array, nested_level: 2, item_type: [:hash, :string, :integer] do
+        response :array, nested_level: 2, item_type: :hash do
           nested.field :a, :string
           nested.field :b, :integer
         end
       ```
-      - An example of the response above: ```[[{a: "string", b: 1}, "another string", 4]]```
+      - An example of the response above: `[[{a: "string", b: 1}, "another string", 4]]`
 
   ### Bugfixes
     - Nested required fields will now no longer bubble up the required to its parent. A deeply nested field that is 
