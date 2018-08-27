@@ -70,7 +70,7 @@ module Brainstem
         end
 
         #
-        # Specifies that the scope should not be documented unless the `--internal`
+        # Specifies that the scope should not be documented unless the `--include-internal`
         # flag is passed in the CLI. Setting this on the default context
         # will force the controller to be undocumented, whereas setting it
         # within an action context will force that action to be undocumented.
@@ -90,7 +90,7 @@ module Brainstem
         #
         # Setting the +:internal+ option marks this presenter as 'internal use only',
         # and causes formatters to not display this unless documentation is generated with
-        # `--internal` flag.
+        # `--include-internal` flag.
         #
         # @param [Class] target_class the target class of the presenter (i.e the model it presents)
         # @param [Hash] options options to record with the presenter
@@ -117,7 +117,7 @@ module Brainstem
         # Setting the +:internal+ option marks this title as 'internal use only',
         # and causes formatters to fall back to the controller constant or to
         # the action name as appropriate unless documentation is generated with
-        # `--internal` flag. If you are trying to set the entire
+        # `--include-internal` flag. If you are trying to set the entire
         # controller or action as nondocumentable unless internal, instead,
         # use the +.internal!+ method in the desired context without a block.
         #
@@ -138,7 +138,7 @@ module Brainstem
         #
         # Setting the +:internal+ option marks this description as 'internal use
         # only', and causes formatters not to display a description unless documentation
-        # is generated with `--internal` flag.
+        # is generated with `--include-internal` flag.
         #
         # @param [String] text The description to set
         # @param [Hash] options options to record with the description
