@@ -158,6 +158,10 @@ module Brainstem
             options[:sink][:options][:output_extension] = extension
           end
 
+          opts.on('--include-internal', 'Generate docs for all `internal!` flagged presenters/controllers') do |_|
+            options[:builder][:args_for_atlas][:include_internal] = true
+          end
+
           #########################################################
           #                                                       #
           # Open API Specification generation specific commands:  #

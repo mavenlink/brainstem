@@ -21,14 +21,16 @@ module Brainstem
           :filename_pattern,
           :filename_link_pattern,
           :document_empty_associations,
-          :document_empty_filters
+          :document_empty_filters,
+          :include_internal
         ]
       end
 
       attr_accessor :const,
                     :target_class,
                     :document_empty_associations,
-                    :document_empty_filters
+                    :document_empty_filters,
+                    :include_internal
 
       attr_writer   :filename_pattern,
                     :filename_link_pattern
@@ -75,7 +77,7 @@ module Brainstem
       delegate :find_by_class => :atlas
 
       def nodoc?
-        configuration[:nodoc]
+        nodoc_for?(configuration)
       end
 
       def title
@@ -98,7 +100,7 @@ module Brainstem
       alias_method :valid_fields_in, :valid_fields
 
       def invalid_field?(field)
-        field.options[:nodoc]
+        nodoc_for?(field.options)
       end
 
       def nested_field?(field)
@@ -131,7 +133,7 @@ module Brainstem
       end
 
       def documentable_filter?(_, filter)
-        !filter[:nodoc] &&
+        !nodoc_for?(filter) &&
           (
             document_empty_filters? || # document empty filters or
             !(filter[:info] || "").empty? # has info string
@@ -143,7 +145,7 @@ module Brainstem
       end
 
       def valid_sort_orders
-        configuration[:sort_orders].to_h.reject {|k, v| v[:nodoc] }
+        configuration[:sort_orders].to_h.reject {|_k, v| nodoc_for?(v) }
       end
 
       def valid_associations
@@ -168,7 +170,7 @@ module Brainstem
       # @return [Bool] document this association?
       #
       def documentable_association?(_, association)
-        !association.options[:nodoc] && # not marked nodoc and
+        !nodoc_for?(association.options) && # not marked nodoc and
           (
             document_empty_associations? || # document empty associations or
             !(association.description.nil? || association.description.empty?) # has description
@@ -196,7 +198,7 @@ module Brainstem
       #
       def contextual_documentation(key)
         configuration.has_key?(key) &&
-          !configuration[key][:nodoc] &&
+          !nodoc_for?(configuration[key]) &&
           configuration[key][:info]
       end
 
@@ -209,6 +211,12 @@ module Brainstem
         presenter_path = Pathname.new(presenter.suggested_filename_link(format))
 
         presenter_path.relative_path_from(my_path).to_s
+      end
+
+      private
+
+      def nodoc_for?(config)
+        !!(config[:nodoc] || (config[:internal] && !include_internal))
       end
     end
   end

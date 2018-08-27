@@ -13,12 +13,38 @@ module Brainstem
       end
 
       describe ".nodoc!" do
-        it "sets the config nodoc to true" do
+        it "sets the config nodoc to passed in description" do
+          subject.brainstem_params do
+            nodoc! "Description for why these are nodoc"
+          end
+
+          expect(subject.configuration[:_default][:nodoc]).to eq "Description for why these are nodoc"
+        end
+
+        it "sets the config nodoc to default value (true)" do
           subject.brainstem_params do
             nodoc!
           end
 
           expect(subject.configuration[:_default][:nodoc]).to eq true
+        end
+      end
+
+      describe ".internal!" do
+        it "sets the config internal to passed in description" do
+          subject.brainstem_params do
+            internal! "Description for why these are internal docs"
+          end
+
+          expect(subject.configuration[:_default][:internal]).to eq "Description for why these are internal docs"
+        end
+
+        it "sets the config internal to default value (true)" do
+          subject.brainstem_params do
+            internal!
+          end
+
+          expect(subject.configuration[:_default][:internal]).to eq true
         end
       end
 

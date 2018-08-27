@@ -65,8 +65,18 @@ module Brainstem
         # whereas setting it within an action context will force that action to
         # be undocumented.
         #
-        def nodoc!
-          configuration[brainstem_params_context][:nodoc] = true
+        def nodoc!(description = true)
+          configuration[brainstem_params_context][:nodoc] = description
+        end
+
+        #
+        # Specifies that the scope should not be documented unless the `--include-internal`
+        # flag is passed in the CLI. Setting this on the default context
+        # will force the controller to be undocumented, whereas setting it
+        # within an action context will force that action to be undocumented.
+        #
+        def internal!(description = true)
+          configuration[brainstem_params_context][:internal] = description
         end
 
         #
@@ -78,11 +88,15 @@ module Brainstem
         # Setting the +:nodoc+ option marks this presenter as 'internal use only',
         # and causes formatters to display this as not indicated.
         #
+        # Setting the +:internal+ option marks this presenter as 'internal use only',
+        # and causes formatters to not display this unless documentation is generated with
+        # `--include-internal` flag.
+        #
         # @param [Class] target_class the target class of the presenter (i.e the model it presents)
         # @param [Hash] options options to record with the presenter
         # @option options [Boolean] :nodoc whether this presenter should not be output in the documentation.
         #
-        def presents(target_class = :default, options = { nodoc: false })
+        def presents(target_class = :default, options = { nodoc: false, internal: false })
           raise "`presents` must be a class (in #{self.to_s})" \
             unless target_class.is_a?(Class) || target_class == :default || target_class.nil?
 
@@ -100,11 +114,18 @@ module Brainstem
         # controller or action as nondocumentable, instead, use the
         # +.nodoc!+ method in the desired context without a block.
         #
+        # Setting the +:internal+ option marks this title as 'internal use only',
+        # and causes formatters to fall back to the controller constant or to
+        # the action name as appropriate unless documentation is generated with
+        # `--include-internal` flag. If you are trying to set the entire
+        # controller or action as nondocumentable unless internal, instead,
+        # use the +.internal!+ method in the desired context without a block.
+        #
         # @param [String] text The title to set
         # @param [Hash] options options to record with the title
         # @option options [Boolean] :nodoc whether this title should not be output in the documentation.
         #
-        def title(text, options = { nodoc: false })
+        def title(text, options = { nodoc: false, internal: false })
           configuration[brainstem_params_context][:title] = options.merge(info: text)
         end
 
@@ -115,11 +136,15 @@ module Brainstem
         # Setting the +:nodoc+ option marks this description as 'internal use
         # only', and causes formatters not to display a description.
         #
+        # Setting the +:internal+ option marks this description as 'internal use
+        # only', and causes formatters not to display a description unless documentation
+        # is generated with `--include-internal` flag.
+        #
         # @param [String] text The description to set
         # @param [Hash] options options to record with the description
         # @option options [Boolean] :nodoc whether this description should not be output in the documentation.
         #
-        def description(text, options = { nodoc: false })
+        def description(text, options = { nodoc: false, internal: false })
           configuration[brainstem_params_context][:description] = options.merge(info: text)
         end
 

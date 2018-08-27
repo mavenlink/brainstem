@@ -9,10 +9,12 @@ module Brainstem
     describe Presenter do
       subject { described_class.new(atlas, options) }
 
-      let(:atlas)        { Object.new }
-      let(:target_class) { Class.new }
-      let(:options)      { { } }
-      let(:nodoc)        { false }
+      let(:atlas)         { Object.new }
+      let(:target_class)  { Class.new }
+      let(:options)       { { include_internal: internal_flag } }
+      let(:internal_flag) { false }
+      let(:nodoc)         { false }
+      let(:internal)      { false }
 
       describe "#initialize" do
         it "yields self if given a block" do
@@ -25,7 +27,6 @@ module Brainstem
         let(:lorem)  { "lorem ipsum dolor sit amet" }
         let(:const)  { Object.new }
         let(:config) { {} }
-        let(:options)   { { const: const } }
 
         subject { described_class.new(atlas, options) }
 
@@ -35,16 +36,58 @@ module Brainstem
             constant.to_s { "Namespaced::ClassName" }
             constant.possible_brainstem_keys { Set.new(%w(lorem ipsum)) }
           end
+
+          options[:const] = const
         end
 
         describe "#nodoc?" do
-          let(:config) { { nodoc: nodoc } }
+          let(:config) { { nodoc: nodoc, internal: internal } }
 
           context "when nodoc in default" do
             let(:nodoc) { true }
 
             it "is true" do
               expect(subject.nodoc?).to eq true
+            end
+          end
+
+          context "when internal flag is true" do
+            let(:internal_flag) { true }
+
+            context "when action config is internal" do
+              let(:internal) { true }
+
+              it "is false" do
+                expect(subject.nodoc?).to eq false
+              end
+            end
+
+            context "when action config is not internal" do
+              let(:internal) { false }
+
+              it "is false" do
+                expect(subject.nodoc?).to eq false
+              end
+            end
+          end
+
+          context "when internal flag is false" do
+            let(:internal_flag) { false }
+
+            context "when action config is internal" do
+              let(:internal) { true }
+
+              it "is true" do
+                expect(subject.nodoc?).to eq true
+              end
+            end
+
+            context "when action config is not internal" do
+              let(:internal) { false }
+
+              it "is false" do
+                expect(subject.nodoc?).to eq false
+              end
             end
           end
 
@@ -56,13 +99,53 @@ module Brainstem
         end
 
         describe "#title" do
-          let(:config) { { title: { info: lorem, nodoc: nodoc } } }
+          let(:config) { { title: { info: lorem, nodoc: nodoc, internal: internal } } }
 
           context "when nodoc" do
             let(:nodoc) { true }
 
             it "uses the last portion of the presenter's class" do
               expect(subject.title).to eq "ClassName"
+            end
+          end
+
+          context "when internal flag is true" do
+            let(:internal_flag) { true }
+
+            context "when title is internal" do
+              let(:internal) { true }
+
+              it "shows the title" do
+                expect(subject.title).to eq lorem
+              end
+            end
+
+            context "when title is not internal" do
+              let(:internal) { false }
+
+              it "shows the title" do
+                expect(subject.title).to eq lorem
+              end
+            end
+          end
+
+          context "when internal flag is false" do
+            let(:internal_flag) { false }
+
+            context "when title is internal" do
+              let(:internal) { true }
+
+              it "uses the last portion of the presenter's class" do
+                expect(subject.title).to eq "ClassName"
+              end
+            end
+
+            context "when title is not internal" do
+              let(:internal) { false }
+
+              it "shows the title" do
+                expect(subject.title).to eq lorem
+              end
             end
           end
 
@@ -81,7 +164,47 @@ module Brainstem
 
         describe "#description" do
           context "with description" do
-            let(:config) { { description: { info: lorem, nodoc: nodoc } } }
+            let(:config) { { description: { info: lorem, nodoc: nodoc, internal: internal } } }
+
+            context "when internal flag is true" do
+              let(:internal_flag) { true }
+
+              context "when description is internal" do
+                let(:internal) { true }
+
+                it "shows the description" do
+                  expect(subject.description).to eq lorem
+                end
+              end
+
+              context "when description is not internal" do
+                let(:internal) { false }
+
+                it "shows the description" do
+                  expect(subject.description).to eq lorem
+                end
+              end
+            end
+
+            context "when internal flag is false" do
+              let(:internal_flag) { false }
+
+              context "when description is internal" do
+                let(:internal) { true }
+
+                it "shows nothing" do
+                  expect(subject.description).to eq ""
+                end
+              end
+
+              context "when description is not internal" do
+                let(:internal) { false }
+
+                it "shows the description" do
+                  expect(subject.description).to eq lorem
+                end
+              end
+            end
 
             context "when nodoc" do
               let(:nodoc) { true }
@@ -112,13 +235,78 @@ module Brainstem
             end
           end
 
-          subject { described_class.new(atlas, target_class: 'Workspace', const: presenter_class) }
+          subject { described_class.new(atlas, options) }
 
           before do
             stub(atlas).find_by_class(anything) { nil }
+            options[:target_class] = 'Workspace'
+            options[:const] = presenter_class
           end
 
           describe "leafs" do
+            context "when internal flag is true" do
+              let(:internal_flag) { true }
+
+              context "when field is internal" do
+                before do
+                  presenter_class.fields do
+                    field :new_field, :string, dynamic: lambda { "new_field value" }, nodoc: false
+                    field :new_field2, :string, dynamic: lambda { "new_field2 value" }, internal: 'Only for internal docs'
+                    field :new_field3, :string, dynamic: lambda { "new_field3 value" }
+                  end
+                end
+
+                it "keeps the field" do
+                  expect(subject.valid_fields.keys).to match_array(%w(new_field new_field2 new_field3))
+                end
+              end
+
+              context "when field is not internal" do
+                before do
+                  presenter_class.fields do
+                    field :new_field, :string, dynamic: lambda { "new_field value" }, nodoc: false
+                    field :new_field2, :string, dynamic: lambda { "new_field2 value" }, internal: false
+                    field :new_field3, :string, dynamic: lambda { "new_field3 value" }
+                  end
+                end
+
+                it "keeps the field" do
+                  expect(subject.valid_fields.keys).to match_array(%w(new_field new_field2 new_field3))
+                end
+              end
+            end
+
+            context "when internal flag is false" do
+              let(:internal_flag) { false }
+
+              context "when field is internal" do
+                before do
+                  presenter_class.fields do
+                    field :new_field2, :string, dynamic: lambda { "new_field2 value" }, internal: true
+                    field :new_field3, :string, dynamic: lambda { "new_field3 value" }, internal: 'Only for internal docs'
+                  end
+                end
+
+                it "rejects the field" do
+                  expect(subject.valid_fields.count).to eq 0
+                end
+              end
+
+              context "when field is not internal" do
+                before do
+                  presenter_class.fields do
+                    field :new_field, :string, dynamic: lambda { "new_field value" }, nodoc: true
+                    field :new_field2, :string, dynamic: lambda { "new_field2 value" }, internal: false
+                    field :new_field3, :string, dynamic: lambda { "new_field3 value" }
+                  end
+                end
+
+                it "keeps the field" do
+                  expect(subject.valid_fields.keys).to match_array(%w(new_field2 new_field3))
+                end
+              end
+            end
+
             context "when nodoc" do
               before do
                 presenter_class.fields do
@@ -243,6 +431,7 @@ module Brainstem
                 field :mandatory_field, :string, dynamic: lambda { "new_field value" }
                 field :optional_top_field, :string, dynamic: lambda { "new_field value" }, optional: true
                 field :nodoc_optional_top_field, :string, dynamic: lambda { "new_field value" }, optional: true, nodoc: true
+                field :internal_optional_top_field, :string, dynamic: lambda { "new_field value" }, optional: true, internal: true
 
                 fields :optional_block_field, :hash, optional: true do
                   field :leaf_field_1, :string
@@ -256,6 +445,14 @@ module Brainstem
                   field :optional_field_nodoc_block_field, :string, optional: true
                 end
 
+                fields :internal_optional_block_field, :hash, internal: 'Only for internal docs', optional: true do
+                  field :optional_field_internal_block_field, :string, optional: true
+                end
+
+                fields :internal_block_field, :hash, internal: true do
+                  field :optional_field_internal_block_field, :string, optional: true
+                end
+
                 fields :block_field_with_optional_fields, :hash do
                   fields :optional_double_nested_field, :hash, optional: true do
                     field :leaf_field_3, :string
@@ -263,6 +460,8 @@ module Brainstem
 
                   fields :double_nested_field, :hash do
                     field :leaf_field_4, :string
+                    field :internal_optional_leaf_field, :string, internal: 'Only for internal docs', optional: true
+                    field :internal_leaf_field, :string, internal: true
                     field :optional_leaf_field, :string, optional: true
                     field :nodoc_optional_leaf_field, :string, optional: true, nodoc: true
                   end
@@ -271,25 +470,45 @@ module Brainstem
             end
           end
 
-          subject { described_class.new(atlas, target_class: 'Workspace', const: presenter_class).optional_field_names }
+          subject { described_class.new(atlas, options).optional_field_names }
 
           before do
             stub(atlas).find_by_class(anything) { nil }
+            options[:target_class] = 'Workspace'
+            options[:const] = presenter_class
           end
 
           it 'includes optional top level fields if nodoc is false' do
             expect(subject).to include('optional_top_field')
-            expect(subject).to_not include('nodoc_optional_top_field')
+            expect(subject).to_not include('nodoc_optional_top_field', 'internal_optional_top_field')
           end
 
           it 'includes optional block fields if nodoc is false' do
             expect(subject).to include('optional_block_field', 'optional_double_nested_field')
-            expect(subject).to_not include('nodoc_optional_block_field')
+            expect(subject).to_not include('nodoc_optional_block_field', 'internal_block_field')
           end
 
           it 'includes optional leaf fields of block fields if nodoc is false' do
             expect(subject).to include('optional_leaf_field')
-            expect(subject).to_not include('nodoc_optional_leaf_field', 'optional_field_nodoc_block_field')
+            expect(subject).to_not include('nodoc_optional_leaf_field', 'optional_field_nodoc_block_field', 'internal_leaf_field')
+          end
+
+          context "when internal flag is true" do
+            let(:internal_flag) { true }
+
+            it 'includes optional top level fields' do
+              expect(subject).to include('internal_optional_top_field')
+            end
+
+            it 'includes optional block fields' do
+              expect(subject).to include('internal_optional_block_field')
+              expect(subject).to_not include('internal_block_field')
+            end
+
+            it 'includes optional leaf fields of block fields' do
+              expect(subject).to include('internal_optional_leaf_field')
+              expect(subject).to_not include('internal_leaf_field')
+            end
           end
         end
 
@@ -320,8 +539,47 @@ module Brainstem
         end
 
         describe "#documentable_filter?" do
-          let(:info)   { lorem }
-          let(:filter) { { nodoc: nodoc, info: info } }
+          let(:info) { lorem }
+          let(:filter) { { nodoc: nodoc, info: info, internal: internal } }
+
+          context "when internal flag is true" do
+            let(:internal_flag) { true }
+
+            context "when field is internal" do
+              let(:internal) { true }
+
+              it "is true" do
+                expect(subject.documentable_filter?(:filter, filter)).to eq true
+              end
+            end
+
+            context "when field is not internal" do
+              let(:internal) { false }
+
+              it "is true" do
+                expect(subject.documentable_filter?(:filter, filter)).to eq true
+              end
+            end
+          end
+
+          context "when internal flag is false" do
+            let(:internal_flag) { false }
+
+            context "when field is internal" do
+              let(:internal) { true }
+
+              it "is false" do
+                expect(subject.documentable_filter?(:filter, filter)).to eq false
+              end
+            end
+
+            context "when field is not internal" do
+              let(:internal) { false }
+              it "is true" do
+                expect(subject.documentable_filter?(:filter, filter)).to eq true
+              end
+            end
+          end
 
           context "when nodoc" do
             let(:nodoc) { true }
@@ -361,11 +619,55 @@ module Brainstem
         end
 
         describe "#valid_sort_orders" do
-          let(:config) { { sort_orders: { title: { nodoc: true }, date: {} } } }
+          let(:config) { { sort_orders: { title: { nodoc: nodoc, internal: internal }, date: {} } } }
 
-          it "returns all pairs not marked nodoc" do
-            expect(subject.valid_sort_orders).to have_key(:date)
-            expect(subject.valid_sort_orders).not_to have_key(:title)
+          context 'nodoc is true' do
+            let(:nodoc) { true }
+
+            it "returns all pairs not marked nodoc" do
+              expect(subject.valid_sort_orders).to have_key(:date)
+              expect(subject.valid_sort_orders).not_to have_key(:title)
+            end
+          end
+
+          context "when internal flag is true" do
+            let(:internal_flag) { true }
+
+            context "when field is internal" do
+              let(:internal) { true }
+
+              it "returns all pairs marked internal" do
+                expect(subject.valid_sort_orders).to have_key(:title)
+              end
+            end
+
+            context "when field is not internal" do
+              let(:internal) { false }
+
+              it "returns all pairs not marked internal" do
+                expect(subject.valid_sort_orders).to have_key(:title)
+              end
+            end
+          end
+
+          context "when internal flag is false" do
+            let(:internal_flag) { false }
+
+            context "when field is internal" do
+              let(:internal) { true }
+
+              it "doesnt return all pairs not marked internal" do
+                expect(subject.valid_sort_orders).to_not have_key(:title)
+              end
+            end
+
+            context "when field is not internal" do
+              let(:internal) { false }
+
+              it "returns all pairs not marked internal" do
+                expect(subject.valid_sort_orders).to have_key(:title)
+              end
+            end
           end
         end
 
@@ -396,8 +698,48 @@ module Brainstem
         end
 
         describe "#documentable_association?" do
-          let(:desc)        { lorem }
-          let(:association) { OpenStruct.new(options: { nodoc: nodoc }, description: desc ) }
+          let(:desc) { lorem }
+          let(:association) { OpenStruct.new(options: { nodoc: nodoc, internal: internal }, description: desc) }
+
+          context "when internal flag is true" do
+            let(:internal_flag) { true }
+
+            context "when field is internal" do
+              let(:internal) { true }
+
+              it "is true" do
+                expect(subject.documentable_association?(:assoc, association)).to eq true
+              end
+            end
+
+            context "when field is not internal" do
+              let(:internal) { false }
+
+              it "is true" do
+                expect(subject.documentable_association?(:assoc, association)).to eq true
+              end
+            end
+          end
+
+          context "when internal flag is false" do
+            let(:internal_flag) { false }
+
+            context "when field is internal" do
+              let(:internal) { true }
+
+              it "is false" do
+                expect(subject.documentable_association?(:assoc, association)).to eq false
+              end
+            end
+
+            context "when field is not internal" do
+              let(:internal) { false }
+
+              it "is true" do
+                expect(subject.documentable_association?(:assoc, association)).to eq true
+              end
+            end
+          end
 
           context "when nodoc" do
             let(:nodoc) { true }
@@ -485,7 +827,7 @@ module Brainstem
         end
 
         describe "#contextual_documentation" do
-          let(:config) { { title: { info: info, nodoc: nodoc } } }
+          let(:config) { { title: { info: info, nodoc: nodoc, internal: internal } } }
           let(:info)   { lorem }
 
           context "when has the key" do
@@ -507,6 +849,46 @@ module Brainstem
 
                 it "is falsey" do
                   expect(subject.contextual_documentation(key)).to be_falsey
+                end
+              end
+            end
+
+            context "when internal flag is true" do
+              let(:internal_flag) { true }
+
+              context "when field is internal" do
+                let(:internal) { true }
+
+                it "is truthy" do
+                  expect(subject.contextual_documentation(key)).to be_truthy
+                end
+              end
+
+              context "when field is not internal" do
+                let(:internal) { false }
+
+                it "is truthy" do
+                  expect(subject.contextual_documentation(key)).to be_truthy
+                end
+              end
+            end
+
+            context "when internal flag is false" do
+              let(:internal_flag) { false }
+
+              context "when field is internal" do
+                let(:internal) { true }
+
+                it "is falsey" do
+                  expect(subject.contextual_documentation(key)).to be_falsey
+                end
+              end
+
+              context "when field is not internal" do
+                let(:internal) { false }
+
+                it "is truthy" do
+                  expect(subject.contextual_documentation(key)).to be_truthy
                 end
               end
             end
@@ -592,7 +974,7 @@ module Brainstem
             stub(presenter).nodoc? { nodoc }
           end
 
-          context "when nodoc" do
+          context "when nodoc? returns true" do
             let(:nodoc) { true }
 
             it "is nil" do
@@ -600,7 +982,7 @@ module Brainstem
             end
           end
 
-          context "when not nodoc" do
+          context "when nodoc? returns false" do
             it "is the path" do
               expect(subject.link_for_association(association)).to eq "./path"
             end

@@ -155,7 +155,7 @@ module Brainstem
                         type: :belongs_to
 
                       association :user, User,
-                        foreign_key: :user_id,
+                        response_key: :user_id,
                         type: :has_one
                     end
                   end
@@ -165,8 +165,8 @@ module Brainstem
 
                     expect(subject.definition).to have_key :properties
                     expect(subject.definition[:properties]).to eq({
-                      'task_id' => { 'type' => 'integer', 'format' => 'int32', 'description' => '`task_id` will only be included in the response if `task` is in the list of included associations.' },
-                      'user_id' => { 'type' => 'integer', 'format' => 'int32', 'description' => '`user_id` will only be included in the response if `user` is in the list of included associations.' }
+                      'task_id' => { 'type' => 'string', 'description' => "`task_id` will only be included in the response if `task` is in the list of included associations. See <a href='#section/Includes'>include</a> section for usage." },
+                      'user_id' => { 'type' => 'string', 'description' => "`user_id` will only be included in the response if `user` is in the list of included associations. See <a href='#section/Includes'>include</a> section for usage." }
                     })
                   end
                 end
@@ -186,10 +186,9 @@ module Brainstem
                     expect(subject.definition[:properties]).to eq({
                       'task_ids' => {
                         'type' => 'array',
-                        'description' => '`task_ids` will only be included in the response if `task` is in the list of included associations.',
+                        'description' => "`task_ids` will only be included in the response if `task` is in the list of included associations. See <a href='#section/Includes'>include</a> section for usage.",
                         'items' => {
-                          'type' => 'integer',
-                          'format' => 'int32'
+                          'type' => 'string'
                         },
                       },
                     })
@@ -210,7 +209,7 @@ module Brainstem
                     expect(subject.definition[:properties]).to eq({
                       'task_ref' => {
                         'type' => 'object',
-                        'description' => '`task_ref` will only be included in the response if `task` is in the list of included associations.',
+                        'description' => "`task_ref` will only be included in the response if `task` is in the list of included associations. See <a href='#section/Includes'>include</a> section for usage.",
                         'properties' => {
                           'id' => {
                             'type' => 'string'
@@ -244,7 +243,6 @@ module Brainstem
                         'sprockets' => {
                           'type' => 'object',
                           'properties' => {
-
                             'sprocket_name' => { 'type' => 'string', 'description' => 'Whatever.' }
                           }
                         }
@@ -500,6 +498,40 @@ module Brainstem
 
                   expect(subject.definition[:properties]).to be_nil
                 end
+              end
+            end
+
+            describe '#sort_properties!' do
+              let(:presenter_class) do
+                Class.new(Brainstem::Presenter) do
+                  presents Workspace
+                end
+              end
+              let(:presenter) { Presenter.new(Object.new, const: presenter_class, target_class: 'Workspace') }
+              let(:conditionals) { {} }
+
+              before do
+                stub(presenter).conditionals { conditionals }
+
+                presenter_class.associations do
+                  association :user, User,
+                    response_key: :user_id,
+                    type: :has_one
+
+                  association :task, Task,
+                    type: :belongs_to
+                end
+              end
+
+              it 'correctly sorts the properties' do
+                subject.send(:format_fields!)
+                subject.send(:sort_properties!)
+
+                expect(subject.definition).to have_key :properties
+                expect(subject.definition[:properties]).to eq({
+                  'task_id' => { 'type' => 'string', 'description' => "`task_id` will only be included in the response if `task` is in the list of included associations. See <a href='#section/Includes'>include</a> section for usage." },
+                  'user_id' => { 'type' => 'string', 'description' => "`user_id` will only be included in the response if `user` is in the list of included associations. See <a href='#section/Includes'>include</a> section for usage." }
+                })
               end
             end
           end

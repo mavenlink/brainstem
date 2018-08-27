@@ -31,6 +31,7 @@ module Brainstem
               format_description!
               format_type!
               format_fields!
+              sort_properties!
 
               output.merge!(presenter.target_class => definition.reject {|_, v| v.blank?})
             end
@@ -41,6 +42,14 @@ module Brainstem
 
             def format_title!
               definition.merge! title: presenter_title(presenter)
+            end
+
+            def sort_properties!
+              return if definition[:properties].blank?
+
+              definition[:properties] = definition[:properties].sort.each_with_object({}) do |(key, val), obj|
+                obj[key] = val
+              end
             end
 
             def format_description!
@@ -84,9 +93,9 @@ module Brainstem
                 key = association_key(association)
                 description = association_description(key, association.name)
                 formatted_type = if association.type == :has_many
-                  type_and_format(:array, :integer)
+                  type_and_format(:array, :string)
                 else
-                  type_and_format(:integer)
+                  type_and_format(:string)
                 end.merge(description: description)
 
                 props[key] = formatted_type unless props[key]
@@ -94,12 +103,13 @@ module Brainstem
             end
 
             def association_description(key, name)
-              "`#{key}` will only be included in the response if `#{name}` is in the list of included associations."
+              ["`#{key}` will only be included in the response if `#{name}` is in the list of included associations.",
+                "See <a href='#section/Includes'>include</a> section for usage."].join(' ')
             end
 
             def association_key(association)
-              if association.foreign_key
-                association.foreign_key
+              if association.response_key
+                association.response_key
               else
                 key = association.name.singularize
                 association.type == :has_many ? "#{key}_ids" : "#{key}_id"

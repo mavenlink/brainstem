@@ -5,13 +5,22 @@ module Brainstem
   module ApiDocs
     class ControllerCollection < AbstractCollection
 
+      attr_accessor :include_internal
+
+      def valid_options
+        super | [
+          :include_internal
+        ]
+      end
+
       #
       # Creates a new controller from a route object and appends it to the
       # collection.
       def create_from_route(route)
         Controller.new(atlas,
-          const:  route[:controller],
-          name:   route[:controller_name].split("/").last
+          const:            route[:controller],
+          name:             route[:controller_name].split("/").last,
+          include_internal: include_internal
         ).tap { |controller| self.<< controller }
       end
 

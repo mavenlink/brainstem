@@ -23,7 +23,8 @@ module Brainstem
           :controller,
           :controller_name,
           :action,
-          :presenter
+          :presenter,
+          :include_internal
         ]
       end
 
@@ -38,7 +39,8 @@ module Brainstem
                     :controller,
                     :controller_name,
                     :action,
-                    :atlas
+                    :atlas,
+                    :include_internal
 
       #
       # Pretty prints each endpoint.
@@ -94,7 +96,7 @@ module Brainstem
       # Is the entire endpoint undocumentable?
       #
       def nodoc?
-        action_configuration[:nodoc]
+        nodoc_for?(action_configuration)
       end
 
       def title
@@ -156,7 +158,8 @@ module Brainstem
             .with_indifferent_access
             .inject(ActiveSupport::HashWithIndifferentAccess.new) do |result, (field_name_proc, field_config)|
 
-            next result if field_config[:nodoc]
+            next result if nodoc_for?(field_config)
+            field_config = field_config.except(:nodoc, :internal)
 
             field_name = evaluate_field_name(field_name_proc)
             if field_config.has_key?(:ancestors)
@@ -199,7 +202,8 @@ module Brainstem
             .except(:_config)
             .inject(custom_config_tree) do |result, (field_name_proc, field_config)|
 
-            next result if field_config[:nodoc]
+            next result if nodoc_for?(field_config)
+            field_config = field_config.except(:nodoc, :internal)
 
             field_name = evaluate_field_name(field_name_proc)
             if field_config.has_key?(:ancestors)
@@ -243,7 +247,7 @@ module Brainstem
       #
       def declared_presented_class
         valid_presents.has_key?(:target_class) &&
-          !valid_presents[:nodoc] &&
+          !nodoc_for?(valid_presents) &&
           valid_presents[:target_class]
       end
 
@@ -281,7 +285,7 @@ module Brainstem
       #
       def contextual_documentation(key)
         action_configuration.has_key?(key) &&
-          !action_configuration[key][:nodoc] &&
+          !nodoc_for?(action_configuration[key]) &&
           action_configuration[key][:info]
       end
 
@@ -304,6 +308,12 @@ module Brainstem
 
           presenter_path.relative_path_from(controller_path).to_s
         end
+      end
+
+      private
+
+      def nodoc_for?(config)
+        !!(config[:nodoc] || (config[:internal] && !include_internal))
       end
     end
   end

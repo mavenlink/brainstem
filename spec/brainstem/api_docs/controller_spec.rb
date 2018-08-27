@@ -6,7 +6,8 @@ module Brainstem
     describe Controller do
       subject       { described_class.new(atlas, options) }
       let(:atlas)   { Object.new }
-      let(:options) { {} }
+      let(:options) { {include_internal: internal_flag} }
+      let(:internal_flag) { false }
 
       describe "#initialize" do
         it "yields self if given a block" do
@@ -31,9 +32,10 @@ module Brainstem
         let(:default_config) { {} }
         let(:show_config)    { {} }
         let(:nodoc)          { false }
-        let(:options)        { { const: const } }
+        let(:internal)       { false }
 
         before do
+          options[:const] = const
           stub(const) do |constant|
             constant.configuration { {
               :_default => default_config,
@@ -46,11 +48,51 @@ module Brainstem
 
         describe "configuration helpers" do
           describe "#contextual_documentation" do
-            let(:default_config) { { title: { info: info, nodoc: nodoc } } }
+            let(:default_config) { { title: { info: info, nodoc: nodoc, internal: internal } } }
             let(:info)           { lorem }
 
             context "when has the key" do
               let(:key) { :title }
+
+              context "when internal flag is true" do
+                let(:internal_flag) { true }
+
+                context "when contextual key is internal" do
+                  let(:internal) { true }
+
+                  it "is truthy" do
+                    expect(subject.contextual_documentation(key)).to be_truthy
+                  end
+                end
+
+                context "when contextual key is not internal" do
+                  let(:internal) { false }
+
+                  it "is truthy" do
+                    expect(subject.contextual_documentation(key)).to be_truthy
+                  end
+                end
+              end
+
+              context "when internal flag is false" do
+                let(:internal_flag) { false }
+
+                context "when contextual key is internal" do
+                  let(:internal) { true }
+
+                  it "is falsey" do
+                    expect(subject.contextual_documentation(key)).to be_falsey
+                  end
+                end
+
+                context "when contextual key is not internal" do
+                  let(:internal) { false }
+
+                  it "is truthy" do
+                    expect(subject.contextual_documentation(key)).to be_truthy
+                  end
+                end
+              end
 
               context "when not nodoc" do
                 context "when has info" do
@@ -141,7 +183,7 @@ module Brainstem
 
         describe "#title" do
           context "when present" do
-            let(:default_config) { { title: { info: lorem, nodoc: nodoc } } }
+            let(:default_config) { { title: { info: lorem, nodoc: nodoc, internal: internal } } }
 
             context "when nodoc" do
               let(:nodoc) { true }
@@ -156,6 +198,46 @@ module Brainstem
                 expect(subject.title).to eq lorem
               end
             end
+
+            context "when internal flag is true" do
+              let(:internal_flag) { true }
+
+              context "when title is internal" do
+                let(:internal) { true }
+
+                it "shows the title" do
+                  expect(subject.title).to eq lorem
+                end
+              end
+
+              context "when title is not internal" do
+                let(:internal) { false }
+
+                it "shows the title" do
+                  expect(subject.title).to eq lorem
+                end
+              end
+            end
+
+            context "when internal flag is false" do
+              let(:internal_flag) { false }
+
+              context "when title is internal" do
+                let(:internal) { true }
+
+                it "falls back to the controller class" do
+                  expect(subject.title).to eq "ClassName"
+                end
+              end
+
+              context "when title is not internal" do
+                let(:internal) { false }
+
+                it "shows the title" do
+                  expect(subject.title).to eq lorem
+                end
+              end
+            end
           end
 
           context "when absent" do
@@ -167,7 +249,7 @@ module Brainstem
 
         describe "#description" do
           context "when present" do
-            let(:default_config) { { description: { info: lorem, nodoc: nodoc } } }
+            let(:default_config) { { description: { info: lorem, nodoc: nodoc, internal: internal } } }
 
             context "when nodoc" do
               let(:nodoc) { true }
@@ -180,6 +262,46 @@ module Brainstem
             context "when documentable" do
               it "shows the description" do
                 expect(subject.description).to eq lorem
+              end
+            end
+
+            context "when internal flag is true" do
+              let(:internal_flag) { true }
+
+              context "when description is internal" do
+                let(:internal) { true }
+
+                it "shows the description" do
+                  expect(subject.description).to eq lorem
+                end
+              end
+
+              context "when description is not internal" do
+                let(:internal) { false }
+
+                it "shows the description" do
+                  expect(subject.description).to eq lorem
+                end
+              end
+            end
+
+            context "when internal flag is false" do
+              let(:internal_flag) { false }
+
+              context "when description is internal" do
+                let(:internal) { true }
+
+                it "shows nothing" do
+                  expect(subject.description).to eq ""
+                end
+              end
+
+              context "when description is not internal" do
+                let(:internal) { false }
+
+                it "shows the description" do
+                  expect(subject.description).to eq lorem
+                end
               end
             end
           end

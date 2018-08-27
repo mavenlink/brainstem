@@ -119,6 +119,14 @@ module Brainstem
           end
         end
 
+        context "when --include-internal" do
+          let(:args) { %w(--include-internal) }
+
+          it "sets the internal option in the args for atlas" do
+            expect(subject.options[:builder][:args_for_atlas][:include_internal]).to eq true
+          end
+        end
+
         context "when --oas-filename-pattern" do
           let(:args) { %w(--oas-filename-pattern=blah/{{version}}.{{extension}}) }
 

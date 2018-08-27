@@ -18,9 +18,9 @@ module Brainstem
       include Concerns::Optional
 
       def initialize(introspector, options = {})
-        self.endpoints          = EndpointCollection.new(self)
-        self.controllers        = ControllerCollection.new(self)
-        self.presenters         = ::Brainstem::ApiDocs::PresenterCollection.new(self)
+        self.endpoints          = EndpointCollection.new(self, options)
+        self.controllers        = ControllerCollection.new(self, options)
+        self.presenters         = ::Brainstem::ApiDocs::PresenterCollection.new(self, options)
         self.resolver           = Resolver.new(self)
 
         self.controller_matches = []
