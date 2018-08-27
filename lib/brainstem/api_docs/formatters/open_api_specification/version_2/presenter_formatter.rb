@@ -45,9 +45,11 @@ module Brainstem
             end
 
             def sort_properties!
+              return if definition[:properties].blank?
+
               definition[:properties] = definition[:properties].sort.each_with_object({}) do |(key, val), obj|
                 obj[key] = val
-              end if definition[:properties]
+              end
             end
 
             def format_description!
