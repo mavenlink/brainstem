@@ -64,22 +64,41 @@
     end
     ```
 
-    - Add support for dynamic key fields. When key is non static, use the new DSL for body params or response params.
+    - Add support for dynamic key fields. When key is non static, use the new DSL for response params.
       See example below for usage.
 
     ```ruby
-    class PetsPresenter < Brainstem::Presenter
+    class ContactsController < ApiController
       brainstem_params do
         actions :show do
           response :hash do |response_param|
             response_param.fields :attributes, :hash do |attributes|
               attributes.dynamic_key_field :string
+              attributes.field :some_ids, :array, dynamic: true
               attributes.field :name, :string, required: true
             end
 
             response_param.dynamic_key_field :hash do |dk|
               dk.dynamic_key_field :string
+              dk.field :other_ids, :array, dynamic: true
             end
+          end
+        end
+      end
+    end
+    ```
+
+    - Add support for dynamic key params. When key is non static, use the new DSL for request params.
+      See example below for usage.
+
+    ```ruby
+    class ContactsController < ApiController
+      brainstem_params do
+        actions :create do
+          valid :info, :hash, required: true do |param|
+            param.valid_dynamic_param :string, required: true
+
+            param.valid :some_ids, :array, dynamic: true
           end
         end
       end
