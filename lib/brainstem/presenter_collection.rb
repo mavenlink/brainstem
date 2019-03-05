@@ -99,7 +99,11 @@ module Brainstem
                                                                              load_associations_into: associated_models)
 
         struct[brainstem_key] = presented_primary_models.each.with_object({}) { |model, obj| obj[model['id']] = model }
-        struct['results'] = presented_primary_models.map { |model| { 'key' => brainstem_key, 'id' => model['id'] } }
+        struct['results'] = primary_models.map do |model|
+          { 'key' => brainstem_key,
+            'id' => model.id.to_s,
+            '_actions' => actions_for(model, options[:primary_presenter].class.merged_helper_class.new.current_user) }
+        end
 
         associated_models.each do |association_brainstem_key, associated_models_hash|
           presenter = for!(associated_models_hash.values.first.class)
@@ -116,6 +120,17 @@ module Brainstem
     # @return [Hash] The presenters this collection knows about, keyed on the names of the classes that can be presented.
     def presenters
       @presenters ||= {}
+    end
+
+    def actions_for(model, current_user)
+      {}.tap do |actions|
+        if model.updatable_by?(current_user)
+          actions['update'] = { href: "/api/v1/something/#{model.id}" }
+        end
+        if model.destroyable_by?(current_user)
+          actions['delete'] = { href: "/api/v1/something/#{model.id}" }
+        end
+      end
     end
 
     # @param [String, Class] presenter_class The presenter class that knows how to present all of the classes given in +klasses+.
