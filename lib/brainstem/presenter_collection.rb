@@ -102,7 +102,7 @@ module Brainstem
         struct['results'] = primary_models.map do |model|
           { 'key' => brainstem_key,
             'id' => model.id.to_s,
-            '_actions' => actions_for(model, options[:primary_presenter].class.merged_helper_class.new.current_user) }
+            '_actions' => actions_for(model, brainstem_key, options[:primary_presenter].class.merged_helper_class.new.current_user) }
         end
 
         associated_models.each do |association_brainstem_key, associated_models_hash|
@@ -122,13 +122,13 @@ module Brainstem
       @presenters ||= {}
     end
 
-    def actions_for(model, current_user)
+    def actions_for(model, key, current_user)
       {}.tap do |actions|
         if model.updatable_by?(current_user)
-          actions['update'] = { href: "/api/v1/something/#{model.id}" }
+          actions['update'] = { href: "/api/v1/#{key}/#{model.id}" }
         end
         if model.destroyable_by?(current_user)
-          actions['delete'] = { href: "/api/v1/something/#{model.id}" }
+          actions['delete'] = { href: "/api/v1/#{key}/#{model.id}" }
         end
       end
     end
