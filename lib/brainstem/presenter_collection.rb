@@ -125,10 +125,10 @@ module Brainstem
     def actions_for(model, key, current_user)
       {}.tap do |actions|
         if model.updatable_by?(current_user)
-          actions['update'] = { method: "put", href: "/api/v1/#{key}/#{model.id}" }
+          actions['update'] = { "method" => "put", "href" => "/api/v1/#{key}/#{model.id}" }
         end
         if model.destroyable_by?(current_user)
-          actions['delete'] = { method: "delete", href: "/api/v1/#{key}/#{model.id}" }
+          actions['delete'] = { "method" => "delete", "href" => "/api/v1/#{key}/#{model.id}" }
         end
       end
     end
