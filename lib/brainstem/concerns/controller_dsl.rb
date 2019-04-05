@@ -226,7 +226,7 @@ module Brainstem
         # @option options [Boolean] :required if the param is required for
         #   the endpoint
         # @option options [String, Symbol] :item_type The data type of the items contained in a field.
-        #   Ideally used when the data type of the field is an `array`, `object` or `hash`.
+        #   Only used when the data type of the field is an `array`.
         #
         def valid(name, type = nil, options = {}, &block)
           valid_params = configuration[brainstem_params_context][:valid_params]
@@ -252,7 +252,7 @@ module Brainstem
         # @option options [Boolean] :required if the param is required for
         #   the endpoint
         # @option options [String, Symbol] :item_type The data type of the items contained in a field.
-        #   Ideally used when the data type of the field is an `array`, `object` or `hash`.
+        #   Only used when the data type of the field is an `array`.
         #
         def valid_dynamic_param(type, options = {}, &block)
           valid(DYNAMIC_KEY, type, options, &block)
@@ -266,7 +266,7 @@ module Brainstem
         # @option options [String] :info the documentation for the param
         # @option options [Boolean] :nodoc should this block appear in the documentation?
         # @option options [String, Symbol] :item_type The data type of the items contained in a field.
-        #   Ideally used when the data type of the response is an `array`.
+        #   Only used when the data type of the response is an `array`.
         #
         def response(type, options = {}, &block)
           configuration[brainstem_params_context].nest! :custom_response
@@ -290,7 +290,7 @@ module Brainstem
         # @param [Hash] options
         # @option options [String] :info the documentation for the param
         # @option options [String, Symbol] :item_type The data type of the items contained in a field.
-        #   Ideally used when the data type of the response is an `array`.
+        #   Only used when the data type of the response is an `array`.
         #
         def fields(name, type, options = {}, &block)
           custom_response = configuration[brainstem_params_context][:custom_response]
@@ -310,7 +310,7 @@ module Brainstem
         # @param [Hash] options
         # @option options [String] :info the documentation for the param
         # @option options [String, Symbol] :item_type The data type of the items contained in a field.
-        #   Ideally used when the data type of the response is an `array`.
+        #   Only used when the data type of the response is an `array`.
         #
         def dynamic_key_fields(type, options = {}, &block)
           fields(DYNAMIC_KEY, type, options, &block)
@@ -324,7 +324,7 @@ module Brainstem
         # @param [Hash] options
         # @option options [String] :info the documentation for the param
         # @option options [String, Symbol] :item_type The data type of the items contained in a field.
-        #   Ideally used when the data type of the response is an `array`.
+        #   Only used when the data type of the response is an `array`.
         #
         def field(name, type, options = {})
           custom_response = configuration[brainstem_params_context][:custom_response]
@@ -341,7 +341,7 @@ module Brainstem
         # @param [Hash] options
         # @option options [String] :info the documentation for the param
         # @option options [String, Symbol] :item_type The data type of the items contained in a field.
-        #   Ideally used when the data type of the response is an `array`.
+        #   Only used when the data type of the response is an `array`.
         #
         def dynamic_key_field(type, options = {})
           field(DYNAMIC_KEY, type, options)
