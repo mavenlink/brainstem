@@ -144,5 +144,3 @@ end
 
 Brainstem::ApiDocs::FORMATTERS[:response_field][:oas_v2] =
   Brainstem::ApiDocs::Formatters::OpenApiSpecification::Version2::FieldDefinitions::ResponseFieldFormatter.method(:call)
-
-
