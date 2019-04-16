@@ -1,6 +1,6 @@
 # Changelog
 
-+ **2.1.0** - _09/10/2018_
++ **2.1.0** - _05/01/2019_
   ### New Features
     - Add the ability to mark properties as internal for Open API.
     ```ruby
@@ -64,46 +64,64 @@
     end
     ```
 
-    - Add support for dynamic key fields. When key is non static, use the new DSL for response params.
+    - Add support for non-static key fields in responses. When key is non-static, use the new DSL for response params.
       See example below for usage.
 
-    ```ruby
-    class ContactsController < ApiController
-      brainstem_params do
-        actions :show do
-          response :hash do |response_param|
-            response_param.fields :attributes, :hash do |attributes|
-              attributes.dynamic_key_field :string
-              attributes.field :some_ids, :array, dynamic: true
-              attributes.field :name, :string, required: true
-            end
+       ```ruby
+        {
+            :attributes => {
+                :"#{name}_field" => 'world',
+                :"#{name}_ids" => [1, 2, 3],
+                :name => name
+            },
+            :"#{model.class_name}_klass" => {
+                :"#{model.class_name}_identifier" => model.identifier,
+                :"#{model.association_name}_ids" => [1, 2, 3]
+            }
+        }
+       ```
 
-            response_param.dynamic_key_field :hash do |dk|
-              dk.dynamic_key_field :string
-              dk.field :other_ids, :array, dynamic: true
+       A response with non-static key fields written above can be described as follows:
+
+       ```ruby
+       class ContactsController < ApiController
+         brainstem_params do
+           actions :show do
+             response :hash do |response_param|
+               response_param.fields :attributes, :hash do |attributes|
+                 attributes.dynamic_key_field :string
+                 attributes.field :some_ids, :array, dynamic: true
+                  attributes.field :name, :string, required: true
+               end
+
+               response_param.dynamic_key_field :hash do |dk|
+                 dk.dynamic_key_field :string
+                 dk.field :other_ids, :array, dynamic: true
+               end
+             end
+           end
+         end
+       end
+       ```
+
+    - Add support for non-static key params. When key is non-static, use the new DSL for request params.
+      See example below for usage.
+
+      A param with non-static keys like `{ contact.id => 10, :"#{contact.friends_association_name}_ids" => [1, 2, 3] }`
+      can be described as follows:
+
+      ```ruby
+      class ContactsController < ApiController
+        brainstem_params do
+          actions :create do
+            valid :info, :hash, required: true do |param|
+              param.valid_dynamic_param :integer, required: true
+              param.valid :some_ids, :array, dynamic: true
             end
           end
         end
       end
-    end
-    ```
-
-    - Add support for dynamic key params. When key is non static, use the new DSL for request params.
-      See example below for usage.
-
-    ```ruby
-    class ContactsController < ApiController
-      brainstem_params do
-        actions :create do
-          valid :info, :hash, required: true do |param|
-            param.valid_dynamic_param :string, required: true
-
-            param.valid :some_ids, :array, dynamic: true
-          end
-        end
-      end
-    end
-    ```
+      ```
 
     - Sort orders now default to directions `asc` and `desc`.
       When direction is passed as false, no sort order is generated for the docs.
@@ -124,6 +142,9 @@
   ### Bugfixes
     - Nested required fields will now no longer bubble up the required to its parent. A deeply nested field that is 
     required will now only be required on its direct parent.
+    - Required fields for a create / update (POST / PUT) request are explicitly called out in the OAS specification
+    - Default top-level query params like `only `, `order `, `page`, `per_page`, `include` & `optional` are not
+    displayed when the endpoint is not returning brainstem models.
 
 + **2.0.0** - _05/17/2018_
   - Introduce the capability to document custom response on endpoints
