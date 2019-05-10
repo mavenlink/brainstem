@@ -1,6 +1,6 @@
 # Changelog
 
-+ **2.1.0** - _05/01/2019_
++ **2.1.0** - _05/10/2019_
   ### New Features
     - Add the ability to mark properties as internal for Open API.
     ```ruby
