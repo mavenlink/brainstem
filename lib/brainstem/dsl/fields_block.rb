@@ -15,7 +15,7 @@ module Brainstem
 
         private
 
-        NON_INHERITABLE_FIELD_OPTIONS = [:dynamic, :via, :lookup, :lookup_fetch, :info, :type, :item_type]
+        NON_INHERITABLE_FIELD_OPTIONS = [:dynamic, :via, :lookup, :lookup_fetch, :info, :type, :item_type, :nested_levels, :dynamic_key]
         private_constant :NON_INHERITABLE_FIELD_OPTIONS
 
         def merge_parent_options(block_options, parent_options)

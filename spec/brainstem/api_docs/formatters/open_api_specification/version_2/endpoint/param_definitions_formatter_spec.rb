@@ -34,38 +34,86 @@ module Brainstem
               end
 
               describe '#call' do
-                context 'when request type is get' do
-                  let(:http_methods)  { %w(GET) }
+                context 'when an endpoint presents a brainstem object' do
+                  context 'when request type is get' do
+                    let(:http_methods)  { %w(GET) }
 
-                  context 'when action is index' do
-                    let(:action) { 'index' }
+                    context 'when action is index' do
+                      let(:action) { 'index' }
 
-                    it 'formats path, shared, query and body params for the endpoint' do
+                      it 'formats path, shared, query and body params for the endpoint' do
+                        any_instance_of(described_class) do |instance|
+                          mock(instance).format_path_params!
+                          mock(instance).format_optional_params!
+                          mock(instance).format_include_params!
+                          mock(instance).format_query_params!
+                          mock(instance).format_body_params!
+                          mock(instance).format_pagination_params!
+                          mock(instance).format_search_param!
+                          mock(instance).format_only_param!
+                          mock(instance).format_sort_order_params!
+                          mock(instance).format_filter_params!
+                        end
+
+                        subject.call
+                      end
+                    end
+
+                    context 'when action is show' do
+                      let(:action) { 'show' }
+
+                      it 'formats path, optional, query and body params for the endpoint' do
+                        any_instance_of(described_class) do |instance|
+                          mock(instance).format_path_params!
+                          mock(instance).format_optional_params!
+                          mock(instance).format_include_params!
+                          mock(instance).format_query_params!
+                          mock(instance).format_body_params!
+
+                          dont_allow(instance).format_pagination_params!
+                          dont_allow(instance).format_search_param!
+                          dont_allow(instance).format_only_param!
+                          dont_allow(instance).format_sort_order_params!
+                          dont_allow(instance).format_filter_params!
+                        end
+
+                        subject.call
+                      end
+                    end
+                  end
+
+                  context 'when request type is `delete`' do
+                    let(:http_methods) { %w(DELETE) }
+                    let(:action)       { 'destroy' }
+
+                    it 'formats path, query and body param for the endpoint' do
                       any_instance_of(described_class) do |instance|
                         mock(instance).format_path_params!
-                        mock(instance).format_optional_params!
-                        mock(instance).format_include_params!
                         mock(instance).format_query_params!
                         mock(instance).format_body_params!
-                        mock(instance).format_pagination_params!
-                        mock(instance).format_search_param!
-                        mock(instance).format_only_param!
-                        mock(instance).format_sort_order_params!
-                        mock(instance).format_filter_params!
+
+                        dont_allow(instance).format_pagination_params!
+                        dont_allow(instance).format_search_param!
+                        dont_allow(instance).format_only_param!
+                        dont_allow(instance).format_sort_order_params!
+                        dont_allow(instance).format_optional_params!
+                        dont_allow(instance).format_include_params!
+                        dont_allow(instance).format_filter_params!
                       end
 
                       subject.call
                     end
                   end
 
-                  context 'when action is show' do
-                    let(:action) { 'show' }
+                  context 'when request type is not delete' do
+                    let(:http_methods) { %w(PATCH) }
+                    let(:action)       { 'update' }
 
-                    it 'formats path, optional, query and body params for the endpoint' do
+                    it 'formats path, query and body param for the endpoint' do
                       any_instance_of(described_class) do |instance|
-                        mock(instance).format_path_params!
                         mock(instance).format_optional_params!
                         mock(instance).format_include_params!
+                        mock(instance).format_path_params!
                         mock(instance).format_query_params!
                         mock(instance).format_body_params!
 
@@ -81,9 +129,8 @@ module Brainstem
                   end
                 end
 
-                context 'when request type is `delete`' do
-                  let(:http_methods) { %w(DELETE) }
-                  let(:action)       { 'destroy' }
+                context 'when an endpoint does not present a brainstem object' do
+                  let(:presenter) { nil }
 
                   it 'formats path, query and body param for the endpoint' do
                     any_instance_of(described_class) do |instance|
@@ -97,29 +144,6 @@ module Brainstem
                       dont_allow(instance).format_sort_order_params!
                       dont_allow(instance).format_optional_params!
                       dont_allow(instance).format_include_params!
-                      dont_allow(instance).format_filter_params!
-                    end
-
-                    subject.call
-                  end
-                end
-
-                context 'when request type is not delete' do
-                  let(:http_methods) { %w(PATCH) }
-                  let(:action)       { 'update' }
-
-                  it 'formats path, query and body param for the endpoint' do
-                    any_instance_of(described_class) do |instance|
-                      mock(instance).format_optional_params!
-                      mock(instance).format_include_params!
-                      mock(instance).format_path_params!
-                      mock(instance).format_query_params!
-                      mock(instance).format_body_params!
-
-                      dont_allow(instance).format_pagination_params!
-                      dont_allow(instance).format_search_param!
-                      dont_allow(instance).format_only_param!
-                      dont_allow(instance).format_sort_order_params!
                       dont_allow(instance).format_filter_params!
                     end
 
@@ -239,7 +263,7 @@ module Brainstem
                         'in'          => 'query',
                         'name'        => 'sprocket_ids',
                         'type'        => 'array',
-                        'items'       => { 'type' => 'integer' }
+                        'items'       => { 'type' => 'integer', 'format' => 'int32' }
                       },
                       {
                         'in'          => 'query',
@@ -274,7 +298,7 @@ module Brainstem
                           type: 'hash',
                           info: 'attributes for the task  '
                         },
-                        name: {
+                        title: {
                           _config: {
                             type: 'string',
                             required: true,
@@ -286,7 +310,7 @@ module Brainstem
                             type: 'hash',
                             info: 'sub tasks of the task'
                           },
-                          name: {
+                          title: {
                             _config: {
                               type: 'string',
                               required: true
@@ -300,7 +324,15 @@ module Brainstem
                           },
                           name: {
                             _config: {
-                              type: 'string'
+                              type: 'string',
+                              required: true,
+                            }
+                          },
+                          _dynamic_key: {
+                            _config: {
+                              type: 'boolean',
+                              info: 'something',
+                              dynamic_key: true,
                             }
                           },
                         },
@@ -324,6 +356,7 @@ module Brainstem
                         },
                         id: {
                           _config: {
+                            required: true,
                             type: 'integer',
                             info: 'ID of the assignee'
                           }
@@ -333,6 +366,15 @@ module Brainstem
                             type: 'boolean',
                             info: 'activates the assignment'
                           }
+                        }
+                      },
+                      _dynamic_key: {
+                        _config: {
+                          required: true,
+                          type: 'array',
+                          item_type: 'integer',
+                          info: 'IDs of assignees',
+                          dynamic_key: true,
                         }
                       }
                     }.with_indifferent_access
@@ -353,38 +395,38 @@ module Brainstem
                         'schema'      => {
                           'type'       => 'object',
                           'properties' => {
-
                             'task' => {
-                              'title'       => 'task',
-                              'type'        => 'object',
                               'description' => 'Attributes for the task.',
+                              'required'    => ['title'],
+                              'type'        => 'object',
                               'properties'  => {
-                                'name' => {
-                                  'title'       => 'name',
+                                'title' => {
                                   'description' => 'Name of the task.',
                                   'type'        => 'string'
                                 },
                                 'subs' => {
-                                  'title'       => 'subs',
                                   'description' => 'Sub tasks of the task.',
+                                  'required'    => ['title'],
                                   'type'        => 'object',
                                   'properties'  => {
-                                    'name' => {
-                                      'title'    => 'name',
-                                      'type'     => 'string'
+                                    'title' => {
+                                      'type' => 'string'
                                     }
                                   }
                                 },
                                 'checklist' => {
-                                  'title'  => 'checklist',
                                   'type'   => 'array',
                                   'items'  => {
                                     'type'       => 'object',
+                                    'required'   => ['name'],
                                     'properties' => {
                                       'name' => {
-                                        'title'    => 'name',
-                                        'type'     => 'string'
+                                        'type' => 'string',
                                       }
+                                    },
+                                    'additionalProperties' => {
+                                      'type' => 'boolean',
+                                      'description' => 'Something.',
                                     }
                                   }
                                 }
@@ -392,12 +434,10 @@ module Brainstem
                             },
 
                             'creator' => {
-                              'title'       => 'creator',
                               'type'        => 'object',
                               'description' => 'Attributes for the creator.',
                               'properties'  => {
                                 'id' => {
-                                  'title'       => 'id',
                                   'description' => 'ID of the creator.',
                                   'type'        => 'integer',
                                   'format'      => 'int32'
@@ -406,25 +446,31 @@ module Brainstem
                             },
 
                             'assignees' => {
-                              'title'       => 'assignees',
                               'type'        => 'array',
                               'description' => 'Attributes for the assignees.',
                               'items'       => {
                                 'type'        => 'object',
+                                'required'    => ['id'],
                                 'properties'  => {
                                   'id' => {
-                                    'title'       => 'id',
                                     'description' => 'ID of the assignee.',
                                     'type'        => 'integer',
                                     'format'      => 'int32'
                                   },
                                   'active' => {
-                                    'title'       => 'active',
                                     'description' => 'Activates the assignment.',
                                     'type'        => 'boolean'
                                   },
                                 }
                               }
+                            },
+                          },
+                          'additionalProperties' => {
+                            'type' => 'array',
+                            'description' => 'IDs of assignees.',
+                            'items' => {
+                              'type' => 'integer',
+                              'format' => 'int32',
                             }
                           }
                         },
@@ -595,8 +641,8 @@ module Brainstem
                     mock(presenter).default_sort_order { 'title:asc' }
                     mock(presenter).valid_sort_orders {
                       {
-                        'title'         => { info: 'Order by title aphabetically' },
-                        'sprocket_name' => { info: 'Order by sprocket name aphabetically' },
+                        'title'         => { info: 'Order by title alphabetically', direction: true },
+                        'sprocket_name' => { info: 'Order by sprocket name alphabetically', direction: false },
                       }
                     }
                   end
@@ -611,7 +657,7 @@ module Brainstem
                         'type'        => 'string',
                         'default'     => 'title:asc',
                         'description' => "Supply `order` with the name of a valid sort field for the endpoint and a direction.\n\n" +
-                                         "Valid values: `sprocket_name:asc`, `sprocket_name:desc`, `title:asc`, and `title:desc`."
+                                         "Valid values: `sprocket_name`, `title:asc`, and `title:desc`."
                       }
                     ])
                   end

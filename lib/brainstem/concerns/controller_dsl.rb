@@ -8,6 +8,7 @@ module Brainstem
       include Brainstem::Concerns::InheritableConfiguration
 
       DEFAULT_BRAINSTEM_PARAMS_CONTEXT = :_default
+      DYNAMIC_KEY = :_dynamic_key
 
       included do
         reset_configuration!
@@ -64,8 +65,18 @@ module Brainstem
         # whereas setting it within an action context will force that action to
         # be undocumented.
         #
-        def nodoc!
-          configuration[brainstem_params_context][:nodoc] = true
+        def nodoc!(description = true)
+          configuration[brainstem_params_context][:nodoc] = description
+        end
+
+        #
+        # Specifies that the scope should not be documented unless the `--include-internal`
+        # flag is passed in the CLI. Setting this on the default context
+        # will force the controller to be undocumented, whereas setting it
+        # within an action context will force that action to be undocumented.
+        #
+        def internal!(description = true)
+          configuration[brainstem_params_context][:internal] = description
         end
 
         #
@@ -77,11 +88,15 @@ module Brainstem
         # Setting the +:nodoc+ option marks this presenter as 'internal use only',
         # and causes formatters to display this as not indicated.
         #
+        # Setting the +:internal+ option marks this presenter as 'internal use only',
+        # and causes formatters to not display this unless documentation is generated with
+        # `--include-internal` flag.
+        #
         # @param [Class] target_class the target class of the presenter (i.e the model it presents)
         # @param [Hash] options options to record with the presenter
         # @option options [Boolean] :nodoc whether this presenter should not be output in the documentation.
         #
-        def presents(target_class = :default, options = { nodoc: false })
+        def presents(target_class = :default, options = { nodoc: false, internal: false })
           raise "`presents` must be a class (in #{self.to_s})" \
             unless target_class.is_a?(Class) || target_class == :default || target_class.nil?
 
@@ -99,11 +114,18 @@ module Brainstem
         # controller or action as nondocumentable, instead, use the
         # +.nodoc!+ method in the desired context without a block.
         #
+        # Setting the +:internal+ option marks this title as 'internal use only',
+        # and causes formatters to fall back to the controller constant or to
+        # the action name as appropriate unless documentation is generated with
+        # `--include-internal` flag. If you are trying to set the entire
+        # controller or action as nondocumentable unless internal, instead,
+        # use the +.internal!+ method in the desired context without a block.
+        #
         # @param [String] text The title to set
         # @param [Hash] options options to record with the title
         # @option options [Boolean] :nodoc whether this title should not be output in the documentation.
         #
-        def title(text, options = { nodoc: false })
+        def title(text, options = { nodoc: false, internal: false })
           configuration[brainstem_params_context][:title] = options.merge(info: text)
         end
 
@@ -114,11 +136,15 @@ module Brainstem
         # Setting the +:nodoc+ option marks this description as 'internal use
         # only', and causes formatters not to display a description.
         #
+        # Setting the +:internal+ option marks this description as 'internal use
+        # only', and causes formatters not to display a description unless documentation
+        # is generated with `--include-internal` flag.
+        #
         # @param [String] text The description to set
         # @param [Hash] options options to record with the description
         # @option options [Boolean] :nodoc whether this description should not be output in the documentation.
         #
-        def description(text, options = { nodoc: false })
+        def description(text, options = { nodoc: false, internal: false })
           configuration[brainstem_params_context][:description] = options.merge(info: text)
         end
 
@@ -189,7 +215,7 @@ module Brainstem
         # Adds a param to the list of valid params, storing
         # the info sent with it.
         #
-        # @param [Symbol] field_name the name of the param
+        # @param [Symbol] name the name of the param
         # @param [String, Symbol] type the data type of the field. If not specified, will default to `string`.
         # @param [Hash] options
         # @option options [String] :info the documentation for the param
@@ -200,16 +226,36 @@ module Brainstem
         # @option options [Boolean] :required if the param is required for
         #   the endpoint
         # @option options [String, Symbol] :item_type The data type of the items contained in a field.
-        #   Ideally used when the data type of the field is an `array`, `object` or `hash`.
+        #   Only used when the data type of the field is an `array`.
         #
         def valid(name, type = nil, options = {}, &block)
           valid_params = configuration[brainstem_params_context][:valid_params]
-          param_config = format_field_configuration(valid_params, type, options, &block)
+          param_config = format_field_configuration(valid_params, name, type, options, &block)
 
           formatted_name = convert_to_proc(name)
           valid_params[formatted_name] = param_config
 
           with_options(format_ancestry_options(formatted_name, param_config), &block) if block_given?
+        end
+
+        #
+        # Adds a param that has a dynamic key to the list of valid params, storing
+        # the info sent with it.
+        #
+        # @param [String, Symbol] type the data type of the field. If not specified, will default to `string`.
+        # @param [Hash] options
+        # @option options [String] :info the documentation for the param
+        # @option options [String, Symbol] :root if this is a nested param,
+        #   under which param should it be nested?
+        # @option options [Boolean] :nodoc should this param appear in the
+        #   documentation?
+        # @option options [Boolean] :required if the param is required for
+        #   the endpoint
+        # @option options [String, Symbol] :item_type The data type of the items contained in a field.
+        #   Only used when the data type of the field is an `array`.
+        #
+        def valid_dynamic_param(type, options = {}, &block)
+          valid(DYNAMIC_KEY, type, options, &block)
         end
 
         #
@@ -220,7 +266,7 @@ module Brainstem
         # @option options [String] :info the documentation for the param
         # @option options [Boolean] :nodoc should this block appear in the documentation?
         # @option options [String, Symbol] :item_type The data type of the items contained in a field.
-        #   Ideally used when the data type of the response is an `array`.
+        #   Only used when the data type of the response is an `array`.
         #
         def response(type, options = {}, &block)
           configuration[brainstem_params_context].nest! :custom_response
@@ -228,6 +274,7 @@ module Brainstem
 
           custom_response[:_config] = format_field_configuration(
             custom_response,
+            nil,
             type,
             options,
             &block
@@ -243,17 +290,30 @@ module Brainstem
         # @param [Hash] options
         # @option options [String] :info the documentation for the param
         # @option options [String, Symbol] :item_type The data type of the items contained in a field.
-        #   Ideally used when the data type of the response is an `array`.
+        #   Only used when the data type of the response is an `array`.
         #
         def fields(name, type, options = {}, &block)
           custom_response = configuration[brainstem_params_context][:custom_response]
           raise "`fields` must be nested under a response block" if custom_response.nil?
 
           formatted_name = convert_to_proc(name)
-          field_block_config = format_field_configuration(custom_response, type, options, &block)
+          field_block_config = format_field_configuration(custom_response, name, type, options, &block)
 
           custom_response[formatted_name] = field_block_config
           with_options(format_ancestry_options(formatted_name, field_block_config), &block)
+        end
+
+        #
+        # Allows defining a field block with a dynamic key for a custom response
+        #
+        # @param [Symbol] type the data type of the response.
+        # @param [Hash] options
+        # @option options [String] :info the documentation for the param
+        # @option options [String, Symbol] :item_type The data type of the items contained in a field.
+        #   Only used when the data type of the response is an `array`.
+        #
+        def dynamic_key_fields(type, options = {}, &block)
+          fields(DYNAMIC_KEY, type, options, &block)
         end
 
         #
@@ -264,14 +324,27 @@ module Brainstem
         # @param [Hash] options
         # @option options [String] :info the documentation for the param
         # @option options [String, Symbol] :item_type The data type of the items contained in a field.
-        #   Ideally used when the data type of the response is an `array`.
+        #   Only used when the data type of the response is an `array`.
         #
         def field(name, type, options = {})
           custom_response = configuration[brainstem_params_context][:custom_response]
           raise "`fields` must be nested under a response block" if custom_response.nil?
 
           formatted_name = convert_to_proc(name)
-          custom_response[formatted_name] = format_field_configuration(custom_response, type, options)
+          custom_response[formatted_name] = format_field_configuration(custom_response, name, type, options)
+        end
+
+        #
+        # Allows defining a field with a dynamic key either under a field block or the custom response block.
+        #
+        # @param [Symbol] type the data type of the response.
+        # @param [Hash] options
+        # @option options [String] :info the documentation for the param
+        # @option options [String, Symbol] :item_type The data type of the items contained in a field.
+        #   Only used when the data type of the response is an `array`.
+        #
+        def dynamic_key_field(type, options = {})
+          field(DYNAMIC_KEY, type, options)
         end
 
         ####################################################
@@ -459,10 +532,12 @@ module Brainstem
         #
         # Formats the configuration of the param and returns the default configuration if not specified.
         #
-        def format_field_configuration(configuration_map, type, options = {}, &block)
+        def format_field_configuration(configuration_map, name, type, options = {}, &block)
           field_config = options.with_indifferent_access
 
           field_config[:type] = type.to_s
+          field_config[:dynamic_key] = true if name.present? && name.to_sym == DYNAMIC_KEY
+
           if options.has_key?(:item_type)
             field_config[:item_type] = field_config[:item_type].to_s
           elsif field_config[:type] == 'array'
@@ -475,12 +550,7 @@ module Brainstem
             field_config[:nodoc] ||= !!parent_field_config[:nodoc]
           end
 
-          # Rollup `required` attribute to ancestors if true
-          if field_config[:required]
-            (field_config[:ancestors] || []).reverse.each do |ancestor_key|
-              configuration_map[ancestor_key][:required] = true if configuration_map.has_key?(ancestor_key)
-            end
-          end
+          field_config.delete(:nested_levels) if field_config[:nested_levels].to_i < 2
 
           DEFAULT_FIELD_CONFIG.merge(field_config).with_indifferent_access
         end

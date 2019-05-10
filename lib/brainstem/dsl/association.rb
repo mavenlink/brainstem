@@ -17,6 +17,18 @@ module Brainstem
         options[:info].presence
       end
 
+      def response_key
+        options[:response_key]
+      end
+
+      def polymorphic_classes
+        options[:polymorphic_classes]
+      end
+
+      def type
+        options[:type]
+      end
+
       def method_name
         if options[:dynamic] || options[:lookup]
           nil

@@ -1,6 +1,7 @@
 require 'active_support/core_ext/string/inflections'
 require 'brainstem/api_docs/formatters/abstract_formatter'
 require 'brainstem/api_docs/formatters/open_api_specification/helper'
+require 'brainstem/api_docs/formatters/open_api_specification/version_2/field_definitions/presenter_field_formatter'
 
 module Brainstem
   module ApiDocs
@@ -30,6 +31,7 @@ module Brainstem
               format_description!
               format_type!
               format_fields!
+              sort_properties!
 
               output.merge!(presenter.target_class => definition.reject {|_, v| v.blank?})
             end
@@ -42,8 +44,16 @@ module Brainstem
               definition.merge! title: presenter_title(presenter)
             end
 
+            def sort_properties!
+              return if definition[:properties].blank?
+
+              definition[:properties] = definition[:properties].sort.each_with_object({}) do |(key, val), obj|
+                obj[key] = val
+              end
+            end
+
             def format_description!
-              definition.merge! description: format_description(presenter.description)
+              definition.merge! description: format_sentence(presenter.description)
             end
 
             def format_type!
@@ -51,75 +61,63 @@ module Brainstem
             end
 
             def format_fields!
-              return unless presenter.valid_fields.any?
+              return unless presenter.valid_fields.any? || presenter.valid_associations.any?
 
-              definition.merge! properties: format_field_branch(presenter.valid_fields)
+              properties = format_field_branch(presenter.valid_fields)
+              with_associations = format_field_associations(properties)
+
+              definition.merge! properties: with_associations
             end
 
             def format_field_branch(branch)
-              branch.inject(ActiveSupport::HashWithIndifferentAccess.new) do |buffer, (name, field)|
-                if nested_field?(field)
-                  buffer[name.to_s] = case field.type
-                    when 'hash'
-                      {
-                        type: 'object',
-                        properties: format_field_branch(field.to_h)
-                      }.with_indifferent_access
-                    when 'array'
-                      {
-                        type: 'array',
-                        items: {
-                          type: 'object',
-                          properties: format_field_branch(field.to_h)
-                        }
-                      }.with_indifferent_access
-                    else
-                      raise "Unknown Brainstem Field type encountered(#{field.type}) for field #{name}"
-                  end
-                else
-                  buffer[name.to_s] = format_field_leaf(field)
+              branch.each_with_object(ActiveSupport::HashWithIndifferentAccess.new) do |(name, field), buffer|
+                buffer[name.to_s] = format_field(field)
+              end
+            end
+
+            def format_field_associations(properties)
+              presenter.valid_associations.each_with_object(properties) do |(name, association), props|
+                if association.polymorphic?
+                  key = association.name + "_ref"
+                  props[key] = {
+                    type: 'object',
+                    description: association_description(key, name),
+                    properties: {
+                      key: type_and_format(:string),
+                      id: type_and_format(:string)
+                    }
+                  }
+                  next
                 end
 
-                buffer
+                key = association_key(association)
+                description = association_description(key, association.name)
+                formatted_type = if association.type == :has_many
+                  type_and_format(:array, :string)
+                else
+                  type_and_format(:string)
+                end.merge(description: description)
+
+                props[key] = formatted_type unless props[key]
               end
             end
 
-            def nested_field?(field)
-              field.respond_to?(:configuration)
+            def association_description(key, name)
+              ["`#{key}` will only be included in the response if `#{name}` is in the list of included associations.",
+                "See <a href='#section/Includes'>include</a> section for usage."].join(' ')
             end
 
-            def format_field_leaf(field)
-              field_data = type_and_format(field.type, field.options[:item_type])
-
-              unless field_data
-                raise "Unknown Brainstem Field type encountered(#{field.type}) for field #{field.name}"
+            def association_key(association)
+              if association.response_key
+                association.response_key
+              else
+                key = association.name.singularize
+                association.type == :has_many ? "#{key}_ids" : "#{key}_id"
               end
-
-              field_data.merge!(description: format_description_for(field))
-              field_data.delete(:description) if field_data[:description].blank?
-
-              field_data
             end
 
-            def format_description_for(field)
-              field_description = format_description(field.description) || ''
-              field_description << format_conditional_description(field.options)
-              field_description << "\nOnly returned when requested through the optional_fields param.\n" if field.optional?
-              field_description.try(:chomp!)
-              field_description
-            end
-
-            def format_conditional_description(field_options)
-              return '' if field_options[:if].blank?
-
-              conditions = field_options[:if]
-                .reject { |cond| presenter.conditionals[cond].options[:nodoc] }
-                .map    { |cond| uncapitalize(presenter.conditionals[cond].description) }
-                .delete_if(&:empty?)
-                .uniq
-                .to_sentence
-
-              conditions.present? ? "\nVisible when #{conditions}.\n" : ''
+            def format_field(field)
+              Brainstem::ApiDocs::FORMATTERS[:presenter_field][:oas_v2].call(presenter, field)
             end
           end
         end

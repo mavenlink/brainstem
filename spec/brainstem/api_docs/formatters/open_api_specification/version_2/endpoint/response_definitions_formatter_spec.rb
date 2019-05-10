@@ -114,6 +114,7 @@ module Brainstem
                   before do
                     stub(presenter).brainstem_keys { ['widgets'] }
                     stub(presenter).target_class { 'Widget' }
+                    stub(presenter).valid_associations { {} }
                   end
 
                   it 'returns the structured response for an endpoint' do
@@ -153,6 +154,172 @@ module Brainstem
                         }
                       }
                     })
+                  end
+
+                  context 'when there are valid associations' do
+                    let(:task_stubbed_presenter) { Object.new }
+                    let(:user_stubbed_presenter) { Object.new }
+                    let(:nodoc) { false }
+
+                    before do
+                      stub(task_stubbed_presenter).nodoc? { nodoc }
+                      stub(task_stubbed_presenter).brainstem_keys { ['tasks'] }
+                      stub(user_stubbed_presenter).nodoc? { nodoc }
+                      stub(user_stubbed_presenter).brainstem_keys { ['users'] }
+                      stub(presenter).find_by_class(Task) { task_stubbed_presenter }
+                      stub(presenter).find_by_class(User) { user_stubbed_presenter }
+                    end
+
+                    context 'when association is pointing to a nodoc class' do
+                      let(:nodoc) { true }
+
+                      it 'does not generate references for the association' do
+                        subject.send(:format_schema_response!)
+
+                        expect(subject.output).to eq('200' => {
+                          'description' => 'A list of Widgets have been retrieved.',
+                          'schema' => {
+                            'type' => 'object',
+                            'properties' => {
+                              'count' => { 'type' => 'integer', 'format' => 'int32' },
+                              'meta' => {
+                                'type' => 'object',
+                                'properties' => {
+                                  'count' => { 'type' => 'integer', 'format' => 'int32' },
+                                  'page_count' => { 'type' => 'integer', 'format' => 'int32' },
+                                  'page_number' => { 'type' => 'integer', 'format' => 'int32' },
+                                  'page_size' => { 'type' => 'integer', 'format' => 'int32' },
+                                }
+                              },
+                              'results' => {
+                                'type' => 'array',
+                                'items' => {
+                                  'type' => 'object',
+                                  'properties' => {
+                                    'key' => { 'type' => 'string' },
+                                    'id' => { 'type' => 'string' }
+                                  }
+                                }
+                              },
+                              'widgets' => {
+                                'type' => 'object',
+                                'additionalProperties' => {
+                                  '$ref' => '#/definitions/Widget'
+                                }
+                              }
+                            }
+                          }
+                        })
+                      end
+                    end
+
+                    context 'when the association is polymorphic' do
+                      before do
+                        stub(presenter).valid_associations { { 'tasks' => ::Brainstem::DSL::Association.new('polymorphic', :polymorphic, polymorphic_classes: [Task, User]) } }
+                      end
+
+                      it 'returns the appropriate associations with their additional properties' do
+                        subject.send(:format_schema_response!)
+
+                        expect(subject.output).to eq('200' => {
+                          'description' => 'A list of Widgets have been retrieved.',
+                          'schema' => {
+                            'type' => 'object',
+                            'properties' => {
+                              'count' => { 'type' => 'integer', 'format' => 'int32' },
+                              'meta' => {
+                                'type' => 'object',
+                                'properties' => {
+                                  'count' => { 'type' => 'integer', 'format' => 'int32' },
+                                  'page_count' => { 'type' => 'integer', 'format' => 'int32' },
+                                  'page_number' => { 'type' => 'integer', 'format' => 'int32' },
+                                  'page_size' => { 'type' => 'integer', 'format' => 'int32' },
+                                }
+                              },
+                              'results' => {
+                                'type' => 'array',
+                                'items' => {
+                                  'type' => 'object',
+                                  'properties' => {
+                                    'key' => { 'type' => 'string' },
+                                    'id' => { 'type' => 'string' }
+                                  }
+                                }
+                              },
+                              'widgets' => {
+                                'type' => 'object',
+                                'additionalProperties' => {
+                                  '$ref' => '#/definitions/Widget'
+                                }
+                              },
+                              'tasks' => {
+                                'type' => 'object',
+                                'additionalProperties' => {
+                                  '$ref' => '#/definitions/Task'
+                                }
+                              },
+                              'users' => {
+                                'type' => 'object',
+                                'additionalProperties' => {
+                                  '$ref' => '#/definitions/User'
+                                }
+                              }
+                            }
+                          }
+                        })
+                      end
+                    end
+
+                    context 'when the association is not polymorphic' do
+                      before do
+                        stub(presenter).valid_associations { { 'tasks' => ::Brainstem::DSL::Association.new('Task', Task, {}) } }
+                      end
+
+                      it 'returns the appropriate association with its additional properties' do
+                        subject.send(:format_schema_response!)
+
+                        expect(subject.output).to eq('200' => {
+                          'description' => 'A list of Widgets have been retrieved.',
+                          'schema' => {
+                            'type' => 'object',
+                            'properties' => {
+                              'count' => { 'type' => 'integer', 'format' => 'int32' },
+                              'meta' => {
+                                'type' => 'object',
+                                'properties' => {
+                                  'count' => { 'type' => 'integer', 'format' => 'int32' },
+                                  'page_count' => { 'type' => 'integer', 'format' => 'int32' },
+                                  'page_number' => { 'type' => 'integer', 'format' => 'int32' },
+                                  'page_size' => { 'type' => 'integer', 'format' => 'int32' },
+                                }
+                              },
+                              'results' => {
+                                'type' => 'array',
+                                'items' => {
+                                  'type' => 'object',
+                                  'properties' => {
+                                    'key' => { 'type' => 'string' },
+                                    'id' => { 'type' => 'string' }
+                                  }
+                                }
+                              },
+                              'widgets' => {
+                                'type' => 'object',
+                                'additionalProperties' => {
+                                  '$ref' => '#/definitions/Widget'
+                                }
+                              },
+                              'tasks' => {
+                                'type' => 'object',
+                                'additionalProperties' => {
+                                  '$ref' => '#/definitions/Task'
+                                }
+                              }
+                            }
+                          }
+                        })
+                      end
+                    end
                   end
                 end
 
@@ -197,7 +364,25 @@ module Brainstem
                                 'info' => 'Can edit the widget.',
                                 'nodoc' => false
                               },
-                            }
+                            },
+                            '_dynamic_key' => {
+                              '_config' => {
+                                'type' => 'array',
+                                'item_type' => 'integer',
+                                'info' => 'Viewable Widget Ids.',
+                                'nodoc' => false,
+                                'dynamic_key' => true
+                              },
+                            },
+                          },
+                          '_dynamic_key' => {
+                            '_config' => {
+                              'type' => 'array',
+                              'item_type' => 'integer',
+                              'info' => 'Association Ids.',
+                              'nodoc' => false,
+                              'dynamic_key' => true
+                            },
                           },
                         }.with_indifferent_access
                       }
@@ -223,49 +408,93 @@ module Brainstem
                                   'type' => 'boolean',
                                   'description' => 'Can edit the widget.'
                                 }
-                              }
+                              },
+                              'additionalProperties' => {
+                                'type' => 'array',
+                                'description' => 'Viewable Widget Ids.',
+                                'items' => {
+                                  'type' => 'integer',
+                                  'format' => 'int32',
+                                }
+                              },
                             }
-                          }
+                          },
+                          'additionalProperties' => {
+                            'type' => 'array',
+                            'description' => 'Association Ids.',
+                            'items' => {
+                              'type' => 'integer',
+                              'format' => 'int32',
+                            }
+                          },
                         }
                       })
                     end
                   end
 
                   context 'when the response is an array' do
-                    before do
-                      stub(endpoint).custom_response_configuration_tree {
-                        {
-                          '_config' => {
-                            'type' => 'array',
-                            'item_type' => 'hash',
-                          },
-                          'widget_name' => {
+                    context 'when array of string / number' do
+                      before do
+                        stub(endpoint).custom_response_configuration_tree {
+                          {
                             '_config' => {
-                              'type' => 'string',
-                              'info' => 'The name of the widget.',
-                              'nodoc' => false
+                              'type' => 'array',
+                              'item_type' => 'string',
                             },
-                          },
-                          'widget_permissions' => {
+                          }.with_indifferent_access
+                        }
+                      end
+
+                      it 'returns the response structure' do
+                        subject.send(:format_custom_response!)
+
+                        expect(subject.output).to eq('200' => {
+                          'description' => 'A list of Widgets have been retrieved.',
+                          'schema' => {
+                            'type' => 'array',
+                            'items' => {
+                              'type' => 'string',
+                            }
+                          }
+                        })
+                      end
+                    end
+
+                    context 'when array of hashes' do
+                      before do
+                        stub(endpoint).custom_response_configuration_tree {
+                          {
                             '_config' => {
                               'type' => 'array',
                               'item_type' => 'hash',
-                              'info' => 'The permissions of the widget.',
-                              'nodoc' => false
                             },
-                            'can_edit' => {
+                            'widget_name' => {
                               '_config' => {
-                                'type' => 'boolean',
-                                'info' => 'Can edit the widget.',
+                                'type' => 'string',
+                                'info' => 'The name of the widget.',
                                 'nodoc' => false
                               },
-                            }
-                          },
-                        }.with_indifferent_access
-                      }
-                    end
+                            },
+                            'widget_permissions' => {
+                              '_config' => {
+                                'type' => 'array',
+                                'item_type' => 'hash',
+                                'info' => 'The permissions of the widget.',
+                                'nodoc' => false
+                              },
+                              'can_edit' => {
+                                '_config' => {
+                                  'type' => 'boolean',
+                                  'info' => 'Can edit the widget.',
+                                  'nodoc' => false
+                                },
+                              }
+                            },
+                          }.with_indifferent_access
+                        }
+                      end
 
-                    it 'returns the response structure' do
+                      it 'returns the response structure' do
                       subject.send(:format_custom_response!)
 
                       expect(subject.output).to eq('200' => {
@@ -296,16 +525,158 @@ module Brainstem
                           }
                         }
                       })
+                      end
                     end
                   end
 
-                  context 'when the response is not a hash or array' do
+                  context 'when the response is multi nested array' do
+                    before do
+                      stub(endpoint).custom_response_configuration_tree { response_config_tree }
+                    end
+
+                    # response :array, nested_level: 2, item_type: [:hash, :string, :integer] do
+                    #   nested.field :a, :string
+                    #   nested.field :b, :integer
+                    # end
+                    
+                    # response :array, nested_level: 2, item_type: :hash do
+                    #   nested.field :a, :string
+                    #   nested.field :a, :integer
+                    # end
+                    # 
+                    # [
+                    #   [
+                    #     { widget_name: 'Widget A', can_edit: false },
+                    #     { widget_name: 'Widget B', can_edit: true },
+                    #   ]
+                    # ]
+                    context 'when the leaf array is an array of objects' do
+                      let(:response_config_tree) do
+                        {
+                          '_config' => {
+                            'type' => 'array',
+                            'nested_levels' => 2,
+                            'item_type' => 'hash',
+                          },
+                          'widget_name' => {
+                            '_config' => {
+                              'type' => 'string',
+                              'info' => 'The name of the widget.',
+                              'nodoc' => false
+                            },
+                          },
+                          'widget_permissions' => {
+                            '_config' => {
+                              'type' => 'array',
+                              'item_type' => 'hash',
+                              'info' => 'The permissions of the widget.',
+                              'nodoc' => false
+                            },
+                            'can_edit' => {
+                              '_config' => {
+                                'type' => 'array',
+                                'nested_levels' => 3,
+                                'item_type' => 'boolean',
+                                'nodoc' => false
+                              },
+                            }
+                          },
+                        }.with_indifferent_access
+                      end
+
+                      it 'returns the response structure' do
+                        subject.send(:format_custom_response!)
+
+                        expect(subject.output).to eq('200' => {
+                          'description' => 'A list of Widgets have been retrieved.',
+                          'schema' => {
+                            'type' => 'array',
+                            'items' => {
+                              'type' => 'array',
+                              'items' => {
+                                'type' => 'object',
+                                'properties' => {
+                                  'widget_name' => {
+                                    'type' => 'string',
+                                    'description' => 'The name of the widget.'
+                                  },
+                                  'widget_permissions' => {
+                                    'type' => 'array',
+                                    'description' => 'The permissions of the widget.',
+                                    'items' => {
+                                      'type' => 'object',
+                                      'properties' => {
+                                        'can_edit' => {
+                                          'type' => 'array',
+                                          'items' => {
+                                            'type' => 'array',
+                                            'items' => {
+                                              'type' => 'array',
+                                              'items' => {
+                                                'type' => 'boolean'
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        })
+                      end
+                    end
+
+                    # response :array, nested_level: 3, item_type: :string
+                    # 
+                    # [
+                    #   [
+                    #     [1,3,4,5],
+                    #     [6,7,8,9],
+                    #   ]
+                    # ]
+                    context 'when the leaf array is an array of strings' do
+                      let(:response_config_tree) do
+                        {
+                          '_config' => {
+                            'type' => 'array',
+                            'nested_levels' => 3,
+                            'item_type' => 'string',
+                          },
+                        }.with_indifferent_access
+                      end
+
+                      it 'returns the response structure' do
+                        subject.send(:format_custom_response!)
+
+                        expect(subject.output).to eq('200' => {
+                          'description' => 'A list of Widgets have been retrieved.',
+                          'schema' => {
+                            'type' => 'array',
+                            'items' => {
+                              'type' => 'array',
+                              'items' => {
+                                'type' => 'array',
+                                'items' => {
+                                  'type' => 'string',
+                                }
+                              }
+                            }
+                          }
+                        })
+                      end
+                    end
+                  end
+
+                  context 'when the response is not a hash or an array' do
                     before do
                       stub(endpoint).custom_response_configuration_tree {
                         {
                           '_config' => {
-                            'type' => 'boolean',
-                            'info' => 'whether the widget exists',
+                            'type' => 'integer',
+                            'info' => 'Indicates the number of widgets',
                             'nodoc' => false
                           },
                         }.with_indifferent_access
@@ -318,8 +689,9 @@ module Brainstem
                       expect(subject.output).to eq('200' => {
                         'description' => 'A list of Widgets have been retrieved.',
                         'schema' => {
-                          'type' => 'boolean',
-                          'description' => 'Whether the widget exists.'
+                          'type' => 'integer',
+                          'format' => 'int32',
+                          'description' => 'Indicates the number of widgets.'
                         }
                       })
                     end

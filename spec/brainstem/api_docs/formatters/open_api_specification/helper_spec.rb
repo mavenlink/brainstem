@@ -54,12 +54,12 @@ module Brainstem
             end
           end
 
-          describe "format_description" do
+          describe "format_sentence" do
             context "when description is given" do
               let(:description) { "  lorem ipsum dolor sit amet  " }
 
               it "returns the formatted description" do
-                expect(subject.format_description(description)).to eq("Lorem ipsum dolor sit amet.")
+                expect(subject.format_sentence(description)).to eq("Lorem ipsum dolor sit amet.")
               end
             end
 
@@ -67,7 +67,7 @@ module Brainstem
               let(:description) { "" }
 
               it "returns nil" do
-                expect(subject.format_description(description)).to eq('')
+                expect(subject.format_sentence(description)).to eq('')
               end
             end
           end
@@ -191,8 +191,19 @@ module Brainstem
                 it "returns type as `array` and given item type" do
                   expect(subject.send(:type_and_format, 'array', 'integer')).to eq({
                     'type' => 'array',
-                    'items' => { 'type' => 'integer' }
+                    'items' => { 'type' => 'integer', 'format' => 'int32' }
                   })
+                end
+              end
+            end
+
+            context "when dealing with delimited strings" do
+              it 'returns string as type and the collection format' do
+                %w(csv ssv tsv pipes).each do |delimited_string_type|
+                  expect(subject.type_and_format(delimited_string_type)).to eq(
+                    'type' => 'string',
+                    'collectionFormat' => delimited_string_type,
+                  )
                 end
               end
             end

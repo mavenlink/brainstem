@@ -109,7 +109,7 @@ module Brainstem
             def format_tag_data(controller)
               {
                 name:        tag_name(controller),
-                description: format_description(controller.description),
+                description: format_sentence(controller.description),
               }.reject { |_, v| v.blank? }
             end
           end

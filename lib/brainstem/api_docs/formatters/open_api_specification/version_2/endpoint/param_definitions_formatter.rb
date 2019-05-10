@@ -3,6 +3,7 @@ require 'active_support/core_ext/hash/compact'
 require 'active_support/inflector'
 require 'brainstem/api_docs/formatters/abstract_formatter'
 require 'brainstem/api_docs/formatters/open_api_specification/helper'
+require 'brainstem/api_docs/formatters/open_api_specification/version_2/field_definitions/endpoint_param_formatter'
 require 'brainstem/api_docs/formatters/markdown/helper'
 
 #
@@ -30,17 +31,19 @@ module Brainstem
               def call
                 format_path_params!
 
-                if endpoint.action == 'index'
-                  format_pagination_params!
-                  format_search_param!
-                  format_only_param!
-                  format_sort_order_params!
-                  format_filter_params!
-                end
+                if presenter
+                  if endpoint.action == 'index'
+                    format_pagination_params!
+                    format_search_param!
+                    format_only_param!
+                    format_sort_order_params!
+                    format_filter_params!
+                  end
 
-                if http_method != 'delete'
-                  format_optional_params!
-                  format_include_params!
+                  if http_method != 'delete'
+                    format_optional_params!
+                    format_include_params!
+                  end
                 end
 
                 format_query_params!
@@ -104,8 +107,12 @@ module Brainstem
               def format_sort_order_params!
                 return if presenter.nil? || (valid_sort_orders = presenter.valid_sort_orders).empty?
 
-                sort_orders = valid_sort_orders.map { |sort_name, _|
-                  [md_inline_code("#{sort_name}:asc"), md_inline_code("#{sort_name}:desc")]
+                sort_orders = valid_sort_orders.map { |sort_name, sort_config|
+                  if sort_config[:direction]
+                    [md_inline_code("#{sort_name}:asc"), md_inline_code("#{sort_name}:desc")]
+                  else
+                    md_inline_code(sort_name)
+                  end
                 }.flatten.sort
 
                 description = <<-DESC.strip_heredoc
@@ -160,7 +167,7 @@ module Brainstem
                   text = md_inline_code(association.name)
                   text += " (#{ association.target_class.to_s })"
 
-                  desc = format_description(association.description)
+                  desc = format_sentence(association.description)
                   if association.options && association.options[:restrict_to_only]
                     desc += "  Restricted to queries using the #{md_inline_code("only")} parameter."
                   end
@@ -208,13 +215,15 @@ module Brainstem
                   'in'          => 'query',
                   'name'        => param_name.to_s,
                   'required'    => param_config[:required],
-                  'description' => format_description(param_config[:info]).presence,
+                  'description' => format_sentence(param_config[:info]).presence,
                 }.merge(type_data).compact
               end
 
               def format_body_params!
-                formatted_body_params = format_body_params
-                return if formatted_body_params.blank?
+                properties, additional_properties = split_properties(endpoint.params_configuration_tree)
+                formatted_body_params = format_field_properties(properties)
+                formatted_dynamic_key_params = format_field_properties(additional_properties)
+                return if formatted_body_params.blank? && formatted_dynamic_key_params.blank?
 
                 output << {
                   'in'          => 'body',
@@ -222,82 +231,45 @@ module Brainstem
                   'name'        => 'body',
                   'schema'      => {
                     'type'       => 'object',
-                    'properties' => formatted_body_params
-                  },
+                    'properties' => formatted_body_params,
+                    'additionalProperties' => formatted_dynamic_key_params,
+                  }.with_indifferent_access.reject { |_, v| v.blank? },
                 }
               end
 
-              def format_body_params
-                ActiveSupport::HashWithIndifferentAccess.new.tap do |body_params|
-                  endpoint.params_configuration_tree.each do |param_name, param_config|
-                    next if nested_properties(param_config).blank?
+              def split_properties(field_properties)
+                split_properties = field_properties.each_with_object({ properties: {}, additional_properties: {} }) do |(field_name, field_config), acc|
+                  if field_config[:_config][:dynamic_key]
+                    acc[:additional_properties][field_name] = field_config
+                  else
+                    acc[:properties][field_name] = field_config
+                  end
+                end
 
-                    body_params[param_name] = format_parent_param(param_name, param_config)
+                [split_properties[:properties], split_properties[:additional_properties]]
+              end
+
+              def format_field_properties(branches)
+                branches.inject(ActiveSupport::HashWithIndifferentAccess.new) do |buffer, (field_name, field_config)|
+                  if dynamic_key_field?(field_config)
+                    formatted_field('Dynamic Key Field', field_config)
+                  else
+                    buffer[field_name.to_s] = formatted_field(field_name, field_config) if nested_properties(field_config).present?
+                    buffer
                   end
                 end
               end
 
-              def format_parent_param(param_name, param_data)
-                param_config = param_data[:_config]
-                result = case param_config[:type]
-                  when 'hash'
-                    {
-                      type:        'object',
-                      title:       param_name.to_s,
-                      description: format_description(param_config[:info]),
-                      properties:  format_param_branch(nested_properties(param_data))
-                    }
-                  when 'array'
-                    {
-                      type:        'array',
-                      title:       param_name.to_s,
-                      description: format_description(param_config[:info]),
-                      items: {
-                        type: 'object',
-                        properties: format_param_branch(nested_properties(param_data))
-                      }
-                    }
-                  else
-                    raise "Unknown Brainstem body param encountered(#{param_config[:type]}) for field #{param_name}"
-                end
-
-                result.with_indifferent_access.reject { |_, v| v.blank? }
+              def dynamic_key_field?(param_config)
+                param_config[:_config][:dynamic_key].presence
               end
 
-              def format_param_branch(branch)
-                branch.inject(ActiveSupport::HashWithIndifferentAccess.new) do |buffer, (param_name, param_data)|
-                  nested_properties = nested_properties(param_data)
-                  param_config = param_data[:_config]
-
-                  branch_schema = if nested_properties.present?
-                    case param_config[:type].to_s
-                      when 'hash'
-                        { type: 'object', properties: format_param_branch(nested_properties) }
-                      when 'array'
-                        {
-                          type: 'array',
-                          items: { type: 'object', properties: format_param_branch(nested_properties) }
-                        }
-                      else
-                        raise "Unknown Brainstem Param type encountered(#{param_config[:type]}) for param #{param_name}"
-                    end
-                  else
-                    param_data = type_and_format(param_config[:type].to_s, param_config[:item_type])
-
-                    if param_data.blank?
-                      raise "Unknown Brainstem Param type encountered(#{param_config[:type]}) for param #{param_name}"
-                    end
-
-                    param_data
-                  end
-
-                  buffer[param_name.to_s] = {
-                    title:       param_name.to_s,
-                    description: format_description(param_config[:info])
-                  }.merge(branch_schema).reject { |_, v| v.blank? }
-
-                  buffer
-                end
+              def formatted_field(param_name, param_data)
+                Brainstem::ApiDocs::FORMATTERS[:endpoint_param][:oas_v2].call(
+                  endpoint,
+                  param_name,
+                  param_data
+                )
               end
             end
           end

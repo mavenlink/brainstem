@@ -125,12 +125,26 @@ describe Brainstem::Concerns::PresenterDSL do
   end
 
   describe 'the nodoc! method' do
-    before do
-      presenter_class.nodoc!
+    it "is stored in the configuration" do
+      presenter_class.nodoc! "Description for why these are nodoc"
+      expect(presenter_class.configuration[:nodoc]).to eq "Description for why these are nodoc"
     end
 
-    it "is stored in the configuration" do
+    it "is defaults to true" do
+      presenter_class.nodoc!
       expect(presenter_class.configuration[:nodoc]).to be true
+    end
+  end
+
+  describe 'the internal! method' do
+    it "is stored in the configuration" do
+      presenter_class.internal! "Description for why these are internal docs"
+      expect(presenter_class.configuration[:internal]).to eq "Description for why these are internal docs"
+    end
+
+    it "is defaults to true" do
+      presenter_class.internal!
+      expect(presenter_class.configuration[:internal]).to be true
     end
   end
 
@@ -170,6 +184,24 @@ describe Brainstem::Concerns::PresenterDSL do
 
       it "stores the documentation" do
         expect(orders[:created_at][:info]).to eq "sorts by creation time"
+      end
+    end
+
+    context "when setting the direction" do
+      it "sets the direction to true by default" do
+        presenter_class.sort_order :created_at, value, info: "sorts by creation time"
+
+        expect(orders[:created_at][:direction]).to be_truthy
+      end
+
+      context "when direction is given" do
+        it "respects the given direction value" do
+          presenter_class.sort_order :created_at, value, info: "sorts by creation time", direction: false
+          presenter_class.sort_order :updated_at, value, info: "sorts by creation time", direction: true
+
+          expect(orders[:created_at][:direction]).to be_falsey
+          expect(orders[:updated_at][:direction]).to be_truthy
+        end
       end
     end
   end

@@ -39,16 +39,20 @@ module Brainstem
           AssociationsBlock.new(configuration, &block)
         end
 
-        def title(str, options = { nodoc: false })
+        def title(str, options = { nodoc: false, internal: false })
           configuration[:title] = options.merge(info: str)
         end
 
-        def description(str, options = { nodoc: false })
+        def description(str, options = { nodoc: false, internal: false })
           configuration[:description] = options.merge(info: str)
         end
 
-        def nodoc!
-          configuration[:nodoc] = true
+        def nodoc!(description = true)
+          configuration[:nodoc] = description
+        end
+
+        def internal!(description = true)
+          configuration[:internal] = description
         end
 
         #
@@ -93,6 +97,8 @@ module Brainstem
         #   @option options [String] :info Docstring for the sort order
         #   @option options [Boolean] :nodoc Whether this sort order be
         #     included in the generated documentation
+        #   @option options [Boolean] :direction Whether this sort order
+        #     has direction based ordering (asc/desc). Defaults to true
         #
         # @overload sort_order(name, options, &block)
         #   @yieldparam scope [ActiveRecord::Relation] The scope representing
@@ -107,10 +113,12 @@ module Brainstem
         # @raise [ArgumentError] if neither an order string or block is given.
         #
         def sort_order(name, *args, &block)
-          valid_options = %w(info nodoc)
-          options       = args.extract_options!
-                            .select { |k, v| valid_options.include?(k.to_s) }
-          order         = args.first
+          valid_options       = %w(info nodoc internal direction)
+          options             = args.extract_options!
+                                  .select { |k, v| valid_options.include?(k.to_s) }
+                                  .with_indifferent_access
+          options[:direction] = true unless options.has_key?(:direction)
+          order               = args.first
 
           raise ArgumentError, "A sort order must be given" unless block_given? || order
           configuration[:sort_orders][name] = options.merge({

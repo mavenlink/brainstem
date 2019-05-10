@@ -30,9 +30,10 @@ module Brainstem
 
             describe '#call' do
               before do
-                stub(presenter).format_title!  { title }
-                stub(presenter).format_fields! { fake_formatted_fields }
-                stub(presenter).valid_fields   { valid_fields }
+                stub(presenter).format_title!      { title }
+                stub(presenter).format_fields!     { fake_formatted_fields }
+                stub(presenter).valid_fields       { valid_fields }
+                stub(presenter).valid_associations { {} }
               end
 
               context 'when nodoc' do
@@ -146,6 +147,83 @@ module Brainstem
                 stub(presenter).conditionals { conditionals }
               end
 
+              context 'with associations present' do
+                context 'when association type is belongs_to or has_one' do
+                  before do
+                    presenter_class.associations do
+                      association :task, Task,
+                        type: :belongs_to
+
+                      association :user, User,
+                        response_key: :user_id,
+                        type: :has_one
+                    end
+                  end
+
+                  it 'outputs the foreign key in single formatted id' do
+                    subject.send(:format_fields!)
+
+                    expect(subject.definition).to have_key :properties
+                    expect(subject.definition[:properties]).to eq({
+                      'task_id' => { 'type' => 'string', 'description' => "`task_id` will only be included in the response if `task` is in the list of included associations. See <a href='#section/Includes'>include</a> section for usage." },
+                      'user_id' => { 'type' => 'string', 'description' => "`user_id` will only be included in the response if `user` is in the list of included associations. See <a href='#section/Includes'>include</a> section for usage." }
+                    })
+                  end
+                end
+
+                context 'when association type is has_many' do
+                  before do
+                    presenter_class.associations do
+                      association :task, Task,
+                        type: :has_many
+                    end
+                  end
+
+                  it 'outputs the foreign key in plural formatted id' do
+                    subject.send(:format_fields!)
+
+                    expect(subject.definition).to have_key :properties
+                    expect(subject.definition[:properties]).to eq({
+                      'task_ids' => {
+                        'type' => 'array',
+                        'description' => "`task_ids` will only be included in the response if `task` is in the list of included associations. See <a href='#section/Includes'>include</a> section for usage.",
+                        'items' => {
+                          'type' => 'string'
+                        },
+                      },
+                    })
+                  end
+                end
+
+                context 'when association is polymorphic' do
+                  before do
+                    presenter_class.associations do
+                      association :task, :polymorphic, polymorphic_classes: [User, Task]
+                    end
+                  end
+
+                  it 'outputs an object that contains an id and key' do
+                    subject.send(:format_fields!)
+
+                    expect(subject.definition).to have_key :properties
+                    expect(subject.definition[:properties]).to eq({
+                      'task_ref' => {
+                        'type' => 'object',
+                        'description' => "`task_ref` will only be included in the response if `task` is in the list of included associations. See <a href='#section/Includes'>include</a> section for usage.",
+                        'properties' => {
+                          'id' => {
+                            'type' => 'string'
+                          },
+                          'key' => {
+                            'type' => 'string'
+                          }
+                        }
+                      }
+                    })
+                  end
+                end
+              end
+
               context 'with fields present' do
                 describe 'branch node' do
                   context 'with single branch' do
@@ -165,7 +243,6 @@ module Brainstem
                         'sprockets' => {
                           'type' => 'object',
                           'properties' => {
-
                             'sprocket_name' => { 'type' => 'string', 'description' => 'Whatever.' }
                           }
                         }
@@ -225,6 +302,7 @@ module Brainstem
                         expect(subject.definition[:properties]).to eq({
                           'sprockets' => {
                             'type' => 'array',
+                            'description' => 'Parent.',
                             'items' => {
                               'type' => 'object',
                               'properties' => {
@@ -420,6 +498,40 @@ module Brainstem
 
                   expect(subject.definition[:properties]).to be_nil
                 end
+              end
+            end
+
+            describe '#sort_properties!' do
+              let(:presenter_class) do
+                Class.new(Brainstem::Presenter) do
+                  presents Workspace
+                end
+              end
+              let(:presenter) { Presenter.new(Object.new, const: presenter_class, target_class: 'Workspace') }
+              let(:conditionals) { {} }
+
+              before do
+                stub(presenter).conditionals { conditionals }
+
+                presenter_class.associations do
+                  association :user, User,
+                    response_key: :user_id,
+                    type: :has_one
+
+                  association :task, Task,
+                    type: :belongs_to
+                end
+              end
+
+              it 'correctly sorts the properties' do
+                subject.send(:format_fields!)
+                subject.send(:sort_properties!)
+
+                expect(subject.definition).to have_key :properties
+                expect(subject.definition[:properties]).to eq({
+                  'task_id' => { 'type' => 'string', 'description' => "`task_id` will only be included in the response if `task` is in the list of included associations. See <a href='#section/Includes'>include</a> section for usage." },
+                  'user_id' => { 'type' => 'string', 'description' => "`user_id` will only be included in the response if `user` is in the list of included associations. See <a href='#section/Includes'>include</a> section for usage." }
+                })
               end
             end
           end

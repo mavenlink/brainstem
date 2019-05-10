@@ -2,6 +2,7 @@ require 'active_support/core_ext/hash/except'
 require 'active_support/inflector'
 require 'brainstem/api_docs/formatters/abstract_formatter'
 require 'brainstem/api_docs/formatters/open_api_specification/helper'
+require 'brainstem/api_docs/formatters/open_api_specification/version_2/field_definitions/response_field_formatter'
 require 'forwardable'
 
 #
@@ -72,41 +73,70 @@ module Brainstem
               def format_schema_response!
                 return if presenter.nil?
 
-                brainstem_key = presenter.brainstem_keys.first
-                model_klass   = presenter.target_class
-
                 output.merge! '200' => {
                   description: success_response_description,
                   schema: {
                     type: 'object',
+                    properties: properties
+                  }
+                }
+              end
+
+              def properties
+                brainstem_key = presenter.brainstem_keys.first
+                model_klass = presenter.target_class
+
+                {
+                  count: type_and_format('integer'),
+                  meta: {
+                    type: 'object',
                     properties: {
                       count: type_and_format('integer'),
-                      meta: {
-                        type: 'object',
-                        properties: {
-                          count:       type_and_format('integer'),
-                          page_count:  type_and_format('integer'),
-                          page_number: type_and_format('integer'),
-                          page_size:   type_and_format('integer'),
-                        }
-                      },
-                      results: {
-                        type: 'array',
-                        items: {
-                          type: 'object',
-                          properties: {
-                            key: type_and_format('string'),
-                            id:  type_and_format('string')
-                          }
-                        }
-                      },
-                      brainstem_key => {
-                        type: 'object',
-                        additionalProperties: {
-                          '$ref' => "#/definitions/#{model_klass}"
-                        }
+                      page_count: type_and_format('integer'),
+                      page_number: type_and_format('integer'),
+                      page_size: type_and_format('integer'),
+                    }
+                  },
+                  results: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        key: type_and_format('string'),
+                        id: type_and_format('string')
                       }
                     }
+                  },
+                  brainstem_key => object_reference(model_klass)
+                }.merge(associated_properties)
+              end
+
+              def associated_properties
+                presenter.valid_associations.each_with_object({}) do |(_key, association), obj|
+                  if association.polymorphic?
+                    associated_klasses = association.polymorphic_classes || []
+                    associated_klasses.each do |assoc|
+                      association_reference(assoc, obj)
+                    end
+                  else
+                    association_reference(association.target_class, obj)
+                  end
+                end
+              end
+
+              def association_reference(target_class, obj)
+                assoc_presenter = presenter.find_by_class(target_class)
+                brainstem_key = assoc_presenter.brainstem_keys.first
+                return if assoc_presenter.nodoc?
+
+                obj[brainstem_key] = object_reference(target_class)
+              end
+
+              def object_reference(klass)
+                {
+                  type: 'object',
+                  additionalProperties: {
+                    '$ref' => "#/definitions/#{klass}"
                   }
                 }
               end
@@ -124,66 +154,16 @@ module Brainstem
               def format_custom_response!
                 output.merge! '200' => {
                   description: success_response_description,
-                  schema: format_response(endpoint.custom_response_configuration_tree)
+                  schema: format_response!
                 }
               end
 
-              def format_response(response_tree)
-                response_config   = response_tree[:_config]
-                response_branches = response_tree.except(:_config)
-
-                format_response_field(response_config, response_branches)
-              end
-
-              def format_response_field(field_config, field_branches)
-                if field_branches.present?
-                  formed_nested_field(field_config, field_branches)
-                else
-                  format_response_leaf(field_config)
-                end
-              end
-
-              def format_response_leaf(field_config)
-                field_data = type_and_format(field_config[:type], field_config[:item_type])
-
-                unless field_data
-                  raise "Unknown Brainstem Field type encountered(#{field_config[:type]}) for field #{field_config[:name]}"
-                end
-
-                field_data.merge!(description: format_description(field_config[:info])) if field_config[:info].present?
-                field_data
-              end
-
-              def formed_nested_field(field_config, field_branches)
-                result = case field_config[:type]
-                  when 'hash'
-                    {
-                      type: 'object',
-                      description: format_description(field_config[:info]),
-                      properties: format_response_branches(field_branches)
-                    }
-                  when 'array'
-                    {
-                      type: 'array',
-                      description: format_description(field_config[:info]),
-                      items: {
-                        type: 'object',
-                        properties: format_response_branches(field_branches)
-                      }
-                    }
-                end
-
-                result.with_indifferent_access.reject { |_, v| v.blank? }
-              end
-
-              def format_response_branches(branches)
-                branches.inject(ActiveSupport::HashWithIndifferentAccess.new) do |buffer, (field_name, field_config)|
-                  config   = field_config[:_config]
-                  branches = field_config.except(:_config)
-
-                  buffer[field_name.to_s] = format_response_field(config, branches)
-                  buffer
-                end
+              def format_response!
+                Brainstem::ApiDocs::FORMATTERS[:response_field][:oas_v2].call(
+                  endpoint,
+                  'schema',
+                  endpoint.custom_response_configuration_tree
+                )
               end
             end
           end

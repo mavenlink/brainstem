@@ -1,5 +1,151 @@
 # Changelog
 
++ **2.1.0** - _05/10/2019_
+  ### New Features
+    - Add the ability to mark properties as internal for Open API.
+    ```ruby
+    class ContactsController < ApiController
+      internal! "Only used internally"
+
+      brainstem_params do
+        actions :index do
+          response :hash do
+            field :count, :integer,
+                  info: "Total count of contacts",
+                  internal: "Internal eyes only"
+            fields :contacts, :array,
+                   item_type: :hash,
+                   nodoc: true,
+                   info: "Array of contact details" do
+              field :full_name, :string,
+                    info: "Full name of the contact",
+                    internal: true
+            end
+          end
+        end
+      end
+    end
+    ```
+    
+    - Add `--include-internal` option to CLI:
+      `brainstem generate --include-internal --open-api-specification=2` will generate documentation for
+      everything that is not marked as `nodoc`.
+    
+    - Automatically generate documentation for associations
+      - `response_key` will be used if given, otherwise, it will use the name of the association appended
+        with `_id` or `_ids` for `has_many`.
+
+        Using the example below, the association for `PetCategory` will generate documentation for `shooby_id`,
+        while the `Owner` association will generate documentation for `owner_id`.
+      - The response will include references to all of the associations, including any `polymorphic_classes` added to
+        polymorphic associations.
+
+        In the example below, the documentation for the response will contain references to `PetCategory`, `Vaccine`,
+        `Owner`, `Dog`, and `Cat`.
+
+    ```ruby
+    class PetsPresenter < Brainstem::Presenter
+      presents Pet
+
+      associations do
+        association :pet_category, PetCategory,
+                    response_key: :shooby_id,
+                    type: :belongs_to
+        association :vaccines, Vaccine,
+                    response_key: :vaccine_ids,
+                    type: :has_many
+        association :owner, Owner,
+                    response_key: :owner_id,
+                    type: :has_one
+        association :pettable, :polymorphic,
+                    response_key: :pettable_ref,
+                    polymorphic_classes: [Dog, Cat]
+      end
+    end
+    ```
+
+    - Add support for non-static key fields in responses. When key is non-static, use the new DSL for response params.
+      See example below for usage.
+
+       ```ruby
+        {
+            :attributes => {
+                :"#{name}_field" => 'world',
+                :"#{name}_ids" => [1, 2, 3],
+                :name => name
+            },
+            :"#{model.class_name}_klass" => {
+                :"#{model.class_name}_identifier" => model.identifier,
+                :"#{model.association_name}_ids" => [1, 2, 3]
+            }
+        }
+       ```
+
+       A response with non-static key fields written above can be described as follows:
+
+       ```ruby
+       class ContactsController < ApiController
+         brainstem_params do
+           actions :show do
+             response :hash do |response_param|
+               response_param.fields :attributes, :hash do |attributes|
+                 attributes.dynamic_key_field :string
+                 attributes.field :some_ids, :array, dynamic: true
+                  attributes.field :name, :string, required: true
+               end
+
+               response_param.dynamic_key_field :hash do |dk|
+                 dk.dynamic_key_field :string
+                 dk.field :other_ids, :array, dynamic: true
+               end
+             end
+           end
+         end
+       end
+       ```
+
+    - Add support for non-static key params. When key is non-static, use the new DSL for request params.
+      See example below for usage.
+
+      A param with non-static keys like `{ contact.id => 10, :"#{contact.friends_association_name}_ids" => [1, 2, 3] }`
+      can be described as follows:
+
+      ```ruby
+      class ContactsController < ApiController
+        brainstem_params do
+          actions :create do
+            valid :info, :hash, required: true do |param|
+              param.valid_dynamic_param :integer, required: true
+              param.valid :some_ids, :array, dynamic: true
+            end
+          end
+        end
+      end
+      ```
+
+    - Sort orders now default to directions `asc` and `desc`.
+      When direction is passed as false, no sort order is generated for the docs.
+      - ex.
+        ```ruby
+          presenter_class.sort_order :created_at, value, info: "sorts by creation time", direction: false
+        ```
+
+    - Add new DSL for nested arrays
+      ```ruby
+        response :array, nested_level: 2, item_type: :hash do
+          nested.field :a, :string
+          nested.field :b, :integer
+        end
+      ```
+      - An example of the response above: `[[{a: "string", b: 1}, "another string", 4]]`
+
+  ### Bugfixes
+    - Nested required fields will now no longer bubble up the required to its parent. A deeply nested field that is 
+    required will now only be required on its direct parent.
+    - Required fields for a create / update (POST / PUT) request are explicitly called out in the OAS specification
+    - Default top-level query params like `only `, `order `, `page`, `per_page`, `include` & `optional` are not
+    displayed when the endpoint is not returning brainstem models.
+
 + **2.0.0** - _05/17/2018_
   - Introduce the capability to document custom response on endpoints
   ```ruby
@@ -20,6 +166,7 @@
         end
       end
     end
+  end
   ```
   - Add DSL on controllers to set Open API Specification 2.0 configurations
   ```ruby
