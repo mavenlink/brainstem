@@ -334,7 +334,9 @@ module Brainstem
         # If this association has been explictly requested, execute the association here.  Additionally, store
         # the loaded models in the :load_associations_into hash for later use.
         if context[:association_objects_by_name][external_name]
-          associated_model_or_models = association.run_on(model, context, context[:helper_instance])
+          lookup_options = {}
+          lookup_options[:firstFiftyAssociations] = true if options[:firstFiftyAssociations]
+          associated_model_or_models = association.run_on(model, context, context[:helper_instance], lookup_options)
 
           if options[:load_associations_into]
             Array(associated_model_or_models).flatten.each do |associated_model|

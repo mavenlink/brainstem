@@ -93,10 +93,13 @@ module Brainstem
 
       if primary_models.length > 0
         associated_models = {}
+        group_present_options = {optional_fields: optional_fields, load_associations_into: associated_models}
+        if options[:params]["firstFiftyAssociations"]
+          group_present_options.merge!({firstFiftyAssociations: true})
+        end
         presented_primary_models = options[:primary_presenter].group_present(primary_models,
                                                                              selected_associations.map(&:name),
-                                                                             optional_fields: optional_fields,
-                                                                             load_associations_into: associated_models)
+                                                                             group_present_options)
 
         struct[brainstem_key] = presented_primary_models.each.with_object({}) { |model, obj| obj[model['id']] = model }
         struct['results'] = presented_primary_models.map { |model| { 'key' => brainstem_key, 'id' => model['id'] } }
