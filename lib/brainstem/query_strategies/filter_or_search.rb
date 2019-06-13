@@ -44,7 +44,7 @@ module Brainstem
       def run_search(scope, includes, sort_name, direction)
         return scope unless searching?
 
-        search_options = HashWithIndifferentAccess.new(
+        search_options = ActiveSupport::HashWithIndifferentAccess.new(
           include: includes,
           order: { sort_order: sort_name, direction: direction },
         )

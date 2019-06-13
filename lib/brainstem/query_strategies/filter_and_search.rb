@@ -35,7 +35,7 @@ module Brainstem
       private
 
       def run_search(scope, includes)
-        search_options = HashWithIndifferentAccess.new(
+        search_options = ActiveSupport::HashWithIndifferentAccess.new(
           include: includes,
           limit: @options[:default_max_filter_and_search_page],
           offset: 0
