@@ -31,6 +31,8 @@ Add this line to your application's Gemfile:
 
 ## Usage
 
+Set up the database as outlined in `Schema.rb`. You must also have `ONLY_FULL_GROUP_BY` disabled currently.
+
 ### Make a Presenter
 
 Create a class that inherits from Brainstem::Presenter, named after the model that you want to present, and preferrably

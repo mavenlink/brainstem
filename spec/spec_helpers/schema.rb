@@ -1,5 +1,5 @@
 if ENV['USE_MYSQL']
-  ActiveRecord::Base.establish_connection(:adapter => 'mysql2', :database => 'test', :username => 'root', :password => '', :host => '127.0.0.1')
+  ActiveRecord::Base.establish_connection(:adapter => 'mysql2', :database => 'test', :username => 'root', :password => '', :host => '127.0.0.1', variables: { "sql_mode" => 'STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' })
 else
   ActiveRecord::Base.establish_connection(:adapter => 'sqlite3', :database => ':memory:')
 end
