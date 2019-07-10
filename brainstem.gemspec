@@ -33,4 +33,5 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency "pry"
   gem.add_development_dependency "pry-nav"
   gem.add_development_dependency "db-query-matchers"
+  gem.add_development_dependency 'actionpack'
 end

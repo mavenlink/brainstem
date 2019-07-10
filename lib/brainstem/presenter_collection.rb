@@ -35,7 +35,7 @@ module Brainstem
     # @yield Must return a scope on the model +name+, which will then be presented.
     # @return [Hash] A hash of arrays of hashes. Top-level hash keys are pluralized model names, with values of arrays containing one hash per object that was found by the given given options.
     def presenting(name, options = {}, &block)
-      options[:params] = HashWithIndifferentAccess.new(options[:params] || {})
+      options[:params] = ActiveSupport::HashWithIndifferentAccess.new(options[:params] || {})
       check_for_old_options!(options)
       set_default_filters_option!(options)
       presented_class = (options[:model] || name)

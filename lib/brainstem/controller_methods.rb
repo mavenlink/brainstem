@@ -25,7 +25,7 @@ module Brainstem
     # @yield (see PresenterCollection#presenting)
     # @return (see PresenterCollection#presenting)
     def brainstem_present(name, options = {}, &block)
-      Brainstem.presenter_collection(options[:namespace]).presenting(name, options.reverse_merge(:params => params), &block)
+      Brainstem.presenter_collection(options[:namespace]).presenting(name, options.reverse_merge(:params => params.to_unsafe_h), &block)
     end
 
     # Similar to ControllerMethods#brainstem_present, but always returns all of the given objects, not just those that
@@ -36,7 +36,7 @@ module Brainstem
     #                           only required if the name cannot be inferred.
     # @return (see PresenterCollection#presenting)
     def brainstem_present_object(objects, options = {})
-      options.merge!(:params => params, :apply_default_filters => false)
+      options.merge!(:params => params.to_unsafe_h, :apply_default_filters => false)
 
       if objects.is_a?(ActiveRecord::Relation) || objects.is_a?(Array)
         raise ActiveRecord::RecordNotFound if objects.empty?
