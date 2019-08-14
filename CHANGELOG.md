@@ -1,5 +1,10 @@
 # Changelog
 
++ **2.2.0** - _08/15/2019_
+  ### Bugfixes
+    - Add support for API documentation generation in Rails 5.x
+    - Address deprecation warnings for Rails 6 by wrapping raw sql in `Arel.sql`
+
 + **2.1.0** - _05/10/2019_
   ### New Features
     - Add the ability to mark properties as internal for Open API.

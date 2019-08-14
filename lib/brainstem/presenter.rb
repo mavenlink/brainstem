@@ -232,7 +232,7 @@ module Brainstem
       primary_key = scope.model.primary_key
 
       if table_name && primary_key
-        "#{scope.connection.quote_table_name(table_name)}.#{scope.connection.quote_column_name(primary_key)} ASC"
+        Arel.sql("#{scope.connection.quote_table_name(table_name)}.#{scope.connection.quote_column_name(primary_key)} ASC")
       else
         nil
       end

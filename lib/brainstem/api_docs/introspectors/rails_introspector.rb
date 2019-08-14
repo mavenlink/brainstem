@@ -212,17 +212,19 @@ module Brainstem
                   .classify
                   .constantize rescue nil
 
+              http_methods = (
+                route.verb.is_a?(Regexp) ?
+                  route.verb.inspect.gsub(/[\/\$\^]/, '') :
+                  route.verb
+              ).split("|")
+
               {
                 alias:            route.name,
                 path:             route.path.spec.to_s,
                 controller_name:  route.defaults[:controller],
                 controller:       controller_const,
                 action:           route.defaults[:action],
-                http_methods:     route.constraints
-                  .fetch(:request_method, nil)
-                  .inspect
-                  .gsub(/[\/\$\^]/, '')
-                  .split("|")
+                http_methods:     http_methods
               }
             end.compact
           end
