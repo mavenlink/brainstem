@@ -85,20 +85,22 @@ module Brainstem
                   class User {
                   string name
                   }
-                  User o-- "1" Cheese
+                  User o-- "1" Cheese : cheese_id
                 PUML
               end
 
               it "adds a has_many association to the output" do
                 presenter_class.associations do
                   association :posts, Post, type: :has_many
+                  association :tasks, Task, type: :has_many, response_key: :task_ids
                 end
 
                 expect(subject).to eq(<<~PUML)
                   class User {
                   string name
                   }
-                  User *-- "n" Post
+                  User *-- "n" Post : post_ids
+                  User *-- "n" Task : task_ids
                 PUML
               end
             end

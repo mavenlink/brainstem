@@ -34,22 +34,30 @@ module Brainstem
             presenter.target_class
           end
 
-          def format_association_relations
-            presenter.valid_associations.each do |name, association|
-              association_klass = association.target_class.to_s
-
-              if association.type == :has_many
-                buffer.puts(%(#{target_class} *-- "n" #{association_klass}))
-              else
-                buffer.puts(%(#{target_class} o-- "1" #{association_klass}))
-              end
-            end
-          end
-
           def format_fields
             presenter.valid_fields.each do |_, field|
               buffer.puts("#{field.type} #{field.name.to_s}")
             end
+          end
+
+          def format_association_relations
+            presenter.valid_associations.each do |name, association|
+              association_klass = association.target_class.to_s
+              association_key = format_association_key(association)
+
+              buffer.puts(%(#{target_class} #{association_connector(association)} #{association_klass} : #{association_key}))
+            end
+          end
+
+          def association_connector(association)
+            association.type == :has_many ? '*-- "n"' : 'o-- "1"'
+          end
+
+          def format_association_key(association)
+            return association.response_key if association.response_key.present?
+
+            key = association.name.singularize
+            association.type == :has_many ? "#{key}_ids" : "#{key}_id"
           end
         end
       end
