@@ -9,13 +9,15 @@ module Brainstem
       module Puml
         describe PresenterFormatter do
           let(:presenter_class) do
+            target_class = self.target_class
             Class.new(Brainstem::Presenter) do
-              presents Workspace
+              presents target_class.constantize
               title "Project (Workspace)"
             end
           end
 
-          let(:presenter) { Presenter.new(Object.new, const: presenter_class, target_class: 'Workspace') }
+          let(:target_class) { 'Workspace' }
+          let(:presenter) { Presenter.new(Object.new, const: presenter_class, target_class: target_class) }
 
           subject { Brainstem::ApiDocs::FORMATTERS[:presenter][:puml].call(presenter) }
 
@@ -45,6 +47,29 @@ module Brainstem
 
                 it "adds the string field to the output" do
                   expect(subject).to include("string name\ninteger creator_id\nboolean archived\n")
+                end
+              end
+
+              context "when associations are defined" do
+                let(:target_class) { 'User' }
+
+                before do
+                  presenter_class.fields do
+                    field :name, :string
+                  end
+
+                  presenter_class.associations do
+                    association :cheese, Cheese, type: :has_one
+                  end
+                end
+
+                it "can add a has_one association to the output" do
+                  expect(subject).to eq(<<~PUML)
+                    class User {
+                    string name
+                    }
+                    User o-- "1" Cheese
+                  PUML
                 end
               end
             end

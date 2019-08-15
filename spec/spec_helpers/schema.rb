@@ -51,6 +51,7 @@ end
 
 class User < ActiveRecord::Base
   has_many :workspaces
+  has_one :cheese
 
   def type
     self.class.name

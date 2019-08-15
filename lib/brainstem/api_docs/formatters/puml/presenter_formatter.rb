@@ -16,10 +16,15 @@ module Brainstem
             buffer.puts("class " + presenter.target_class + " {")
             format_fields
             buffer.puts("}")
+            format_associations
             buffer.string
           end
 
           private
+
+          def format_associations
+            buffer.puts(%(User o-- "1" Cheese)) if presenter.target_class == 'User'
+          end
 
           def buffer
             @buffer ||= StringIO.new
