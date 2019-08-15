@@ -16,6 +16,8 @@ module Brainstem
           raise NotImplementedError
         end
 
+        attr_writer :write_method, :write_path
+
         #######################################################################$
         private
 
@@ -57,7 +59,7 @@ module Brainstem
         # @return [Array<Symbol>] valid options
         #
         def valid_options
-          []
+          [ :write_method, :write_path ]
         end
       end
     end

@@ -15,16 +15,11 @@ module Brainstem
             :api_version,
             :ignore_tagging,
             :format,
-            :write_method,
-            :write_path,
             :oas_filename_pattern,
             :output_extension,
             :include_internal
           ]
         end
-
-        attr_writer :write_method,
-                    :write_path
 
         attr_accessor :api_version,
                       :atlas,

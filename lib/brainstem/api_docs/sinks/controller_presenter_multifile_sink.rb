@@ -17,11 +17,8 @@ module Brainstem
         end
 
         def valid_options
-          super | [ :write_method, :format, :write_path ]
+          super | [ :format ]
         end
-
-        attr_writer     :write_method,
-                        :write_path
 
         attr_accessor   :atlas,
                         :format
