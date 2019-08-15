@@ -1,5 +1,4 @@
 require 'brainstem/api_docs/sinks/abstract_sink'
-require 'fileutils'
 require 'forwardable'
 
 module Brainstem
@@ -47,36 +46,6 @@ module Brainstem
         #
         def write_presenter_files
           presenters.each_formatted_with_filename(format, &method(:write_buffer_to_file))
-        end
-
-        #
-        # Writes a given bufer to a filename within the base path.
-        #
-        def write_buffer_to_file(buffer, filename)
-          abs_path = File.join(write_path, filename)
-          assert_directory_exists!(abs_path)
-          write_method.call(abs_path, buffer)
-        end
-
-        #
-        # Asserts that a directory exists, creating it if it does not.
-        #
-        def assert_directory_exists!(path)
-          dir = File.dirname(path)
-          FileUtils.mkdir_p(dir) unless File.directory?(dir)
-        end
-
-        #
-        # Defines how we write out the files.
-        #
-        def write_method
-          @write_method ||= Proc.new do |name, buff|
-            File.write(name, buff, mode: 'w')
-          end
-        end
-
-        def write_path
-          @write_path ||= ::Brainstem::ApiDocs.write_path
         end
       end
     end
