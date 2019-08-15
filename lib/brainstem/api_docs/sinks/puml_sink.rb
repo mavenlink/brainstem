@@ -11,6 +11,9 @@ module Brainstem
         def <<(atlas)
           buffer = StringIO.new
           buffer.puts("@startuml")
+          atlas.presenters.formatted(:puml).each do |presenter|
+            buffer.puts(presenter)
+          end
           buffer.puts("@enduml")
           write_buffer_to_file(buffer.string, 'specification.puml')
         end
