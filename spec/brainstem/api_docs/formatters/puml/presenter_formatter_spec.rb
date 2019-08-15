@@ -26,7 +26,17 @@ module Brainstem
               expect(subject).to match(/class Workspace {\n.*}/)
             end
 
+            context "when nodoc" do
+              let(:presenter) { OpenStruct.new(nodoc?: true) }
+
+              it "returns an empty string" do
+                expect(subject).to eq("")
+              end
+            end
+
             describe "formatting fields" do
+              let(:target_class) { 'User' }
+
               xcontext "when no fields explicitly defined" do
                 it "adds id field by default" do
                   presenter_class.fields do
@@ -55,36 +65,41 @@ module Brainstem
                   PUML
                 end
               end
-
-              context "when associations are defined" do
-                let(:target_class) { 'User' }
-
-                before do
-                  presenter_class.fields do
-                    field :name, :string
-                  end
-
-                  presenter_class.associations do
-                    association :cheese, Cheese, type: :has_one
-                  end
-                end
-
-                it "can add a has_one association to the output" do
-                  expect(subject).to eq(<<~PUML)
-                    class User {
-                    string name
-                    }
-                    User o-- "1" Cheese
-                  PUML
-                end
-              end
             end
 
-            context "when nodoc" do
-              let(:presenter) { OpenStruct.new(nodoc?: true) }
+            describe "when associations are defined" do
+              let(:target_class) { 'User' }
 
-              it "returns an empty string" do
-                expect(subject).to eq("")
+              before do
+                presenter_class.fields do
+                  field :name, :string
+                end
+              end
+
+              it "adds a has_one association to the output" do
+                presenter_class.associations do
+                  association :cheese, Cheese, type: :has_one
+                end
+
+                expect(subject).to eq(<<~PUML)
+                  class User {
+                  string name
+                  }
+                  User o-- "1" Cheese
+                PUML
+              end
+
+              it "adds a has_many association to the output" do
+                presenter_class.associations do
+                  association :posts, Post, type: :has_many
+                end
+
+                expect(subject).to eq(<<~PUML)
+                  class User {
+                  string name
+                  }
+                  User *-- "n" Post
+                PUML
               end
             end
           end

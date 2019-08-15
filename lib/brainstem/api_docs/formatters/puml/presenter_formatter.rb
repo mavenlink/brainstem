@@ -13,23 +13,37 @@ module Brainstem
           def call
             return "" if presenter.nodoc?
 
-            buffer.puts("class " + presenter.target_class + " {")
+            buffer.puts("class " + target_class + " {")
             format_fields
             buffer.puts("}")
-            format_associations
+
+            format_association_relations
+
             buffer.string
           end
 
           private
 
+          attr_reader :presenter
+
           def buffer
             @buffer ||= StringIO.new
           end
 
-          attr_reader :presenter
+          def target_class
+            presenter.target_class
+          end
 
-          def format_associations
-            buffer.puts(%(User o-- "1" Cheese)) if presenter.target_class == 'User'
+          def format_association_relations
+            presenter.valid_associations.each do |name, association|
+              association_klass = association.target_class.to_s
+
+              if association.type == :has_many
+                buffer.puts(%(#{target_class} *-- "n" #{association_klass}))
+              else
+                buffer.puts(%(#{target_class} o-- "1" #{association_klass}))
+              end
+            end
           end
 
           def format_fields
