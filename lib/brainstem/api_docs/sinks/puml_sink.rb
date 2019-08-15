@@ -5,10 +5,10 @@ module Brainstem
     module Sinks
       class PumlSink < AbstractSink
         def self.call(*args)
-          new(*args).call
+          new(*args)
         end
 
-        def call
+        def <<(atlas)
           buffer = StringIO.new
           buffer.puts("@startuml")
           buffer.puts("@enduml")
