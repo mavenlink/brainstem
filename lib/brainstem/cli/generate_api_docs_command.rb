@@ -147,6 +147,7 @@ module Brainstem
 
           opts.on('--puml', 'use puml format') do
             options[:sink][:options][:format] = :puml
+            options[:sink][:method] = Brainstem::ApiDocs::Sinks::PumlSink
           end
 
           opts.on('-m', '--multifile-presenters-and-controllers',

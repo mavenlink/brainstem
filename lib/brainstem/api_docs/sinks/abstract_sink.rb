@@ -46,10 +46,18 @@ module Brainstem
         # Writes a given buffer to a filename within the base path.
         #
         def write_buffer_to_file(buffer, filename)
-          abs_path = File.join(write_path, filename)
-          assert_directory_exists!(abs_path)
-          write_method.call(abs_path, buffer)
+          writer.call(buffer, filename)
         end
+
+        def writer
+          @writer ||= Proc.new do |buffer, filename|
+            abs_path = File.join(write_path, filename)
+            assert_directory_exists!(abs_path)
+            write_method.call(abs_path, buffer)
+          end
+        end
+
+        attr_writer :writer
 
         ########################################################################
 
@@ -59,7 +67,7 @@ module Brainstem
         # @return [Array<Symbol>] valid options
         #
         def valid_options
-          [ :write_method, :write_path ]
+          [ :write_method, :write_path, :writer ]
         end
       end
     end

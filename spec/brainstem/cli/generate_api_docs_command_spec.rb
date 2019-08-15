@@ -28,6 +28,7 @@ module Brainstem
 
           it "sets the sink options to use puml format" do
             expect(subject.options[:sink][:options][:format]).to eq(:puml)
+            expect(subject.options[:sink][:method]).to eq(Brainstem::ApiDocs::Sinks::PumlSink)
           end
         end
 
