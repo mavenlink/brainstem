@@ -145,6 +145,10 @@ module Brainstem
             options[:sink][:options][:format] = :markdown
           end
 
+          opts.on('--puml', 'use puml format') do
+            options[:sink][:options][:format] = :puml
+          end
+
           opts.on('-m', '--multifile-presenters-and-controllers',
             'dumps presenters and controllers to separate files (default)') do |o|
             if options[:sink][:options][:format] == :oas_v2

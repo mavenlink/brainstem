@@ -23,6 +23,14 @@ module Brainstem
           end
         end
 
+        context "when --puml" do
+          let(:args) { %w(--puml) }
+
+          it "sets the sink options to use puml format" do
+            expect(subject.options[:sink][:options][:format]).to eq(:puml)
+          end
+        end
+
         context "when --multifile-presenters-and-controllers" do
           let(:args) { %w(--multifile-presenters-and-controllers) }
 
