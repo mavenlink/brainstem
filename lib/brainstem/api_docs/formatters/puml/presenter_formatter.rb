@@ -22,15 +22,15 @@ module Brainstem
 
           private
 
-          def format_associations
-            buffer.puts(%(User o-- "1" Cheese)) if presenter.target_class == 'User'
-          end
-
           def buffer
             @buffer ||= StringIO.new
           end
 
           attr_reader :presenter
+
+          def format_associations
+            buffer.puts(%(User o-- "1" Cheese)) if presenter.target_class == 'User'
+          end
 
           def format_fields
             presenter.valid_fields.each do |_, field|

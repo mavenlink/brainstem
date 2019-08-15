@@ -46,7 +46,13 @@ module Brainstem
                 end
 
                 it "adds the string field to the output" do
-                  expect(subject).to include("string name\ninteger creator_id\nboolean archived\n")
+                  expect(subject).to eq(<<~PUML)
+                    class User {
+                    string name
+                    integer creator_id
+                    boolean archived
+                    }
+                  PUML
                 end
               end
 
