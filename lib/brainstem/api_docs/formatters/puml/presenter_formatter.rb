@@ -42,8 +42,8 @@ module Brainstem
           end
 
           def format_fields
-            presenter.valid_fields.each do |_, field|
-              buffer.puts("#{field.type} #{field.name.to_s}")
+            presenter.valid_fields.sort.each do |_, field|
+              buffer.puts("#{field.type} #{field.name}")
             end
           end
 

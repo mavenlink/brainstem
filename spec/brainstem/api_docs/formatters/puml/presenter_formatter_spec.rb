@@ -22,7 +22,7 @@ module Brainstem
           subject { Brainstem::ApiDocs::FORMATTERS[:presenter][:puml].call(presenter) }
 
           describe "#call" do
-            it "outputs the title as the class name" do
+            it "outputs the target class as the class name" do
               expect(subject).to match(/class Workspace {\n.*}/)
             end
 
@@ -45,12 +45,12 @@ module Brainstem
                 end
               end
 
-              it "adds the string field to the output" do
+              it "adds attribues to the output alphabetically" do
                 expect(subject).to eq(<<~PUML)
                   class User {
-                  string name
-                  integer creator_id
                   boolean archived
+                  integer creator_id
+                  string name
                   }
                 PUML
               end
