@@ -55,7 +55,7 @@ module Brainstem
 
           def associated_connections(association)
             if association.polymorphic?
-              association.polymorphic_classes.map do |polymorphic_class|
+              Array.wrap(association.polymorphic_classes).map do |polymorphic_class|
                 connect(association, polymorphic_class, association.name)
               end
             else

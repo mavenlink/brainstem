@@ -98,6 +98,7 @@ module Brainstem
                   presenter_class.associations do
                     association :food, :polymorphic, type: :has_one, polymorphic_classes: [Cheese]
                     association :entities, :polymorphic, type: :has_many, polymorphic_classes: [Post, Task]
+                    association :objects, :polymorphic, type: :has_many
                   end
                 end
 
