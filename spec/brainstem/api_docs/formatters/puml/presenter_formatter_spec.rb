@@ -92,6 +92,26 @@ module Brainstem
                   User *-- "n" Task : task_ids
                 PUML
               end
+
+              context "when associations are polymorphic" do
+                before do
+                  presenter_class.associations do
+                    association :food, :polymorphic, type: :has_one, polymorphic_classes: [Cheese]
+                    association :entities, :polymorphic, type: :has_many, polymorphic_classes: [Post, Task]
+                  end
+                end
+
+                it "adds an association for every polymorphic class to the output" do
+                  expect(subject).to eq(<<~PUML)
+                  class User {
+                  string name
+                  }
+                  User o-- "1" Cheese : food
+                  User *-- "n" Post : entities
+                  User *-- "n" Task : entities
+                  PUML
+                end
+              end
             end
           end
         end

@@ -49,14 +49,28 @@ module Brainstem
 
           def format_association_relations
             presenter.valid_associations.each do |_name, association|
-              association_klass = association.target_class.to_s
-              association_key = format_association_key(association)
-
-              buffer.puts(%(#{target_class} #{association_connector(association)} #{association_klass} : #{association_key}))
+              associated_connections(association).each { |connection| buffer.puts(connection) }
             end
           end
 
-          def association_connector(association)
+          def associated_connections(association)
+            if association.polymorphic?
+              association.polymorphic_classes.map do |polymorphic_class|
+                connect(association, polymorphic_class, association.name)
+              end
+            else
+              association_klass = association.target_class
+              association_key = format_association_key(association)
+
+              [connect(association, association_klass, association_key)]
+            end
+          end
+
+          def connect(association, klass, label)
+            %(#{target_class} #{connector(association)} #{klass} : #{label})
+          end
+
+          def connector(association)
             association.type == :has_many ? '*-- "n"' : 'o-- "1"'
           end
 
