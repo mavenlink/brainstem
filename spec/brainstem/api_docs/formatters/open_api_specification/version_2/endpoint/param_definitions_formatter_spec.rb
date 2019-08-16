@@ -707,6 +707,22 @@ module Brainstem
                       }
                     ])
                   end
+
+                  context "when items option specified on a filter is not an array" do
+                    let(:mocked_valid_filters) {
+                      {
+                        filter_1: { type: 'array', item_type: 'string', items: 'Option 1 Option 2', default: 'Option 1' }
+                      }
+                    }
+
+                    before do
+                      mock(presenter).target_class { Workspace }
+                    end
+
+                    it 'raises an error' do
+                      expect { subject.send(:format_filter_params!) }.to raise_error(RuntimeError)
+                    end
+                  end
                 end
               end
             end

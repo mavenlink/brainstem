@@ -384,7 +384,6 @@ module Brainstem
 
               before do
                 stub(presenter).valid_filters { valid_filters }
-                subject.send(:format_filters!)
               end
 
               context "when has filters" do
@@ -399,10 +398,14 @@ module Brainstem
                 }
 
                 it "outputs a header" do
+                  subject.send(:format_filters!)
+
                   expect(subject.output).to include "Filters"
                 end
 
                 it "lists them" do
+                  subject.send(:format_filters!)
+
                   expect(subject.output.scan(/\n-/).count).to eq 1
                   expect(subject.output).to include "`published` (`String`)"
                   expect(subject.output).to include "    - limits to published"
@@ -421,15 +424,36 @@ module Brainstem
                   }
 
                   it "lists them with items" do
+                    subject.send(:format_filters!)
+
                     expect(subject.output.scan(/\n-/).count).to eq 1
                     expect(subject.output).to include "`published` (`String`)"
                     expect(subject.output).to include "    - limits to published. Available values: fizz, buzz."
+                  end
+
+                  context "when items are not an array" do
+                    let(:valid_filters) {
+                      {
+                          "published" => {
+                              type:  "string",
+                              value: Proc.new { nil },
+                              info:  "limits to published",
+                              items: "fizz buzz"
+                          }
+                      }
+                    }
+
+                    it 'raises an error' do
+                      expect { subject.send(:format_filters!) }.to raise_error(RuntimeError)
+                    end
                   end
                 end
               end
 
               context "when no filters" do
                 it "says nothing" do
+                  subject.send(:format_filters!)
+
                   expect(subject.output).to_not include "Filters"
                 end
               end

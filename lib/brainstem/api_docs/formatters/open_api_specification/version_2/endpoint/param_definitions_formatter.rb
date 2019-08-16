@@ -191,8 +191,13 @@ module Brainstem
 
               def format_query_param(param_name, param_config)
                 type_data = type_and_format(param_config[:type], param_config[:item_type])
+
                 if type_data.nil?
                   raise "Unknown Brainstem Param type encountered(#{param_config[:type]}) for param #{param_name}"
+                end
+
+                if param_config[:items].present? && !param_config[:items].is_a?(Array)
+                  raise "`:items` option needs to be an array for #{param_name} filter in #{presenter.target_class} presenter"
                 end
 
                 if param_config[:type].to_s == 'array'

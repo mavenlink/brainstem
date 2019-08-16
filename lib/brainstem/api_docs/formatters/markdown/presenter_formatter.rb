@@ -115,6 +115,10 @@ module Brainstem
                     description = opts[:info].to_s
 
                     if opts[:items].present?
+                      unless opts[:items].is_a?(Array)
+                        raise "`:items` option needs to be an array for #{name} filter in #{presenter.target_class} presenter"
+                      end
+
                       description += "." unless description =~ /\.\s*\z/
                       description += " Available values: #{opts[:items].join(', ')}."
                     end
