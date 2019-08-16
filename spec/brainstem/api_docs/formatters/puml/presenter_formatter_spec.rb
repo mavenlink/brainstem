@@ -37,33 +37,22 @@ module Brainstem
             describe "formatting fields" do
               let(:target_class) { 'User' }
 
-              xcontext "when no fields explicitly defined" do
-                it "adds id field by default" do
-                  presenter_class.fields do
-                  end
-
-                  expect(subject).to include("integer id")
+              before do
+                presenter_class.fields do
+                  field :name, :string
+                  field :creator_id, :integer
+                  field :archived, :boolean
                 end
               end
 
-              context "when fields are defined" do
-                before do
-                  presenter_class.fields do
-                    field :name, :string
-                    field :creator_id, :integer
-                    field :archived, :boolean
-                  end
-                end
-
-                it "adds the string field to the output" do
-                  expect(subject).to eq(<<~PUML)
-                    class User {
-                    string name
-                    integer creator_id
-                    boolean archived
-                    }
-                  PUML
-                end
+              it "adds the string field to the output" do
+                expect(subject).to eq(<<~PUML)
+                  class User {
+                  string name
+                  integer creator_id
+                  boolean archived
+                  }
+                PUML
               end
             end
 
