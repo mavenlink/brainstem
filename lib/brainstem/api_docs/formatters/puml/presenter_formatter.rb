@@ -13,16 +13,23 @@ module Brainstem
           def call
             return "" if presenter.nodoc?
 
-            buffer.puts("class " + target_class + " {")
+            open_class_definition
             format_fields
-            buffer.puts("}")
-
+            close_class_definition
             format_association_relations
 
             buffer.string
           end
 
           private
+
+          def open_class_definition
+            buffer.puts("class " + target_class + " {")
+          end
+
+          def close_class_definition
+            buffer.puts("}")
+          end
 
           attr_reader :presenter
 
@@ -41,7 +48,7 @@ module Brainstem
           end
 
           def format_association_relations
-            presenter.valid_associations.each do |name, association|
+            presenter.valid_associations.each do |_name, association|
               association_klass = association.target_class.to_s
               association_key = format_association_key(association)
 
