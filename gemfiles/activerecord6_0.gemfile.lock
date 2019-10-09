@@ -1,7 +1,7 @@
 PATH
   remote: ..
   specs:
-    brainstem (2.2.1)
+    brainstem (2.3.0)
       activerecord (>= 4.2)
       activesupport (>= 4.2)
 
@@ -86,7 +86,6 @@ GEM
     thread_safe (0.3.6)
     tzinfo (1.2.5)
       thread_safe (~> 0.1)
-    wwtd (1.4.0)
     yard (0.9.20)
     zeitwerk (2.2.0)
 
@@ -108,7 +107,6 @@ DEPENDENCIES
   rr
   rspec (~> 3.9)
   sqlite3
-  wwtd
   yard
 
 BUNDLED WITH
