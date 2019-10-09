@@ -61,7 +61,7 @@ describe Brainstem::QueryStrategies::FilterOrSearch do
                 not_to make_database_queries({ count: 1, matching: "SELECT COUNT(*) FROM" })
 
               expect { subject.execute(Workspace.unscoped) }.
-                to make_database_queries({ count: 1, matching: "SELECT  DISTINCT SQL_CALC_FOUND_ROWS workspaces.id FROM" }).
+                to make_database_queries({ count: 1, matching: /SELECT\s+DISTINCT SQL_CALC_FOUND_ROWS workspaces.id FROM/ }).
                 and make_database_queries({ count: 1, matching: "SELECT FOUND_ROWS()" })
 
               _, count = subject.execute(Workspace.unscoped)
@@ -79,7 +79,7 @@ describe Brainstem::QueryStrategies::FilterOrSearch do
                 to make_database_queries({ count: 1, matching: "SELECT COUNT(distinct `workspaces`.id) FROM" })
 
               expect { subject.execute(Workspace.unscoped) }.
-                not_to make_database_queries({ count: 1, matching: "SELECT  DISTINCT SQL_CALC_FOUND_ROWS workspaces.id FROM" })
+                not_to make_database_queries({ count: 1, matching: /SELECT\s+DISTINCT SQL_CALC_FOUND_ROWS workspaces.id FROM/ })
 
               expect { subject.execute(Workspace.unscoped) }.
                 not_to make_database_queries({ count: 1, matching: "SELECT FOUND_ROWS()" })
