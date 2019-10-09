@@ -1,5 +1,13 @@
 # Changelog
 
++ **2.3.0** - _10/09/2019_
+  ### Version Support
+    - Add official Rails 6.0 compatibility
+    - Drop support for Rails 4.1 and below
+
+  ### Bugfixes
+    - Address deprecation warnings for Rails 6 by wrapping raw sql in `Arel.sql`
+
 + **2.2.0** - _08/15/2019_
   ### Bugfixes
     - Add support for API documentation generation in Rails 5.x
