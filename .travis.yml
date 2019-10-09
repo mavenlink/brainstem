@@ -1,14 +1,121 @@
 language: ruby
-rvm:
-  - 2.3.0
-  - 2.3.1
-  - 2.3.2
-  - 2.3.3
-  - 2.3.5
-  - 2.3.6
-  - 2.4.2
-  - 2.4.3
-  - 2.5.0
+
+matrix:
+  include:
+    - rvm: 2.3.3
+      gemfile: gemfiles/activerecord4_2.gemfile
+      env: USE_MYSQL=true
+    - rvm: 2.3.3
+      gemfile: gemfiles/activerecord4_2.gemfile
+    - rvm: 2.3.8
+      gemfile: gemfiles/activerecord4_2.gemfile
+      env: USE_MYSQL=true
+    - rvm: 2.3.8
+      gemfile: gemfiles/activerecord4_2.gemfile
+    - rvm: 2.4.9
+      gemfile: gemfiles/activerecord4_2.gemfile
+      env: USE_MYSQL=true
+    - rvm: 2.4.9
+      gemfile: gemfiles/activerecord4_2.gemfile
+    - rvm: 2.5.7
+      gemfile: gemfiles/activerecord4_2.gemfile
+      env: USE_MYSQL=true
+    - rvm: 2.5.7
+      gemfile: gemfiles/activerecord4_2.gemfile
+    - rvm: 2.6.5
+      gemfile: gemfiles/activerecord4_2.gemfile
+      env: USE_MYSQL=true
+    - rvm: 2.6.5
+      gemfile: gemfiles/activerecord4_2.gemfile
+
+    - rvm: 2.3.3
+      gemfile: gemfiles/activerecord5_0.gemfile
+      env: USE_MYSQL=true
+    - rvm: 2.3.3
+      gemfile: gemfiles/activerecord5_0.gemfile
+    - rvm: 2.3.8
+      gemfile: gemfiles/activerecord5_0.gemfile
+      env: USE_MYSQL=true
+    - rvm: 2.3.8
+      gemfile: gemfiles/activerecord5_0.gemfile
+    - rvm: 2.4.9
+      gemfile: gemfiles/activerecord5_0.gemfile
+      env: USE_MYSQL=true
+    - rvm: 2.4.9
+      gemfile: gemfiles/activerecord5_0.gemfile
+    - rvm: 2.5.7
+      gemfile: gemfiles/activerecord5_0.gemfile
+      env: USE_MYSQL=true
+    - rvm: 2.5.7
+      gemfile: gemfiles/activerecord5_0.gemfile
+    - rvm: 2.6.5
+      gemfile: gemfiles/activerecord5_0.gemfile
+      env: USE_MYSQL=true
+    - rvm: 2.6.5
+      gemfile: gemfiles/activerecord5_0.gemfile
+
+    - rvm: 2.3.3
+      gemfile: gemfiles/activerecord5_1.gemfile
+      env: USE_MYSQL=true
+    - rvm: 2.3.3
+      gemfile: gemfiles/activerecord5_1.gemfile
+    - rvm: 2.3.8
+      gemfile: gemfiles/activerecord5_1.gemfile
+      env: USE_MYSQL=true
+    - rvm: 2.3.8
+      gemfile: gemfiles/activerecord5_1.gemfile
+    - rvm: 2.4.9
+      gemfile: gemfiles/activerecord5_1.gemfile
+      env: USE_MYSQL=true
+    - rvm: 2.4.9
+      gemfile: gemfiles/activerecord5_1.gemfile
+    - rvm: 2.5.7
+      gemfile: gemfiles/activerecord5_1.gemfile
+      env: USE_MYSQL=true
+    - rvm: 2.5.7
+      gemfile: gemfiles/activerecord5_1.gemfile
+    - rvm: 2.6.5
+      gemfile: gemfiles/activerecord5_1.gemfile
+      env: USE_MYSQL=true
+    - rvm: 2.6.5
+      gemfile: gemfiles/activerecord5_1.gemfile
+
+    - rvm: 2.3.3
+      gemfile: gemfiles/activerecord5_2.gemfile
+      env: USE_MYSQL=true
+    - rvm: 2.3.3
+      gemfile: gemfiles/activerecord5_2.gemfile
+    - rvm: 2.3.8
+      gemfile: gemfiles/activerecord5_2.gemfile
+      env: USE_MYSQL=true
+    - rvm: 2.3.8
+      gemfile: gemfiles/activerecord5_2.gemfile
+    - rvm: 2.4.9
+      gemfile: gemfiles/activerecord5_2.gemfile
+      env: USE_MYSQL=true
+    - rvm: 2.4.9
+      gemfile: gemfiles/activerecord5_2.gemfile
+    - rvm: 2.5.7
+      gemfile: gemfiles/activerecord5_2.gemfile
+      env: USE_MYSQL=true
+    - rvm: 2.5.7
+      gemfile: gemfiles/activerecord5_2.gemfile
+    - rvm: 2.6.5
+      gemfile: gemfiles/activerecord5_2.gemfile
+      env: USE_MYSQL=true
+    - rvm: 2.6.5
+      gemfile: gemfiles/activerecord5_2.gemfile
+
+    - rvm: 2.5.7
+      gemfile: gemfiles/activerecord6_0.gemfile
+      env: USE_MYSQL=true
+    - rvm: 2.5.7
+      gemfile: gemfiles/activerecord6_0.gemfile
+    - rvm: 2.6.5
+      gemfile: gemfiles/activerecord6_0.gemfile
+      env: USE_MYSQL=true
+    - rvm: 2.6.5
+      gemfile: gemfiles/activerecord6_0.gemfile
 
 services:
   - mysql
@@ -16,9 +123,6 @@ services:
 before_install:
   - gem install bundler
   - mysql -e 'CREATE DATABASE IF NOT EXISTS test;'
-
-env:
-  - USE_MYSQL=true
 
 git:
   depth: 1

@@ -8,7 +8,6 @@
 coverage
 doc/
 exec/
-Gemfile.lock
 pkg
 rdoc
 spec/reports

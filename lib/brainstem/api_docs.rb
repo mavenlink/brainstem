@@ -1,4 +1,5 @@
 require 'active_support/configurable'
+require 'active_support/core_ext/string/strip'
 
 module Brainstem
   module ApiDocs

@@ -93,7 +93,7 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
                   not_to make_database_queries({ count: 1, matching: "SELECT COUNT(*) FROM" })
 
               expect { run_query }.
-                to make_database_queries({ count: 1, matching: "SELECT  DISTINCT SQL_CALC_FOUND_ROWS cheeses.id FROM" }).
+                to make_database_queries({ count: 1, matching: /SELECT\s+DISTINCT SQL_CALC_FOUND_ROWS cheeses.id FROM/ }).
                 and make_database_queries({ count: 1, matching: "SELECT FOUND_ROWS()" })
 
               _, count = run_query
@@ -111,7 +111,7 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
                 to make_database_queries({ count: 1, matching: "SELECT COUNT(*) FROM" })
 
               expect { run_query }.
-                not_to make_database_queries({ count: 1, matching: "SELECT  DISTINCT SQL_CALC_FOUND_ROWS cheeses.id FROM" })
+                not_to make_database_queries({ count: 1, matching: /SELECT\s+DISTINCT SQL_CALC_FOUND_ROWS cheeses.id FROM/ })
 
               expect { run_query }.
                 not_to make_database_queries({ count: 1, matching: "SELECT FOUND_ROWS()" })

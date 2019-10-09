@@ -1,5 +1,5 @@
 require 'spec_helper'
-require 'action_controller/metal/strong_parameters'
+require 'action_controller'
 
 describe Brainstem::ControllerMethods do
   class TasksController
@@ -62,7 +62,7 @@ describe Brainstem::ControllerMethods do
 
       it "passes through the controller params" do
         @controller.brainstem_present_object(Workspace.find(1))
-        expect(@controller.call_results[:options][:params]).to eq(@controller.params.merge(:only => '1'))
+        expect(@controller.call_results[:options][:params].with_indifferent_access).to eq(@controller.params.merge('only' => '1').to_unsafe_h)
       end
 
       it "passes through supplied options" do

@@ -584,7 +584,7 @@ module Brainstem
 
             context "when not nodoc" do
               it "evaluates the proc in the controller's context and lists it as a nested param" do
-                mock.proxy(const).brainstem_model_name
+                mock.proxy(const).brainstem_model_name.at_least(1)
 
                 result = subject.params_configuration_tree
                 expect(result.keys).to eq(%w(widget))
