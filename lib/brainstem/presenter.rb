@@ -369,8 +369,8 @@ module Brainstem
           struct["#{singular_external_name}_ref"] = make_model_ref(associated_model_or_models)
         end
       else
-        if associated_model_or_models.is_a?(Array) || associated_model_or_models.is_a?(ActiveRecord::Relation)
-          struct["#{singular_external_name}_ids"] = associated_model_or_models.map { |associated_model| to_s_except_nil(associated_model.try(:id)) }
+        if associated_model_or_models.is_a?(Array) || associated_model_or_models.is_a?(ActiveRecord::Relation) || association.type == :has_many
+          struct["#{singular_external_name}_ids"] = associated_model_or_models&.map { |associated_model| to_s_except_nil(associated_model.try(:id)) } || []
         else
           struct["#{singular_external_name}_id"] = to_s_except_nil(associated_model_or_models.try(:id))
         end

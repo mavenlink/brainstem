@@ -411,6 +411,20 @@ describe Brainstem::PresenterCollection do
         expect(result['workspaces'].keys).to eq odd_workspace_ids
       end
 
+      context "when a dynamic has many association is empty" do
+        before do
+          @user = User.find(3)
+        end
+
+        it "returns the proper foreign_key name and empty array" do
+          result = @presenter_collection.presenting("users", :params => { :include => "odd_workspaces" }) { User.where(:id => 3) }
+          expect(result['users'][@user.id.to_s]).to be_present
+          expect(result['users'][@user.id.to_s].has_key?('odd_workspace_id')).to be_falsey
+          expect(result['users'][@user.id.to_s]['odd_workspace_ids']).to be_empty
+          expect(result['workspaces'].keys).to be_empty
+        end
+      end
+
       describe "restricted associations" do
         it "does apply includes that are restricted to only queries in an only query" do
           t = Task.first

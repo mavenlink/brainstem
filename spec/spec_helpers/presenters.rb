@@ -120,7 +120,8 @@ class UserPresenter < Brainstem::Presenter
   associations do
     association :odd_workspaces, Workspace,
                 info: 'only the odd numbered workspaces',
-                dynamic: lambda { |user| user.workspaces.select { |workspace| workspace.id % 2 == 1 } }
+                type: :has_many,
+                dynamic: lambda { |user| user.workspaces.select { |workspace| workspace.id % 2 == 1 }.presence }
   end
 end
 

@@ -1,5 +1,6 @@
 User.create!(:id => 1, :username => "bob")
 User.create!(:id => 2, :username => "jane")
+User.create!(:id => 3, :username => "steve")
 
 Workspace.create!(:id => 1, :user_id => 1, :title => "bob workspace 1", :description => "a")
 Workspace.create!(:id => 2, :user_id => 1, :title => "bob workspace 2", :description => "1")
