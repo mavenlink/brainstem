@@ -1000,6 +1000,21 @@ describe Brainstem::Presenter do
           # match SQLite and MySQL quotes
           expect(sql).to match(/ORDER BY workspaces\.title asc, [`"]workspaces[`"]\.[`"]id[`"] ASC/i)
         end
+
+        context 'when sorting by associated models' do
+          let(:scope) { Workspace.where(nil).joins(:tasks) }
+          let(:order) { { 'order' => 'tasks:asc' } }
+
+          before do
+            presenter_class.sort_order :tasks, 'COALECE(tasks.name, tasks.created_at)'
+          end
+
+          it 'applies the named ordering in the given direction and adds the primary key as a fallback sort' do
+            sql = presenter.apply_ordering_to_scope(scope, order).to_sql
+            # match SQLite and MySQL quotes
+            expect(sql).to match(/ORDER BY COALECE\(tasks\.name, tasks\.created_at\) asc, [`"]workspaces[`"]\.[`"]id[`"] ASC/i)
+          end
+        end
       end
 
       context 'and is a symbol' do
