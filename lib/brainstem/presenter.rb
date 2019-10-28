@@ -214,7 +214,7 @@ module Brainstem
         when nil
           scope
         else
-          scope.reorder(order.to_s + " " + direction)
+          scope.reorder(Arel.sql(order.to_s + " " + direction))
       end
 
       fallback_deterministic_sort = assemble_primary_key_sort(scope)
