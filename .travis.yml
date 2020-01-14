@@ -1,5 +1,7 @@
 language: ruby
 
+dist: trusty
+
 matrix:
   include:
     - rvm: 2.3.3
