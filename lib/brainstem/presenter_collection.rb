@@ -63,6 +63,8 @@ module Brainstem
 
       structure_response(presented_class, primary_models, strategy, count, options)
     end
+    
+    add_tracer_method :presenting, 'Brainstem/presenter_collection'
 
     def structure_response(presented_class, primary_models, strategy, count, options)
       # key these models will use in the struct that is output
