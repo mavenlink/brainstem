@@ -120,6 +120,8 @@ module Brainstem
       end
     end
 
+    add_method_tracer :group_present, 'Brainstem/presenter'
+
     def present_model(model, requested_associations = [], options = {})
       group_present([model], requested_associations, options).first
     end
