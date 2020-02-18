@@ -21,6 +21,7 @@ Gem::Specification.new do |gem|
 
   gem.add_dependency "activerecord", ">= 4.2"
   gem.add_dependency "activesupport", ">= 4.2"
+  gem.add_dependency 'newrelic_rpm'
 
   gem.add_development_dependency "rake"
   gem.add_development_dependency "redcarpet" # for markdown in yard
