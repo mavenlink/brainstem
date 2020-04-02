@@ -1,5 +1,7 @@
 language: ruby
 
+dist: trusty
+
 matrix:
   include:
     - rvm: 2.3.3
@@ -121,7 +123,7 @@ services:
   - mysql
 
 before_install:
-  - gem install bundler
+  - gem install bundler -v "$(grep -A 1 "BUNDLED WITH" Gemfile.lock | tail -n 1)"
   - mysql -e 'CREATE DATABASE IF NOT EXISTS test;'
 
 git:
