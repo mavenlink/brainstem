@@ -45,7 +45,7 @@ module Brainstem
           ids = scope.pluck(Arel.sql("SQL_CALC_FOUND_ROWS #{scope.table_name}.id"))
           @last_count = ActiveRecord::Base.connection.execute("SELECT FOUND_ROWS()").first.first
         else
-          ids = scope.pluck("#{scope.table_name}.id")
+          ids = scope.pluck(Arel.sql("#{scope.table_name}.id"))
         end
 
         id_lookup = {}
