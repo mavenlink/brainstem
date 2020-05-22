@@ -41,7 +41,7 @@ module Brainstem
       private
 
       def get_ids_sql(scope)
-        if Brainstem.mysql_use_calc_found_rows && ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql/i
+        if use_calc_row?
           ids = scope.pluck(Arel.sql("SQL_CALC_FOUND_ROWS #{scope.table_name}.id"))
           @last_count = ActiveRecord::Base.connection.execute("SELECT FOUND_ROWS()").first.first
         else
@@ -51,6 +51,12 @@ module Brainstem
         id_lookup = {}
         ids.each.with_index { |id, index| id_lookup[id] = index }
         scope.klass.where(id: id_lookup.keys).sort_by { |model| id_lookup[model.id] }
+      end
+
+      def use_calc_row?
+        return false unless Brainstem.mysql_use_calc_found_rows
+        return false unless ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql/i
+        [true, false].sample
       end
 
       def calculate_limit
