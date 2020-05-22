@@ -56,7 +56,7 @@ module Brainstem
       def use_calc_row?
         return false unless Brainstem.mysql_use_calc_found_rows
         return false unless ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql/i
-        [true, false].sample
+        true
       end
 
       def calculate_limit
