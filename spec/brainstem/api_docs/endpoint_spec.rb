@@ -319,6 +319,25 @@ module Brainstem
           end
         end
 
+        describe "#response_details" do
+          context "when present" do
+            let(:details) { { object_name: 'Blah', response_type: 'single' } }
+            let(:show_config) { { response_details: details } }
+
+            it "returns the details" do
+              expect(subject.response_details).to eq(details)
+            end
+          end
+
+          context "when not present" do
+            let(:show_config) { { title: "Blah" } }
+
+            it "returns an empty hash" do
+              expect(subject.response_details).to eq({})
+            end
+          end
+        end
+
         describe "#params_configuration_tree" do
           let(:default_config) { { valid_params: which_param } }
 

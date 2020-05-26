@@ -551,7 +551,7 @@ module Brainstem
 
       describe ".valid_dynamic_param" do
         let(:dynamic_keyword) { described_class::DYNAMIC_KEY.to_s }
-        
+
         it "sets the correct configuration" do
           subject.brainstem_params do
             valid_dynamic_param :integer,
@@ -851,6 +851,56 @@ module Brainstem
           %w(index show).each do |meth|
             expect(subject.configuration[meth.to_sym][:valid_params].keys.map(&:call)).to \
               include "param_1"
+          end
+        end
+      end
+
+      describe '.response_details' do
+        before do
+          subject.brainstem_params do
+            response_details object_name: 'Project Summary', response_type: :multi
+
+            actions :get do
+            end
+
+            actions :show do
+              response_details response_type: :single
+            end
+          end
+        end
+
+        it 'sets the default response details' do
+          expect(subject.configuration[:_default][:response_details].to_h).to eq(
+            'object_name' => 'Project Summary',
+            'response_type' => 'multi'
+          )
+        end
+
+        it 'sets the action specific response details if given' do
+          expect(subject.configuration[:show][:response_details].to_h).to eq(
+            'object_name' => 'Project Summary',
+            'response_type' => 'single'
+          )
+        end
+
+        context 'when action does not specify response details' do
+          it 'inherits the default details' do
+            expect(subject.configuration[:get][:response_details].to_h).to eq(
+              'object_name' => 'Project Summary',
+              'response_type' => 'multi'
+            )
+          end
+        end
+
+        context 'when incorrect response_type is provided' do
+          it 'raises an error' do
+            expect {
+              subject.brainstem_params do
+                actions :search do
+                  response_details object_name: 'Filtered Summaries', response_type: :many
+                end
+              end
+            }.to raise_error(StandardError)
           end
         end
       end
@@ -1234,7 +1284,7 @@ module Brainstem
 
         context "when used within the response block" do
           let(:dynamic_keyword) { described_class::DYNAMIC_KEY.to_s }
-          
+
           context "when type is hash" do
             it "adds the field block to custom_response configuration" do
               subject.brainstem_params do

@@ -21,6 +21,7 @@ module Brainstem
                 )
               }
               let(:endpoint_args) { {} }
+              let(:response_details) { {} }
 
               subject { described_class.new(endpoint) }
 
@@ -30,6 +31,7 @@ module Brainstem
                 stub(endpoint).action { action }
                 stub(endpoint).custom_response_configuration_tree { {} }
                 stub(endpoint).http_methods { http_methods }
+                stub(endpoint).response_details { response_details }
               end
 
               describe '#call' do
@@ -62,17 +64,59 @@ module Brainstem
                     subject.call
                   end
                 end
-
               end
 
               describe '#formatting' do
                 describe '#success_response_description' do
                   subject { described_class.new(endpoint).send(:success_response_description) }
 
+                  context 'when response_details are specified' do
+                    let(:response_details) { { object_name: 'Wizard' } }
+
+                    context 'when action is show' do
+                      let(:action) { 'show' }
+
+                      it { is_expected.to eq('Wizard has been retrieved.') }
+                    end
+
+                    context 'when action is not show' do
+                      let(:action) { 'index' }
+                      let(:response_details) { { object_name: 'Wizard' } }
+
+                      it { is_expected.to eq('A list of Wizards have been retrieved.') }
+                    end
+
+                    context 'when response_type is specified' do
+                      let(:action) { 'custom' }
+
+                      context 'when response_type is single' do
+                        let(:response_details) { { object_name: 'Wizard', response_type: 'single' } }
+
+                        it { is_expected.to eq('Wizard has been retrieved.') }
+                      end
+
+                      context 'when response_type is multi' do
+                        let(:response_details) { { object_name: 'Wizard', response_type: 'multi' } }
+
+                        it { is_expected.to eq('A list of Wizards have been retrieved.') }
+                      end
+                    end
+                  end
+
                   context 'when `GET` request' do
                     let(:http_methods) { %w(GET) }
 
-                    it { is_expected.to eq('A list of Widgets have been retrieved.') }
+                    context 'when action is show' do
+                      let(:action) { 'show' }
+
+                      it { is_expected.to eq('Widget has been retrieved.') }
+                    end
+
+                    context 'when action is not show' do
+                      let(:action) { 'index' }
+
+                      it { is_expected.to eq('A list of Widgets have been retrieved.') }
+                    end
                   end
 
                   context 'when `POST` request' do
@@ -111,6 +155,8 @@ module Brainstem
                 end
 
                 describe '#format_schema_response!' do
+                  let(:action) { 'index' }
+
                   before do
                     stub(presenter).brainstem_keys { ['widgets'] }
                     stub(presenter).target_class { 'Widget' }
@@ -338,6 +384,8 @@ module Brainstem
                 end
 
                 describe '#format_custom_response!' do
+                  let(:action) { 'index' }
+
                   context 'when the response is a hash' do
                     before do
                       stub(endpoint).custom_response_configuration_tree {

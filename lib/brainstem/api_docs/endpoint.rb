@@ -143,6 +143,10 @@ module Brainstem
         @deprecated ||= key_with_default_fallback(:deprecated)
       end
 
+      def response_details
+        @response_details ||= action_configuration[:response_details] || {}
+      end
+
       #
       # Returns a hash of all params nested under the specified root or
       # parent fields along with their type, item type & children.

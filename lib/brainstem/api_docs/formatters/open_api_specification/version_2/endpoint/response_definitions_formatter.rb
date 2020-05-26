@@ -23,7 +23,7 @@ module Brainstem
                 @endpoint    = endpoint
                 @http_method = format_http_method(endpoint)
                 @presenter   = endpoint.presenter
-                @model_name  = presenter ? presenter_title(presenter) : "object"
+                @model_name  = format_model_name
                 @output      = ActiveSupport::HashWithIndifferentAccess.new
               end
 
@@ -57,6 +57,16 @@ module Brainstem
                 param_config.except(:_config)
               end
 
+              def format_model_name
+                if endpoint.response_details[:object_name].present?
+                  endpoint.response_details[:object_name]
+                elsif presenter
+                  presenter_title(presenter)
+                else
+                  "object"
+                end
+              end
+
               def success_response_description
                 case http_method
                   when 'post'
@@ -66,8 +76,17 @@ module Brainstem
                   when 'delete'
                     "#{model_name} has been deleted."
                   else
-                    "A list of #{model_name.pluralize} have been retrieved."
+                    if presents_single_model?
+                      "#{model_name} has been retrieved."
+                    else
+                      "A list of #{model_name.pluralize} have been retrieved."
+                    end
                 end
+              end
+
+              def presents_single_model?
+                endpoint.response_details[:response_type] == 'single' ||
+                  endpoint.action == 'show'
               end
 
               def format_schema_response!

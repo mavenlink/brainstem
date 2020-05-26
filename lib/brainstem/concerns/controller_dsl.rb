@@ -259,6 +259,30 @@ module Brainstem
         end
 
         #
+        # Allows customizing details for the response of an endpoint
+        #
+        # @param [Hash] options
+        # @option options [String, Symbol] :object_name The name for the response object
+        # @option options [String, Symbol] :response_type Accepts `single` or `multiple` as values. Indicates
+        #   if the endpoint returns a single or multiple models
+        #
+        def response_details(object_name: nil, response_type: nil)
+          return if object_name.blank? && response_type.blank?
+
+          if response_type.present? && %w(single multi).exclude?(response_type.to_s)
+            raise <<~ERROR
+              'response_type' accepts 'single' or 'multi' as valid values. 'response_type' indicates
+              if the endpoint responds with single or mulitple objects
+            ERROR
+          end
+
+          response_details = configuration[brainstem_params_context].nest! :response_details
+          response_details[:object_name] = object_name.to_s if object_name.present?
+          response_details[:response_type] = response_type.to_s if response_type.present?
+          response_details
+        end
+
+        #
         # Allows defining a custom response structure for an action.
         #
         # @param [Symbol] type the data type of the response.
