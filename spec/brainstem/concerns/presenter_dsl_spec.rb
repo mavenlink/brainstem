@@ -644,8 +644,25 @@ describe Brainstem::Concerns::PresenterDSL do
 
   describe ".search" do
     it "creates an entry in the search configuration" do
-      presenter_class.search do end
-      expect(presenter_class.configuration[:search]).to be_a(Proc)
+      presenter_class.search do
+      end
+
+      presenter_configuration = presenter_class.configuration[:search]
+      expect(presenter_configuration).to be_present
+      expect(presenter_configuration[:value]).to be_a(Proc)
+      expect(presenter_configuration[:type]).to eq('string')
+    end
+
+    it 'supports nodoc and info' do
+      presenter_class.search(nodoc: true, info: 'Search all the things') do
+      end
+
+      presenter_configuration = presenter_class.configuration[:search]
+      expect(presenter_configuration).to be_present
+      expect(presenter_configuration[:value]).to be_a(Proc)
+      expect(presenter_configuration[:info]).to eq('Search all the things')
+      expect(presenter_configuration[:nodoc]).to eq(true)
+      expect(presenter_configuration[:type]).to eq('string')
     end
   end
 

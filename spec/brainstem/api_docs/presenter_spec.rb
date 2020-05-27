@@ -538,6 +538,44 @@ module Brainstem
           end
         end
 
+        describe "search" do
+          context 'when search configuration is present' do
+            let(:config) { { search: { type: 'string', info: 'Search all the things', value: Proc.new {} } } }
+
+            it 'returns true for searchable' do
+              expect(subject).to be_searchable
+            end
+
+            it 'returns search configuration for documentation' do
+              expect(subject.search_configuration).to eq(type: 'string', info: 'Search all the things')
+            end
+
+            context 'when documentation options are not specified' do
+              let(:config) { { search: { value: Proc.new {} } } }
+
+              it 'returns true for searchable' do
+                expect(subject).to be_searchable
+              end
+
+              it 'returns search configuration as empty' do
+                expect(subject.search_configuration).to be_empty
+              end
+            end
+          end
+
+          context 'when search configuration is not specified' do
+            let(:config) { {} }
+
+            it 'returns false for searchable' do
+              expect(subject).to_not be_searchable
+            end
+
+            it 'returns search configuration as empty' do
+              expect(subject.search_configuration).to be_empty
+            end
+          end
+        end
+
         describe "#documentable_filter?" do
           let(:info) { lorem }
           let(:filter) { { nodoc: nodoc, info: info, internal: internal } }

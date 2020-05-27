@@ -89,9 +89,9 @@ module Brainstem
               end
 
               def format_search_param!
-                return if presenter.nil? || !presenter.searchable?
+                return if presenter.nil? || !presenter.searchable? || presenter.search_configuration[:nodoc].present?
 
-                output << format_query_param(:search, type: 'string')
+                output << format_query_param(:search, presenter.search_configuration)
               end
 
               def format_only_param!

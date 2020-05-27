@@ -113,7 +113,7 @@ module Brainstem
         # @raise [ArgumentError] if neither an order string or block is given.
         #
         def sort_order(name, *args, &block)
-          valid_options       = %w(info nodoc internal direction)
+          valid_options       = %w[info nodoc internal direction]
           options             = args.extract_options!
                                   .select { |k, v| valid_options.include?(k.to_s) }
                                   .with_indifferent_access
@@ -151,17 +151,19 @@ module Brainstem
             options[:item_type] = options[:item_type].to_s.presence || DEFAULT_FILTER_DATA_TYPE
           end
 
-          valid_options = %w(default info include_params nodoc items item_type)
-          options.select! { |k, v| valid_options.include?(k.to_s) }
+          valid_options = %w[default info include_params nodoc items item_type]
+          options.select! { |k, _| valid_options.include?(k.to_s) }
 
-          configuration[:filters][name] = options.merge({
+          configuration[:filters][name] = options.merge(
             value: (block_given? ? block : nil),
-            type: type.to_s,
-          })
+            type: type.to_s
+          )
         end
 
-        def search(&block)
-          configuration[:search] = block
+        def search(options = {}, &block)
+          options.select! { |k, _| %w[info nodoc].include?(k.to_s) }
+
+          configuration[:search] = options.merge(value: block, type: 'string')
         end
 
         def brainstem_key(key)

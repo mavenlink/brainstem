@@ -241,7 +241,7 @@ module Brainstem
 
     # Execute the stored search block
     def run_search(query, search_options)
-      fresh_helper_instance.instance_exec(query, search_options, &configuration[:search])
+      fresh_helper_instance.instance_exec(query, search_options, &configuration[:search][:value])
     end
 
     # Clean and validate a sort order and direction from user params.

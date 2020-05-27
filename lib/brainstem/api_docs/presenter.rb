@@ -144,6 +144,10 @@ module Brainstem
         configuration[:search].present?
       end
 
+      def search_configuration
+        (configuration[:search].presence || {}).except(:value)
+      end
+
       def valid_sort_orders
         configuration[:sort_orders].to_h.reject {|_k, v| nodoc_for?(v) }
       end

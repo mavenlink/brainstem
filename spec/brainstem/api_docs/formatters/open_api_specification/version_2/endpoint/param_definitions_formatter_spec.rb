@@ -525,11 +525,13 @@ module Brainstem
 
                 describe '#format_search_param!' do
                   before do
-                    mock(presenter).searchable? { searchable }
+                    stub(presenter).searchable? { searchable }
+                    stub(presenter).search_configuration { search_configuration }
                   end
 
                   context 'when presenter has search config' do
                     let(:searchable) { true }
+                    let(:search_configuration) { { info: 'Search all things', type: 'string' } }
 
                     it 'adds the search query params' do
                       subject.send(:format_search_param!)
@@ -538,9 +540,20 @@ module Brainstem
                         {
                           'in'   => 'query',
                           'name' => 'search',
-                          'type' => 'string'
+                          'type' => 'string',
+                          'description' => 'Search all things.'
                         }
                       ])
+                    end
+
+                    context 'when configuration has nodoc option set' do
+                      let(:search_configuration) { { info: 'Search all things', type: 'string', nodoc: true } }
+
+                      it 'adds the search query params' do
+                        subject.send(:format_search_param!)
+
+                        expect(subject.output).to eq([])
+                      end
                     end
                   end
 
