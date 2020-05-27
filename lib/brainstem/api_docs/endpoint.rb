@@ -107,6 +107,10 @@ module Brainstem
         @description ||= contextual_documentation(:description) || ""
       end
 
+      def bulk_create
+        @bulk_create ||= action_configuration[:bulk_create_details]
+      end
+
       def valid_params
         @valid_params ||= key_with_default_fallback(:valid_params)
       end

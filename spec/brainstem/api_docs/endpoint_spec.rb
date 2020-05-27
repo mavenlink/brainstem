@@ -252,6 +252,31 @@ module Brainstem
           end
         end
 
+        describe "#bulk_create" do
+          let(:action) { :create }
+
+          before do
+            configuration.merge!(action => create_config)
+          end
+
+          context "when present" do
+            let(:details) { { limit: 100, name: :creators } }
+            let(:create_config) { { bulk_create_details: details } }
+
+            it "returns the details" do
+              expect(subject.bulk_create).to eq(details)
+            end
+          end
+
+          context "when not present" do
+            let(:create_config) { { title: "Create Stuff" } }
+
+            it "returns an empty hash" do
+              expect(subject.bulk_create).to be_nil
+            end
+          end
+        end
+
         describe "#valid_params" do
           it "returns the valid_params key from action or default" do
             mock(subject).key_with_default_fallback(:valid_params)

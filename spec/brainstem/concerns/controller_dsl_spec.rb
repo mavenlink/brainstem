@@ -183,14 +183,14 @@ module Brainstem
         let(:root_proc) { Proc.new {} }
 
         before do
-          stub(subject).brainstem_model_name { "widgets" }
-          stub(subject).format_root_name(:widgets) { root_proc }
+          stub(subject).brainstem_model_name { "widget" }
+          stub(subject).format_root_name(:widget) { root_proc }
         end
 
         it "evaluates the block given to it" do
           mock(subject).valid(:thing, :string, 'root' => root_proc, 'ancestors' => [root_proc])
 
-          subject.model_params :widgets do |param|
+          subject.model_params :widget do |param|
             param.valid :thing, :string
           end
         end
@@ -203,8 +203,34 @@ module Brainstem
             'required'  => true
           )
 
-          subject.model_params :widgets do |param|
+          subject.model_params :widget do |param|
             param.valid :thing, :integer, nodoc: true, required: true
+          end
+        end
+
+        context 'when bulk options are passed in' do
+          context 'when specified in the default context' do
+            it 'raises an error' do
+              expect {
+                subject.brainstem_params do
+                  model_params :widget, bulk: { limit: 100, name: :widgets } do
+                  end
+                end
+              }.to raise_error(StandardError)
+            end
+          end
+
+          context 'when specified in the action context' do
+            it 'sets the bulk details configuration' do
+              subject.brainstem_params do
+                actions :create do
+                  model_params :widget, bulk: { limit: 100, name: :widgets } do
+                  end
+                end
+              end
+
+              expect(subject.configuration[:create][:bulk_create_details]).to eq('limit' => 100, 'name' => :widgets)
+            end
           end
         end
       end
