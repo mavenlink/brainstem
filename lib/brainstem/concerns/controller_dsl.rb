@@ -20,6 +20,7 @@ module Brainstem
           configuration[:_default].tap do |default|
             default.nest! :valid_params
             default.nest! :transforms
+            default.nest! :response_details
             default.nonheritable! :title
             default.nonheritable! :description
             default.nonheritable! :tag
@@ -277,12 +278,14 @@ module Brainstem
         end
 
         #
-        # Allows customizing details for the response of an endpoint
+        # Allows customizing details for the presented object/model of an endpoint
         #
         # @param [Hash] options
-        # @option options [String, Symbol] :object_name The name for the response object
+        # @option options [String, Symbol] :object_name The end user friendly name for the presented object
         # @option options [String, Symbol] :response_type Accepts `single` or `multiple` as values. Indicates
-        #   if the endpoint returns a single or multiple models
+        #   if the endpoint returns a single or multiple models.
+        #   This is used to singularize or pluralize object name, title and other descriptions for
+        #   the API Documentation
         #
         def response_details(object_name: nil, response_type: nil)
           return if object_name.blank? && response_type.blank?
