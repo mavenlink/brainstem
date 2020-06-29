@@ -58,10 +58,12 @@ module Brainstem
             let(:lorem)           { "lorem ipsum dolor sit amet" }
             let(:default_config)  { {} }
             let(:show_config)     { {} }
+            let(:create_config)   { {} }
 
             let(:configuration)   { {
               :_default => default_config,
               :show => show_config,
+              :create => create_config,
             } }
 
             let(:endpoint_args) { { action: :show } }
@@ -134,6 +136,7 @@ module Brainstem
                   end
                 end
               end
+              let(:endpoint_args) { { action: :create } }
 
               before do
                 stub(controller).const { const }
@@ -142,11 +145,20 @@ module Brainstem
               end
 
               context "with valid params" do
-                let(:root_proc) { Proc.new { "widget" } }
+                let(:root_proc) { Proc.new { |_| root_name_proc.call(_).to_s } }
+                let(:root_name_proc) { Proc.new { "widget" } }
                 let(:sprocket_id_proc) { Proc.new { "sprocket_id" } }
                 let(:sprocket_child_proc) { Proc.new { "sprocket_child" } }
-                let(:default_show_config) {
+                let(:bulk_create_details_config) { {} }
+                let(:root_fields_config) {
                   {
+                    single: { name: root_name_proc, config: { 'type' => 'hash' } }
+                  }
+                }
+                let(:default_create_config) {
+                  {
+                    root_fields: root_fields_config,
+                    bulk_create_details: bulk_create_details_config,
                     valid_params: {
                       only: {
                         info: "which ids to include", nodoc: nodoc, type: "array", item_type: "integer"
@@ -158,9 +170,9 @@ module Brainstem
                         recursive: true, legacy: false, info: "it does the thing", root: root_proc, ancestors: [root_proc], type: "string"
                       },
                     }
-                  }
+                  }.reject { |_, v| v.blank? }
                 }
-                let(:show_config) { default_show_config }
+                let(:create_config) { default_create_config }
 
                 context "when nodoc" do
                   let(:nodoc) { true }
@@ -211,8 +223,8 @@ module Brainstem
                   end
 
                   context "when required option is specified" do
-                    let(:show_config) {
-                      default_show_config.tap do |config|
+                    let(:create_config) {
+                      default_create_config.tap do |config|
                         config[:valid_params][sprocket_id_proc][:required] = required
                       end
                     }
@@ -258,8 +270,8 @@ module Brainstem
                         }
                       }
                     }
-                    let(:show_config) {
-                      default_show_config.tap do |config|
+                    let(:create_config) {
+                      default_create_config.tap do |config|
                         config[:valid_params].merge!(multi_nested_params)
                       end
                     }
@@ -278,18 +290,52 @@ module Brainstem
                       expect(output).to include("        - `sprocket_template_title` (`String`) - the title of the sprocket template\n\n\n")
                     end
                   end
+
+                  context "when root params support bulk operations" do
+                    let(:bulk_root_name_proc) { Proc.new { "widgets" } }
+                    let(:root_proc) do
+                      Proc.new do |_, is_bulk|
+                        (is_bulk ? bulk_root_name_proc : root_name_proc).call(_).to_s
+                      end
+                    end
+                    let(:bulk_create_details_config) { { name: bulk_root_name_proc } }
+                    let(:root_fields_config) {
+                      {
+                        single: { name: root_name_proc, config: { 'type' => 'hash' } },
+                        bulk: { name: bulk_root_name_proc, config: { 'type' => 'array', 'item_type' => 'hash' } }
+                      }
+                    }
+
+                    it "outputs params under a list item" do
+                      output = subject.output
+                      expect(output).to include("##### Valid Parameters\n\n")
+                      expect(output).to include("- `only` (`Array<Integer>`) - which ids to include\n")
+                      expect(output).to include("- `widget` (`Hash`)\n")
+                      expect(output).to include("    - `sprocket_id` (`Integer`) - the id of the sprocket\n")
+                      expect(output).to include("    - `sprocket_child` (`String`) - it does the thing\n")
+                      expect(output).to include("        - Legacy: false\n")
+                      expect(output).to include("        - Recursive: true\n")
+                      expect(output).to include("- `widgets` (`Array<Hash>`)\n")
+                      expect(output).to include("    - `sprocket_id` (`Integer`) - the id of the sprocket\n")
+                      expect(output).to include("    - `sprocket_child` (`String`) - it does the thing\n")
+                      expect(output).to include("        - Legacy: false\n")
+                      expect(output).to include("        - Recursive: true\n")
+                    end
+                  end
                 end
               end
 
               context "with only default params" do
-                let(:default_config) { {
-                  valid_params: {
-                    Proc.new { "sprocket_name" } => {
-                      info: "the name of the sprocket",
-                      nodoc: nodoc
+                let(:default_config) {
+                  {
+                    valid_params: {
+                      Proc.new { "sprocket_name" } => {
+                        info: "the name of the sprocket",
+                        nodoc: nodoc
+                      }
                     }
                   }
-                } }
+                }
 
                 context "when nodoc" do
                   let(:nodoc) { true }

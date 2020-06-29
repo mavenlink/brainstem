@@ -164,22 +164,24 @@ module Brainstem
             .to_h
             .deep_dup
             .with_indifferent_access
-            .inject(ActiveSupport::HashWithIndifferentAccess.new) do |result, (field_name_proc, field_config)|
+            .inject(ActiveSupport::HashWithIndifferentAccess.new) do |result, (field_name_proc, raw_field_config)|
 
-            next result if nodoc_for?(field_config)
-            field_config = field_config.except(:nodoc, :internal)
-
+            next result if nodoc_for?(raw_field_config)
+            field_config = raw_field_config.except(:nodoc, :internal)
             field_name = evaluate_field_name(field_name_proc)
+
             if field_config.has_key?(:ancestors)
-              ancestors = field_config[:ancestors].map { |ancestor_key| evaluate_field_name(ancestor_key) }
+              formatted_field_config = { :_config => field_config.except(:root, :ancestors) }
 
-              parent = ancestors.inject(result) do |traversed_hash, ancestor_name|
-                traversed_hash[ancestor_name] ||= { :_config => { type: 'hash' } }
-                traversed_hash[ancestor_name]
+              parent = parent_in_params_tree(result, field_config, false)
+              parent[field_name] = formatted_field_config
+
+              if bulk_create.present?
+                bulk_param_parent = parent_in_params_tree(result, field_config, true)
+                bulk_param_parent[field_name] = formatted_field_config
               end
-
-              parent[field_name] = { :_config => field_config.except(:root, :ancestors) }
             else
+              field_name = evaluate_field_name(field_name_proc)
               result[field_name] = { :_config => field_config }
             end
 
@@ -187,6 +189,18 @@ module Brainstem
           end
         end
       end
+
+      #
+      # Generates the parent params tree based on the given field config
+      #
+      def parent_in_params_tree(params_tree, field_config, is_bulk_param)
+        field_config[:ancestors].inject(params_tree) do |traversed_hash, ancestor_key|
+          ancestor_name = evaluate_field_name(ancestor_key, is_bulk_param)
+          traversed_hash[ancestor_name] ||= evaluate_root_config(is_bulk_param)
+          traversed_hash[ancestor_name]
+        end
+      end
+      private :parent_in_params_tree
 
       #
       # Returns a hash of all fields for a custom response nested under the specified
@@ -235,13 +249,25 @@ module Brainstem
       #
       # Evaluate field name if proc and symbolize it.
       #
-      def evaluate_field_name(field_name_or_proc)
+      def evaluate_field_name(field_name_or_proc, is_bulk_param = false)
         return field_name_or_proc if field_name_or_proc.nil?
 
-        field_name = field_name_or_proc.respond_to?(:call) ? field_name_or_proc.call(controller.const) : field_name_or_proc
+        field_name = field_name_or_proc.respond_to?(:call) ?
+          field_name_or_proc.call(controller.const, is_bulk_param) :
+          field_name_or_proc
         field_name.to_sym
       end
-      alias_method :evaluate_root_name, :evaluate_field_name
+      private :evaluate_field_name
+
+      #
+      # Returns the root field config based on bulk param
+      #
+      def evaluate_root_config(is_bulk_param)
+        root_key = is_bulk_param ? :bulk : :single
+
+        { _config: action_configuration[:root_fields][root_key][:config] }
+      end
+      private :evaluate_root_config
 
       #
       # Retrieves the +presents+ settings.

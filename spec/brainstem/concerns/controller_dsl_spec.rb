@@ -180,35 +180,59 @@ module Brainstem
       end
 
       describe ".model_params" do
+        let(:root_name_proc) { Proc.new {} }
         let(:root_proc) { Proc.new {} }
 
         before do
           stub(subject).brainstem_model_name { "widget" }
-          stub(subject).format_root_name(:widget) { root_proc }
+          stub(subject).format_root_name(:widget) { root_name_proc }
         end
 
-        it "evaluates the block given to it" do
-          mock(subject).valid(:thing, :string, 'root' => root_proc, 'ancestors' => [root_proc])
-
-          subject.model_params :widget do |param|
-            param.valid :thing, :string
+        context 'when bulk option is not specified' do
+          before do
+            stub(subject).root_name_to_proc(root_name_proc, nil) { root_proc }
           end
-        end
 
-        it "merges options" do
-          mock(subject).valid(:thing, :integer,
-            'root'      => root_proc,
-            'ancestors' => [root_proc],
-            'nodoc'     => true,
-            'required'  => true
-          )
+          it "evaluates the block given to it" do
+            mock(subject).valid(:thing, :string, 'root' => root_proc, 'ancestors' => [root_proc])
 
-          subject.model_params :widget do |param|
-            param.valid :thing, :integer, nodoc: true, required: true
+            subject.brainstem_params do
+              model_params :widget do |param|
+                param.valid :thing, :string
+              end
+            end
+          end
+
+          it 'sets the root field' do
+            subject.brainstem_params do
+              model_params :widget do |param|
+                param.valid :thing, :string
+              end
+            end
+
+            root_fields_config = subject.configuration[:_default][:root_fields]
+            expect(root_fields_config[:single]).to eq('name' => root_name_proc, 'config' => { 'type' => 'hash' })
+          end
+
+          it "merges options" do
+            mock(subject).valid(:thing, :integer, 'root' => root_proc, 'ancestors' => [root_proc], 'info' => 'hello')
+
+            subject.brainstem_params do
+              model_params :widget do |param|
+                param.valid :thing, :integer, info: 'hello'
+              end
+            end
           end
         end
 
         context 'when bulk options are passed in' do
+          let(:bulk_root_name_proc) { Proc.new {} }
+
+          before do
+            stub(subject).format_root_name(:widgets, true) { bulk_root_name_proc }
+            stub(subject).root_name_to_proc(root_name_proc, bulk_root_name_proc) { root_proc }
+          end
+
           context 'when specified in the default context' do
             it 'raises an error' do
               expect {
@@ -221,6 +245,38 @@ module Brainstem
           end
 
           context 'when specified in the action context' do
+            it 'evaluates the block given to it' do
+              mock(subject).valid(:thing, :string, 'root' => root_proc, 'ancestors' => [root_proc])
+
+              subject.brainstem_params do
+                actions :create do
+                  model_params :widget, bulk: { name: :widgets } do |param|
+                    param.valid :thing, :string
+                  end
+                end
+              end
+            end
+
+            it 'sets the single and bulk root fields' do
+              subject.brainstem_params do
+                actions :create do
+                  model_params :widget, bulk: { name: :widgets } do |param|
+                    param.valid :thing, :string
+                  end
+                end
+              end
+
+              root_fields_config = subject.configuration[:create][:root_fields]
+              expect(root_fields_config[:single]).to eq(
+                'name' => root_name_proc,
+                'config' => { 'type' => 'hash' }
+              )
+              expect(root_fields_config[:bulk]).to eq(
+                'name' => bulk_root_name_proc,
+                'config' => { 'type' => 'array', 'item_type' => 'hash' }
+              )
+            end
+
             it 'sets the bulk details configuration' do
               subject.brainstem_params do
                 actions :create do
@@ -230,6 +286,50 @@ module Brainstem
               end
 
               expect(subject.configuration[:create][:bulk_create_details]).to eq('limit' => 100, 'name' => :widgets)
+            end
+
+            it "merges options for root params defined as multiple blocks" do
+              mock(subject).valid(:thing, :string, 'root' => root_proc, 'ancestors' => [root_proc])
+              mock(subject).valid(:other_thing, :string, 'root' => root_proc, 'ancestors' => [root_proc])
+
+              subject.brainstem_params do
+                actions :create do
+                  model_params :widget, bulk: { limit: 100, name: :widgets, only: [:create] } do |param|
+                    param.valid :thing, :string
+                  end
+                end
+
+                actions :create do
+                  model_params(:widget, { info: 'single', bulk: { info: 'multiple', name: :widgets } }) do |param|
+                    param.valid :other_thing, :string
+                  end
+                end
+              end
+
+              root_fields_config = subject.configuration[:create][:root_fields]
+              expect(root_fields_config[:single]).to eq(
+                'name' => root_name_proc,
+                'info' => 'single',
+                'config' => { 'type' => 'hash' }
+              )
+              expect(root_fields_config[:bulk]).to eq(
+                'name' => bulk_root_name_proc,
+                'info' => 'multiple',
+                'limit' => 100,
+                'config' => { 'type' => 'array', 'item_type' => 'hash' }
+              )
+            end
+
+            it "merges options with fields" do
+              mock(subject).valid(:thing, :integer, 'root' => root_proc, 'ancestors' => [root_proc])
+
+              subject.brainstem_params do
+                actions :create do
+                  model_params :widget, bulk: { limit: 100, name: :widgets } do |param|
+                    param.valid :thing, :integer
+                  end
+                end
+              end
             end
           end
         end

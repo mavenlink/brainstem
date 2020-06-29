@@ -45,6 +45,7 @@ module Brainstem
         let(:lorem) { "lorem ipsum dolor sit amet" }
         let(:default_config) { {} }
         let(:show_config) { {} }
+        let(:create_config) { {} }
         let(:nodoc) { false }
         let(:internal) { false }
 
@@ -52,6 +53,7 @@ module Brainstem
           {
             :_default => default_config,
             :show => show_config,
+            :create => create_config
           }
         }
 
@@ -255,10 +257,6 @@ module Brainstem
         describe "#bulk_create" do
           let(:action) { :create }
 
-          before do
-            configuration.merge!(action => create_config)
-          end
-
           context "when present" do
             let(:details) { { limit: 100, name: :creators } }
             let(:create_config) { { bulk_create_details: details } }
@@ -364,11 +362,20 @@ module Brainstem
         end
 
         describe "#params_configuration_tree" do
-          let(:default_config) { { valid_params: which_param } }
+          let(:action) { :create }
+          let(:root_fields_config) { {} }
+          let(:bulk_create_config) { {} }
+          let(:create_config) do
+            {
+              valid_params: create_params,
+              root_fields: root_fields_config,
+              bulk_create_details: bulk_create_config,
+            }.reject { |_, v| v.blank? }
+          end
 
           context "non-nested params" do
             let(:root_param) { { Proc.new { 'title' } => { nodoc: nodoc, type: 'string', internal: internal } } }
-            let(:which_param) { root_param }
+            let(:create_params) { root_param }
 
             context "when nodoc" do
               let(:nodoc) { true }
@@ -392,12 +399,12 @@ module Brainstem
               end
 
               context "when param has an item" do
-                let(:which_param) { { only: { nodoc: nodoc, type: 'array', item: 'integer' } } }
+                let(:create_params) { { widget_ids: { nodoc: nodoc, type: 'array', item: 'integer' } } }
 
                 it "lists it as a root param" do
                   expect(subject.params_configuration_tree).to eq(
                     {
-                      only: {
+                      widget_ids: {
                         _config: { type: 'array', item: 'integer' }
                       }
                     }.with_indifferent_access
@@ -466,7 +473,9 @@ module Brainstem
           end
 
           context "nested params" do
-            let(:root_proc) { Proc.new { 'sprocket' } }
+            let(:root_name_proc) { Proc.new { 'sprocket' } }
+            let(:root_proc) { Proc.new { root_name_proc.call.to_s } }
+            let(:root_fields_config) { { single: { name: root_name_proc, config: { 'type' => 'hash' } } } }
             let(:nested_param) {
               { Proc.new { 'title' } => {
                 nodoc: nodoc,
@@ -476,7 +485,7 @@ module Brainstem
                 internal: internal
               } }
             }
-            let(:which_param) { nested_param }
+            let(:create_params) { nested_param }
 
             context "when nodoc" do
               let(:nodoc) { true }
@@ -584,7 +593,7 @@ module Brainstem
               end
 
               context "when nested param has an item" do
-                let(:which_param) {
+                let(:create_params) {
                   {
                     Proc.new { 'ids' } => { nodoc: nodoc, type: 'array', item: 'integer', root: root_proc, ancestors: [root_proc] }
                   }
@@ -608,15 +617,60 @@ module Brainstem
                   )
                 end
               end
+
+              context "when the root params supports bulk operation" do
+                let(:root_name_proc) { Proc.new { 'sprocket' } }
+                let(:bulk_root_name_proc) { Proc.new {  'sprockets' } }
+                let(:root_proc) do
+                  Proc.new { |_, is_bulk| (is_bulk ? bulk_root_name_proc : root_name_proc).call.to_s }
+                end
+                let(:root_fields_config) {
+                  {
+                    single: { name: root_name_proc, config: { 'type' => 'hash' } },
+                    bulk: { name: root_name_proc, config: { 'type' => 'array', item_type: 'hash' } },
+                  }
+                }
+                let(:bulk_create_config) { { name: bulk_root_name_proc, limit: 100 } }
+
+                it "lists the nested params as single and bulk param" do
+                  expect(subject.params_configuration_tree).to eq(
+                    {
+                      sprocket: {
+                        _config: {
+                          type: 'hash',
+                        },
+                        title: {
+                          _config: {
+                            type: 'string'
+                          }
+                        }
+                      },
+                      sprockets: {
+                        _config: {
+                          type: 'array',
+                          item_type: 'hash'
+                        },
+                        title: {
+                          _config: {
+                            type: 'string'
+                          }
+                        }
+                      }
+                    }.with_indifferent_access
+                  )
+                end
+              end
             end
           end
 
           context "proc nested params" do
-            let!(:root_proc) { Proc.new { |klass| klass.brainstem_model_name } }
+            let(:root_name_proc) { Proc.new { |klass| klass.brainstem_model_name } }
+            let(:root_proc) { Proc.new { |klass| root_name_proc.call(klass).to_s } }
+            let(:root_fields_config) { { single: { name: root_name_proc, config: { 'type' => 'hash' } } } }
             let(:proc_nested_param) {
               { Proc.new { 'title' } => { nodoc: nodoc, type: 'string', root: root_proc, ancestors: [root_proc] } }
             }
-            let(:which_param) { proc_nested_param }
+            let(:create_params) { proc_nested_param }
 
             context "when nodoc" do
               let(:nodoc) { true }
@@ -640,11 +694,57 @@ module Brainstem
                 expect(title_param.keys).to eq(%w(type))
                 expect(title_param[:type]).to eq('string')
               end
+
+              context "when root param supports bulk operation" do
+                let(:bulk_root_name_proc) { Proc.new { |klass| klass.brainstem_model_name.to_s.pluralize } }
+                let(:root_proc) do
+                  Proc.new do |klass, is_bulk|
+                    (is_bulk ? bulk_root_name_proc : root_name_proc).call(klass).to_s
+                  end
+                end
+                let(:root_fields_config) {
+                  {
+                    single: { name: root_name_proc, config: { 'type' => 'hash' } },
+                    bulk: { name: bulk_root_name_proc, config: { 'type' => 'array', item_type: 'hash' } },
+                  }
+                }
+                let(:bulk_create_config) { { name: bulk_root_name_proc, limit: 100 } }
+
+                it "evaluates the proc in the controller's context and lists it as a nested param" do
+                  expect(subject.params_configuration_tree).to eq(
+                    {
+                      widget: {
+                        _config: {
+                          type: 'hash',
+                        },
+                        title: {
+                          _config: {
+                            type: 'string'
+                          }
+                        }
+                      },
+                      widgets: {
+                        _config: {
+                          type: 'array',
+                          item_type: 'hash'
+                        },
+                        title: {
+                          _config: {
+                            type: 'string'
+                          }
+                        }
+                      }
+                    }.with_indifferent_access
+                  )
+                end
+              end
             end
           end
 
           context "multi nested params" do
-            let(:project_proc) { Proc.new { 'project' } }
+            let(:project_name_proc) { Proc.new { 'project' } }
+            let(:project_proc) { Proc.new { |klass| project_name_proc.call(klass).to_s } }
+            let(:root_fields_config) { { single: { name: project_proc, config: { 'type' => 'hash' } } } }
             let(:id_proc) { Proc.new { 'id' } }
             let(:task_proc) { Proc.new { 'task' } }
             let(:title_proc) { Proc.new { 'title' } }
@@ -652,7 +752,7 @@ module Brainstem
             let(:name_proc) { Proc.new { 'name' } }
 
             context "has a root & ancestors" do
-              let(:which_param) {
+              let(:create_params) {
                 {
                   id_proc => {
                     type: 'integer'
@@ -680,7 +780,7 @@ module Brainstem
 
               context "when a leaf param has no doc" do
                 before do
-                  which_param[name_proc][:nodoc] = true
+                  create_params[name_proc][:nodoc] = true
                 end
 
                 it "rejects the key" do
@@ -719,8 +819,8 @@ module Brainstem
 
               context "when nodoc on a parent param" do
                 before do
-                  which_param[checklist_proc][:nodoc] = true
-                  which_param[name_proc][:nodoc] = true # This will be inherited from the parent when the param is defined.
+                  create_params[checklist_proc][:nodoc] = true
+                  create_params[name_proc][:nodoc] = true # This will be inherited from the parent when the param is defined.
                 end
 
                 it "rejects the parent key and its children" do
@@ -789,11 +889,90 @@ module Brainstem
                     }.with_indifferent_access
                   )
                 end
+
+                context "when root param supports bulk operation" do
+                  let(:bulk_project_name_proc) { Proc.new {  'projects' } }
+                  let(:project_proc) do
+                    Proc.new { |_, is_bulk| (is_bulk ? bulk_project_name_proc : project_name_proc).call.to_s }
+                  end
+                  let(:root_fields_config) {
+                    {
+                      single: { name: project_name_proc, config: { 'type' => 'hash' } },
+                      bulk: { name: bulk_project_name_proc, config: { 'type' => 'array', item_type: 'hash' } },
+                    }
+                  }
+                  let(:bulk_create_config) { { name: bulk_project_name_proc, limit: 100 } }
+
+                  it "evaluates the proc in the controller's context and lists it as a nested param" do
+                    expect(subject.params_configuration_tree).to eq(
+                      {
+                        id: {
+                          _config: {
+                            type: 'integer'
+                          }
+                        },
+                        project: {
+                          _config: {
+                            type: 'hash',
+                          },
+                          task: {
+                            _config: {
+                              type: 'hash',
+                            },
+                            title: {
+                              _config: {
+                                type: 'string'
+                              }
+                            },
+                            checklist: {
+                              _config: {
+                                type: 'array',
+                                item: 'hash'
+                              },
+                              name: {
+                                _config: {
+                                  type: 'string'
+                                }
+                              },
+                            },
+                          },
+                        },
+                        projects: {
+                          _config: {
+                            type: 'array',
+                            item_type: 'hash',
+                          },
+                          task: {
+                            _config: {
+                              type: 'hash',
+                            },
+                            title: {
+                              _config: {
+                                type: 'string'
+                              }
+                            },
+                            checklist: {
+                              _config: {
+                                type: 'array',
+                                item: 'hash'
+                              },
+                              name: {
+                                _config: {
+                                  type: 'string'
+                                }
+                              },
+                            },
+                          },
+                        },
+                      }.with_indifferent_access
+                    )
+                  end
+                end
               end
             end
 
             context "has only ancestors" do
-              let(:which_param) {
+              let(:create_params) {
                 {
                   task_proc => {
                     type: 'hash',
@@ -816,7 +995,7 @@ module Brainstem
 
               context "when a leaf param has no doc" do
                 before do
-                  which_param[name_proc][:nodoc] = true
+                  create_params[name_proc][:nodoc] = true
                 end
 
                 it "rejects the key" do
@@ -845,8 +1024,8 @@ module Brainstem
 
               context "when parent param has nodoc" do
                 before do
-                  which_param[checklist_proc][:nodoc] = true
-                  which_param[name_proc][:nodoc] = true # This will be inherited from the parent when the param is defined.
+                  create_params[checklist_proc][:nodoc] = true
+                  create_params[name_proc][:nodoc] = true # This will be inherited from the parent when the param is defined.
                 end
 
                 it "rejects the parent key and its children" do

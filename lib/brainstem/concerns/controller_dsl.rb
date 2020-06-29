@@ -209,19 +209,24 @@ module Brainstem
         #
         # @param [Hash] options
         #   @option options [String] :info the documentation for the param
-        #   @option options [Boolean] :nodoc should this param appear in the documentation?
         #
         #   @option options [Hash] :bulk the documentation for the param
         #     @option bulk [String] :name the pluralized brainstem model or method
         #                                 method accepting the controller constant and returning one
         #     @option bulk [String] :limit the max no. of objects created
         #     @option bulk [String] :info the documentation for the param
-        #     @option bulk [Boolean] :nodoc should this param appear in the documentation?
         def model_params(root = nil, options = {}, &block)
-          bulk_details = options[:bulk]
-          bulk_create_details(bulk_details) if bulk_details.present?
+          single_root_proc = format_root_name(root)
+          single_root_config = options.except(:bulk)
+          add_root_field(single_root_proc, single_root_config, false)
 
-          with_options(format_root_ancestry_options(root), &block)
+          bulk_details = bulk_create_details(options[:bulk])
+          if bulk_details.present?
+            bulk_root_proc = format_root_name(bulk_details[:name], true)
+            add_root_field(bulk_root_proc, bulk_details, true)
+          end
+
+          with_options(format_root_ancestry_options(single_root_proc, bulk_root_proc), &block)
         end
 
         #
@@ -537,11 +542,13 @@ module Brainstem
 
         def bulk_create_details(options = {})
           return if options.blank?
+          return if options[:only].present? && options[:only].map(&:to_s).exclude?(brainstem_params_context.to_s)
+
           if brainstem_params_context == DEFAULT_BRAINSTEM_PARAMS_CONTEXT
             raise "`bulk` options for model_params is action specific"
           end
 
-          sanitized_options = options.slice(:name, :nodoc, :info, :limit)
+          sanitized_options = options.slice(:name, :info, :limit)
           configuration[brainstem_params_context][:bulk_create_details] = sanitized_options
         end
         private :bulk_create_details
@@ -553,7 +560,9 @@ module Brainstem
         # @return [Proc]
         #
         def convert_to_proc(field_name_or_proc)
-          field_name_or_proc.respond_to?(:call) ? field_name_or_proc : Proc.new { field_name_or_proc.to_s }
+          field_name_or_proc.respond_to?(:call) ?
+            field_name_or_proc :
+            Proc.new { |_a, _b| field_name_or_proc.to_s }
         end
 
         #
@@ -562,23 +571,35 @@ module Brainstem
         # @param [String, Symbol, Proc] text The title to set
         # @return [Proc]
         #
-        def format_root_name(root_name)
+        def format_root_name(root_name, is_bulk_param = false)
           if root_name.nil?
-            Proc.new do |klass, is_bulk_action = false|
-              is_bulk_action ? klass.brainstem_model_name.pluralize : klass.brainstem_model_name
-            end
-          elsif root_name.respond_to?(:call)
-            root_name
+            is_bulk_param ?
+              Proc.new { |klass, _b| klass.brainstem_model_name.pluralize } :
+              Proc.new { |klass, _b| klass.brainstem_model_name }
           else
-            Proc.new { root_name.to_s }
+            convert_to_proc(root_name)
+          end
+        end
+
+        #
+        # Converts the root field name into a Proc.
+        #
+        # @param [String, Symbol, Proc] text The title to set
+        # @return [Proc]
+        #
+        def root_name_to_proc(root_name_proc, bulk_root_name_proc = nil)
+          Proc.new do |klass, is_bulk_action = false|
+            is_bulk_action ?
+              bulk_root_name_proc.call(klass).to_s :
+              root_name_proc.call(klass).to_s
           end
         end
 
         #
         # Formats the ancestry options of the field. Returns a hash with ancestors & root.
         #
-        def format_root_ancestry_options(root_name)
-          root_proc = format_root_name(root_name)
+        def format_root_ancestry_options(root_name_proc, bulk_root_name_proc)
+          root_proc = root_name_to_proc(root_name_proc, bulk_root_name_proc)
           ancestors = [root_proc]
 
           { root: root_proc, ancestors: ancestors }
@@ -594,6 +615,25 @@ module Brainstem
           ancestors << field_name_proc
 
           { ancestors: ancestors }.with_indifferent_access.reject { |_, v| v.blank? }
+        end
+
+        #
+        # Formats and adds the given root field to root fields configuration for single & bulk params.
+        #
+        def add_root_field(root_name_proc, field_options, bulk_param)
+          configuration[brainstem_params_context].nest!(:root_fields)
+          root_fields_config = configuration[brainstem_params_context][:root_fields]
+
+          if bulk_param
+            field_key = :bulk
+            field_config = field_options.merge(name: root_name_proc, config: { type: 'array', item_type: 'hash' })
+          else
+            field_key = :single
+            field_config = field_options.merge(name: root_name_proc, config: { type: 'hash' })
+          end
+
+          root_fields_config[field_key] = (root_fields_config[field_key] || {}).merge(field_config)
+          root_fields_config
         end
 
         #
