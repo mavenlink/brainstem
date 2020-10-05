@@ -566,8 +566,7 @@ module Brainstem
           .to_h
           .inject(ActiveSupport::HashWithIndifferentAccess.new) do |hsh, (field_name_proc, field_config)|
 
-          if field_config.has_key?(:if)
-            condition = field_config[:if]
+          if (condition = field_config[:if])
             case condition
             when Symbol
               next hsh unless self.send condition
