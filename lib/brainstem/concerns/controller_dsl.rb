@@ -227,6 +227,8 @@ module Brainstem
         #   the endpoint
         # @option options [String, Symbol] :item_type The data type of the items contained in a field.
         #   Only used when the data type of the field is an `array`.
+        # @option options [Proc, Symbol] :if Proc to execute or method to run in the instance context of the controller.
+        #    Param is included in `brainstem_valid_params` if method is truthy, otherwise excludes the param.
         #
         def valid(name, type = nil, options = {}, &block)
           valid_params = configuration[brainstem_params_context][:valid_params]
@@ -563,6 +565,16 @@ module Brainstem
         contextual_key(requested_context, :valid_params)
           .to_h
           .inject(ActiveSupport::HashWithIndifferentAccess.new) do |hsh, (field_name_proc, field_config)|
+
+          if field_config.has_key?(:if)
+            condition = field_config[:if]
+            case condition
+            when Symbol
+              next hsh unless self.send condition
+            when Proc
+              next hsh unless instance_exec(&condition)
+            end
+          end
 
           field_name = field_name_proc.call(self.class)
           if field_config.has_key?(:ancestors)

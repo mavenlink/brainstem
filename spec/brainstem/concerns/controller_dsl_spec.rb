@@ -1908,6 +1908,74 @@ module Brainstem
             expect(subject.new.brainstem_valid_params.keys.sort).to eq ["sprocket_parent_id"]
           end
         end
+
+        context "when a valid param has the :if option" do
+          before do
+            any_instance_of(subject) do |instance|
+              stub(instance).action_name { "show" }
+              stub(instance).condition { condition_val }
+            end
+          end
+
+          context "when the condition is a symbol" do
+            before do
+              subject.brainstem_params do
+                actions :show do
+                  model_params(brainstem_model_name) do |params|
+                    params.valid :conditional_param, :string,
+                                 if: :condition
+                  end
+                end
+              end
+            end
+
+            context "when the condition evaluates to truthy" do
+              let(:condition_val) { true }
+
+              it "includes the param in the valid_params" do
+                expect(subject.new.brainstem_valid_params).to have_key("conditional_param")
+              end
+            end
+
+            context "when the condition evaluates to falsey" do
+              let(:condition_val) { false }
+
+
+              it "excludes the param in the valid_params" do
+                expect(subject.new.brainstem_valid_params).to_not have_key("conditional_param")
+              end
+            end
+          end
+
+          context "when the condition is a Proc" do
+            before do
+              subject.brainstem_params do
+                actions :show do
+                  model_params(brainstem_model_name) do |params|
+                    params.valid :conditional_param, :string,
+                                 if: -> { condition }
+                  end
+                end
+              end
+            end
+
+            context "when the condition evaluates to truthy" do
+              let(:condition_val) { true }
+
+              it "evaluates the proc in the context of the subject and includes the param in valid_params" do
+                expect(subject.new.brainstem_valid_params).to have_key("conditional_param")
+              end
+            end
+
+            context "when the condition evaluates to falsey" do
+              let(:condition_val) { false }
+
+              it "evaluates the proc in the context of the subject and excludes the param in valid_params" do
+                expect(subject.new.brainstem_valid_params).to_not have_key("conditional_param")
+              end
+            end
+          end
+        end
       end
 
       describe "#transforms" do
