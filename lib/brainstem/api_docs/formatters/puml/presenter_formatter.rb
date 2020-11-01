@@ -5,17 +5,28 @@ module Brainstem
     module Formatters
       module Puml
         class PresenterFormatter < AbstractFormatter
+          attr_accessor :add_association_class_definitions
+
+          #
+          # Declares the options that are permissable to set on this instance.
+          #
+          def valid_options
+            super | [
+              :add_association_class_definitions
+            ]
+          end
+
           def initialize(presenter, options = {})
             @presenter = presenter
+            @add_association_class_definitions = false
+
             super options
           end
 
           def call
             return "" if presenter.nodoc?
 
-            open_class_definition
-            format_fields
-            close_class_definition
+            format_class_definition(presenter)
             format_association_relations
 
             buffer.string
@@ -23,15 +34,15 @@ module Brainstem
 
           private
 
-          def open_class_definition
-            buffer.puts("class " + target_class + " {")
+          attr_reader :presenter
+
+          def open_class_definition(given_presenter)
+            buffer.puts("class " + given_presenter.target_class + " {")
           end
 
           def close_class_definition
             buffer.puts("}")
           end
-
-          attr_reader :presenter
 
           def buffer
             @buffer ||= StringIO.new
@@ -41,28 +52,46 @@ module Brainstem
             presenter.target_class
           end
 
-          def format_fields
-            presenter.valid_fields.sort.each do |_, field|
+          def format_class_definition(given_presenter)
+            open_class_definition(given_presenter)
+            format_fields(given_presenter)
+            close_class_definition
+          end
+
+          def format_fields(given_presenter)
+            given_presenter.valid_fields.sort.each do |_, field|
               buffer.puts("#{field.type} #{field.name}")
             end
           end
 
           def format_association_relations
             presenter.valid_associations.each do |_name, association|
-              associated_connections(association).each { |connection| buffer.puts(connection) }
+              associated_classes_with_labels(association).each do |associated_class, label|
+                if add_association_class_definitions
+                  associated_presenter = presenter.find_by_class(associated_class)
+                  format_class_definition(associated_presenter)
+                end
+
+                buffer.puts(connect(association, associated_class, label))
+              end
             end
           end
 
-          def associated_connections(association)
+          def associated_classes_with_labels(association)
             if association.polymorphic?
               Array.wrap(association.polymorphic_classes).map do |polymorphic_class|
-                connect(association, polymorphic_class, association.name)
+                [
+                  polymorphic_class,
+                  association.name
+                ]
               end
             else
-              association_klass = association.target_class
-              association_key = format_association_key(association)
-
-              [connect(association, association_klass, association_key)]
+              [
+                [
+                  association.target_class,
+                  format_association_key(association)
+                ]
+              ]
             end
           end
 

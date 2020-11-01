@@ -154,7 +154,7 @@ module Brainstem
             'dumps presenters and controllers to separate files (default)') do |o|
             if options[:sink][:options][:format] == :oas_v2
               raise NotImplementedError.new("Multi File support for Open API Specification is not supported yet")
-            else
+            elsif options[:sink][:options][:format] != :puml
               options[:sink][:method] = Brainstem::ApiDocs::Sinks::ControllerPresenterMultifileSink.method(:new)
             end
           end
