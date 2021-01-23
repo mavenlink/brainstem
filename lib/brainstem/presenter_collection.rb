@@ -157,13 +157,6 @@ module Brainstem
 
     private
 
-    def get_strategy(options, scope)
-      strat = options[:primary_presenter].get_query_strategy
-
-      return Brainstem::QueryStrategies::FilterAndSearch.new(options) if strat == :filter_and_search && searching?(options)
-      return Brainstem::QueryStrategies::FilterOrSearch.new(options)
-    end
-
     def searching?(options)
       options[:params][:search] && options[:primary_presenter].configuration[:search].present?
     end
