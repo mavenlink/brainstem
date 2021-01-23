@@ -1,5 +1,6 @@
 require "brainstem/version"
 require "brainstem/presenter"
+require "brainstem/poro_presenter"
 require "brainstem/presenter_collection"
 require "brainstem/controller_methods"
 require "brainstem/query_strategies/base_strategy"

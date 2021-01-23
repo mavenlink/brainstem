@@ -74,6 +74,13 @@ module Brainstem
       raise "#present is now deprecated"
     end
 
+    def query_strategy(options)
+      strat = get_query_strategy
+
+      return Brainstem::QueryStrategies::FilterAndSearch.new(options) if strat == :filter_and_search && options[:params][:search] && configuration[:search].present?
+      return Brainstem::QueryStrategies::FilterOrSearch.new(options)
+    end
+
     def get_query_strategy
       if configuration.has_key? :query_strategy
         strat = configuration[:query_strategy]
@@ -90,9 +97,13 @@ module Brainstem
         memo[assoc_name.to_s] = configuration[:associations][assoc_name] if configuration[:associations][assoc_name]
       end
 
-      # It's slightly ugly, but more efficient if we pre-load everything we
-      # need and pass it through.
-      context = {
+      context = prepare_context(models, association_objects_by_name, options)
+      preload(association_objects_by_name, context, models)
+      present_models(context, models, options)
+    end
+
+    def prepare_context(models, association_objects_by_name, options)
+      {
         conditional_cache:            { request: {} },
         fields:                       configuration[:fields],
         conditionals:                 configuration[:conditionals],
@@ -103,13 +114,19 @@ module Brainstem
         models:                       models,
         lookup:                       empty_lookup_cache(configuration[:fields].keys, association_objects_by_name.keys)
       }
+    end
+    private :prepare_context
 
+    def preload(association_objects_by_name, context, models)
       sanitized_association_names = association_objects_by_name.values.map(&:method_name)
       preload_associations! models, sanitized_association_names, context[:reflections]
 
       # Legacy: Overridable for custom preload behavior.
       custom_preload(models, association_objects_by_name.keys)
+    end
+    private :preload
 
+    def present_models(context, models, options)
       models.map do |model|
         context[:conditional_cache][:model] = {}
         context[:helper_instance] = fresh_helper_instance
@@ -119,6 +136,7 @@ module Brainstem
         datetimes_to_json(result)
       end
     end
+    private :present_models
 
     def present_model(model, requested_associations = [], options = {})
       group_present([model], requested_associations, options).first

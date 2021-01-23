@@ -53,7 +53,7 @@ module Brainstem
       options[:default_max_per_page] = default_max_per_page
       options[:default_max_filter_and_search_page] = default_max_filter_and_search_page
 
-      strategy = get_strategy(options, scope)
+      strategy = options[:primary_presenter].query_strategy(options)
       primary_models, count = strategy.execute(scope)
 
       # Determine if an exception should be raised on an empty result set.
