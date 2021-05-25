@@ -261,6 +261,26 @@ module Brainstem
                   end
                 end
 
+                context 'when the field is an enum' do
+                  let(:field_configuration_tree) do
+                    {
+                      _config: {
+                        type: 'string',
+                        info: 'The type of the sprocket.',
+                        enum: %w(Mesh Chain Wheel)
+                      }
+                    }
+                  end
+
+                  it 'is reflected in the oas schema' do
+                    expect(subject).to eq(
+                      'type' => 'string',
+                      'description' => 'The type of the sprocket.',
+                      'enum' => %w(Mesh Chain Wheel)
+                    )
+                  end
+                end
+
                 context 'dynamic keys' do
                   context 'when formatting a hash field' do
                     let(:field_configuration_tree) do

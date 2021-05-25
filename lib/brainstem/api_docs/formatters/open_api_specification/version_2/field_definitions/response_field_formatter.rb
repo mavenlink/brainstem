@@ -20,7 +20,7 @@ module Brainstem
               def format
                 field_config = @param_tree[:_config]
                 field_properties = @param_tree.except(:_config)
-  
+
                 format_field(field_config, field_properties)
               end
               alias_method :call, :format
@@ -39,13 +39,13 @@ module Brainstem
 
               def format_nested_array_field(field_config, field_properties)
                 field_properties_data, nested_levels = format_array_items(field_config, field_properties)
-                
+
                 format_nested_array_parent(nested_levels, field_properties_data)
               end
-              
+
               def format_array_items(field_config, field_properties)
                 field_nested_levels = field_config[:nested_levels]
-                
+
                 if field_properties.present?
                   [format_nested_field(field_config, field_properties), field_nested_levels - 1]
                 else
@@ -107,13 +107,14 @@ module Brainstem
                 field_data = type_and_format(field_config[:type], field_config[:item_type])
                 raise(invalid_type_error_message(field_config)) unless field_data
                 field_data.merge!(description: format_sentence(field_config[:info])) if field_config[:info].present?
+                field_data.merge!(enum: field_config[:enum]) if field_config[:enum].present?
                 field_data
               end
 
               def invalid_type_error_message(field_config)
                 <<-MSG.strip_heredoc
                   Unknown Brainstem Field type encountered(#{field_config[:type]}) for field #{field_config[:name]}
-                  in #{@endpoint.controller_name} for #{@endpoint.action} action. 
+                  in #{@endpoint.controller_name} for #{@endpoint.action} action.
                 MSG
               end
 
@@ -130,7 +131,7 @@ module Brainstem
                   end
                 end
               end
-              
+
               def format_description(field_config)
                 format_sentence(field_config[:info])
               end
