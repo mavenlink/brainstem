@@ -99,6 +99,22 @@ describe Brainstem::Presenter do
         end
       end
     end
+
+    describe '.evaluate_count' do
+      let(:my_class) { Class.new(Brainstem::Presenter) }
+
+      it 'is nil by default' do
+        expect(my_class.count_evaluator).to eq nil
+      end
+
+      it 'can be set with the dsl' do
+        my_class.evaluate_count do
+          'yo dude'
+        end
+
+        expect(my_class.count_evaluator.call).to eq 'yo dude'
+      end
+    end
   end
 
   describe "#group_present" do
@@ -133,7 +149,7 @@ describe Brainstem::Presenter do
         end
       end
     end
-    
+
     let(:workspace) { Workspace.find_by_title("bob workspace 1") }
     let(:presenter) { presenter_class.new }
 

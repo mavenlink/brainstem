@@ -47,6 +47,12 @@ ActiveRecord::Schema.define do
     t.integer :user_id
     t.string :flavor
   end
+
+  create_table :line_items, force: true do |t|
+    t.references :user
+    t.references :workspace
+    t.integer :amount
+  end
 end
 
 class User < ActiveRecord::Base
@@ -117,6 +123,11 @@ class Cheese < ActiveRecord::Base
   belongs_to :user
 
   scope :owned_by, -> id { where(user_id: id) }
+end
+
+class LineItem < ActiveRecord::Base
+  belongs_to :user
+  belongs_to :workspace
 end
 
 module Attachments
