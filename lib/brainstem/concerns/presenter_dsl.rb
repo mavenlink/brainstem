@@ -23,6 +23,10 @@ module Brainstem
       end
 
       module ClassMethods
+        def get_ids_and_count(&block)
+          self.get_ids_sql = block
+        end
+
         def preload(*args)
           configuration.array!(:preloads).concat args
         end

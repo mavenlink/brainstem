@@ -137,6 +137,26 @@ class PostPresenter < Brainstem::Presenter
   end
 end
 
+class LineItemPresenter < Brainstem::Presenter
+  presents LineItem
+
+  get_ids_and_count do |scope|
+    ids = [1, 2, 3]
+    count = 3
+
+    [ids, count]
+  end
+
+  fields do
+    field :amount, :integer
+  end
+
+  associations do
+    association :user, User
+    association :workspace, Workspace
+  end
+end
+
 class AttachmentPresenter < Brainstem::Presenter
   presents Attachments::TaskAttachment, Attachments::PostAttachment
 

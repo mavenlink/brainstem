@@ -99,6 +99,22 @@ describe Brainstem::Presenter do
         end
       end
     end
+
+    describe '.get_ids_sql' do
+      let(:my_class) { Class.new(Brainstem::Presenter) }
+
+      it 'is nil by default' do
+        expect(my_class.get_ids_sql).to eq nil
+      end
+
+      it 'can be set with the dsl' do
+        my_class.get_ids_and_count do
+          'yo dude'
+        end
+
+        expect(my_class.get_ids_sql.call).to eq 'yo dude'
+      end
+    end
   end
 
   describe "#group_present" do
@@ -133,7 +149,7 @@ describe Brainstem::Presenter do
         end
       end
     end
-    
+
     let(:workspace) { Workspace.find_by_title("bob workspace 1") }
     let(:presenter) { presenter_class.new }
 

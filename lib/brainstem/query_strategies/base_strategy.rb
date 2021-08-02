@@ -41,7 +41,9 @@ module Brainstem
       private
 
       def get_ids_sql(scope)
-        if use_calc_row?
+        if delegate_to_presenter?
+          ids, @last_count = primary_presenter.get_ids_sql.call(scope)
+        elsif use_calc_row?
           ids = scope.pluck(Arel.sql("SQL_CALC_FOUND_ROWS #{scope.table_name}.id"))
           @last_count = ActiveRecord::Base.connection.execute("SELECT FOUND_ROWS()").first.first
         else
@@ -59,6 +61,10 @@ module Brainstem
         true
       end
 
+      def delegate_to_presenter?
+        primary_presenter.get_ids_sql.present?
+      end
+
       def calculate_limit
         [[@options[:params][:limit].to_i, 1].max, (@options[:max_per_page] || @options[:default_max_per_page]).to_i].min
       end
@@ -72,7 +78,7 @@ module Brainstem
       end
 
       def filter_includes
-        allowed_associations = @options[:primary_presenter].allowed_associations(@options[:params][:only].present?)
+        allowed_associations = primary_presenter.allowed_associations(@options[:params][:only].present?)
 
         [].tap do |selected_associations|
           (@options[:params][:include] || '').split(',').each do |k|
@@ -108,6 +114,10 @@ module Brainstem
         end
 
         [limit, offset]
+      end
+
+      def primary_presenter
+        @options[:primary_presenter]
       end
     end
   end

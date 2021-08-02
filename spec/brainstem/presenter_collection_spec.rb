@@ -158,6 +158,13 @@ describe Brainstem::PresenterCollection do
           result = @presenter_collection.presenting("workspaces", :params => { :per_page => 2, :page => 1 }) { Workspace.unscoped }
           expect(result['count']).to eq(Workspace.count)
         end
+
+        it "allows overrides" do
+          result = @presenter_collection.presenting("line_items") { LineItem.all }
+          line_item_presenter_count = 3
+          expect(LineItem.all.count).not_to eq line_item_presenter_count
+          expect(result['count']).to eq line_item_presenter_count
+        end
       end
 
       describe "meta keys" do
