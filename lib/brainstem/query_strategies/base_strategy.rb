@@ -62,7 +62,7 @@ module Brainstem
       end
 
       def delegate_to_presenter?
-        primary_presenter.get_ids_sql.present?
+        primary_presenter.get_ids_sql?
       end
 
       def calculate_limit
