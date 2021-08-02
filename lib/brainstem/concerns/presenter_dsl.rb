@@ -23,8 +23,8 @@ module Brainstem
       end
 
       module ClassMethods
-        def get_ids_and_count(&block)
-          self.get_ids_sql = block
+        def evaluate_count(&block)
+          self.count_evaluator = block
         end
 
         def preload(*args)

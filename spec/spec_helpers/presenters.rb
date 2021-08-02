@@ -140,11 +140,8 @@ end
 class LineItemPresenter < Brainstem::Presenter
   presents LineItem
 
-  get_ids_and_count do |scope|
-    ids = [1, 2, 3]
-    count = 3
-
-    [ids, count]
+  evaluate_count do |_count_scope|
+    3
   end
 
   fields do

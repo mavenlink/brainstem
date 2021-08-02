@@ -100,19 +100,19 @@ describe Brainstem::Presenter do
       end
     end
 
-    describe '.get_ids_sql' do
+    describe '.evaluate_count' do
       let(:my_class) { Class.new(Brainstem::Presenter) }
 
       it 'is nil by default' do
-        expect(my_class.get_ids_sql).to eq nil
+        expect(my_class.count_evaluator).to eq nil
       end
 
       it 'can be set with the dsl' do
-        my_class.get_ids_and_count do
+        my_class.evaluate_count do
           'yo dude'
         end
 
-        expect(my_class.get_ids_sql.call).to eq 'yo dude'
+        expect(my_class.count_evaluator.call).to eq 'yo dude'
       end
     end
   end

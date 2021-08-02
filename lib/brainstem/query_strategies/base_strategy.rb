@@ -27,6 +27,8 @@ module Brainstem
       end
 
       def evaluate_count(count_scope)
+        return primary_presenter.count_evaluator.call(count_scope) if delegate_count_to_presenter?
+
         ret = @last_count || count_scope.count
         @last_count = nil
         ret
@@ -41,9 +43,7 @@ module Brainstem
       private
 
       def get_ids_sql(scope)
-        if delegate_to_presenter?
-          ids, @last_count = primary_presenter.get_ids_sql.call(scope)
-        elsif use_calc_row?
+        if use_calc_row?
           ids = scope.pluck(Arel.sql("SQL_CALC_FOUND_ROWS #{scope.table_name}.id"))
           @last_count = ActiveRecord::Base.connection.execute("SELECT FOUND_ROWS()").first.first
         else
@@ -58,11 +58,13 @@ module Brainstem
       def use_calc_row?
         return false unless Brainstem.mysql_use_calc_found_rows
         return false unless ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql/i
+        return false if delegate_count_to_presenter?
+
         true
       end
 
-      def delegate_to_presenter?
-        primary_presenter.get_ids_sql?
+      def delegate_count_to_presenter?
+        primary_presenter.count_evaluator?
       end
 
       def calculate_limit

@@ -9,7 +9,7 @@ module Brainstem
   # @abstract Subclass and override {#present} to implement a presenter.
   class Presenter
     include Concerns::PresenterDSL
-    class_attribute :get_ids_sql
+    class_attribute :count_evaluator
 
     # Class methods
 
