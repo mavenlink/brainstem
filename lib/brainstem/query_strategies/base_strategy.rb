@@ -27,7 +27,7 @@ module Brainstem
       end
 
       def evaluate_count(count_scope)
-        return primary_presenter.count_evaluator.call(count_scope) if delegate_count_to_presenter?
+        return primary_presenter.evaluate_count(count_scope) if delegate_count_to_presenter?
 
         ret = @last_count || count_scope.count
         @last_count = nil
@@ -64,7 +64,7 @@ module Brainstem
       end
 
       def delegate_count_to_presenter?
-        primary_presenter.count_evaluator?
+        primary_presenter.evaluate_count?
       end
 
       def calculate_limit

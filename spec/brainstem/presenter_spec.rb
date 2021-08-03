@@ -100,19 +100,43 @@ describe Brainstem::Presenter do
       end
     end
 
-    describe '.evaluate_count' do
-      let(:my_class) { Class.new(Brainstem::Presenter) }
+    describe '#evaluate_count?' do
+      it 'is true when configuration has an evaluator' do
+        my_class = Class.new(Brainstem::Presenter)
 
-      it 'is nil by default' do
-        expect(my_class.count_evaluator).to eq nil
+        my_class.count_evaluator { |_| 3 }
+        expect(my_class.new.evaluate_count?).to eq true
       end
 
-      it 'can be set with the dsl' do
-        my_class.evaluate_count do
-          'yo dude'
-        end
+      it 'is false when there is no evaluator' do
+        my_class = Class.new(Brainstem::Presenter)
 
-        expect(my_class.count_evaluator.call).to eq 'yo dude'
+        expect(my_class.new.evaluate_count?).to eq false
+      end
+    end
+
+    describe "#evaluate_count" do
+      module CountHelper
+        def count
+          4
+        end
+      end
+
+      it 'evaluates in the context of a helper' do
+        my_class = Class.new(Brainstem::Presenter)
+        my_class.count_evaluator { |_| count }
+        my_class.helper CountHelper
+
+        expect(my_class.new.evaluate_count(0)).to eq 4
+      end
+
+      it 'evaluates without any helper' do
+        my_class = Class.new(Brainstem::Presenter)
+        my_class.count_evaluator { |count_scope| count_scope.count }
+
+        count_scope = OpenStruct.new(count: 42)
+
+        expect(my_class.new.evaluate_count(count_scope)).to eq 42
       end
     end
   end

@@ -1,5 +1,16 @@
 # Changelog
 
++ **2.3.4** - _08/03/2018_
+  ### New Features
+  - Add the ability to delegate count evaluation to presenter which can be useful for caching counts across requests. The block evaluates within the context of any helpers defined for the presenter.
+    ```ruby
+    class LineItemPresenter < Brainstem::Presenter
+      # presenter...
+      count_evaluator do |count_scope|
+        cached_count? ? cached_count : count_scope.count
+      end
+    end
+    ```
 + **2.3.0** - _10/09/2019_
   ### Version Support
     - Add official Rails 6.0 compatibility
