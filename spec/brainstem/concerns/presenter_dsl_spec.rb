@@ -481,6 +481,28 @@ describe Brainstem::Concerns::PresenterDSL do
     end
   end
 
+  describe 'the count_evaluator block' do
+    before do
+      presenter_class.count_evaluator do |_count_scope|
+        3
+      end
+    end
+
+    it 'is stored in the configuration' do
+      expect(presenter_class.configuration[:count_evaluator].call(0)).to eq 3
+    end
+
+    it 'is inherited and overridable' do
+      subclass = Class.new(presenter_class)
+
+      subclass.count_evaluator do |_count_scope|
+        4
+      end
+
+      expect(subclass.configuration[:count_evaluator].call(0)).to eq 4
+    end
+  end
+
   describe ".helper" do
     let(:model) { Workspace.first }
 

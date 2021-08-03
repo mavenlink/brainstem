@@ -23,8 +23,8 @@ module Brainstem
       end
 
       module ClassMethods
-        def evaluate_count(&block)
-          self.count_evaluator = block
+        def count_evaluator(&block)
+          configuration[:count_evaluator] = block
         end
 
         def preload(*args)

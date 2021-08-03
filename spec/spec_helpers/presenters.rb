@@ -140,7 +140,7 @@ end
 class LineItemPresenter < Brainstem::Presenter
   presents LineItem
 
-  evaluate_count do |_count_scope|
+  count_evaluator do |_count_scope|
     3
   end
 
