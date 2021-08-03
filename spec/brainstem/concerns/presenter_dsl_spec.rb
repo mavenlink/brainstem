@@ -501,6 +501,12 @@ describe Brainstem::Concerns::PresenterDSL do
 
       expect(subclass.configuration[:count_evaluator].call(0)).to eq 4
     end
+
+    it 'is backward compatible' do
+      expect {
+        presenter_class.evaluate_count { |_| '12' }
+      }.not_to raise_error
+    end
   end
 
   describe ".helper" do
