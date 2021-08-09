@@ -19,6 +19,9 @@ module Brainstem
           if @options[:params][:only].present?
             # Handle Only
             scope, count_scope = handle_only(scope, @options[:params][:only])
+          elsif @options[:primary_presenter].seek_pagination
+            # Paginate
+            scope, count_scope = seek_paginate scope
           else
             # Paginate
             scope, count_scope = paginate scope
@@ -65,6 +68,14 @@ module Brainstem
         else
           raise(SearchUnavailableError, 'Search is currently unavailable')
         end
+      end
+
+      def seek_paginate(scope)
+        limit, offset = calculate_limit_and_offset
+        ids_select_fetch = "distinct #{scope.connection.quote_table_name @options[:table_name]}.id"
+        last_id = scope.limit(1).offset(offset - 1).pluck(ids_select_fetch)
+        scope_paginated = scope.where("#{scope.connection.quote_table_name @options[:table_name]}.id > ?", last_id.first)
+        [scope_paginated.limit(limit).distinct, scope.select(ids_select_fetch)]
       end
 
       def paginate(scope)
