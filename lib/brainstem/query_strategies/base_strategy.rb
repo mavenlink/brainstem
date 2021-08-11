@@ -45,7 +45,7 @@ module Brainstem
       def get_ids_sql(scope)
         if use_calc_row?
           ids = scope.pluck(Arel.sql("SQL_CALC_FOUND_ROWS #{scope.table_name}.id"))
-          @last_count = ActiveRecord::Base.connection.execute("SELECT FOUND_ROWS()").first.first
+          @last_count = scope.connection.execute("SELECT FOUND_ROWS()").first.first
         else
           ids = scope.pluck(Arel.sql("#{scope.table_name}.id"))
         end
