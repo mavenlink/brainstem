@@ -2,10 +2,10 @@ require "spec_helper"
 
 shared_examples_for Brainstem::QueryStrategies::BaseStrategy do
   let(:strategy) { described_class.new(options) }
-
-  if(ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql/i)
+  using_mysql = ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql/i
+  if using_mysql
     describe 'mysql_use_calc_found_rows' do
-      let(:options) {{}}
+      let(:options) { { params: { page: 1 } } }
 
       context 'when using mysql_use_calc_found_rows' do
         before do
@@ -18,16 +18,9 @@ shared_examples_for Brainstem::QueryStrategies::BaseStrategy do
         end
 
         it 'returns the results without issuing a second query' do
-          expect { strategy.evaluate_scope(Workspace.unscoped) }.
+          expect { strategy.evaluate_scopes(Workspace.unscoped, Workspace.unscoped) }.
             to make_database_queries({ count: 1, matching: "SELECT SQL_CALC_FOUND_ROWS workspaces.id FROM" }).
             and make_database_queries({ count: 1, matching: "SELECT FOUND_ROWS()" })
-
-          count_scope_that_should_not_be_used = Workspace.none
-          count_expected = Workspace.count
-
-          expect {
-            expect(strategy.evaluate_count(count_scope_that_should_not_be_used)).to eq(count_expected)
-          }.not_to make_database_queries
         end
       end
 
@@ -37,13 +30,88 @@ shared_examples_for Brainstem::QueryStrategies::BaseStrategy do
         end
 
         it 'returns the results by issuing a count query' do
-          expect { strategy.evaluate_scope(Workspace.unscoped) }.
+          expect { strategy.evaluate_scopes(Workspace.unscoped, Workspace.unscoped) }.
             not_to make_database_queries({ count: 1, matching: "SELECT SQL_CALC_FOUND_ROWS workspaces.id FROM" })
-          expect { strategy.evaluate_scope(Workspace.unscoped) }.
+          expect { strategy.evaluate_scopes(Workspace.unscoped, Workspace.unscoped) }.
             not_to make_database_queries({ count: 1, matching: "SELECT FOUND_ROWS()" })
 
           expect { strategy.evaluate_count(Workspace.unscoped) }.
             to make_database_queries({ count: 1, matching: "SELECT COUNT(*) FROM" })
+        end
+      end
+    end
+  end
+
+  describe 'custom pagination' do
+    context 'when options contain a paginator' do
+      let(:page) { 1 }
+      let(:fake_get_paged_results) { [[8, 5], 999] }
+      let(:options) do
+        {
+          paginator: paginator,
+          primary_presenter: CheesePresenter.new,
+          params: {
+            page: page,
+            per_page: 10,
+          },
+          default_per_page: 20,
+          default_max_per_page: 200,
+          max_per_page: 100
+        }
+      end
+
+      if using_mysql
+        xit '- Tests requiring sqlite have not been run.' do
+          expect(true).to eq false
+        end
+
+        context 'when using mysql' do
+          let(:paginator) do
+            paginator = Object.new
+            mock(paginator).get_paged(page, anything) { fake_get_paged_results }
+            paginator
+          end
+
+          before { Brainstem.mysql_use_calc_found_rows = true }
+          after { Brainstem.mysql_use_calc_found_rows = false }
+
+          it 'uses the mocked paginator and only queries the database once' do
+            expect { strategy.evaluate_scopes(Workspace.unscoped, Workspace.unscoped).to_a }.
+              to make_database_queries(count: 1)
+          end
+
+          context 'when custom paginator fails' do
+            let(:fake_get_paged_results) { [nil, nil] }
+
+            it 'uses mysql SQL_CALC_FOUND_ROWS and FOUND_ROWS' do
+              expect { strategy.evaluate_scopes(Workspace.unscoped, Workspace.unscoped).to_a }.
+                to make_database_queries({ count: 1, matching: "SELECT SQL_CALC_FOUND_ROWS" }).
+                  and make_database_queries({ count: 1, matching: "SELECT FOUND_ROWS()" })
+            end
+          end
+        end
+      else
+        xit '- Tests requiring mysql have not been run.' do
+          expect(true).to eq false
+        end
+
+        context 'when not using mysql' do
+          context 'the paginator is not used' do
+            let(:paginator) do
+              paginator = Object.new
+              mock(paginator).get_paged(anything, anything).never
+              paginator
+            end
+
+            it 'uses scope to get page data' do
+              expect { strategy.evaluate_scopes(Workspace.unscoped, Workspace.unscoped).to_a }.
+                to make_database_queries(count: 1, matching: 'SELECT workspaces.id FROM "workspaces"').
+                  and make_database_queries(
+                    count: 1,
+                    matching: 'SELECT "workspaces".* FROM "workspaces" WHERE "workspaces"."id" IN ('
+                  )
+            end
+          end
         end
       end
     end

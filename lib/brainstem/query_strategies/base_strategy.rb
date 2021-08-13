@@ -6,32 +6,30 @@ module Brainstem
     class BaseStrategy
       def initialize(options)
         @options = options
-        @last_count = nil
       end
 
       def execute(scope)
         raise NotImplemented, 'Your strategy class must implement an `execute` method'
       end
 
-      def evaluate_scope(scope)
-        @last_count = nil
+      def evaluate_scopes(scope, count_scope, should_paginate = false)
+        page = calculate_page
+        ids, count = ids_and_count_for_page(page, scope, count_scope, should_paginate)
 
         # Load models!
         # On complex queries, MySQL can sometimes handle 'SELECT id FROM ... ORDER BY ...' much faster than
         # 'SELECT * FROM ...', so we pluck the ids, then find those specific ids in a separate query.
         if ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql|sqlite/i
-          get_ids_sql(scope)
+          models = get_models(scope, ids)
         else
-          scope.to_a
+          models = scope.to_a
         end
+
+        [models, count]
       end
 
       def evaluate_count(count_scope)
-        return primary_presenter.evaluate_count(count_scope) if delegate_count_to_presenter?
-
-        ret = @last_count || count_scope.count
-        @last_count = nil
-        ret
+        delegate_count_to_presenter? ? primary_presenter.evaluate_count(count_scope) : count_scope.count
       end
 
       def calculate_per_page
@@ -42,14 +40,32 @@ module Brainstem
 
       private
 
-      def get_ids_sql(scope)
-        if use_calc_row?
-          ids = scope.pluck(Arel.sql("SQL_CALC_FOUND_ROWS #{scope.table_name}.id"))
-          @last_count = ActiveRecord::Base.connection.execute("SELECT FOUND_ROWS()").first.first
-        else
-          ids = scope.pluck(Arel.sql("#{scope.table_name}.id"))
+      def ids_and_count_for_page(page, scope, count_scope, should_paginate)
+        ids, count = use_calc_row? && @options[:paginator]&.get_paged(page, scope)
+        return [ids, count] if ids && count
+
+        if should_paginate
+          scope, new_count_scope = paginate(scope)
+          count_scope = new_count_scope if new_count_scope
+
+          scope = primary_presenter.apply_ordering_to_scope(scope, @options[:params])
         end
 
+        if use_calc_row?
+          # MYSQL specific code:
+          # When `SELECT` is prepended with `SQL_CALC_FOUND_ROWS`, a following call to `SELECT FOUND_ROWS()`
+          # returns the number of rows the statement would produce without `LIMIT` and `OFFSET` clauses.
+          ids = scope.pluck(Arel.sql("SQL_CALC_FOUND_ROWS #{scope.table_name}.id"))
+          count = ActiveRecord::Base.connection.execute("SELECT FOUND_ROWS()").first.first
+        else
+          ids = scope.pluck(Arel.sql("#{scope.table_name}.id"))
+          count = evaluate_count(count_scope)
+        end
+
+        [ids, count]
+      end
+
+      def get_models(scope, ids)
         id_lookup = {}
         ids.each.with_index { |id, index| id_lookup[id] = index }
         scope.klass.where(id: id_lookup.keys).sort_by { |model| id_lookup[model.id] }
@@ -64,7 +80,7 @@ module Brainstem
       end
 
       def delegate_count_to_presenter?
-        primary_presenter.evaluate_count?
+        primary_presenter&.evaluate_count?
       end
 
       def calculate_limit

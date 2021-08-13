@@ -4,13 +4,10 @@ module Brainstem
       def execute(scope)
         scope, ordered_search_ids = run_search(scope, filter_includes.map(&:name))
         scope = @options[:primary_presenter].apply_filters_to_scope(scope, @options[:params], @options)
-
         if ordering?
           count_scope = scope
-          scope = paginate(scope)
-          scope = @options[:primary_presenter].apply_ordering_to_scope(scope, @options[:params])
-          primary_models = evaluate_scope(scope)
-          count = evaluate_count(count_scope)
+          should_paginate = true
+          primary_models, count = evaluate_scopes(scope, count_scope, should_paginate)
         else
           filtered_ids = scope.pluck(:id)
           count = filtered_ids.size
@@ -60,7 +57,7 @@ module Brainstem
 
       def paginate(scope)
         limit, offset = calculate_limit_and_offset
-        scope.limit(limit).offset(offset).distinct
+        [scope.limit(limit).offset(offset).distinct, nil]
       end
 
       def paginate_array(array)

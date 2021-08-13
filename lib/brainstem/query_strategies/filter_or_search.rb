@@ -18,17 +18,14 @@ module Brainstem
 
           if @options[:params][:only].present?
             # Handle Only
+            should_paginate = false
             scope, count_scope = handle_only(scope, @options[:params][:only])
           else
             # Paginate
-            scope, count_scope = paginate scope
+            should_paginate = true
           end
 
-          # Ordering
-          scope = @options[:primary_presenter].apply_ordering_to_scope(scope, @options[:params])
-
-          primary_models = evaluate_scope(scope)
-          count = evaluate_count(count_scope)
+          primary_models, count = evaluate_scopes(scope, count_scope, should_paginate)
           count = count.keys.length if count.is_a?(Hash)
         end
 
