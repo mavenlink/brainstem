@@ -64,7 +64,7 @@ module Brainstem
       end
 
       def delegate_count_to_presenter?
-        primary_presenter.evaluate_count?
+        primary_presenter&.evaluate_count?
       end
 
       def calculate_limit
