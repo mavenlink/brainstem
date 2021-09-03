@@ -158,6 +158,27 @@ describe Brainstem::PresenterCollection do
           result = @presenter_collection.presenting("workspaces", :params => { :per_page => 2, :page => 1 }) { Workspace.unscoped }
           expect(result['count']).to eq(Workspace.count)
         end
+
+        context "when the count_plus_one is true" do
+          before do
+            @presenter_collection.count_plus_one = true
+          end
+
+          it "returns the page count plus 1 if there is more data" do
+            result = @presenter_collection.presenting("workspaces", :params => { :per_page => 1, :page => 1 }) { Workspace.unscoped }
+            expect(result['count']).to eq(1 + 1)
+          end
+
+          it "returns the total count if there is no more data" do
+            result = @presenter_collection.presenting("workspaces", :params => { :per_page => 100, :page => 1 }) { Workspace.unscoped }
+            expect(result['count']).to eq(Workspace.count)
+          end
+
+          it "returns page count plus 1 when paging " do
+            result = @presenter_collection.presenting("workspaces", :params => { :per_page => 2, :page => 2 }) { Workspace.unscoped }
+            expect(result['count']).to eq(2 + 2 + 1)
+          end
+        end
       end
 
       describe "meta keys" do

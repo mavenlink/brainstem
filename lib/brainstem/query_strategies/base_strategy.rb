@@ -26,10 +26,18 @@ module Brainstem
         end
       end
 
-      def evaluate_count(count_scope)
-        ret = @last_count || count_scope.count
+      def evaluate_count(count_scope, scope)
+        if @options[:count_plus_one]
+          limit, offset = calculate_limit_and_offset
+          next_record_spot = limit + offset + 1
+          more_data = scope.limit(1).offset(next_record_spot).exists?
+          return next_record_spot if more_data
+          return count_scope.count
+        end
+
+        returned_count = @last_count || count_scope.count
         @last_count = nil
-        ret
+        returned_count
       end
 
       def calculate_per_page

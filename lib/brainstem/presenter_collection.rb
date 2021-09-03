@@ -12,6 +12,10 @@ module Brainstem
     # @return [Integer] The default number of objects that will be returned in the presented hash.
     attr_accessor :default_per_page
 
+    # @!attribute count_plus_one
+    # @return [Boolean] Return the current page count plus one if there is more data instad of the actual count
+    attr_accessor :count_plus_one
+
     attr_accessor :default_max_filter_and_search_page
 
     # @!visibility private
@@ -19,6 +23,7 @@ module Brainstem
       @default_per_page = 20
       @default_max_per_page = 200
       @default_max_filter_and_search_page = 10_000 # TODO: figure out a better default and make it configurable
+      @count_plus_one = false
     end
 
     # The main presentation method, converting a model name and an optional scope into a hash structure, ready to be converted into JSON.
@@ -52,6 +57,7 @@ module Brainstem
       options[:default_per_page] = default_per_page
       options[:default_max_per_page] = default_max_per_page
       options[:default_max_filter_and_search_page] = default_max_filter_and_search_page
+      options[:count_plus_one] = count_plus_one
 
       strategy = get_strategy(options, scope)
       primary_models, count = strategy.execute(scope)
