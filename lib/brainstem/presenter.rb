@@ -9,7 +9,6 @@ module Brainstem
   # @abstract Subclass and override {#present} to implement a presenter.
   class Presenter
     include Concerns::PresenterDSL
-
     # Class methods
 
     # Accepts a list of classes that this specific presenter knows how to present. These are not inherited.
@@ -254,6 +253,17 @@ module Brainstem
       end
 
       [sort_name, direction == 'desc' ? 'desc' : 'asc']
+    end
+
+    def evaluate_count(count_scope)
+      return unless evaluate_count?
+
+      evaluator = configuration[:count_evaluator]
+      fresh_helper_instance.instance_exec(count_scope, &evaluator)
+    end
+
+    def evaluate_count?
+      configuration.has_key?(:count_evaluator)
     end
 
     protected

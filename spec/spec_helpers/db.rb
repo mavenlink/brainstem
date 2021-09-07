@@ -32,6 +32,12 @@ Post.create!(:id => 1, :user_id => 1, :subject => Workspace.first, :body => "fir
 Post.create!(:id => 2, :user_id => 1, :subject => Task.first, :body => "this is important. get on it!")
 Post.create!(:id => 3, :user_id => 2, :body => "Post without subject")
 
+User.all.each do |user|
+  Workspace.all.each do |workspace|
+    LineItem.create!(user: user, workspace: workspace, amount: 123)
+  end
+end
+
 Attachments::PostAttachment.create!(id: 1, subject: Post.first, filename: 'I am an attachment on a post')
 Attachments::TaskAttachment.create!(id: 2, subject: Task.first, filename: 'I am an attachment on a task')
 

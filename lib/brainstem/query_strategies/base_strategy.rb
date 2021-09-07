@@ -26,7 +26,8 @@ module Brainstem
         end
       end
 
-      def evaluate_count(count_scope, scope)
+      def evaluate_count(count_scope)
+        return primary_presenter.evaluate_count(count_scope) if delegate_count_to_presenter?
         if @options[:count_plus_one]
           limit, offset = calculate_limit_and_offset
           next_record_spot = limit + offset + 1
@@ -64,7 +65,13 @@ module Brainstem
       def use_calc_row?
         return false unless Brainstem.mysql_use_calc_found_rows
         return false unless ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql/i
+        return false if delegate_count_to_presenter?
+
         true
+      end
+
+      def delegate_count_to_presenter?
+        primary_presenter.evaluate_count?
       end
 
       def calculate_limit
@@ -80,7 +87,7 @@ module Brainstem
       end
 
       def filter_includes
-        allowed_associations = @options[:primary_presenter].allowed_associations(@options[:params][:only].present?)
+        allowed_associations = primary_presenter.allowed_associations(@options[:params][:only].present?)
 
         [].tap do |selected_associations|
           (@options[:params][:include] || '').split(',').each do |k|
@@ -116,6 +123,10 @@ module Brainstem
         end
 
         [limit, offset]
+      end
+
+      def primary_presenter
+        @options[:primary_presenter]
       end
     end
   end

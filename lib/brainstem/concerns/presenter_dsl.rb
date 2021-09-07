@@ -23,6 +23,12 @@ module Brainstem
       end
 
       module ClassMethods
+        def count_evaluator(&block)
+          configuration[:count_evaluator] = block
+        end
+
+        alias evaluate_count :count_evaluator
+
         def preload(*args)
           configuration.array!(:preloads).concat args
         end

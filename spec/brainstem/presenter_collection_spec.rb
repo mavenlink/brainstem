@@ -159,6 +159,13 @@ describe Brainstem::PresenterCollection do
           expect(result['count']).to eq(Workspace.count)
         end
 
+        it "allows overrides" do
+          result = @presenter_collection.presenting("line_items") { LineItem.all }
+          line_item_presenter_count = 3
+          expect(LineItem.all.count).not_to eq line_item_presenter_count
+          expect(result['count']).to eq line_item_presenter_count
+        end
+
         context "when the count_plus_one is true" do
           before do
             @presenter_collection.count_plus_one = true
