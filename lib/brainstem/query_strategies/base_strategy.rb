@@ -41,8 +41,11 @@ module Brainstem
       private
 
       def ids_and_count_for_page(page, scope, count_scope, should_paginate)
-        ids, count = use_calc_row? && @options[:paginator]&.get_paged(page, scope)
-        return [ids, count] if ids && count
+        if use_calc_row? && @options[:paginator]
+          scope = primary_presenter.apply_ordering_to_scope(scope, @options[:params])
+          ids, count = @options[:paginator]&.get_paged(page, scope)
+          return [ids, count] if ids && count
+        end
 
         if should_paginate
           scope, new_count_scope = paginate(scope)
