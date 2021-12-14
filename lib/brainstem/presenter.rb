@@ -109,11 +109,13 @@ module Brainstem
       # Legacy: Overridable for custom preload behavior.
       custom_preload(models, association_objects_by_name.keys)
 
+      should_load_associations = requested_associations.any?
+
       models.map do |model|
         context[:conditional_cache][:model] = {}
         context[:helper_instance] = fresh_helper_instance
         result = present_fields(model, context, context[:fields])
-        load_associations!(model, result, context, options)
+        load_associations!(model, result, context, options) if should_load_associations
         add_id!(model, result)
         datetimes_to_json(result)
       end
