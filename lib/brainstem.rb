@@ -34,6 +34,19 @@ module Brainstem
     @mysql_use_calc_found_rows || false
   end
 
+  # Sets {skip_datetime_serialize} to a new value.
+  # @param [Boolean] bool
+  # @return [Boolean] the new mysql_use_calc_found_rows setting
+  def self.skip_datetime_serialize=(bool)
+    @skip_datetime_serialize = bool
+  end
+
+  # Whether or not to pre-serialize dates into iso8601
+  # @return [Boolean] the skip_datetime_serialize setting
+  def self.skip_datetime_serialize
+    @skip_datetime_serialize || false
+  end
+
   # @param [String] namespace
   # @return [PresenterCollection] the {PresenterCollection} for the given namespace.
   def self.presenter_collection(namespace = nil)

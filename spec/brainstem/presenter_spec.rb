@@ -613,6 +613,38 @@ describe Brainstem::Presenter do
         expect(struct['recursion']['something'].last).to eq(:else)
         expect(struct['recursion']['foo']).to eq(:bar)
       end
+
+      describe "when skip_datetime_serialize is set" do
+        before(:all) do
+          Brainstem.skip_datetime_serialize = true
+        end
+
+        after(:all) do
+          Brainstem.skip_datetime_serialize = false
+        end
+
+        it "should not convert when setting is disabled" do
+          presenter = Class.new(Brainstem::Presenter) do
+            fields do
+              field :time, :datetime, dynamic: lambda { Time.now }
+              field :date, :date, dynamic: lambda { Date.new }
+              fields :recursion do
+                field :time, :datetime, dynamic: lambda { Time.now }
+                field :something, :datetime, dynamic: lambda { [Time.now, :else] }
+                field :foo, :string, dynamic: lambda { :bar }
+              end
+            end
+          end
+
+          struct = presenter.new.group_present([Workspace.first]).first
+          expect(struct['time']).to be_a(Time)
+          expect(struct['date']).to be_a(Date)
+          expect(struct['recursion']['time']).to be_a(Time)
+          expect(struct['recursion']['something'].first).to be_a(Time)
+          expect(struct['recursion']['something'].last).to eq(:else)
+          expect(struct['recursion']['foo']).to eq(:bar)
+        end
+      end
     end
 
     describe "outputting associations" do

@@ -115,7 +115,11 @@ module Brainstem
         result = present_fields(model, context, context[:fields])
         load_associations!(model, result, context, options)
         add_id!(model, result)
-        datetimes_to_json(result)
+        if Brainstem.skip_datetime_serialize
+          result
+        else
+          datetimes_to_json(result)
+        end
       end
     end
 
