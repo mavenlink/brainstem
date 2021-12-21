@@ -55,6 +55,7 @@ shared_examples_for Brainstem::QueryStrategies::BaseStrategy do
       let(:page) { 1 }
       let(:fake_get_ids_for_page_results) { [8, 5] }
       let(:fake_get_count_results) { 999 }
+      let(:paginator) { Object.new }
       let(:options) do
         {
           paginator: paginator,
@@ -75,11 +76,6 @@ shared_examples_for Brainstem::QueryStrategies::BaseStrategy do
         end
 
         context 'when using mysql' do
-          let(:paginator) do
-            paginator = Object.new
-            paginator
-          end
-
           before { Brainstem.mysql_use_calc_found_rows = true }
           after { Brainstem.mysql_use_calc_found_rows = false }
 
@@ -95,7 +91,7 @@ shared_examples_for Brainstem::QueryStrategies::BaseStrategy do
             it '#evaluate_scope uses mysql SQL_CALC_FOUND_ROWS and FOUND_ROWS' do
               mock(paginator).get_ids_for_page(page, anything) { nil }
 
-              expect { strategy.evaluate_scope(Workspace.unscoped).to_a }.
+              expect { strategy.evaluate_scope(Workspace.unscoped) }.
                 to make_database_queries({ count: 1, matching: "SELECT SQL_CALC_FOUND_ROWS" }).
                   and make_database_queries({ count: 1, matching: "SELECT FOUND_ROWS()" })
             end
@@ -113,21 +109,9 @@ shared_examples_for Brainstem::QueryStrategies::BaseStrategy do
         end
 
         context 'when not using mysql' do
-          context 'the paginator is not used' do
-            let(:paginator) do
-              paginator = Object.new
-              mock(paginator).get_ids_for_page(anything, anything).never
-              paginator
-            end
-
-            it 'uses scope to get page data' do
-              expect { strategy.evaluate_scope(Workspace.unscoped).to_a }.
-                to make_database_queries(count: 1, matching: 'SELECT workspaces.id FROM "workspaces"').
-                  and make_database_queries(
-                        count: 1,
-                        matching: 'SELECT "workspaces".* FROM "workspaces" WHERE "workspaces"."id" IN ('
-                      )
-            end
+          it 'still uses paginator to get page data' do
+            mock(paginator).get_ids_for_page(anything, anything)
+            strategy.evaluate_scope(Workspace.unscoped)
           end
         end
       end

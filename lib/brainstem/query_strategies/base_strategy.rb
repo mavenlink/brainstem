@@ -50,11 +50,9 @@ module Brainstem
       end
 
       def get_ids_for_page(scope)
+        ids = @options[:paginator]&.get_ids_for_page(calculate_page, scope)
+        return ids if ids.present?
         if use_calc_row?
-          # The paginator uses mysql SQL_CALC_FOUND_ROWS.
-          ids = @options[:paginator]&.get_ids_for_page(calculate_page, scope)
-          return ids if ids.present?
-
           ids = scope.pluck(Arel.sql("SQL_CALC_FOUND_ROWS #{scope.table_name}.id"))
           @last_count = ActiveRecord::Base.connection.execute("SELECT FOUND_ROWS()").first.first
         else
@@ -73,7 +71,7 @@ module Brainstem
       end
 
       def delegate_count_to_presenter?
-        primary_presenter&.evaluate_count?
+        !!primary_presenter&.evaluate_count?
       end
 
       def calculate_limit
