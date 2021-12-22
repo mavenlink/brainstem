@@ -50,7 +50,7 @@ describe Brainstem::QueryStrategies::FilterOrSearch do
         let(:options) { default_options.merge(paginator: paginator) }
 
         it 'uses the provided paginator' do
-          mock(paginator).paginate(anything, anything)
+          mock(paginator).paginate(anything)
           subject.execute(Workspace.unscoped)
         end
       end

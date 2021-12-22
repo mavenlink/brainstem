@@ -744,7 +744,7 @@ describe Brainstem::PresenterCollection do
           end
 
           it "does not apply pagination" do
-            mock(@presenter_collection).paginate(anything, anything).times(0)
+            mock(@presenter_collection).paginate(anything).times(0)
             result = @presenter_collection.presenting("workspaces", :params => { :search => "blah" }) { Workspace.unscoped }
           end
 

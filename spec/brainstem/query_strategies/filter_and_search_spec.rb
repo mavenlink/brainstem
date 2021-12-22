@@ -56,7 +56,7 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
         let(:options) { default_options.merge(paginator: paginator) }
 
         it 'uses the provided paginator' do
-          mock(paginator).paginate(anything, anything)
+          mock(paginator).paginate(anything)
           query_strat = described_class.new(options)
           query_strat.execute(Workspace.unscoped)
         end
