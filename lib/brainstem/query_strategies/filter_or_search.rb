@@ -1,3 +1,5 @@
+require 'brainstem/query_strategies/paginator'
+
 module Brainstem
   module QueryStrategies
     class FilterOrSearch < BaseStrategy
@@ -13,7 +15,6 @@ module Brainstem
           primary_models = order_for_search(primary_models, ordered_search_ids)
         else
           # Filter
-
           scope = @options[:primary_presenter].apply_filters_to_scope(scope, @options[:params], @options)
 
           if @options[:params][:only].present?
@@ -21,15 +22,12 @@ module Brainstem
             scope, count_scope = handle_only(scope, @options[:params][:only])
           else
             # Paginate
-            scope, count_scope = paginate scope
+            scope, count_scope = paginated_scopes(scope)
           end
 
           # Ordering
           scope = @options[:primary_presenter].apply_ordering_to_scope(scope, @options[:params])
-
-          primary_models = evaluate_scope(scope)
-          count = evaluate_count(count_scope)
-          count = count.keys.length if count.is_a?(Hash)
+          primary_models, count = paginator.paginate(scope, count_scope)
         end
 
         [primary_models, count]
@@ -67,7 +65,7 @@ module Brainstem
         end
       end
 
-      def paginate(scope)
+      def paginated_scopes(scope)
         limit, offset = calculate_limit_and_offset
         [scope.limit(limit).offset(offset).distinct, scope.select("distinct #{scope.connection.quote_table_name @options[:table_name]}.id")]
       end

@@ -9,7 +9,7 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
     search: 'toot, otto, toot',
   } }
 
-  let(:options) { {
+  let(:default_options) { {
     primary_presenter: CheesePresenter.new,
     table_name: 'cheeses',
     default_per_page: 20,
@@ -17,6 +17,7 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
     default_max_filter_and_search_page: 500,
     params: params
   } }
+  let(:options) { default_options }
 
   it_behaves_like Brainstem::QueryStrategies::BaseStrategy
 
@@ -48,6 +49,17 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
         results, count = run_query
         expect(count).to eq(owned_by_bob.count)
         expect(results.map(&:id)).to eq(expected_ordered_ids)
+      end
+
+      context 'when options contain a paginator' do
+        let(:paginator) { Object.new }
+        let(:options) { default_options.merge(paginator: paginator) }
+
+        it 'uses the provided paginator' do
+          mock(paginator).paginate(anything, anything)
+          query_strat = described_class.new(options)
+          query_strat.execute(Workspace.unscoped)
+        end
       end
 
       context 'with limit and offset params' do
@@ -185,7 +197,7 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
 
       context 'and it does not exist on the presenter' do
         before do
-         expect(CheesePresenter.configuration[:sort_orders][:canadianness]).not_to be_present
+          expect(CheesePresenter.configuration[:sort_orders][:canadianness]).not_to be_present
         end
 
         it 'returns false' do

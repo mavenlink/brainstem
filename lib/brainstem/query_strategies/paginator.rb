@@ -1,0 +1,69 @@
+module Brainstem
+  module QueryStrategies
+    class Paginator
+      def initialize(primary_presenter: primary_presenter)
+        @primary_presenter = primary_presenter
+        @last_count = nil
+      end
+
+      def paginate(scope, count_scope)
+        models = get_models(scope)
+        count = get_count(count_scope)
+        count = count.keys.length if count.is_a?(Hash)
+        [models, count]
+      end
+
+      private
+
+      def get_models(scope)
+        @last_count = nil
+
+        # On complex queries, MySQL can sometimes handle 'SELECT id FROM ... ORDER BY ...' much faster than
+        # 'SELECT * FROM ...', so we pluck the ids, then find those specific ids in a separate query.
+        if ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql|sqlite/i
+          get_models_using_ids(scope)
+        else
+          scope.to_a
+        end
+      end
+
+      def get_count(count_scope)
+        return @primary_presenter.evaluate_count(count_scope) if delegate_count_to_presenter?
+
+        ret = @last_count || count_scope.reorder(nil).count
+        @last_count = nil
+        ret
+      end
+
+      def get_models_using_ids(scope)
+        ids = get_ids_for_page(scope)
+        id_lookup = {}
+        ids.each.with_index { |id, index| id_lookup[id] = index }
+        scope.klass.where(id: id_lookup.keys).sort_by { |model| id_lookup[model.id] }
+      end
+
+      def get_ids_for_page(scope)
+        if use_calc_row?
+          ids = scope.pluck(Arel.sql("SQL_CALC_FOUND_ROWS #{scope.table_name}.id"))
+          @last_count = ActiveRecord::Base.connection.execute("SELECT FOUND_ROWS()").first.first
+        else
+          ids = scope.pluck(Arel.sql("#{scope.table_name}.id"))
+        end
+
+        ids
+      end
+
+      def use_calc_row?
+        return false unless Brainstem.mysql_use_calc_found_rows
+        return false unless ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql/i
+        return false if delegate_count_to_presenter?
+
+        true
+      end
+
+      def delegate_count_to_presenter?
+        !!@primary_presenter&.evaluate_count?
+      end
+    end
+  end
+end

@@ -7,10 +7,9 @@ module Brainstem
 
         if ordering?
           count_scope = scope
-          scope = paginate(scope)
+          scope = paginated_scope(scope)
           scope = @options[:primary_presenter].apply_ordering_to_scope(scope, @options[:params])
-          primary_models = evaluate_scope(scope)
-          count = evaluate_count(count_scope)
+          primary_models, count = paginator.paginate(scope, count_scope)
         else
           filtered_ids = scope.pluck(:id)
           count = filtered_ids.size
@@ -58,7 +57,7 @@ module Brainstem
         sort_name.present? && sort_orders && sort_orders[sort_name].present?
       end
 
-      def paginate(scope)
+      def paginated_scope(scope)
         limit, offset = calculate_limit_and_offset
         scope.limit(limit).offset(offset).distinct
       end

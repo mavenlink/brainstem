@@ -29,7 +29,7 @@ describe Brainstem::QueryStrategies::FilterOrSearch do
     end
 
     context 'we are not searching' do
-      let(:options) do
+      let(:default_options) do
         {
           primary_presenter: WorkspacePresenter.new,
           table_name: 'workspaces',
@@ -38,10 +38,21 @@ describe Brainstem::QueryStrategies::FilterOrSearch do
           params: {}
         }
       end
+      let(:options) { default_options }
       let(:subject) { described_class.new(options) }
 
       it 'returns the primary models and count' do
         expect(subject.execute(Workspace.unscoped)).to eq([Workspace.unscoped.to_a, Workspace.count])
+      end
+
+      context 'when options contain a paginator' do
+        let(:paginator) { Object.new }
+        let(:options) { default_options.merge(paginator: paginator) }
+
+        it 'uses the provided paginator' do
+          mock(paginator).paginate(anything, anything)
+          subject.execute(Workspace.unscoped)
+        end
       end
 
       if(ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql/i)
