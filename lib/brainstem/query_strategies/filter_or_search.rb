@@ -1,5 +1,3 @@
-require 'brainstem/query_strategies/paginator'
-
 module Brainstem
   module QueryStrategies
     class FilterOrSearch < BaseStrategy
