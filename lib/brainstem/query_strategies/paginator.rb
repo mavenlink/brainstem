@@ -3,9 +3,9 @@ module Brainstem
     class Paginator
       attr_reader :pagination_strategy, :primary_presenter
 
-      def initialize(primary_presenter:)
+      def initialize(primary_presenter:, pagination_strategy:)
         @primary_presenter = primary_presenter
-        @pagination_strategy = Brainstem::QueryStrategies::PaginationStrategy.new
+        @pagination_strategy = pagination_strategy
       end
 
       def paginate(page:, per_page:, scope:, count_scope:)

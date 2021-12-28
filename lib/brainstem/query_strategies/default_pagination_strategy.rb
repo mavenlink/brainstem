@@ -1,6 +1,6 @@
 module Brainstem
   module QueryStrategies
-    class PaginationStrategy
+    class DefaultPaginationStrategy
       def initialize
         @last_count = nil
       end

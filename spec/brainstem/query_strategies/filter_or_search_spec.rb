@@ -46,11 +46,12 @@ describe Brainstem::QueryStrategies::FilterOrSearch do
       end
 
       context 'when options contain a paginator' do
-        let(:paginator) { Object.new }
-        let(:options) { default_options.merge(paginator: paginator) }
+        let(:pagination_strategy) { Object.new }
+        let(:options) { default_options.merge(pagination_strategy: pagination_strategy) }
 
-        it 'uses the provided paginator' do
-          mock(paginator).paginate(anything)
+        it 'uses the provided pagination_strategy' do
+          mock(pagination_strategy).get_models_for_page(anything)
+          mock(pagination_strategy).get_count(anything)
           subject.execute(Workspace.unscoped)
         end
       end

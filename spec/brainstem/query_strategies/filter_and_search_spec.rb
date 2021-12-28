@@ -51,12 +51,13 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
         expect(results.map(&:id)).to eq(expected_ordered_ids)
       end
 
-      context 'when options contain a paginator' do
-        let(:paginator) { Object.new }
-        let(:options) { default_options.merge(paginator: paginator) }
+      context 'when options contain a pagination_strategy' do
+        let(:pagination_strategy) { Object.new }
+        let(:options) { default_options.merge(pagination_strategy: pagination_strategy) }
 
-        it 'uses the provided paginator' do
-          mock(paginator).paginate(anything)
+        it 'uses the provided pagination_strategy' do
+          mock(pagination_strategy).get_models_for_page(anything)
+          mock(pagination_strategy).get_count(anything)
           query_strat = described_class.new(options)
           query_strat.execute(Workspace.unscoped)
         end

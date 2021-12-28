@@ -79,7 +79,8 @@ module Brainstem
       end
 
       def paginator
-        @options[:paginator] || Brainstem::QueryStrategies::Paginator.new(primary_presenter: primary_presenter)
+        pagination_strategy = @options[:pagination_strategy] || Brainstem::QueryStrategies::DefaultPaginationStrategy.new
+        Brainstem::QueryStrategies::Paginator.new(primary_presenter: primary_presenter, pagination_strategy: pagination_strategy)
       end
     end
   end
