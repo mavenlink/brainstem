@@ -52,12 +52,11 @@ module Brainstem
         end
       end
 
-      attr_reader :pagination_strategy
+      attr_reader :pagination_strategy, :primary_presenter
 
       def initialize(primary_presenter:)
         @primary_presenter = primary_presenter
         @pagination_strategy = PaginationStrategy.new
-        @last_count = nil
       end
 
       def paginate(page:, per_page:, scope:, count_scope:)
@@ -68,12 +67,12 @@ module Brainstem
       end
 
       def get_count(count_scope)
-        return @primary_presenter.evaluate_count(count_scope) if delegate_count_to_presenter?
+        return primary_presenter.evaluate_count(count_scope) if delegate_count_to_presenter?
         pagination_strategy.get_count(count_scope)
       end
 
       def delegate_count_to_presenter?
-        !!@primary_presenter&.evaluate_count?
+        !!primary_presenter&.evaluate_count?
       end
     end
   end
