@@ -25,7 +25,7 @@ module Brainstem
 
           # Ordering
           scope = @options[:primary_presenter].apply_ordering_to_scope(scope, @options[:params])
-          primary_models, count = paginator.paginate(page: calculate_page, scope: scope, count_scope: count_scope)
+          primary_models, count = paginator.paginate(page: calculate_page, per_page: calculate_per_page, scope: scope, count_scope: count_scope)
         end
 
         [primary_models, count]

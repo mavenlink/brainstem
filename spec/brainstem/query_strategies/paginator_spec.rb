@@ -19,6 +19,7 @@ describe Brainstem::QueryStrategies::Paginator do
       let(:scope) { Workspace.unscoped }
       let(:count_scope) { scope }
       let(:page) { 1 }
+      let(:per_page) { 3 }
 
       context 'when using mysql_use_calc_found_rows' do
         before do
@@ -31,7 +32,7 @@ describe Brainstem::QueryStrategies::Paginator do
         end
 
         it 'issues SQL_CALC_FOUND_ROWS and SELECT FOUND_ROWS queries' do
-          expect { paginator.paginate(page: page, scope: scope, count_scope: count_scope) }.
+          expect { paginator.paginate(page: page, per_page: per_page, scope: scope, count_scope: count_scope) }.
             to make_database_queries({ count: 1, matching: "SELECT SQL_CALC_FOUND_ROWS workspaces.id FROM" }).
               and make_database_queries({ count: 1, matching: "SELECT FOUND_ROWS()" })
         end
@@ -43,12 +44,12 @@ describe Brainstem::QueryStrategies::Paginator do
         end
 
         it 'returns the results by issuing a count query' do
-          expect { paginator.paginate(page: page, scope: scope, count_scope: count_scope) }.
+          expect { paginator.paginate(page: page, per_page: per_page, scope: scope, count_scope: count_scope) }.
             not_to make_database_queries({ count: 1, matching: "SELECT SQL_CALC_FOUND_ROWS workspaces.id FROM" })
-          expect { paginator.paginate(page: page, scope: scope, count_scope: count_scope) }.
+          expect { paginator.paginate(page: page, per_page: per_page, scope: scope, count_scope: count_scope) }.
             not_to make_database_queries({ count: 1, matching: "SELECT FOUND_ROWS()" })
 
-          expect { paginator.paginate(page: page, scope: scope, count_scope: count_scope) }.
+          expect { paginator.paginate(page: page, per_page: per_page, scope: scope, count_scope: count_scope) }.
             to make_database_queries({ count: 1, matching: "SELECT COUNT(*) FROM" })
         end
       end

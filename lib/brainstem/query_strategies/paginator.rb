@@ -6,8 +6,8 @@ module Brainstem
         @last_count = nil
       end
 
-      def paginate(page:, scope:, count_scope:)
-        models = get_models_for_page(page, scope)
+      def paginate(page:, per_page:, scope:, count_scope:)
+        models = get_models_for_page( scope: scope, page: page, per_page: per_page)
         count = get_count(count_scope)
         count = count.keys.length if count.is_a?(Hash)
         [models, count]
@@ -15,13 +15,13 @@ module Brainstem
 
       private
 
-      def get_models_for_page(page, scope)
+      def get_models_for_page(scope:, page: nil, per_page: nil)
         @last_count = nil
 
         # On complex queries, MySQL can sometimes handle 'SELECT id FROM ... ORDER BY ...' much faster than
         # 'SELECT * FROM ...', so we pluck the ids, then find those specific ids in a separate query.
         if ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql|sqlite/i
-          get_models_using_ids(page, scope)
+          get_models_using_ids(scope: scope)
         else
           scope.to_a
         end
@@ -35,14 +35,14 @@ module Brainstem
         ret
       end
 
-      def get_models_using_ids(page, scope)
-        ids = get_ids_for_page(page, scope)
+      def get_models_using_ids(scope:, page: nil, per_page: nil)
+        ids = get_ids_for_page(scope: scope, page: page, per_page: per_page)
         id_lookup = {}
         ids.each.with_index { |id, index| id_lookup[id] = index }
         scope.klass.where(id: id_lookup.keys).sort_by { |model| id_lookup[model.id] }
       end
 
-      def get_ids_for_page(page, scope)
+      def get_ids_for_page(scope:, page: nil, per_page: nil)
         if use_calc_row?
           ids = scope.pluck(Arel.sql("SQL_CALC_FOUND_ROWS #{scope.table_name}.id"))
           @last_count = ActiveRecord::Base.connection.execute("SELECT FOUND_ROWS()").first.first
