@@ -7,9 +7,11 @@ module Brainstem
 
         if ordering?
           count_scope = scope
-          scope = paginated_scope(scope)
           scope = @options[:primary_presenter].apply_ordering_to_scope(scope, @options[:params])
-          primary_models, count = paginator.paginate(page: calculate_page, per_page: calculate_per_page, scope: scope, count_scope: count_scope)
+          limit, offset = calculate_limit_and_offset
+          ids = paginator.get_ids(limit: limit, offset: offset, scope: scope)
+          count = paginator.get_count(scope)
+          primary_models = Brainstem::QueryStrategies::DataMapper.new.get_models(ids: ids, scope: scope)
         else
           filtered_ids = scope.pluck(:id)
           count = filtered_ids.size

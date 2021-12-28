@@ -3,21 +3,40 @@ module Brainstem
     class Paginator
       attr_reader :pagination_strategy, :primary_presenter
 
-      def initialize(primary_presenter:, pagination_strategy:)
+      def initialize(primary_presenter:)
         @primary_presenter = primary_presenter
-        @pagination_strategy = pagination_strategy
+        @last_count = nil
       end
 
-      def paginate(page:, per_page:, scope:, count_scope:)
-        models = pagination_strategy.get_models_for_page(scope: scope, page: page, per_page: per_page)
-        count = get_count(count_scope)
-        count = count.keys.length if count.is_a?(Hash)
-        [models, count]
+      def get_ids_for_paginated_scope(scope)
+        if use_calc_row?
+          ids = scope.pluck(Arel.sql("SQL_CALC_FOUND_ROWS #{scope.table_name}.id"))
+          @last_count = ActiveRecord::Base.connection.execute("SELECT FOUND_ROWS()").first.first
+        else
+          ids = scope.pluck(Arel.sql("#{scope.table_name}.id"))
+        end
+
+        ids
       end
 
-      def get_count(count_scope)
-        return primary_presenter.evaluate_count(count_scope) if delegate_count_to_presenter?
-        pagination_strategy.get_count(count_scope)
+      def use_calc_row?
+        return false unless Brainstem.mysql_use_calc_found_rows
+        return false unless ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql/i
+
+        true
+      end
+
+      def get_ids(limit:, offset:, scope:)
+        paginated_scope = scope.limit(limit).offset(offset).distinct
+        get_ids_for_paginated_scope(paginated_scope)
+      end
+
+      def get_count(scope)
+        return primary_presenter.evaluate_count(scope) if delegate_count_to_presenter?
+        binding.pry
+        ret = @last_count || scope.reorder(nil).count
+        @last_count = nil
+        ret
       end
 
       def delegate_count_to_presenter?

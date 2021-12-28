@@ -14,18 +14,24 @@ module Brainstem
         else
           # Filter
           scope = @options[:primary_presenter].apply_filters_to_scope(scope, @options[:params], @options)
+          scope = @options[:primary_presenter].apply_ordering_to_scope(scope, @options[:params])
 
           if @options[:params][:only].present?
+            puts "handle only"
             # Handle Only
             scope, count_scope = handle_only(scope, @options[:params][:only])
+            ids = scope.pluck(:id)
+            count = scope.count
+            primary_models = Brainstem::QueryStrategies::DataMapper.new.get_models(ids: ids, scope: scope)
           else
+            puts "paginate"
             # Paginate
-            scope, count_scope = paginated_scopes(scope)
+            limit, offset = calculate_limit_and_offset
+            ids = paginator.get_ids(limit: limit, offset: offset, scope: scope)
+            count = paginator.get_count(scope)
+            puts "count: #{count}"
+            primary_models = Brainstem::QueryStrategies::DataMapper.new.get_models(ids: ids, scope: scope)
           end
-
-          # Ordering
-          scope = @options[:primary_presenter].apply_ordering_to_scope(scope, @options[:params])
-          primary_models, count = paginator.paginate(page: calculate_page, per_page: calculate_per_page, scope: scope, count_scope: count_scope)
         end
 
         [primary_models, count]
