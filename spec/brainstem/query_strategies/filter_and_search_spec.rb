@@ -88,50 +88,6 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
           expect(results.map(&:id)).to eq(expected_paginated_ids)
         end
       end
-
-      if(ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql/i)
-        describe 'mysql_use_calc_found_rows' do
-          context 'when using mysql_use_calc_found_rows' do
-            before do
-              Brainstem.mysql_use_calc_found_rows = true
-              expect(Brainstem.mysql_use_calc_found_rows).to eq(true)
-            end
-
-            after do
-              Brainstem.mysql_use_calc_found_rows = false
-            end
-
-            it 'returns the results without issuing a second query' do
-              expect { run_query }.
-                  not_to make_database_queries({ count: 1, matching: "SELECT COUNT(*) FROM" })
-
-              expect { run_query }.
-                to make_database_queries({ count: 1, matching: /SELECT\s+DISTINCT SQL_CALC_FOUND_ROWS cheeses.id FROM/ }).
-                and make_database_queries({ count: 1, matching: "SELECT FOUND_ROWS()" })
-
-              _, count = run_query
-              expect(count).to eq(owned_by_bob.count)
-            end
-          end
-
-          context 'when not using mysql_use_calc_found_rows' do
-            before do
-              expect(Brainstem.mysql_use_calc_found_rows).to eq(false)
-            end
-
-            it 'returns the results by issuing a count query' do
-              expect { run_query }.
-                to make_database_queries({ count: 1, matching: "SELECT COUNT(*) FROM" })
-
-              expect { run_query }.
-                not_to make_database_queries({ count: 1, matching: /SELECT\s+DISTINCT SQL_CALC_FOUND_ROWS cheeses.id FROM/ })
-
-              expect { run_query }.
-                not_to make_database_queries({ count: 1, matching: "SELECT FOUND_ROWS()" })
-            end
-          end
-        end
-      end
     end
 
     context 'when no order is specified' do

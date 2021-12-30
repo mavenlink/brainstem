@@ -35,6 +35,18 @@ module Brainstem
         [(@options[:params][:page] || 1).to_i, 1].max
       end
 
+      def calculate_limit_and_offset
+        if @options[:params][:limit].present? && @options[:params][:offset].present?
+          limit = calculate_limit
+          offset = calculate_offset
+        else
+          limit = calculate_per_page
+          offset = limit * (calculate_page - 1)
+        end
+
+        [limit, offset]
+      end
+
       def filter_includes
         allowed_associations = primary_presenter.allowed_associations(@options[:params][:only].present?)
 
@@ -60,18 +72,6 @@ module Brainstem
         end
 
         ordered_records.compact
-      end
-
-      def calculate_limit_and_offset
-        if @options[:params][:limit].present? && @options[:params][:offset].present?
-          limit = calculate_limit
-          offset = calculate_offset
-        else
-          limit = calculate_per_page
-          offset = limit * (calculate_page - 1)
-        end
-
-        [limit, offset]
       end
 
       def primary_presenter
