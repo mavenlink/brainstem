@@ -11,7 +11,7 @@ module Brainstem
           limit, offset = calculate_limit_and_offset
           ids = paginator.get_ids(limit: limit, offset: offset, scope: scope)
           count = paginator.get_count(count_scope)
-          primary_models = Brainstem::QueryStrategies::DataMapper.new.get_models(ids: ids, scope: scope)
+          primary_models = data_mapper.get_models(ids: ids, scope: scope)
         else
           filtered_ids = scope.pluck(:id)
           count = filtered_ids.size

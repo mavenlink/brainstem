@@ -29,7 +29,7 @@ module Brainstem
           scope = primary_presenter.apply_ordering_to_scope(scope, @options[:params])
           ids = paginator.get_ids(limit: limit, offset: offset, scope: scope)
           count = paginator.get_count(count_scope)
-          primary_models = Brainstem::QueryStrategies::DataMapper.new.get_models(ids: ids, scope: scope)
+          primary_models = data_mapper.get_models(ids: ids, scope: scope)
         end
 
         [primary_models, count]
