@@ -49,7 +49,7 @@ describe Brainstem::QueryStrategies::FilterOrSearch do
         let(:paginator) { Object.new }
         let(:options) { default_options.merge(paginator: paginator) }
 
-        it 'uses the provided pagination_strategy' do
+        it 'uses the provided paginator' do
           mock(paginator).get_ids(anything) { [] }
           mock(paginator).get_count(anything)
           subject.execute(Workspace.unscoped)
