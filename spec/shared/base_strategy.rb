@@ -3,52 +3,6 @@ require "spec_helper"
 shared_examples_for Brainstem::QueryStrategies::BaseStrategy do
   let(:strategy) { described_class.new(options) }
 
-  if(ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql/i)
-    describe 'mysql_use_calc_found_rows' do
-      let(:options) {{}}
-
-      context 'when using mysql_use_calc_found_rows' do
-        before do
-          Brainstem.mysql_use_calc_found_rows = true
-          expect(Brainstem.mysql_use_calc_found_rows).to eq(true)
-        end
-
-        after do
-          Brainstem.mysql_use_calc_found_rows = false
-        end
-
-        it 'returns the results without issuing a second query' do
-          expect { strategy.evaluate_scope(Workspace.unscoped) }.
-            to make_database_queries({ count: 1, matching: "SELECT SQL_CALC_FOUND_ROWS workspaces.id FROM" }).
-            and make_database_queries({ count: 1, matching: "SELECT FOUND_ROWS()" })
-
-          count_scope_that_should_not_be_used = Workspace.none
-          count_expected = Workspace.count
-
-          expect {
-            expect(strategy.evaluate_count(count_scope_that_should_not_be_used)).to eq(count_expected)
-          }.not_to make_database_queries
-        end
-      end
-
-      context 'when not using mysql_use_calc_found_rows' do
-        before do
-          expect(Brainstem.mysql_use_calc_found_rows).to eq(false)
-        end
-
-        it 'returns the results by issuing a count query' do
-          expect { strategy.evaluate_scope(Workspace.unscoped) }.
-            not_to make_database_queries({ count: 1, matching: "SELECT SQL_CALC_FOUND_ROWS workspaces.id FROM" })
-          expect { strategy.evaluate_scope(Workspace.unscoped) }.
-            not_to make_database_queries({ count: 1, matching: "SELECT FOUND_ROWS()" })
-
-          expect { strategy.evaluate_count(Workspace.unscoped) }.
-            to make_database_queries({ count: 1, matching: "SELECT COUNT(*) FROM" })
-        end
-      end
-    end
-  end
-
   describe "#calculate_per_page" do
     let(:result) { strategy.calculate_per_page }
 

@@ -9,7 +9,7 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
     search: 'toot, otto, toot',
   } }
 
-  let(:options) { {
+  let(:default_options) { {
     primary_presenter: CheesePresenter.new,
     table_name: 'cheeses',
     default_per_page: 20,
@@ -17,6 +17,7 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
     default_max_filter_and_search_page: 500,
     params: params
   } }
+  let(:options) { default_options }
 
   it_behaves_like Brainstem::QueryStrategies::BaseStrategy
 
@@ -50,6 +51,18 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
         expect(results.map(&:id)).to eq(expected_ordered_ids)
       end
 
+      context 'when options contain a paginator' do
+        let(:paginator) { Object.new }
+        let(:options) { default_options.merge(paginator: paginator) }
+
+        it 'uses the provided paginator' do
+          mock(paginator).get_ids(anything) { [] }
+          mock(paginator).get_count(anything)
+          query_strat = described_class.new(options)
+          query_strat.execute(Workspace.unscoped)
+        end
+      end
+
       context 'with limit and offset params' do
         let(:limit) { 2 }
         let(:offset) { 4 }
@@ -73,50 +86,6 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
           results, count = run_query
           expect(count).to eq(owned_by_bob.count)
           expect(results.map(&:id)).to eq(expected_paginated_ids)
-        end
-      end
-
-      if(ActiveRecord::Base.connection.instance_values["config"][:adapter] =~ /mysql/i)
-        describe 'mysql_use_calc_found_rows' do
-          context 'when using mysql_use_calc_found_rows' do
-            before do
-              Brainstem.mysql_use_calc_found_rows = true
-              expect(Brainstem.mysql_use_calc_found_rows).to eq(true)
-            end
-
-            after do
-              Brainstem.mysql_use_calc_found_rows = false
-            end
-
-            it 'returns the results without issuing a second query' do
-              expect { run_query }.
-                  not_to make_database_queries({ count: 1, matching: "SELECT COUNT(*) FROM" })
-
-              expect { run_query }.
-                to make_database_queries({ count: 1, matching: /SELECT\s+DISTINCT SQL_CALC_FOUND_ROWS cheeses.id FROM/ }).
-                and make_database_queries({ count: 1, matching: "SELECT FOUND_ROWS()" })
-
-              _, count = run_query
-              expect(count).to eq(owned_by_bob.count)
-            end
-          end
-
-          context 'when not using mysql_use_calc_found_rows' do
-            before do
-              expect(Brainstem.mysql_use_calc_found_rows).to eq(false)
-            end
-
-            it 'returns the results by issuing a count query' do
-              expect { run_query }.
-                to make_database_queries({ count: 1, matching: "SELECT COUNT(*) FROM" })
-
-              expect { run_query }.
-                not_to make_database_queries({ count: 1, matching: /SELECT\s+DISTINCT SQL_CALC_FOUND_ROWS cheeses.id FROM/ })
-
-              expect { run_query }.
-                not_to make_database_queries({ count: 1, matching: "SELECT FOUND_ROWS()" })
-            end
-          end
         end
       end
     end
@@ -185,7 +154,7 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
 
       context 'and it does not exist on the presenter' do
         before do
-         expect(CheesePresenter.configuration[:sort_orders][:canadianness]).not_to be_present
+          expect(CheesePresenter.configuration[:sort_orders][:canadianness]).not_to be_present
         end
 
         it 'returns false' do

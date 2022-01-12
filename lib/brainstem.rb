@@ -5,6 +5,8 @@ require "brainstem/controller_methods"
 require "brainstem/query_strategies/base_strategy"
 require "brainstem/query_strategies/filter_and_search"
 require "brainstem/query_strategies/filter_or_search"
+require "brainstem/query_strategies/paginator"
+require "brainstem/query_strategies/data_mapper"
 
 # The Brainstem module itself contains a +default_namespace+ class attribute and a few helpers that make managing +PresenterCollections+ and their corresponding namespaces easier.
 module Brainstem
