@@ -63,6 +63,17 @@ describe Brainstem::QueryStrategies::FilterAndSearch do
         end
       end
 
+      context 'when options contain a data_mapper' do
+        let(:data_mapper) { Object.new }
+        let(:options) { default_options.merge(data_mapper: data_mapper) }
+
+        it 'uses the provided data_mapper' do
+          mock(data_mapper).get_models(anything) { [] }
+          query_strategy = described_class.new(options)
+          query_strategy.execute(Workspace.unscoped)
+        end
+      end
+
       context 'with limit and offset params' do
         let(:limit) { 2 }
         let(:offset) { 4 }
