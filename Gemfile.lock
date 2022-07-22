@@ -85,7 +85,7 @@ GEM
     rspec-support (3.9.3)
     sqlite3 (1.4.2)
     thread_safe (0.3.6)
-    tzinfo (1.2.7)
+    tzinfo (1.2.10)
       thread_safe (~> 0.1)
     yard (0.9.25)
 
@@ -94,8 +94,6 @@ PLATFORMS
 
 DEPENDENCIES
   actionpack
-  activerecord (~> 5.2.0)
-  activesupport (~> 5.2.0)
   brainstem!
   database_cleaner
   db-query-matchers
