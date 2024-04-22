@@ -85,7 +85,7 @@ GEM
     rspec-support (3.9.3)
     sqlite3 (1.4.2)
     thread_safe (0.3.6)
-    tzinfo (1.2.7)
+    tzinfo (1.2.11)
       thread_safe (~> 0.1)
     yard (0.9.25)
 
