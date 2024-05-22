@@ -2,9 +2,20 @@ module Brainstem
   module QueryStrategies
     class DataMapper
       def get_models(ids:, scope:)
-        id_lookup = {}
-        ids.each.with_index { |id, index| id_lookup[id] = index }
-        scope.klass.where(id: ids).sort_by { |model| id_lookup[model.id] }
+        models = _get_models(scope, ids)
+        sort_models(models, ids)
+      end
+
+      private
+
+      def _get_models(scope, ids)
+        scope.klass.where(id: ids)
+      end
+
+      def sort_models(models, ids)
+        model_order = {}
+        ids.each.with_index { |id, index| model_order[id] = index }
+        models.sort_by { |model| model_order[model.id] }
       end
     end
   end
