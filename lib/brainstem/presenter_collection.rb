@@ -33,6 +33,7 @@ module Brainstem
     # @option options [Boolean] :apply_default_filters Determine if Presenter's filter defaults should be applied.  On by default.
     # @option options [Brainstem::Presenter] :primary_presenter The Presenter to use for filters and sorts. If unspecified, the +:model+ or +name+ will be used to find an appropriate Presenter.
     # @option options [paginator] :paginator Optional custom paginator. If unspecified, the default paginator will be used.
+    # @option options [data_mapper] :paginator Optional custom data mapper. If unspecified, the default data mapper will be used.
     # @yield Must return a scope on the model +name+, which will then be presented.
     # @return [Hash] A hash of arrays of hashes. Top-level hash keys are pluralized model names, with values of arrays containing one hash per object that was found by the given given options.
     def presenting(name, options = {}, &block)
