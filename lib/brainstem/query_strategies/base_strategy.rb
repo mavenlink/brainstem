@@ -83,7 +83,7 @@ module Brainstem
       end
 
       def data_mapper
-        Brainstem::QueryStrategies::DataMapper.new
+        @data_mapper ||= @options[:data_mapper] || Brainstem::QueryStrategies::DataMapper.new
       end
     end
   end

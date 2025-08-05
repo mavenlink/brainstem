@@ -55,6 +55,16 @@ describe Brainstem::QueryStrategies::FilterOrSearch do
           subject.execute(Workspace.unscoped)
         end
       end
+
+      context 'when options contain a data_mapper' do
+        let(:data_mapper) { Object.new }
+        let(:options) { default_options.merge(data_mapper: data_mapper) }
+
+        it 'uses the provided data_mapper' do
+          mock(data_mapper).get_models(anything) { [] }
+          subject.execute(Workspace.unscoped)
+        end
+      end
     end
   end
 end
