@@ -21,7 +21,7 @@ filters, and association loads, allowing for simpler implementations, fewer requ
 * Prevent data duplication by pulling associations into top-level hashes, easily indexable by ID.
 * Easy integration with Backbone.js via [brainstem-js](https://github.com/mavenlink/brainstem-js).  "It's like Ember Data for Backbone.js!"
 
-[Watch our talk about Brainstem from RailsConf 2013](http://www.confreaks.com/videos/2457-railsconf2013-introducing-brainstem-your-companion-for-rich-rails-apis)
+[Watch our talk about Brainstem from RailsConf 2013](https://www.youtube.com/embed/MDNbcpHrVJk)
 
 ## Installation
 
